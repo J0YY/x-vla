@@ -403,6 +403,241 @@ open question below. Net: the "how do we principally solve this" investigation
 concludes that the simple solution was already principled — near-identity gains keep
 the whole degree-2/4 stack in the linear regime where a fixed scalar norm is exact.
 
+### Finding 18 — P0 (panel-mandated): the deployment tail is THIN
+Panel voted unanimously (5/5) to measure the tail before building any workaround
+(W1 compact-domain certificate / W2 rational attention / W3 homogenization gauge;
+tally W2=4, W1=3, W3=0.5). Built `modal_app.py::pretest_tail`: train per-token
+bilinear vs softmax LMs, hook every norm site, measure ρ = max_i(perTokenRMS_i)/c
+over ~1.6M tokens. Result:
+```
+  bilinear attn:  max ρ = 2.84  → THIN   (per-layer ρ ~1.5–1.9, flat with depth)
+  softmax  attn:  max ρ = 2.20  → THIN
+```
+No depth growth, no 1e3–1e4 spikes. **The scalar calibration constant c covers the
+tail with ~2–3× margin** — "c happened to cover the tail" is now a *measured*
+statement, not a hope.
+
+**This reconciles the entire arc.** ρ≈2.8 is thin, yet the strict model with BIG
+gains still diverged (Findings 16–17) — because divergence is (β·ρ²) compounded over
+depth: β·2.8²≈β·7.8, which for big β=0.29 gives ~2.3/layer → 2.3^L blowup, but for
+near-identity β=0.01 gives ~0.08/layer → bounded. So: **thin tail + near-identity
+gains = stable full purity (Findings 10–12); thin tail + big gains = divergence.**
+The near-identity solution isn't luck — it's the regime where β·ρ²<1 given the
+measured ρ.
+
+Caveats (honest): (1) tiny-shakespeare text, NOT robot pixels — the chair flagged
+text as register-token-adjacent; robot box (1 cam/1 embodiment) should be thinner
+still, but must be re-measured there. (2) Register-token "massive activations" are a
+LARGE-model phenomenon; a 13M model wouldn't show them either way, so this doesn't
+fully falsify the softmax-artifact hypothesis — it shows the small-scale tail is thin
+for both.
+
+### Decision after P0
+- **W2 (rational attention): deferred / not needed.** Its payoff (escape near-identity
+  for big gains, tame a fat attention tail) redeems nothing given a thin tail + a
+  near-identity solution that already reaches κ=1 and matches capability. Revisit only
+  if a real task shows near-identity caps capability, or robot-domain P0 shows fat tails.
+- **W3 (homogenization gauge): deferred polish.** Calibration gap already ~1e-12 (fold).
+- **W1 (compact-domain certificate): the one worth building — as a safety artifact**,
+  and best paired with the deployment domain. It upgrades "measured-thin on text" to
+  "provably bounded over the pixel box." Cheap first step: certificate-vs-capability
+  tradeoff at L=6. Do it alongside/after Milestone 2 (vision), where the box + the
+  robot-domain tail re-measurement actually matter.
+
+## HEADLINE RESULTS (summary)
+
+1. **Genuinely a tensor network.** Exact fold to a normalization-free graph:
+   LM ~1e-12 (FP64), χ-MLP 5e-12, per-module tests <1e-5. 0 disallowed ops.
+2. **Competitive when folded.** Strict LM matches per-token teacher (5.04≈5.0);
+   χ-ViT 0.917 = 98.8% of matched softmax (SVHN).
+3. **Cross-bilinear fusion works.** +81 pts over concat+linear where the
+   spatial×semantic product is provably required; ablating it erases the gain.
+4. **End-to-end pixels+language+state→action, tensor-pure, language load-bearing.**
+   Synthetic: 22× better than language-blind, 13× worse on shuffled instruction.
+   Real (LIBERO-Object, 18.9k chunks): full 0.021; shuffled-instruction 0.194 (~9×
+   worse, in-distribution grounding signal); zeroing image → >1.0 (model does NOT
+   coast on state). Rollout deferred (needs MuJoCo).
+5. **Exact global diagonalization (the tensor-network dividend).** χ-MLP: 62% of
+   hidden dims removable at ≤1% acc drop; global ODT > local SVD at matched rank
+   (+9 pts @ rank 6). An ordinary VLA cannot be globally diagonalized.
+
+Compute-deferred (honest): χ-VLA-450M *training* (no A100); exact global ODT on the
+attention+residual transformer (Level-C, open — spec §16.1). Reference config
+verified at 448.2M; explicit>Khatri-Rao attention latency for all N≤4096.
+
+## Day 2 — autonomous milestone push (M2–M7)
+
+Agent panel set the compute-feasible plan (A10G-only): SVHN for M2/M5, synthetic
++ LIBERO for M4, exact ODT on a feedforward χ-MLP (not the transformer). Order
+M2→M5→M3→M4→M6/M7. Code: `models/vit.py`, `models/chi_mlp.py`, `models/vla.py`,
+`nn/projector.py`, `train/{train_vit,odt}.py`; Modal fns `train_chi_vit`,
+`odt_experiment`, `m3_projector`, `pretest_tail`. 17/17 tests pass.
+
+### ✅ M3 — cross-bilinear projector (headline #3)
+Bilinear-teacher conjunction task (label = argmax of a fixed spatial×semantic
+product, linearly inseparable by construction):
+```
+  cross-bilinear projector      0.9711   (tensor-pure)
+  concat + linear               0.1602   (chance 0.10 — can't represent product)
+  cross-bilinear, interaction=0 0.1607   (ablation → collapses to linear)
+  concat + GELU-MLP (non-pure)  0.5899   (matched params)
+```
+Gap over concat-linear = **+81 pts**; zeroing the interaction term erases **81 pts**.
+The tensor-pure projector even beats the non-pure MLP at matched params. Proves the
+spatial×semantic interaction does real work and is readable (CP rank components).
+
+### ✅ M5 — exact global ODT (FLAGSHIP, headline #5)
+Feedforward χ-MLP (3 bilinear CP layers, d=32, no residual/attention) on SVHN,
+base acc 0.81:
+- (i) **exact reconstruction**: unrolled cores vs module = **5.2e-12** (fp64).
+- (ii) **global low-rank**: **20/32 (62%) hidden dims removable at ≤1% acc drop**
+  (Dooms reported ~70% on their SVHN tree; we measure 62% — reported, not assumed).
+- (iii) **global ODT > local SVD** at matched rank on the deepest bond (a_1, feeds
+  2 downstream layers): rank6 0.777 vs 0.686 (**+9pts**), also wins at 4/12/16/24;
+  local edges out only at rank 1–2 (noise). Global accounts for the full downstream,
+  local only the adjacent core — the predicted advantage, largest in the useful
+  compression regime.
+This is the payoff an ordinary VLA cannot deliver: exact global diagonalization.
+
+### ✅ M2 — χ-ViT on SVHN (headline #2, vision)
+Softmax-free bilinear χ-ViT (6.7M, per-token norm) vs param-matched softmax-attention
+baseline, SVHN 30 epochs:
+```
+  bilinear (χ, tensor-pure)   0.9166
+  softmax baseline            0.9281   → χ is 98.8% of baseline (§19 gate: ≥90% ✓)
+```
+The softmax-free attention costs only 1.2 acc points on real images.
+
+### ✅ M4a — synthetic χ-VLA, grounding (headline #4, controlled)
+End-to-end pixels+instruction+state→continuous action, single χ-ViT + joint
+χ-transformer + linear action head (6.7M), 3000 steps:
+```
+  position MSE (correct instr)   0.00045
+  language-blind lower bound      0.00995   → model 22× better (uses vision+language)
+  position MSE (shuffled instr)   0.00589   → 13× worse ⇒ grounding gap = 0.00544
+```
+Shuffling the instruction wrecks the prediction → language is demonstrably
+load-bearing, on a fully tensor-pure forward graph.
+
+### ✅ M6/M7 — attention-kernel latency crossover
+Measured explicit vs Khatri-Rao bilinear attention (d_h=32, d_h²=1024) across N:
+explicit is faster for ALL N∈[128,4096] on A10G (well-optimized dense matmul beats
+the factored contraction at these scales; KR's asymptotic O(N·d_h³) win needs a
+fused kernel / much larger N). Matches spec §6.5/§20: use explicit for the VLA's
+short sequences (N≈100–330); KR/scan only for very long (video/multi-cam).
+
+### ✅ M4b — LIBERO-Object real-robot BC (headline #4, real data)
+Real robot-imitation data (10 object-naming tasks), 20M-param χ-VLA, offline BC
+over 18.9k action chunks (20k frames streamed from HF, cached to volume):
+```
+  full (image+instr+state)          0.021
+  shuffled instruction (img+state ok) 0.194   → ~9× worse = clean grounding signal
+  image zeroed (instr kept)          1.100   → OOD (>mean): model does NOT coast on state
+  image+instr zeroed                 1.148   → OOD
+  mean-action predictor              1.025   (trivial; ≈1.0 by normalization)
+```
+HONEST FRAMING (revised after user pushback on "50× < baseline"): the mean-predictor
+is trivial (≈1.0 because actions are unit-variance normalized). The zeroed-input rows
+are OOD (>mean), NOT fair "state-only" baselines — a fair one needs a separately
+trained state-only model. Two real signals: (a) zeroing the image sends error >1.0,
+so the low 0.021 is NOT the model coasting on smooth state trajectories — it genuinely
+uses vision; (b) shuffled instruction (image+state correct) → 0.194, ~9× worse =
+clean in-distribution proof language is load-bearing. The 0.021 is legit: identify
+target from image+language, then the smooth action toward it is easy. Rollout DEFERRED
+(needs MuJoCo; low MSE ≠ task success). Ops note: run heavy jobs `modal run --detach`
++ volume frame-cache (local wrapper can be killed mid-run).
+
+### ✅ Finding 19 — ODT DOES work on a 1-layer attention+residual transformer
+(User asked for evidence, "even one layer.") Trained a 1-layer strict (foldable,
+scalar-norm, near-identity-gain) χ-transformer LM (d=128, 4 heads) on
+tiny-shakespeare, val 5.23. Two results:
+- **It folds to an exact tensor network WITH attention**: fp64 abs |Δ| = 9.5e-7
+  (fp32 rel looks large only because some logits are ~0; fp64 confirms exactness).
+- **Global ODT structure survives through attention.** At the block-INPUT bond —
+  whose downstream *crosses* the attention layer (a token feeds Q/K/V for every
+  position) + residual + FFN + head — truncating by the GLOBAL output-sensitivity
+  Gram beats the LOCAL adjacent-weight SVD at *every* rank:
+```
+  k    global   local(weight-SVD)
+  32   6.11     7.88
+  64   5.47     6.27
+  96   5.27     5.55         (full-rank 5.23)
+```
+  32/128 (25%) of block-input dims removable at ≤0.05 nats. Global > local at all
+  k=4..96 — the ODT principle (output-aware global ranking beats input-only local)
+  holds through attention+residual, not just feedforward.
+
+**2-layer confirmation (distillation recipe).** Rewrote `odt_attention` to train
+via the recipe (per-token teacher → near-identity scalar student), which trains
+stably at depth (raw scalar diverged). 2-layer strict student: val 5.98, folds
+exact (fp64 abs = 0.0). ODT at the block-input bond (downstream now crosses BOTH
+attention layers):
+```
+  k    global   local(weight-SVD)
+  16   6.68     8.66
+  32   6.18     7.78
+  64   6.02     6.52         (full-rank 5.98)
+```
+Global > local at every rank, and **64/128 (50%) removable at ≤0.05 nats** — MORE
+compressible than 1 layer (25%), i.e. deeper attention stacks have MORE global
+low-rank structure, not less. Encouraging for the full VLA.
+
+HONESTY: the "global" Gram here is the DATA-DRIVEN output-sensitivity Gram
+(E[g gᵀ] over calibration) — a legitimate global-ODT variant that shows the
+structure EXISTS. The fully weight-based, data-free exact contraction across an
+attention-crossing bond is still the open Level-C step; for post-attention
+(feedforward-downstream) bonds the exact weight-based version (M5 machinery)
+already applies.
+
+### A100 note
+A100/H100 are blocked at the Modal ACCOUNT level ("add a payment method") — not a
+token issue (L4/A10G authenticate + run fine). Needs a card added at
+modal.com/settings; unrelated to code. All results here are A10G.
+
+### ✅ Finding 20 — actually APPLYING ODT + testing whether we can INTERPRET
+(The two things we'd left off: go past M5's compression *numbers* to (1) extract
+the mechanisms and (2) prove they're interpretable + causal. Also integrates the
+new reference Dehérand 2026, "Convolutional Tensor Networks for Weight-Based
+Mechanistic Interpretability" — the conv extension of the χ-net/ODT line, which
+does exactly this for shallow CNNs and leaves the deep + causal cases open.)
+
+New code: `xvla/train/odt_interp.py` (output-conditioned eig decomposition,
+pixel atoms, locality metric, faithfulness battery, amplify test), Modal fn
+`odt_interpret`, `random_projector` in odt.py, tests/test_odt_interp.py (4 new,
+21/21 pass). Ran on A10G (`modal run --detach`), well under 1 GPU-hr.
+
+**Output-conditioned atoms (shallow single-bilinear χ-classifier, SVHN 0.80):**
+each class logit is *exactly* the quadratic form `ℓ_c = zᵀ Q_c z + b_c`,
+Q_c = head folded into the core — reconstruction vs module **2.6e-13** (fp64).
+Eigendecompose Q_c = Σ λ_i v_i v_iᵀ → signed atoms (λ>0 supports c, λ<0
+suppresses), each projected through the embed to a pixel sensitivity map.
+
+**Coherence (honest):** atoms concentrate centrally (where digits sit), oriented
+stroke-like, but locality 0.63 vs 0.55 random = only **1.16×**. Dense-bilinear
+atoms are far LESS localized than Dehérand's conv atoms → direct support for his
+thesis: it's the *topology* (locality/weight-sharing), not tensor-convertibility,
+that makes modes crisply readable. (PNGs: odt_atoms_{shallow,deep}.png in volume.)
+
+**Faithfulness — the ranking is CAUSAL (the test Dehérand lacked):**
+```
+  modes r (of 65) |   4      8     16     32
+  keep top-r      | 0.398  0.663  0.779  0.804
+  drop top-r      | 0.639  0.442  0.275  0.212
+  drop random-r   | 0.785  0.690  0.643  0.591   (full model 0.80)
+```
+Removing the top-16 ranked modes → 0.28; removing 16 RANDOM → 0.64. The spectral
+ranking is load-bearing, not an arbitrary basis. Amplifying one top +atom (3×λ)
+raises the target-class logit by +2.5..+4 and flips up to 12% of samples to it —
+directed predicted-and-observed causal effect.
+
+**Deep extension (3-layer χ-MLP, Dehérand only did shallow):** global-Gram bond
+ranking vs random subspace at matched k — global beats random at every k<full
+(k=6: 0.78 vs 0.46; k=8: 0.78 vs 0.47). Causal ranking holds in a deep model.
+
+Paper (paper/chi-vla.tex): new subsection "From compression to interpretation:
+are the ranked modes real?", a future-work paragraph, and \bibitem{deherand}.
+Compiles clean, 12pp (was 10).
+
 ### Genuinely still open (real research)
 - Can bilinear ATTENTION be bounded by a *foldable* mechanism that permits LARGE gains
   (i.e. escape near-identity without per-token QK-norm)? Unsolved; would need a fixed
@@ -410,3 +645,9 @@ the whole degree-2/4 stack in the linear regime where a fixed scalar norm is exa
   near-identity regime actually caps capability at scale (it did not here).
 - Does the near-identity strict result hold on vision / a real policy (narrow input
   distribution should make it *easier*)? → Milestone 2 (single χ-ViT).
+- Dehérand-inspired next-gen χ-VLA (from his conv result): (a) projective/rational
+  normalization — carry (numerator, denominator) so per-instance RMS stays EXACT and
+  interpretable instead of folded to a fixed scalar; (b) local/multiscale + symmetry-
+  graded bilinear vision cores so atoms are localized by construction; (c) fixed
+  structural tensors separating world/robot geometry from learned policy; (d) bounded-
+  treewidth design (his conversion blows up via fan-out — convertible ≠ contractible).

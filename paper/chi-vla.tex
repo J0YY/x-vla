@@ -1,31 +1,23 @@
 \documentclass[11pt]{article}
 
-% ----------------------------------------------------------------------------
+% ==========================================================================
 % chi-VLA: Fully Tensor-Decomposable Vision-Language-Action Models
 % Compile: pdflatex chi-vla.tex  (twice, for references)
-% ----------------------------------------------------------------------------
+% ==========================================================================
 
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{caption}
 
 \newcommand{\chivla}{$\chi$-VLA}
 \newcommand{\chivit}{$\chi$-ViT}
 
-% palette
-\definecolor{cOrig}{HTML}{B23A48}
-\definecolor{cChi}{HTML}{1F6F8B}
-\definecolor{cBox}{HTML}{F2F2F2}
-\definecolor{cSwap}{HTML}{2E7D32}
-
 \title{\textbf{$\chi$-VLA: A Fully Tensor-Decomposable\\ Vision-Language-Action Model}\\[0.4em]
-\large Swapping bilinear tensor primitives into the OpenVLA blueprint}
+\large Building a robot policy that is a single algebraic object, from pixels to actions}
 \author{}
 \date{\today}
 
@@ -33,99 +25,167 @@
 \maketitle
 
 \begin{abstract}
-Vision-Language-Action (VLA) models such as OpenVLA already factor cleanly into a
-division of labor---dual visual encoders, a visual projector, a language/policy
-backbone, and an action head---but every learned block inside them is an ordinary
-non-compositional neural network (softmax attention, gated MLPs, LayerNorm,
-discretized action decoding). Two recent lines of work independently supply
-drop-in, \emph{multilinear} replacements for exactly these blocks: Riggs'
-tensor-transformer variants (bilinear feed-forward networks and softmax-free
-bilinear attention) and Dooms et al.'s $\chi$-nets (CP-factorized bilinear cores
-and a foldable running-RMS normalization that leaves \emph{no} input-dependent
-division at inference). Our observation is simply that \emph{the components are
-already there}: assembling them along OpenVLA's skeleton yields a VLA whose entire
-learned pixel-to-action map is a structured polynomial that unfolds into a single
-tensor network. We specify this model ($\chi$-VLA), implement and validate its
-tensor primitives, and study its central and least-obvious requirement---that the
-normalization be foldable to a fixed scalar without destabilizing the deep
-bilinear stack. We report: (i) exact agreement (${<}10^{-5}$, FP32) among three
-attention execution paths and between bilinear FFNs and their dense CP cores;
-(ii) a four-way language-model ablation reproducing the finding that softmax-free
-bilinear variants are competitive with softmax${+}$SwiGLU; and (iii) a working
-\emph{strict}, fully-foldable model that, after distillation, \emph{matches} its
-non-strict teacher and folds to a normalization-free tensor network (relative
-pre/post-fold discrepancy ${\sim}10^{-6}$ in FP32, exact to ${\sim}10^{-12}$ in
-FP64). The enabling ingredient is near-identity residual gains, which keep the
-degree-2 feed-forward map from amplifying per-instance magnitude variance---the
-failure mode that a fixed scalar norm, unlike a per-token norm, cannot correct.
+A modern robot policy such as OpenVLA is a stack of ordinary neural-network
+blocks: attention layers with a softmax, gated multi-layer perceptrons (MLPs)
+with smooth activation functions, and normalization layers that rescale each
+input by a quantity computed from that same input. These operations make the
+model hard to analyze, because the network cannot be rewritten as one closed-form
+algebraic expression. We ask what happens if every learned block is instead
+restricted to operations that are polynomial in the activations: linear maps,
+multiplications, additions, and fixed rescalings. Under that restriction the
+whole model becomes a single multilinear object, a tensor network, which can be
+factored and inspected directly from its weights.
+
+Our observation is that the pieces needed to do this already exist in the
+literature and that OpenVLA's modular design is ready to receive them. We combine
+three ingredients: activation-free ``bilinear'' feed-forward layers and
+softmax-free ``bilinear'' attention (from Riggs' tensor-transformer work), and a
+normalization scheme that after training collapses into a fixed constant so it can
+be absorbed into a neighbouring weight matrix (from Dooms et al.'s $\chi$-nets).
+We assemble these along OpenVLA's skeleton to obtain \chivla, a policy whose entire
+learned map from pixels and token identities to a continuous action is one tensor
+network.
+
+We report five results. (1) The exported model is genuinely a tensor network: it
+folds to a form with no input-dependent division, reproducing the trained network
+to within $10^{-6}$ in single precision and $10^{-12}$ in double precision. (2) It
+stays competitive after folding: a softmax-free vision encoder reaches $98.8\%$ of
+a matched softmax baseline on image classification, and a strict foldable language
+model matches its non-strict teacher. (3) A cross-bilinear fusion layer beats a
+plain concatenation baseline by $81$ accuracy points on a task where the answer
+provably requires multiplying the two input streams, and removing the
+multiplication term erases the gain. (4) An end-to-end tensor-pure policy uses
+language in a measurable way: shuffling the instruction degrades its predictions.
+(5) The interpretability payoff that an ordinary policy cannot give: we compute an
+exact global diagonalization of a bilinear network, remove $62\%$ of its hidden
+dimensions with under $1\%$ accuracy loss, and show that a global importance
+ranking beats a per-layer one. We also give first evidence that this global
+low-rank structure survives through attention and residual connections.
 \end{abstract}
 
 % ============================================================================
 \section{Introduction}
 % ============================================================================
 
-Mechanistic interpretability of large policies is hard largely because the
-networks are not compositional: nonlinearities (GELU, softmax, LayerNorm) prevent
-the model from being rewritten as a single algebraic object. A recent thread
-argues that this is a \emph{choice}. If every learned component is restricted to
-linear maps, tensor contractions, element-wise products, residual sums, fixed
-masks, learned constants, and fixed scalar rescalings, then---after representing
-token identities as one-hot vectors---the whole model is a structured polynomial,
-i.e.\ a tensor network amenable to global spectral decomposition and
-orthogonalization/diagonalization/truncation (ODT) analysis.
+Interpreting a large policy is hard largely because the network is not
+compositional. Nonlinear operations such as the softmax in attention, the smooth
+activation in an MLP, and layer normalization prevent us from rewriting the model
+as a single algebraic formula, so we are forced to study its behaviour on data
+rather than its weights directly.
 
-Our contribution is an integration insight rather than a new primitive:
-\textbf{the ingredients for a fully tensor-decomposable VLA already exist, and
-OpenVLA's architecture is unusually ready to receive them.} OpenVLA
-\cite{openvla} already separates a VLA into (a) two complementary visual encoders
-(DINOv2, SigLIP), (b) a small visual projector, (c) a language backbone
-(Llama~2), and (d) an action decoder. Each of these has a published multilinear
-counterpart:
+A recent line of work argues that this is a design choice, not a necessity. If
+every learned operation is kept polynomial in the activations, meaning it is built
+only from linear maps, element-wise multiplications, additions, fixed masks and
+permutations, learned constants, and fixed scalar or diagonal rescalings, then the
+model is a structured polynomial. Once token identities are written as one-hot
+vectors, that polynomial is a single multilinear object, commonly called a tensor
+network, and tensor networks can be decomposed, ranked, and truncated using tools
+from numerical linear algebra applied to the weights alone.
+
+Our contribution is an integration insight rather than a new primitive: the parts
+needed to build a fully tensor-decomposable Vision-Language-Action model (a VLA, a
+model that maps camera images and a language instruction to robot actions) already
+exist, and OpenVLA's architecture is unusually ready to receive them. OpenVLA
+\cite{openvla} already separates a VLA into four learned stages: two complementary
+image encoders (DINOv2 and SigLIP), a small projector that fuses them, a language
+backbone (Llama~2), and an action decoder. Each stage has a published polynomial
+replacement:
 
 \begin{itemize}
-  \item \textbf{Bilinear FFN} (Riggs \cite{riggs}): replace the SwiGLU MLP
-        $D(\mathrm{swish}(Lx)\otimes Rx)$ with the activation-free
-        $D[(L\bar x)\otimes(R\bar x)]$, a CP factorization of a dense third-order
-        tensor.
-  \item \textbf{Softmax-free bilinear attention} (Riggs \cite{riggs}): replace
-        the softmax pattern with the element-wise product of two learned
-        query--key score matrices.
-  \item \textbf{Foldable RmsBatchNorm} and \textbf{CP-factorized cores} (Dooms et
-        al.\ \cite{chinets}): a normalization that divides only by a running
-        scalar RMS, foldable into adjacent weights after training so that the
-        deployed graph has no input-dependent division.
-  \item \textbf{Continuous, linear action head}: replace discretized action
-        tokens and LM decoding with a direct linear map from learned
-        action-query states to a continuous action chunk.
+  \item \textbf{Bilinear feed-forward layer} (Riggs \cite{riggs}). Replace the
+        gated MLP $D(\mathrm{swish}(Lx)\otimes Rx)$ with the activation-free
+        $D[(L\bar x)\otimes(R\bar x)]$, where $\otimes$ is the element-wise
+        (Hadamard) product and $\bar x$ is defined below. This is exactly a
+        low-rank factorization (a CP, or canonical polyadic, factorization) of a
+        third-order weight tensor.
+  \item \textbf{Softmax-free bilinear attention} (Riggs \cite{riggs}). Replace the
+        softmax attention pattern with the element-wise product of two separate
+        learned query-key score matrices.
+  \item \textbf{Foldable normalization} (Dooms et al. \cite{chinets}). Normalize
+        during training by dividing by a running average magnitude (a single
+        scalar), then after training freeze that scalar and multiply it into the
+        next weight matrix, so the deployed model contains no division at all.
+  \item \textbf{Linear action head}. Replace the discretized action tokens and
+        language-model-style decoding with a direct linear map from learned
+        action-query states to a continuous action vector.
 \end{itemize}
 
-We combine these along the OpenVLA skeleton, keeping only genuinely non-learned
-interfaces (string tokenization, camera decoding, safety clipping, actuator I/O)
-outside the tensor-network boundary. The result, $\chi$-VLA, is specified in full
-elsewhere; this paper reports the first implementation and the experiments that
-validate its primitives and, crucially, resolve its one non-obvious obstacle: the
-stability of a \emph{foldable} normalization inside a deep bilinear stack.
+We assemble these along the OpenVLA skeleton and keep only genuinely non-learned
+interfaces outside the tensor-network boundary: string tokenization, camera
+decoding, safety clipping, and motor communication. The result, \chivla, is a
+policy whose learned computation from pixels and token identities to a continuous
+action is one tensor network. This paper reports the first implementation, the
+experiments that validate its parts, and, in depth, the property that motivates
+the whole exercise: the exported model can be exactly decomposed and compressed.
+
+% ============================================================================
+\section{Background: the three polynomial primitives}
+% ============================================================================
+
+\paragraph{The homogeneous coordinate.} Throughout, we write $\bar x = [1;x]$ for
+the input with a constant $1$ prepended. This ``homogeneous coordinate'' lets a
+bilinear layer represent not only quadratic terms but also linear terms and
+constants (a bias becomes the weight on the constant coordinate). Without it, a
+stack of $L$ multiplicative layers would be forced to produce only degree-$2^L$
+terms; with it, the network can represent every degree up to $2^L$, including the
+near-linear functions that most of a real task needs.
+
+\paragraph{Bilinear feed-forward layer (a CP-factorized cubic tensor).} With
+$L,R\in\mathbb{R}^{r\times(d+1)}$ and $D\in\mathbb{R}^{d\times r}$,
+\begin{equation}
+\mathrm{BFFN}(x) = D\big[(L\bar x)\otimes(R\bar x)\big],
+\qquad
+y_o = \sum_{i,j}\Big(\underbrace{\textstyle\sum_r D_{or}L_{ri}R_{rj}}_{T_{oij}}\Big)\bar x_i \bar x_j .
+\end{equation}
+The middle expression makes the tensor structure explicit: the layer is exactly a
+third-order weight tensor $T\in\mathbb{R}^{d\times(d+1)\times(d+1)}$ contracted
+twice with the input. The factored form uses about $3dr$ parameters instead of the
+$d^3$ of the dense tensor, which is why it is called a CP factorization (a sum of
+$r$ rank-one terms).
+
+\paragraph{Softmax-free bilinear attention.} Each head forms two query-key systems
+$A_1=Q_1K_1^\top$ and $A_2=Q_2K_2^\top$ and one value matrix $V$. The attention
+pattern is their element-wise product, with no softmax:
+\begin{equation}
+Y = C\big[M \otimes (A_1\otimes A_2)/s\big]V .
+\end{equation}
+Here $M$ is a fixed mask (for example, lower-triangular for causal models), $C$ is
+a fixed per-row rescaling $C_{ii}=1/\sqrt{n_i}$ with $n_i$ the number of visible
+keys, and $s$ is a fixed scale. Because there is no softmax, the whole operation
+is polynomial in the activations. It can be evaluated three mathematically
+identical ways: the explicit $N\times N$ pattern; a ``Khatri-Rao'' form that
+avoids the $N\times N$ matrix by building row-wise Kronecker features; and a
+causal prefix-scan. We verified all three agree to $10^{-5}$ in single precision.
+
+\paragraph{Foldable normalization.} During training we divide activations by a
+single running scalar equal to their average root-mean-square magnitude. After
+training we re-estimate that scalar on a calibration set, freeze it, and multiply
+it into the following weight matrix ($W' = W/c$ before a linear map, or
+$L'=L/c,\,R'=R/c$ before a bilinear layer). A frozen scalar division is a fixed
+rescaling, so the deployed model has no operation whose divisor depends on the
+input. This is what we mean by ``fold'': the normalization module disappears into
+the weights.
 
 % ============================================================================
 \section{From OpenVLA to $\chi$-VLA}
 % ============================================================================
 
-Figure~\ref{fig:arch} contrasts the two pipelines; Table~\ref{tab:swaps} lists the
-component-level swaps. The high-level flow is preserved exactly---this is the point
-of the exercise---while every learned internal block is replaced by a multilinear
-one.
+Figure~\ref{fig:arch} contrasts the two pipelines and Table~\ref{tab:swaps} lists
+the block-level replacements. The high-level flow is deliberately preserved, while
+every learned internal block is replaced by a polynomial one.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.86\textwidth]{pipeline.png}
-\caption{OpenVLA (left) vs.\ \chivla\ (right), stage by stage. \textbf{Green}
-boxes are tensorized (multilinear) replacements; \textbf{blue} boxes are the
-non-polynomial originals they replace; \textbf{grey} boxes are kept as-is or lie
-outside the tensor-network boundary. Patchify/embed and the tokenizer are already
-linear and need no change; the softmax/GELU/LayerNorm blocks (dual ViTs, MLP
-projector, Llama~2 backbone) and the discrete action decoder are each swapped for
-a bilinear/CP equivalent with foldable RmsBatchNorm; camera decoding, string
-tokenization, and safety clipping remain external.}
+\includegraphics[width=0.84\textwidth]{pipeline.png}
+\caption{OpenVLA (left) versus \chivla\ (right), stage by stage. Green boxes are
+the polynomial (tensorized) replacements; blue boxes are the non-polynomial
+originals they replace; grey boxes are kept unchanged or lie outside the
+tensor-network boundary. Patch embedding and the tokenizer are already linear and
+need no change. The softmax, smooth-activation, and layer-normalization blocks
+(the dual vision encoders, the MLP projector, and the Llama~2 backbone) and the
+discrete action decoder are each swapped for a polynomial equivalent with foldable
+normalization. Camera decoding, string tokenization, and safety clipping stay
+external.}
 \label{fig:arch}
 \end{figure}
 
@@ -136,311 +196,469 @@ tokenization, and safety clipping remain external.}
 \toprule
 \textbf{Ordinary component} & \textbf{\chivla\ replacement} & \textbf{Algebraic form} \\
 \midrule
-ReLU/GELU/SiLU/sigmoid & element-wise product of linear maps & $(Lx)\otimes(Rx)$ \\
-SwiGLU FFN & bilinear (CP) FFN & $D[(L\bar x)\otimes(R\bar x)]$ \\
-Softmax attention & product of two score matrices & $C[M\otimes(A_1\otimes A_2)/d_h]V$ \\
-LayerNorm/RMSNorm (inference) & foldable RmsBatchNorm $\to$ fold & $x/c$, $c$ frozen scalar \\
-MLP visual projector & cross-bilinear CP projector & $W_s s{+}W_m m{+}D_p[(L_s\bar s)\otimes(R_m\bar m)]$ \\
-DINOv2 / SigLIP ViTs & two independent \chivit s & (all blocks bilinear) \\
-Llama~2 transformer & joint $\chi$-transformer & (all blocks bilinear) \\
-Discrete action tokenizer & linear continuous-action head & $\hat a_k = W_a h_k + b_a$ \\
-Bias terms & homogeneous constant coordinate & $\bar x = [1;x]$ \\
+Smooth activation (ReLU, GELU) & element-wise product of two linear maps & $(Lx)\otimes(Rx)$ \\
+Gated MLP & bilinear (CP) feed-forward & $D[(L\bar x)\otimes(R\bar x)]$ \\
+Softmax attention & product of two score matrices & $C[M\otimes(A_1\otimes A_2)/s]V$ \\
+Layer/RMS normalization & foldable scalar normalization & $x/c$ with $c$ a frozen scalar \\
+MLP projector & cross-bilinear (CP) projector & $W_s s{+}W_m m{+}D_p[(L_s\bar s)\otimes(R_m\bar m)]$ \\
+DINOv2 / SigLIP encoders & two polynomial \chivit s & (all blocks bilinear) \\
+Llama~2 backbone & polynomial transformer & (all blocks bilinear) \\
+Discrete action tokens & linear continuous-action head & $\hat a_k = W_a h_k + b_a$ \\
+Bias terms & constant (homogeneous) coordinate & $\bar x = [1;x]$ \\
 \bottomrule
 \end{tabular}
-\caption{Component-level swaps. Bars denote the homogeneous coordinate
-$\bar x=[1;x]$; $\otimes$ denotes element-wise (Hadamard) product.}
+\caption{Component-level replacements. A bar denotes the homogeneous coordinate
+$\bar x=[1;x]$; $\otimes$ is the element-wise product.}
 \label{tab:swaps}
 \end{table}
 
-\subsection{The bilinear primitives}
+% ============================================================================
+\section{Making the foldable model stable}
+% ============================================================================
 
-\paragraph{Bilinear FFN.}
-With $\bar x=[1;x]\in\mathbb{R}^{d+1}$, $L,R\in\mathbb{R}^{r\times(d+1)}$,
-$D\in\mathbb{R}^{d\times r}$,
+The subtle question is not whether the model can be written as a tensor network
+(by construction it can) but whether the foldable normalization is stable inside a
+deep stack. A per-token normalization, which divides each token by its own
+magnitude, keeps every layer's activations at unit scale on every input and is
+therefore very stable, but its divisor depends on the input, so it cannot be
+folded. A scalar normalization divides every input by the same frozen constant
+$c$, which is foldable, but a fixed constant cannot rescale an input that happens
+to be larger or smaller than average. Because the bilinear feed-forward layer is
+degree two, meaning it multiplies activations together, an input that arrives at
+twice the average scale produces an update about four times too large, and this
+error grows with depth.
+
+The resolution is to keep the residual connections close to the identity. We give
+each residual branch a small learned gain (initialized at $0.01$), so each layer
+changes the running representation only slightly and the degree-two amplification
+never compounds. We train a stable per-token model first and then distill it into
+a scalar-normalization student with these small gains. On a language model this
+student matches its teacher (validation loss $5.04$ versus $5.0$) and folds to a
+normalization-free graph with error about $10^{-6}$ in single precision and
+$10^{-12}$ in double precision.
+
+We also measured why this works: across roughly $1.6$ million tokens, the largest
+per-token magnitude at any normalization site is only about $2.8$ times the
+average (the tail is thin), and it does not grow with depth. With the small gains,
+the per-layer amplification factor stays below one, so the fixed scalar is an
+accurate stand-in for the per-token normalization.
+
+% ============================================================================
+\section{Exact global decomposition (ODT), in depth}
+\label{sec:odt}
+% ============================================================================
+
+This section is the payoff of the whole design and we treat it carefully. An
+ordinary softmax-and-normalization policy cannot be turned into a single algebraic
+object, so it cannot be globally diagonalized; a tensor network can.
+
+\subsection{What ODT is, and why it needs a tensor network}
+
+Suppose we want to compress a network by discarding directions in one of its
+hidden spaces, keeping only the ones that matter for the output. Call the hidden
+space we are analyzing a ``bond''. The naive approach is a local one: take the
+weight matrix that reads from that bond, run a singular value decomposition (SVD),
+and keep its top directions. This is greedy and per-layer; it only sees the one
+adjacent weight matrix, not what the rest of the network does with those
+directions downstream.
+
+Orthogonalize-Diagonalize-Truncate (ODT), introduced for tree-shaped bilinear
+networks by Dooms et al. \cite{chinets}, instead ranks bond directions by their
+\emph{global} importance, accounting for the entire rest of the network, which we
+call the ``environment'' of the bond. This is only possible if the whole model is
+one multilinear object, because only then can the environment be contracted into a
+single operator whose singular directions are the true global importances. The
+three steps are:
+
+\begin{enumerate}
+  \item \textbf{Orthogonalize.} Sweep through the network and replace each weight
+  core by an isometry (an orthonormal map) times a small triangular remainder,
+  using a reduced RQ decomposition of the matricized core, pushing the remainder
+  toward the output. After this sweep each bond has an orthonormal basis, so
+  importance can be read off directly as singular values rather than being tangled
+  up with the basis.
+  \item \textbf{Diagonalize.} At a bond, form the Gram matrix of the environment,
+  $G = Q^{*}Q$, where $Q$ is the downstream map from the bond to the output. Its
+  eigenvalues are the squared global importances of the bond directions and its
+  eigenvectors are those directions.
+  \item \textbf{Truncate.} Keep the top $k$ eigenvectors, insert the projector
+  $P_k = V_kV_k^{\top}$ at the bond, and absorb it into the adjacent cores. The
+  output error is bounded by the square root of the sum of the discarded
+  eigenvalues, so the spectrum tells you in advance how much you can remove.
+\end{enumerate}
+
+\subsection{How we compute it for a bilinear chain}
+
+Our exact-decomposition model is a feed-forward bilinear network we call a
+$\chi$-MLP, chosen because a chain with no attention and no residual connection is
+a clean tree, exactly the setting ODT was designed for. After folding, it is
 \begin{equation}
-\mathrm{BFFN}(x) = D\big[(L\bar x)\otimes(R\bar x)\big],
+z_0 = [1;\,Ex], \qquad a_i = C_i(z_{i-1},z_{i-1}), \qquad z_i = [1;\,a_i],
+\qquad \text{logits} = W_{\text{head}}\,a_L + b,
+\end{equation}
+where $E$ is a linear input embedding, each $C_i\in\mathbb{R}^{d\times(d+1)\times(d+1)}$
+is a symmetric bilinear core recovered from the folded layer, and $C_i(z,z)$ means
+contracting the core twice with the homogeneous activation $z$.
+
+To rank the directions of a bond $a_i$ by global importance we build the exact
+downstream map from $a_i$ to the output and contract it against itself over the
+output index and over every environment leg, leaving the bond leg open on both
+sides. For the deepest bond (the output of the first layer, whose downstream is two
+more bilinear layers) the downstream is a degree-four form in $z_i$. We construct
+it explicitly by composing the cores,
+\begin{equation}
+D[c,i,j,k,l] = \sum_{p,q} C^{\text{head}}_L[c,p,q]\; Z_2[p,i,j]\; Z_2[q,k,l],
 \qquad
-y_o = \sum_{i,j}\Big(\underbrace{\textstyle\sum_r D_{or}L_{ri}R_{rj}}_{T_{oij}}\Big)\bar x_i \bar x_j ,
+G[i,i'] = \sum_{c,j,k,l} D[c,i,j,k,l]\,D[c,i',j,k,l],
 \end{equation}
-so BFFN is exactly a CP factorization of the third-order tensor
-$T\in\mathbb{R}^{d\times(d+1)\times(d+1)}$, with $\mathcal{O}(3dr)$ parameters
-rather than $\mathcal{O}(d^3)$. The homogeneous coordinate lets a stack of $L$
-bilinear layers represent every polynomial degree up to $2^L$, not only the top
-degree.
+where $Z_2$ expresses the second-layer homogeneous activation as a quadratic form
+in $z_i$ and $C^{\text{head}}_L$ folds the linear head into the last core. The
+$d\times d$ block of $G$ over the non-constant coordinates gives the global
+importances. The local baseline uses only the adjacent core (the layer that
+directly reads the bond), ignoring everything downstream. Truncation projects the
+activation onto the top $k$ eigenvectors and we measure the resulting accuracy.
 
-\paragraph{Softmax-free bilinear attention.}
-Each head forms two query--key systems $A_1=Q_1K_1^\top$, $A_2=Q_2K_2^\top$ and a
-value $V$; the pattern is their Hadamard product,
-\begin{equation}
-Y = C\big[M \otimes (A_1\otimes A_2)/s\big]V,
-\end{equation}
-with $M$ a fixed mask, $C_{ii}=1/\sqrt{n_i}$ a fixed row scaling, and no softmax.
-Writing row-wise Kronecker features $\tilde q_i=q_{1,i}\!\otimes\!q_{2,i}$,
-$\tilde k_j=k_{1,j}\!\otimes\!k_{2,j}$ gives $A_1\otimes A_2=\tilde Q\tilde
-K^\top$, so the same function admits an explicit $N\times N$ form, a Khatri--Rao
-contraction $Y=\tilde Q(\tilde K^\top V)$, and a causal prefix-scan form
-$S_i=\sum_{j\le i}\tilde k_j v_j^\top,\; y_i=\tilde q_i^\top S_i/(s\sqrt{n_i})$.
-We use the scaling $s=d_h^2$ (dividing each score by $d_h$): with per-token
-$Q,K$ normalization this bounds the pattern to $[-1,1]$ by Cauchy--Schwarz,
-which is both stable and expressive.
+\subsection{Results on the $\chi$-MLP}
 
-\paragraph{Foldable RmsBatchNorm.}
-Training divides by the batch RMS while maintaining an EMA running scalar $c$;
-after training $c$ is re-estimated on a calibration set, frozen, and folded into
-the neighbouring projections ($W'=W/c$ before attention; $L'=L/c$, $R'=R/c$ before
-the bilinear FFN). A frozen scalar division is a fixed rescaling, so the exported
-graph contains \emph{no} input-dependent normalization.
+We train a three-layer $\chi$-MLP (bond width $32$) on the SVHN digit dataset to
+$0.81$ accuracy and run the exact procedure.
 
-% ============================================================================
-\section{The foldability obstacle and its resolution}
-% ============================================================================
+\begin{itemize}
+  \item \textbf{Exact reconstruction.} The unrolled tensor network reproduces the
+  trained module to $5\times10^{-12}$ in double precision, confirming that the
+  exported cores are the model, not an approximation of it.
+  \item \textbf{Global low-rank structure.} Ranking the deepest bond by the global
+  Gram, $20$ of its $32$ hidden dimensions ($62\%$) can be removed with at most a
+  $1\%$ accuracy drop. Dooms et al. report about $70\%$ on their own SVHN network;
+  we report our measured figure rather than assuming their number transfers.
+  \item \textbf{Global beats local.} At a matched number of kept directions, the
+  global ranking preserves accuracy better than the local per-layer SVD, most
+  clearly at the compression elbow.
+\end{itemize}
 
-The subtle question is not whether the model \emph{can} be written as a tensor
-network---by construction it can---but whether the \emph{foldable} normalization
-is stable in a deep stack. A per-token RMS norm rescales every instance to unit
-magnitude and is trivially stable but is input-dependent (not foldable). A
-\emph{scalar} RmsBatchNorm is foldable but divides every instance by the same
-constant $c$. The residual update
-\begin{equation}
-x_{\ell+1} = x_\ell + \beta_\ell\, D\big[(L x_\ell/c)\otimes(R x_\ell/c)\big]
-\label{eq:resid}
-\end{equation}
-is \emph{degree-2} in $x_\ell$, so per-instance magnitude \emph{variance} is
-squared at each layer. With the default gains $\beta_\ell=1/\sqrt{2L}$, instances
-that run hotter than the calibration average compound multiplicatively and the
-hidden stream diverges---while the final normalization masks this in the logits,
-making the failure easy to miss (Section~\ref{sec:exp-strict}).
-
-\paragraph{Resolution: near-identity residual gains.}
-Setting the gains to a small learned constant ($\beta_\ell\approx 0.01$, spec's
-alternative) keeps~\eqref{eq:resid} near-identity, so the degree-2 amplification
-never compounds; the model still learns through the accumulated small updates. We
-distil the strict scalar-norm student from a stable per-token teacher using a
-temperature KL loss on the logits plus a small task cross-entropy---but
-\emph{without} hidden-state feature matching, whose gradient explodes on a
-diverging stream and is counterproductive.
-
-% ============================================================================
-\section{Experiments}
-% ============================================================================
-
-All experiments run on Modal GPUs (L4/A10G). We study the joint backbone as a
-causal language model (spec Stage~1) before adding vision; this isolates the
-tensor-transformer core, which dominates the parameter budget of the full VLA. The
-reference small config: $d{=}384$, $6$ layers, $12$ heads ($d_h{=}32$), bilinear
-FFN rank $3d$, sequence length $256$, GPT-2 tokenizer; trained on tiny-shakespeare
-with AdamW and a cosine schedule.
-
-\subsection{Operator validation}
-Every primitive is checked against an independent reference in FP32
-(Table~\ref{tab:ops}): the bilinear FFN against an explicit dense CP-core
-contraction; the three attention execution paths against each other; and the
-foldable norm against its folded weight form at every site, including the
-end-to-end language model. All $14$ tests pass to ${<}10^{-5}$.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{@{}ll@{}}
+\begin{center}\small
+\begin{tabular}{@{}lcccccc@{}}
 \toprule
-\textbf{Property tested} & \textbf{Max abs.\ discrepancy (FP32)} \\
-\midrule
-Bilinear FFN vs.\ dense third-order CP core & $<10^{-5}$ \\
-Explicit vs.\ Khatri--Rao attention & $<10^{-5}$ \\
-Causal explicit vs.\ prefix-scan attention & $<10^{-5}$ \\
-RmsBatchNorm fold (linear / FFN / Q,K,V branches) & $<10^{-5}$ \\
-End-to-end LM fold to normalization-free graph (FP64) & ${\sim}10^{-12}$ \\
+retained directions $k$ & 4 & 6 & 8 & 12 & 16 \\ \midrule
+global ODT  & 0.571 & \textbf{0.777} & 0.797 & 0.809 & 0.811 \\
+local SVD   & 0.523 & 0.686 & 0.798 & 0.807 & 0.811 \\
 \bottomrule
-\end{tabular}
-\caption{Operator correctness (spec acceptance: ${<}10^{-5}$). $14/14$ tests pass.}
-\label{tab:ops}
-\end{table}
+\end{tabular}\quad (full width $32$ gives $0.808$; deepest bond)
+\end{center}
 
-\subsection{Four-way attention$\times$FFN ablation}
-We cross softmax vs.\ bilinear attention with SwiGLU vs.\ bilinear FFN
-(Table~\ref{tab:ablation}), reproducing the key comparison from
-\cite{riggs}. At their minima the four configurations lie within ${\sim}0.1$
-nats: the softmax-free bilinear core is competitive with the ordinary
-softmax${+}$SwiGLU baseline. The bilinear-attention variants carry the expected
-extra $Q_2,K_2$ parameters ($+$50\% attention params, $\sim\!13.4$M vs.\ $11.6$M);
-on this tiny corpus they also overfit noticeably less.
+The reason global wins is exactly the reason it needs a tensor network: at $k=6$
+the global ranking already knows which directions the two downstream layers will
+actually use, while the local ranking only sees the immediately following layer
+and keeps directions that later turn out not to matter.
 
-\begin{table}[h]
-\centering
-\small
+\subsection{From compression to interpretation: are the ranked modes real?}
+
+Removable-dimension counts show that low-rank structure \emph{exists}; they do not
+show that the surviving directions are human-interpretable, nor that the ranking is
+\emph{causal} rather than merely a good compressor. D\'eh\'erand \cite{deherand}
+takes the complementary step, extending the $\chi$-net idea to convolutional
+networks and reading each class output as a quadratic form whose eigenvectors,
+projected to pixels, are spatially coherent digit strokes. Two things are left
+open there: the interpretation is run only on a shallow single-bilinear layer, and
+visual coherence is never tied to an intervention. We close both on our own models.
+
+\paragraph{Output-conditioned atoms.} For a single-bilinear $\chi$-classifier each
+class logit is \emph{exactly} a quadratic form in the homogeneous embedded input,
+$\ell_c(x)=z^\top Q_c\,z+b_c$ with $z=[1;Ex]$ and $Q_c=\sum_o W^{\text{head}}_{c,o}C_o$
+the head folded into the core (reconstruction against the trained module is
+$2.6\times10^{-13}$ on SVHN, $0.80$ accuracy). Eigendecomposing $Q_c=\sum_i\lambda_i
+v_iv_i^\top$ writes the logit as $\sum_i\lambda_i(v_i\!\cdot\! z)^2+b_c$: signed
+``atoms'' where $\lambda_i>0$ supports class $c$ and $\lambda_i<0$ suppresses it,
+each projected to a pixel sensitivity map through $E$.
+
+\paragraph{Coherence, honestly.} The atoms concentrate energy centrally, where
+SVHN digits sit, in oriented stroke-like patterns; but their spatial locality
+(fraction of energy in the top $10\%$ of pixels) is $0.63$ versus $0.55$ for random
+directions --- only $1.16\times$. Our dense-bilinear atoms are therefore far less
+localized than D\'eh\'erand's convolutional ones. This is direct support for his
+thesis that it is the \emph{topology} (local connectivity, weight sharing), not
+tensor-convertibility alone, that makes the spectral modes crisply human-readable.
+
+\paragraph{Faithfulness: the ranking is causal.} We intervene on the extracted
+modes and measure accuracy: \emph{keep} only the top-$r$ modes of every class,
+\emph{drop} the top-$r$ (project them out), or drop $r$ \emph{random} modes.
+
+\begin{center}\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+modes $r$ (of $65$)             & 4 & 8 & 16 & 32 \\ \midrule
+keep top-$r$                    & 0.398 & 0.663 & 0.779 & 0.804 \\
+drop top-$r$                    & 0.639 & 0.442 & \textbf{0.275} & 0.212 \\
+drop random-$r$ (control)       & 0.785 & 0.690 & \textbf{0.643} & 0.591 \\
+\bottomrule
+\end{tabular}\quad (SVHN, full model $0.80$)
+\end{center}
+
+Removing the $16$ top-ranked modes collapses accuracy to $0.28$, while removing
+$16$ \emph{random} modes leaves $0.64$: the spectral ranking is load-bearing, not
+an arbitrary basis. Amplifying a single top positive atom of a target class
+($3\times$ its eigenvalue) raises that class logit by $+2.5$ to $+4$ and flips up to
+$12\%$ of samples to the target --- a directed, predicted-and-observed causal
+effect, the intervention D\'eh\'erand's visual eigenspectra never demonstrated.
+The same test on the deep three-layer $\chi$-MLP, ranking the deepest bond by the
+global Gram versus a random subspace of matched size, gives $0.78$ vs $0.46$ at
+$k=6$ and beats random at every retained width below full rank --- extending the
+causal-ranking result from a shallow model to a deep one.
+
+\subsection{Does this survive attention and residual connections?}
+
+The $\chi$-MLP is feed-forward; a transformer adds attention (which mixes
+information across token positions) and residual connections. Extending exact,
+weight-only global ODT to a general attention network is an open problem, because
+the attention pattern is itself a learned degree-four function of the inputs, so
+the environment is no longer a fixed operator. We give the first empirical
+evidence that the structure is nonetheless there.
+
+We train a strict, foldable transformer language model (using the
+teacher-then-distill recipe so it is stable) and analyze the bond at the block
+input, whose downstream \emph{crosses} the attention layer (each token feeds the
+queries, keys, and values of every position), then the residual path, the
+feed-forward layer, and the head. Because the attention pattern is data-dependent
+here, we rank directions by a data-driven version of the global Gram, the average
+outer product of the output gradient at the bond, which measures how much each
+direction of the bond actually affects the loss through the full downstream
+including attention. The local baseline is the SVD of the adjacent input
+projections (the query, key, value, and feed-forward input weights).
+
+\begin{center}\small
 \begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{Attention} & \textbf{FFN} & \textbf{Best val.\ loss} & \textbf{Params} \\
+ & retained $k$ & global (output-aware) & local (weight SVD) \\ \midrule
+\textbf{1 attention layer} (full-rank loss $5.23$) & 32 & \textbf{6.11} & 7.88 \\
+                                                    & 64 & \textbf{5.47} & 6.27 \\
+                                                    & 96 & \textbf{5.27} & 5.55 \\
 \midrule
-softmax  & SwiGLU   & $\sim$4.90 & 11.6M \\
-softmax  & bilinear & $\sim$4.94 & 11.6M \\
-bilinear & SwiGLU   & $\sim$5.02 & 13.4M \\
-bilinear & bilinear & $\sim$5.02 & 13.4M \\
+\textbf{2 attention layers} (full-rank loss $5.98$) & 32 & \textbf{6.18} & 7.78 \\
+                                                    & 64 & \textbf{6.02} & 6.52 \\
+                                                    & 96 & \textbf{5.99} & 6.18 \\
 \bottomrule
 \end{tabular}
-\caption{Four-way ablation on tiny-shakespeare (min.\ validation loss). All train
-stably; the fully tensor (bilinear${+}$bilinear) core is competitive.}
-\label{tab:ablation}
-\end{table}
+\end{center}
 
-\subsection{The strict, fully-foldable model}
-\label{sec:exp-strict}
-We distil a strict student---scalar RmsBatchNorm at every site, near-identity
-learned gains---from a per-token teacher, calibrate and freeze its scalar
-constants, evaluate the deployable (frozen) graph, and fold. Table~\ref{tab:strict}
-summarizes. With default gains the hidden stream diverges (feature norm $\sim\!10^7$)
-while the logit KL stays small---the masking effect noted above; with near-identity
-gains the strict model trains stably (validation $13.7\!\to\!5.04$, monotone) and,
-after $2500$ distillation steps, \emph{matches its non-strict teacher}
-(${\approx}5.0$)---the near-identity-gain capability tax nearly vanishes with
-sufficient distillation. It folds to a normalization-free tensor network with
-relative pre/post-fold discrepancy ${\sim}10^{-6}$ in FP32 (absolute
-$1.4\times10^{-5}$ on trained, large-magnitude logits) and ${\sim}10^{-12}$ in
-FP64---folding is an exact algebraic identity, so the FP32 residual is pure
-accumulation, not error. A discovered bug is worth noting:
-\texttt{kl\_div} with \texttt{batchmean} reduction averaged over the batch
-dimension only, making the distillation gradient $N\times$ ($N{=}256$) too strong
-and pushing the student into the unstable regime; flattening to $(B\!\cdot\!N,V)$
-fixed it.
+The global ranking beats the local one at every retained width for both models,
+and the attention model still folds to an exact tensor network (double-precision
+fold error at machine precision). Notably the two-layer model is \emph{more}
+compressible ($64$ of $128$ directions, $50\%$, removable at under $0.05$ nats)
+than the one-layer model ($25\%$), which suggests deeper attention stacks have
+more, not less, global low-rank structure. Two honest caveats. First, this uses
+the data-driven global Gram; the fully weight-based, data-free contraction across
+an attention-crossing bond, and the transfer of the tree error bound, remain open.
+For bonds whose downstream is feed-forward (for example, the bond after the
+attention sub-layer), the exact weight-based procedure of the previous subsection
+applies directly. Second, the strict scalar-normalization model needs the
+distillation recipe to train stably beyond one layer.
 
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\textbf{Residual gains} & \textbf{Stream stable?} & \textbf{Strict val.} & \textbf{Fold rel.\ $\Delta$ (FP32 / FP64)} \\
-\midrule
-default $1/\sqrt{2L}$ & no (diverges, $\sim10^7$) & \texttt{nan} & --- \\
-near-identity ($0.01$, learned) & yes & $\mathbf{5.04}$ ($\approx$ teacher) & ${\sim}10^{-6}$ / ${\sim}10^{-12}$ \\
-\bottomrule
-\end{tabular}
-\caption{Strict scalar-norm model (2500-step distillation). Near-identity gains
-are the enabling ingredient: the strict, fully-foldable model matches its
-non-strict teacher (${\approx}5.0$) and folds exactly (FP64) to a
-normalization-free tensor network.}
-\label{tab:strict}
-\end{table}
+\subsection{Cost and limits}
+
+For the tree network the procedure costs about $O(Lh^4)$ time with $O(h^3)$ memory
+in the bond width $h$, which is why our exact-decomposition models use a small
+width. Unrolling a full attention transformer into one tensor over all token
+positions grows combinatorially, so exact whole-model contraction is only feasible
+at small scale; the practical path is to decompose one analysis bond at a time, as
+above.
 
 % ============================================================================
-\section{Experimental design: one substitution per experiment}
+\section{Full-stack results}
+\label{sec:fullstack}
+% ============================================================================
+
+We built the model from the bottom up under a hard compute limit (single
+consumer-grade GPUs, no data-center GPUs), so the numbers below are on small models
+and modest data. The aim is a working, verified demonstration of every claim, not
+a scale record. All the polynomial primitives are shared across the language,
+vision, and action models.
+
+\paragraph{Softmax-free vision encoder.} A bilinear vision transformer (\chivit,
+$6.7$ million parameters) on SVHN versus a parameter-matched baseline that differs
+only by using ordinary softmax attention:
+
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+attention & test accuracy & fraction of baseline \\ \midrule
+softmax (baseline) & 0.928 & (reference) \\
+\textbf{bilinear (\chivit, tensor-pure)} & \textbf{0.917} & \textbf{98.8\%} \\
+\bottomrule
+\end{tabular}
+\end{center}
+Removing the softmax costs $1.2$ accuracy points on real images.
+
+\paragraph{Cross-bilinear projector.} The projector fuses the two vision streams so
+that products between them are represented explicitly. On a task whose label is,
+by construction, the result of multiplying the two streams (and therefore cannot be
+separated by any purely additive model), at matched parameters:
+
+\begin{center}\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+fusion method & test accuracy \\ \midrule
+cross-bilinear projector (tensor-pure) & \textbf{0.971} \\
+\quad same, with the product term set to zero & 0.161 \\
+concatenate then linear & 0.160 \\
+concatenate then MLP with GELU (not tensor-pure, matched size) & 0.590 \\
+\bottomrule
+\end{tabular} \quad (chance is $0.10$)
+\end{center}
+The product term is worth $81$ accuracy points over the concatenation baseline, and
+removing it erases exactly that gain. The tensor-pure projector even beats a
+non-polynomial MLP of the same size here.
+
+\paragraph{End-to-end policy and language grounding.} A full \chivla\ (a \chivit\
+front-end, a joint bilinear transformer, and a linear action head) trained by
+behaviour cloning. On a controlled synthetic reaching task where the instruction
+names which of several objects to reach, the policy is $22$ times more accurate
+than a language-blind baseline that always reaches the average object location, and
+shuffling the instruction makes its error $13$ times worse, which shows it reads
+the instruction and grounds it in the image.
+
+On real robot-imitation data (LIBERO-Object, ten tasks that each name a different
+object, offline behaviour cloning over $18{,}900$ action chunks), we report the
+result carefully because the absolute error is easy to misread.
+
+\begin{center}\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+model input & normalized action error \\ \midrule
+full model (image + instruction + state) & \textbf{0.021} \\
+correct image and state, shuffled instruction & 0.194 \\
+predict the mean action (trivial baseline) & 1.025 \\
+image and instruction zeroed (out of distribution) & 1.148 \\
+image zeroed, instruction kept (out of distribution) & 1.100 \\
+\bottomrule
+\end{tabular}
+\end{center}
+This table is easy to misread, so we are explicit. Actions are normalized to unit
+variance, so the mean-action baseline scores about $1.0$ automatically and a
+comparison against it should not be read as strong grounding. We first checked
+whether the low error was the model coasting on the proprioceptive state, since
+robot trajectories are smooth. It is not: zeroing the image (with or without the
+instruction) sends the error above $1.0$, so the model genuinely relies on its
+visual input rather than predicting the action from state alone. Note these
+zeroed-input rows are out-of-distribution inputs for a model trained on real
+images, so they are stress tests, not fair ``state-only'' baselines; a fair
+state-only baseline would require training a separate state-only model, which we
+did not do. The clean, in-distribution measure of language use is the shuffled
+instruction: keeping the correct image and state but supplying a mismatched
+instruction raises the error from $0.021$ to $0.194$, about nine times worse. In
+other words the policy identifies the correct target object from the image and the
+instruction together, and once the target is known the smooth action toward it is
+easy to predict, which is why the absolute error is small. We report offline action
+error only; closed-loop success on a simulator is deferred, and a low error does
+not by itself imply task success.
+
+\paragraph{Reference configuration and attention kernel.} The parameter count of
+the specification's $450$-million-parameter reference configuration (two twelve-layer
+vision encoders, a twenty-layer joint backbone, a $32{,}000$-word vocabulary) works
+out to $448.2$ million, matching the intended breakdown. Training it needs
+data-center GPUs and large-scale data and is deferred. We also measured that the
+explicit attention kernel is faster than the Khatri-Rao form for all sequence
+lengths up to $4096$ on our hardware, so the policy's short sequences (roughly one
+hundred to three hundred tokens) should use the explicit kernel; the factored
+form's theoretical advantage needs a fused kernel or much longer sequences.
+
+% ============================================================================
+\section{The experiment program: one substitution per experiment}
 \label{sec:design}
 % ============================================================================
 
-The substitution table (Table~\ref{tab:swaps}) suggests its own experimental
-program: \textbf{each swap can be tested in isolation}. Experiments~1--6 below
-each ablate exactly one row---one ``non-polynomial op $\to$ polynomial op''
-substitution---holding everything else fixed, so any capability change is
-attributable to that single swap. Experiment~7 then tests the \emph{reason} for
-performing all the swaps at once: whether the resulting global, weight-based
-low-rank structure (ODT) actually exists and pays off in a policy. Presented this
-way the table of experiments mirrors the table of substitutions row for row, and
-the argument for the architecture is exactly the set of ablations that probe it.
-
-Table~\ref{tab:program} lists the program and its status; two rows already have
-results (Sections~\ref{sec:exp-strict} above), the rest are the immediate agenda
-once vision is added.
+The replacement table (Table~\ref{tab:swaps}) suggests its own experiment program,
+because each substitution can be tested on its own. Experiments 1 to 6 each change
+exactly one row of the table and hold everything else fixed, so any change in
+performance is attributable to that single substitution. Experiment 7 tests the
+reason for doing all the substitutions at once, namely that the resulting model can
+be globally decomposed. Table~\ref{tab:program} lists the program and its status;
+the results above cover experiments 1, 3, 5, and 7.
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{@{}p{0.5cm}p{4.2cm}p{6.7cm}p{1.7cm}@{}}
+\begin{tabular}{@{}p{0.4cm}p{4.4cm}p{6.5cm}p{1.7cm}@{}}
 \toprule
-\# & \textbf{Swap under test} & \textbf{Question} & \textbf{Status} \\
+\# & \textbf{Substitution tested} & \textbf{Question} & \textbf{Status} \\
 \midrule
-1 & softmax vs.\ bilinear attn $\times$ SwiGLU vs.\ bilinear FFN &
-Where is the capability tax---softmax's sharpness/full-rank expressivity, or the
-(nearly free) FFN swap? Does Riggs' language result (FFN free, attn few-\%)
-transfer to continuous control? & \textbf{done} (lang., Tab.~\ref{tab:ablation}) \\
-2 & tied vs.\ untied score systems &
-Do two independent $Q,K$ pairs buy anything over squaring one pattern
-$(QK^\top)^{\otimes 2}$, or is any degree-4 pattern enough? Tied $\Rightarrow$
-cheaper, more symmetric tensor for decomposition. & planned \\
-3 & cross-bilinear CP projector vs.\ concat${+}$linear &
-Does forcing explicit spatial$\times$semantic products help, or would the
-backbone recover them anyway? If cross-bilinear wins, its CP components are
-readable ``spatial pattern $\times$ object type'' pairs. & planned (needs vision) \\
-4 & homogeneous coordinate on/off &
-Does dropping the appended $1$ (losing low-degree terms) wreck generalization?
-Measure the weight mass on the constant dimension (Dooms: ${\sim}90\%$ early,
-i.e.\ near-linear computation)---how ``polynomial'' is control? & planned \\
-5 & foldable RmsBatchNorm vs.\ per-input RMSNorm &
-Is the tensor-compatible scalar norm enough to stabilize degree-5 attention
-updates, or is input-dependent rescaling required? Verify pre-fold${=}$post-fold.
-& \textbf{done} (Tab.~\ref{tab:strict}) \\
-6 & continuous linear head vs.\ 256-bin discrete head &
-Does tensorization-forced continuous regression cost anything (discrete heads
-model multimodal action distributions differently)? Isolates this confound. &
-planned (needs VLA) \\
-7 & \textbf{global ODT vs.\ per-core SVD} &
-Truncate the same fraction of hidden dimensions two ways; compare task success
-$+$ intervention faithfulness (truncate / project-out / amplify / swap top
-directions). Does Dooms' global low-rank structure exist in a policy? &
-planned (winning config) \\
+1 & softmax vs bilinear attention, crossed with gated vs bilinear MLP &
+Where is the accuracy cost, in the attention change or the MLP change? & done (language) \\
+2 & tied vs untied score systems &
+Do two independent query-key systems help, or is any degree-four pattern enough? & planned \\
+3 & cross-bilinear projector vs concatenate-then-linear &
+Does forcing the product help, or would the backbone recover it anyway? & done \\
+4 & homogeneous coordinate on or off &
+Does dropping the constant coordinate hurt generalization? & planned \\
+5 & foldable scalar vs per-input normalization &
+Is the foldable normalization enough to stay stable? & done \\
+6 & continuous vs discretized action head &
+Does the continuous regression cost anything? & planned \\
+7 & \textbf{global ODT vs local SVD} &
+Does the global low-rank structure exist, and does global beat local? & done (feed-forward and attention) \\
 \bottomrule
 \end{tabular}
-\caption{The ablation program. Experiments 1--6 each isolate one row of
-Table~\ref{tab:swaps}; Experiment 7 tests whether the joint payoff (global
-decomposability) that motivates all the swaps materializes. Suggested dependency
-order: 1 and 5 first (do we train, and where is the tax); 2/3/4/6 in parallel as
-cheap variants; 7 only on the winning configuration, ideally at ${\sim}50$M
-params where exact contraction is feasible.}
+\caption{The experiment program. Experiments 1 to 6 each isolate one row of
+Table~\ref{tab:swaps}; experiment 7 tests whether the combined payoff, global
+decomposability, actually appears.}
 \label{tab:program}
 \end{table}
 
-Experiment~5 is the pivotal early gate: if per-input RMSNorm beats the foldable
-scalar norm by a wide margin, the entire folding/export story is in jeopardy. Our
-finding (Section~\ref{sec:exp-strict}) is encouraging---the foldable norm \emph{is}
-sufficient for stable training and exact folding, provided the residual gains keep
-the stack near-linear, and with enough distillation it matches the per-input-norm
-model rather than merely trailing it. Experiment~7 is what elevates the work from compression to
-interpretability and is the single result that most decides whether the program
-succeeds in robotics.
-
 % ============================================================================
-\section{Discussion}
+\section{Discussion and limitations}
 % ============================================================================
 
-\paragraph{What is (and is not) shown.} By construction the $\chi$-VLA inference
-function is exactly a tensor network; we verify this end-to-end for the language
-backbone (the fold gate). We do \emph{not} claim that Dooms et al.'s tree-ODT
-error bounds transfer unchanged to the attention-containing model---extending
-global ODT to residual, attention, weight-sharing tensor networks is future work.
+By construction the \chivla\ forward map is a tensor network, and we verify this
+end to end for the language backbone, a one-layer and a two-layer attention model,
+and the feed-forward decomposition model. The central new finding is that global
+low-rank structure, the property that makes ODT worthwhile, is present not only in
+feed-forward chains but also through attention and residual connections, and it
+grows rather than shrinks with depth in our small models.
 
-\paragraph{The central lesson.} Foldability is free algebraically but not free
-dynamically. A fixed scalar norm cannot undo per-instance magnitude variance, and
-a degree-2 feed-forward squares that variance each layer. Near-identity residual
-gains keep the model in the regime where this never bites; this is the practical
-price of full decomposability, and quantifying it at scale (and against gain
-annealing) is the immediate next question.
+The honest boundaries are as follows. The exact, weight-only, data-free version of
+global ODT is established here only for feed-forward downstream bonds; for
+attention-crossing bonds we currently use a data-driven importance measure, and the
+transfer of Dooms et al.'s error bound to attention networks is not proven. The
+strict foldable model is stable and matches its non-strict teacher only in the
+small-residual-gain regime, which is a real constraint we did not need to pay any
+accuracy for at this scale but which may matter at larger scale. All experiments
+are small; the reference-scale model is specified and its size verified but not
+trained, for lack of data-center hardware. On the robot task we report offline
+action error and a language-grounding gap, not closed-loop success.
 
-\paragraph{Limitations.} Experiments so far are language-only and on a small
-corpus that overfits; the capability numbers are indicative, not final. The
-strict model matches its teacher on this corpus (${\approx}5.0$); whether that
-parity holds at larger scale, and whether a gain-annealing schedule improves on
-fixed near-identity gains, remain open.
-
-\paragraph{Roadmap.} The build sequence continues up the VLA stack on the
-now-verified foldable foundation: single \chivit\ with local ODT; dual spatial/
-semantic encoders with the cross-bilinear projector; a small end-to-end
-$\chi$-VLA in simulation; an exact-decomposition reference model; and finally the
-$450$M reference configuration with generalized ODT.
+The interpretation results also point past the current architecture. Our atoms are
+causal but only mildly localized, and D\'eh\'erand's convolutional comparison
+\cite{deherand} shows why: the tensor-network \emph{topology} decides whether the
+spectral modes are human-coherent, not the mere fact of tensor-convertibility.
+This suggests the next \chivla\ should build coherence into its structure rather
+than hope to read it out afterwards --- for instance local or multiscale bilinear
+vision cores in place of dense ones, fixed structural tensors that separate world
+and robot geometry from learned policy, symmetry-aware canonicalization that groups
+translated copies of a mechanism into one orbit, and an output-conditioned,
+modality- and degree-resolved decomposition of continuous actions (which signed
+mechanism drives ``move left'', and does it survive intervention). D\'eh\'erand
+also warns that a convertible network need not be tractably \emph{contractible};
+its unrolled tensor network can grow exponentially through fan-out, which argues for
+bounded-treewidth design (local attention, object-slot bottlenecks) from the start.
 
 % ============================================================================
 \section{Conclusion}
 % ============================================================================
-The parts for a fully tensor-decomposable VLA already exist in the literature;
-OpenVLA's modular skeleton is ready to receive them. Assembling bilinear FFNs,
-softmax-free bilinear attention, foldable RmsBatchNorm, and a linear continuous
-action head yields $\chi$-VLA, a policy core that is a single tensor network from
-pixels and token identities to continuous actions. We validated the primitives,
-reproduced the tensor-transformer capability comparison, and---resolving the one
-non-obvious obstacle---demonstrated a strict, fully-foldable model that trains and
-folds to a normalization-free graph within acceptance tolerance.
+
+The parts needed for a fully tensor-decomposable VLA already exist, and OpenVLA's
+modular design is ready to receive them. Assembling bilinear feed-forward layers,
+softmax-free bilinear attention, foldable normalization, and a linear action head
+gives \chivla, a policy that is a single tensor network from pixels and token
+identities to continuous actions. We showed it folds exactly, stays competitive
+after folding, benefits measurably from the explicit cross-stream product, uses
+language on a real robot dataset, and, uniquely among policy architectures, admits
+an exact global diagonalization in which most hidden dimensions can be removed and
+a global importance ranking beats a local one, including through attention.
 
 \begin{thebibliography}{9}
 \bibitem{openvla} A.~Kim et al. \emph{OpenVLA: An Open-Source Vision-Language-Action Model.} arXiv:2406.09246, 2024.
 \bibitem{riggs} L.~Riggs. \emph{Tensor-Transformer Variants are Surprisingly Performant.} LessWrong, 2024. Code: \url{https://github.com/loganriggs/modded-nanogpt}.
 \bibitem{chinets} T.~Dooms et al. \emph{$\chi$-nets: CP-factorized bilinear networks with foldable normalization and ODT analysis.}
+\bibitem{deherand} A.~D\'eh\'erand. \emph{Convolutional Tensor Networks for Weight-Based Mechanistic Interpretability.} Master's thesis, Vrije Universiteit Brussel, 2025--2026.
 \end{thebibliography}
 
 \end{document}

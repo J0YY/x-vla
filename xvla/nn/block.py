@@ -19,6 +19,7 @@ import torch
 import torch.nn as nn
 
 from xvla.nn.attention import BilinearAttention
+from xvla.nn.baselines import SoftmaxAttention
 from xvla.nn.bilinear import BilinearFFN
 from xvla.nn.normalization import make_norm
 
@@ -33,13 +34,19 @@ class ChiTransformerBlock(nn.Module):
         causal: bool = False,
         norm: str = "per_token",
         qk_norm: str = "per_token",
+        attn: str = "bilinear",
         rbn_momentum: float = 0.99,
         learned_gain: bool = False,
     ):
         super().__init__()
         self.rbn_attn = make_norm(norm, momentum=rbn_momentum)
-        self.attn = BilinearAttention(dim, n_heads, causal=causal,
-                                      qk_norm=qk_norm, rbn_momentum=rbn_momentum)
+        if attn == "bilinear":
+            self.attn = BilinearAttention(dim, n_heads, causal=causal,
+                                          qk_norm=qk_norm, rbn_momentum=rbn_momentum)
+        elif attn == "softmax":  # matched (non-pure) baseline for the §19 gate
+            self.attn = SoftmaxAttention(dim, n_heads, causal=causal)
+        else:
+            raise ValueError(f"unknown attn {attn!r}")
         self.rbn_ffn = make_norm(norm, momentum=rbn_momentum)
         self.ffn = BilinearFFN(dim, rank=ffn_rank)
 
@@ -72,6 +79,7 @@ class ChiTransformer(nn.Module):
         causal: bool = False,
         norm: str = "per_token",
         qk_norm: str = "per_token",
+        attn: str = "bilinear",
         rbn_momentum: float = 0.99,
         learned_gain: bool = False,
     ):
@@ -81,7 +89,7 @@ class ChiTransformer(nn.Module):
         self.blocks = nn.ModuleList([
             ChiTransformerBlock(
                 dim, n_heads, ffn_rank=ffn_rank, n_layers=n_layers,
-                causal=causal, norm=norm, qk_norm=qk_norm,
+                causal=causal, norm=norm, qk_norm=qk_norm, attn=attn,
                 rbn_momentum=rbn_momentum, learned_gain=learned_gain,
             )
             for _ in range(n_layers)

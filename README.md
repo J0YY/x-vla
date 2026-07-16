@@ -63,7 +63,25 @@ modal run modal_app.py::run_ablation           # larger 4-way ablation
 modal run modal_app.py::distill_strict_model   # strict scalar-norm model: distill→calibrate→fold→§19 gate
 ```
 
-## Next milestones
+## Full-stack results (M2–M6)
 
-M2 single χ-ViT · M3 dual χ-vision + cross-bilinear projector · M4 small χ-VLA ·
-M5 exact-ODT reference · M6 χ-VLA-450M · M7 generalized ODT.
+All on shared tensor primitives; small models / consumer GPUs (no A100).
+
+| # | Milestone | Result |
+|---|---|---|
+| M2 | softmax-free **χ-ViT** on SVHN | 0.917 vs 0.928 softmax baseline = **98.8%** (>90% gate) |
+| M3 | **cross-bilinear projector** (conjunction task) | **0.971** vs 0.160 concat+linear (**+81 pts**); zeroing interaction → 0.161 |
+| M4a | synthetic **χ-VLA** (pixels+lang+state→action) | 22× better than language-blind; shuffled instruction → **13× worse** (grounding) |
+| M4b | **LIBERO-Object** real-robot offline BC | action-MSE **0.021**; shuffled instruction **9× worse**; zeroing image → >1.0 (uses vision, not just state); rollout deferred |
+| M5 | **exact global ODT** (χ-MLP, flagship) | reconstruction 5e-12; **62% dims removable @≤1%**; global ODT > local SVD (+9 pts @ rank 6) |
+| M6 | χ-VLA-450M reference config | params compute to **448.2M** (≈ spec 447M); training deferred (no A100) |
+
+Modal entrypoints: `train_chi_vit`, `m3_projector`, `train_vla_synth`,
+`train_vla_libero`, `odt_experiment`, `attention_latency_crossover`, `pretest_tail`.
+
+Write-up: `paper/chi-vla.tex` (8 pp). Full narrative in `DEVLOG.md`.
+
+## Deferred (compute-bound)
+
+M6 χ-VLA-450M *training* (needs A100/multi-GPU + OpenX-scale data) · M7 exact global
+ODT on the attention+residual transformer (Level-C, open problem — spec §16.1).
