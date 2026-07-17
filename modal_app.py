@@ -31,10 +31,234 @@ app = modal.App("xvla")
 vol = modal.Volume.from_name("xvla-data", create_if_missing=True)
 VOL_PATH = "/vol"
 
+# ---- LIBERO closed-loop simulator image (MuJoCo + robosuite + LIBERO, headless EGL) ----
+libero_image = (
+    modal.Image.debian_slim(python_version="3.10")
+    .apt_install("git", "wget", "libgl1-mesa-dev", "libglib2.0-0", "libosmesa6-dev",
+                 "libegl1-mesa-dev", "libgles2-mesa-dev", "libglfw3", "libglew-dev",
+                 "patchelf", "gcc", "g++")
+    .pip_install("torch>=2.2", "torchvision", "numpy<2", "scipy", "pillow",
+                 "huggingface_hub", "datasets", "opencv-python-headless",
+                 "mujoco==3.1.6", "robosuite==1.4.1", "bddl", "easydict",
+                 "termcolor", "thop", "cloudpickle", "gym==0.25.2", "hydra-core", "pyyaml",
+                 "matplotlib", "imageio", "imageio-ffmpeg", "future")
+    .run_commands(
+        "git clone https://github.com/Lifelong-Robot-Learning/LIBERO.git /opt/LIBERO",
+        "cd /opt/LIBERO && pip install --no-deps -e .",
+        # pre-write LIBERO's config so first import doesn't prompt interactively (EOFError)
+        "mkdir -p /root/.libero",
+        "python3 -c \"import os,yaml; root='/opt/LIBERO'; f=lambda n:next((d for d,s,fs in os.walk(root) if os.path.basename(d)==n),''); b=f('bddl_files'); i=f('init_files'); a=f('assets'); yaml.safe_dump({'benchmark_root':os.path.dirname(b),'bddl_files':b,'init_states':i,'assets':a,'datasets':root+'/datasets'}, open('/root/.libero/config.yaml','w')); print(open('/root/.libero/config.yaml').read())\"")
+    .env({"PYTHONPATH": "/opt/LIBERO",
+          "MUJOCO_GL": "egl", "PYOPENGL_PLATFORM": "egl", "MUJOCO_EGL_DEVICE_ID": "0",
+          "TOKENIZERS_PARALLELISM": "false"})
+    .add_local_dir(".", PROJ,
+                   ignore=["*.pdf", "__pycache__", "*.pyc", ".git", ".venv", "data", "out"])
+)
+
+
+@app.function(image=libero_image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def libero_rollout(steps: int = 6000, n_frames: int = 40000, horizon: int = 8, res: int = 64,
+                   eps_per_task: int = 10, max_task: int = 10, exec_h: int = 8):
+    """CLOSED-LOOP eval (Q0): train the χ-VLA offline on LIBERO-Object (lerobot data,
+    exact M4b pipeline) then roll it out in the MuJoCo/robosuite sim and report task
+    success rate. Reconstructs the sim obs to match the training convention (agentview
+    flipped+resized+/255; state = eef_pos + eef axis-angle + gripper_qpos; actions
+    un-normalized) with a state-distribution sanity check before rollout."""
+    _bootstrap()
+    import json, os, pickle
+    import numpy as np
+    import torch
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download, list_repo_files
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.train.train_lm import _lr_at, TrainConfig
+    dev = "cuda"; H = horizon
+    name = "lerobot/libero_object_image"
+
+    # ---- tasks + vocab (same as train_vla_libero) ----
+    tasks = {}
+    for tf in [f for f in list_repo_files(name, repo_type="dataset")
+               if "task" in f.lower() and f.endswith((".jsonl", ".json", ".parquet"))]:
+        try:
+            tp = hf_hub_download(name, tf, repo_type="dataset")
+            if tp.endswith(".parquet"):
+                import pandas as pd
+                df = pd.read_parquet(tp).reset_index()
+                tcol = "task" if "task" in df.columns else next(c for c in df.columns if df[c].dtype == object)
+                icol = "task_index" if "task_index" in df.columns else ("index" if "index" in df.columns else df.columns[0])
+                for _, r in df.iterrows(): tasks[int(r[icol])] = str(r[tcol])
+            else:
+                for line in open(tp): r = json.loads(line); tasks[int(r["task_index"])] = r["task"]
+            if tasks: break
+        except Exception as e: print(f"{tf}: {e}")
+    words = set()
+    for t in tasks.values(): words.update(t.lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words): vocab[w] = len(vocab)
+    T = 32
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T] + [0] * max(0, T - len(ids)))[:T]
+
+    # ---- frames (cached) ----
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    if os.path.exists(cache):
+        frames = pickle.load(open(cache, "rb"))
+    else:
+        from PIL import Image
+        ds = load_dataset(name, split="train", streaming=True); frames = []
+        for ex in ds:
+            img = ex["observation.images.image"]
+            if not isinstance(img, Image.Image): img = Image.fromarray(np.array(img))
+            frames.append((int(ex["episode_index"]), int(ex["frame_index"]),
+                           np.asarray(img.resize((res, res)), dtype=np.uint8),
+                           np.asarray(ex["observation.state"], dtype=np.float32),
+                           np.asarray(ex["action"], dtype=np.float32), int(ex["task_index"])))
+            if len(frames) >= n_frames: break
+        pickle.dump(frames, open(cache, "wb")); vol.commit()
+    print(f"{len(frames)} frames")
+    from collections import defaultdict
+    eps = defaultdict(list)
+    for f in frames: eps[f[0]].append(f)
+    samples = []
+    for ep, fs in eps.items():
+        fs.sort(key=lambda z: z[1])
+        for i in range(len(fs) - H):
+            samples.append((fs[i][2], fs[i][5], fs[i][3], np.stack([fs[i + k][4] for k in range(H)])))
+    d_a = samples[0][3].shape[1]; state_dim = samples[0][2].shape[0]
+    A = np.stack([s[3] for s in samples]); S = np.stack([s[2] for s in samples])
+    a_mu, a_sd = A.mean((0, 1)), A.std((0, 1)) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+    print(f"state_dim={state_dim} action_dim={d_a}; train state mean={np.round(s_mu,3)}")
+
+    imgs = torch.tensor(np.stack([s[0] for s in samples])).permute(0, 3, 1, 2).float().div(255).to(dev)
+    instr = torch.tensor([encode(tasks.get(s[1], "")) for s in samples], device=dev)
+    states = torch.tensor((S - s_mu) / s_sd, dtype=torch.float32, device=dev)
+    actions = torch.tensor((A - a_mu) / a_sd, dtype=torch.float32, device=dev)
+    cfg = VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                    vocab_size=len(vocab), max_instr_len=T, state_dim=state_dim, n_embodiments=1,
+                    dim=384, n_layers=8, n_heads=12, action_horizon=H, action_dim=d_a)
+    model = ChiVLA(cfg).to(dev)
+    opt = torch.optim.AdamW(model.parameters(), lr=8e-4, betas=(0.9, 0.95), weight_decay=0.05)
+    tcfg = TrainConfig(train_bin="", val_bin="", lr=8e-4, max_steps=steps, warmup_frac=0.05)
+    model.train()
+    for step in range(steps + 1):
+        for g in opt.param_groups: g["lr"] = _lr_at(step, tcfg)
+        idx = torch.randint(len(samples), (256,), device=dev)
+        opt.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            _, loss = model(imgs[idx], instr[idx], states[idx],
+                            torch.zeros(256, dtype=torch.long, device=dev), target_actions=actions[idx])
+        loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+        if step % 1000 == 0: print(f"  step {step} mse {loss.item():.4f}")
+    model.eval()
+
+    # ---- rollout in sim ----
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    from robosuite.utils.transform_utils import quat2axisangle
+    from PIL import Image
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    a_mu_t = torch.tensor(a_mu, device=dev); a_sd_t = torch.tensor(a_sd, device=dev)
+    s_mu_t = torch.tensor(s_mu, dtype=torch.float32); s_sd_t = torch.tensor(s_sd, dtype=torch.float32)
+
+    def build_state(obs):
+        v = np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]),
+                            obs["robot0_gripper_qpos"]]).astype(np.float32)
+        return v[:state_dim] if len(v) >= state_dim else np.pad(v, (0, state_dim - len(v)))
+
+    @torch.no_grad()
+    def act(obs, instr_ids):
+        raw = build_state(obs)
+        img = np.asarray(Image.fromarray(obs["agentview_image"][::-1]).resize((res, res)))
+        im = torch.tensor(img).permute(2, 0, 1).float().div(255).unsqueeze(0).to(dev)
+        st = ((torch.tensor(raw) - s_mu_t) / s_sd_t).float().unsqueeze(0).to(dev)
+        a, _ = model(im, instr_ids, st, torch.zeros(1, dtype=torch.long, device=dev))
+        return (a[0] * a_sd_t + a_mu_t).cpu().numpy()          # (H, d_a) un-normalized
+
+    n_tasks = min(max_task, suite.n_tasks)
+    per_task, sane = {}, None
+    for ti in range(n_tasks):
+        task = suite.get_task(ti)
+        bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+        instr_ids = torch.tensor([encode(task.language)], device=dev)
+        succ = 0
+        for ep in range(eps_per_task):
+            env.seed(ti * 100 + ep); obs = env.reset()
+            if sane is None:                                   # state-match sanity (once)
+                sane = {"sim_state": np.round(build_state(obs), 3).tolist(),
+                        "train_state_mean": np.round(s_mu, 3).tolist()}
+                print("STATE SANITY:", sane)
+            done = False
+            for t in range(220):
+                chunk = act(obs, instr_ids)
+                for k in range(min(exec_h, H)):
+                    obs, r, done, info = env.step(chunk[k].tolist())
+                    if done: break
+                if done: break
+            succ += int(bool(done))
+        env.close()
+        per_task[task.language] = round(succ / eps_per_task, 3)
+        print(f"[task {ti}] {task.language}: {succ}/{eps_per_task}")
+    overall = round(float(np.mean(list(per_task.values()))), 3)
+    result = {"overall_success": overall, "n_tasks": n_tasks, "eps_per_task": eps_per_task,
+              "per_task": per_task, "state_sanity": sane, "train_action_mse_note": "see libero BC"}
+    with open(f"{VOL_PATH}/libero_rollout.json", "w") as f: json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps({"overall_success": overall, "per_task": per_task}, indent=2))
+    return result
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=1800)
+def libero_smoke():
+    """De-risk step: can we run the LIBERO sim headless on Modal at all? Import,
+    build the libero_object suite, reset one env, render + step, report obs schema."""
+    _bootstrap()
+    import numpy as np
+    import os
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    bd = benchmark.get_benchmark_dict()
+    print("benchmarks:", list(bd.keys()))
+    suite = bd["libero_object"]()
+    n = suite.n_tasks
+    print(f"libero_object tasks: {n}")
+    task = suite.get_task(0)
+    print("task0:", task.language)
+    bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+    env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=128, camera_widths=128)
+    env.seed(0); obs = env.reset()
+    print("obs keys:", sorted(obs.keys()))
+    for k in obs:
+        v = np.asarray(obs[k])
+        print(f"  {k}: {v.shape} {v.dtype}")
+    a = np.zeros(env.action_dim if hasattr(env, "action_dim") else 7)
+    for _ in range(3):
+        obs, r, done, info = env.step(a)
+    print(f"stepped OK; action_dim={len(a)}; agentview img shape="
+          f"{np.asarray(obs.get('agentview_image')).shape}")
+    env.close()
+    return {"tasks": n, "task0": task.language, "obs_keys": sorted(obs.keys())}
+
 
 def _bootstrap():
     if PROJ not in sys.path:
         sys.path.insert(0, PROJ)
+
+
+@app.function(image=image, gpu="A100", timeout=300)
+def a100_check():
+    """Smoke test: is A100 unlocked now that a payment method is on file?
+    Reports the GPU, does a trivial matmul, prints memory — a few seconds of A100."""
+    _bootstrap()
+    import torch
+    name = torch.cuda.get_device_name(0)
+    total_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+    x = torch.randn(4096, 4096, device="cuda")
+    y = (x @ x).sum().item()
+    print(f"A100 OK ✅  device={name}  mem={total_gb:.1f}GB  matmul_ok={abs(y) > 0}")
+    return {"device": name, "total_gb": round(total_gb, 1)}
 
 
 @app.function(image=image, gpu="L4", timeout=1800)
@@ -987,26 +1211,42 @@ def _train_chi_mlp(dim, n_layers, epochs, tl, vl):
     return model, acc
 
 
-def _save_atom_grid(rows, path, cell=48, pad=2):
-    """Save a montage PNG. ``rows`` is a list of lists of (3,32,32) fp tensors;
-    each atom is rendered as an upscaled grayscale magnitude map (bright = high
-    sensitivity). Diverging sign is reported in JSON, not colour."""
+def _save_atom_grid(rows, path, cell=56, pad=3, row_labels=None, split_after=None,
+                    gamma=0.7, margin=22):
+    """Save a labeled montage PNG. ``rows`` is a list of lists of (3,32,32) fp
+    tensors; each atom is a grayscale magnitude map (bright = high sensitivity),
+    contrast-stretched per atom and gamma-brightened. ``row_labels`` prints a tag
+    left of each row; ``split_after`` inserts a divider column (e.g. between
+    supporting and suppressing atoms). Diverging sign is in JSON, not colour."""
     import numpy as np
-    from PIL import Image
+    from PIL import Image, ImageDraw
     ncol = max(len(r) for r in rows)
-    H = len(rows) * (cell + pad) + pad
-    W = ncol * (cell + pad) + pad
-    canvas = np.full((H, W), 30, dtype=np.uint8)
+    gap = pad + (6 if split_after is not None else 0)
+    H = len(rows) * (cell + pad) + pad + margin
+    W = margin + ncol * (cell + pad) + pad + (gap if split_after is not None else 0)
+    canvas = np.full((H, W), 22, dtype=np.uint8)
     for ri, row in enumerate(rows):
         for ci, atom in enumerate(row):
             mag = (atom ** 2).sum(0).sqrt().cpu().numpy()      # (32,32) magnitude
             mag = mag - mag.min()
-            mag = mag / (mag.max() + 1e-12)
+            mag = (mag / (mag.max() + 1e-12)) ** gamma          # brighten mid-tones
             img = Image.fromarray((mag * 255).astype(np.uint8)).resize(
                 (cell, cell), Image.NEAREST)
-            y0 = pad + ri * (cell + pad); x0 = pad + ci * (cell + pad)
+            xshift = gap if (split_after is not None and ci >= split_after) else 0
+            y0 = margin + pad + ri * (cell + pad)
+            x0 = margin + pad + ci * (cell + pad) + xshift
             canvas[y0:y0 + cell, x0:x0 + cell] = np.asarray(img)
-    Image.fromarray(canvas).save(path)
+    im = Image.fromarray(canvas).convert("L")
+    draw = ImageDraw.Draw(im)
+    if row_labels:
+        for ri, lab in enumerate(row_labels):
+            draw.text((4, margin + pad + ri * (cell + pad) + cell // 2 - 4),
+                      str(lab), fill=255)
+    if split_after is not None:
+        draw.text((margin + pad + 2, 6), "supporting  (lambda>0)", fill=200)
+        xg = margin + pad + split_after * (cell + pad) + gap - 4
+        draw.text((xg + 2, 6), "suppressing  (lambda<0)", fill=200)
+    im.save(path)
 
 
 @app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=2 * 3600)
@@ -1086,7 +1326,8 @@ def odt_interpret(epochs: int = 15):
                              "eig": round(float(l[i]), 4),
                              "locality": round(locality(p), 4)})
         atom_rows.append(row); atom_meta.extend(meta)
-    _save_atom_grid(atom_rows, f"{VOL_PATH}/odt_atoms_shallow.png")
+    _save_atom_grid(atom_rows, f"{VOL_PATH}/odt_atoms_shallow.png",
+                    row_labels=list(range(10)), split_after=n_pos)
     atom_loc = sum(m["locality"] for m in atom_meta) / len(atom_meta)
     print(f"A(iii) mean atom locality {atom_loc:.3f} vs random {rand_loc:.3f} "
           f"(ratio {atom_loc/rand_loc:.2f}×)")
@@ -1118,9 +1359,10 @@ def odt_interpret(epochs: int = 15):
         M = 0.5 * (M + M.T)
         lm, vm = eig_atoms(M)
         p = atom_to_pixels(vm[:, 0], embed_d, IN_SHAPE, std)
-        deep_rows.append([p])
+        deep_rows.append(p)
         deep_meta.append({"global_dir": j, "locality": round(locality(p), 4)})
-    _save_atom_grid(deep_rows, f"{VOL_PATH}/odt_atoms_deep.png")
+    _save_atom_grid([deep_rows], f"{VOL_PATH}/odt_atoms_deep.png",
+                    row_labels=["a1"])
     deep_loc = sum(m["locality"] for m in deep_meta) / len(deep_meta)
 
     # Global vs random subspace truncation at the bond (causal control).
@@ -1163,6 +1405,1107 @@ def odt_interpret(epochs: int = 15):
         "drop_random@4": faith["drop_random"][4],
         "deep_acc": acc_d, "deep_global_beats_random_at": result["deep"]["global_beats_random_at"],
     }, indent=2))
+    return result
+
+
+def _train_shallow(model, tl, vl, epochs, lr=2e-3):
+    import torch
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.05, betas=(0.9, 0.95))
+    model.cuda().train()
+    acc = 0.0
+    for ep in range(epochs):
+        for imgs, labels in tl:
+            imgs, labels = imgs.cuda(), labels.cuda()
+            opt.zero_grad(set_to_none=True)
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                _, loss = model(imgs, labels)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            opt.step()
+        model.eval(); cor = tot = 0
+        with torch.no_grad():
+            for imgs, labels in vl:
+                lg, _ = model(imgs.cuda())
+                cor += (lg.argmax(-1).cpu() == labels).sum().item(); tot += labels.numel()
+        model.train(); acc = cor / tot
+    model.eval()
+    return acc
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def interp_baselines_clf(epochs: int = 12, seeds: int = 2):
+    """G1b/G7: the DATA-FREE claim, done right. On the exact feedforward χ-classifier
+    (conv-spatial, SVHN), rank input directions by (a) ODT [DATA-FREE, from weights:
+    eigvecs of Σ_c Q_c²], (b) PCA of inputs [data-driven], (c) integrated gradients
+    [data-driven, standard attribution], (d) random; score by deletion/insertion AUC.
+    If data-free ODT ≈ data-heavy IG/PCA ≫ random ⇒ 'faithful attribution for free from
+    weights' — the defensible version of claim 1."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_conv import ShallowBilinear
+    from xvla.train.topology import class_quadratics
+
+    tl, vl = _svhn_loaders(flatten=False)
+    vol.commit()
+    in_ch, hw = 3, 32; D = in_ch * hw * hw
+    ks = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 3072]
+    agg = {m: {"deletion_auc": [], "insertion_auc": []} for m in ["odt", "pca", "ig", "random"]}
+    accs = []
+    for seed in range(seeds):
+        torch.manual_seed(seed)
+        model = ShallowBilinear(mode="conv", readout="spatial", grid=8, width=48, kernel=5,
+                                in_ch=in_ch, hw=hw, num_classes=10)
+        acc = _train_shallow(model, tl, vl, epochs, lr=2e-3); accs.append(acc)
+        model = model.cuda().double().eval()
+        xs, ys = [], []
+        for imgs, labels in vl:
+            xs.append(imgs); ys.append(labels)
+            if sum(t.shape[0] for t in xs) >= 3000:
+                break
+        X = torch.cat(xs)[:3000].cuda().double(); Y = torch.cat(ys)[:3000].cuda()
+
+        # (a) ODT data-free importance Gram Σ_c Q_c²
+        Q, _, _ = class_quadratics(model, "cuda")
+        G_odt = torch.zeros(D, D, device="cuda", dtype=torch.float64)
+        for c in range(Q.shape[0]):
+            G_odt += Q[c] @ Q[c]
+        V_odt = torch.linalg.eigh(G_odt)[1].flip(1); del Q, G_odt; torch.cuda.empty_cache()
+        # (b) PCA of inputs
+        Xf = X.reshape(-1, D); Xm = Xf.mean(0)
+        V_pca = torch.linalg.eigh((Xf - Xm).T @ (Xf - Xm) / Xf.shape[0])[1].flip(1)
+        # (c) integrated gradients importance Gram
+        attrs = torch.zeros(Xf.shape[0], D, device="cuda", dtype=torch.float64)
+        st = 20
+        for i in range(0, Xf.shape[0], 250):
+            x = X[i:i+250]; y = Y[i:i+250]; tot = torch.zeros_like(x)
+            for s in range(1, st + 1):
+                xs_ = ((s / st) * x).detach().requires_grad_(True)
+                with torch.enable_grad():
+                    sel = model.logits(xs_).gather(1, y[:, None]).sum()
+                    gg, = torch.autograd.grad(sel, xs_)
+                tot = tot + gg
+            attrs[i:i+250] = (x * tot / st).reshape(x.shape[0], -1)
+        V_ig = torch.linalg.eigh(attrs.T @ attrs / attrs.shape[0])[1].flip(1)
+        del attrs; torch.cuda.empty_cache()
+        rng = torch.Generator(device="cuda").manual_seed(seed)
+        V_rand = torch.linalg.qr(torch.randn(D, D, generator=rng, device="cuda", dtype=torch.float64))[0]
+
+        @torch.no_grad()
+        def acc_proj(V, k, keep):
+            P = V[:, :k] @ V[:, :k].T
+            if not keep:
+                P = torch.eye(D, device="cuda", dtype=torch.float64) - P
+            c = t = 0
+            for i in range(0, Xf.shape[0], 500):
+                xp = (Xf[i:i+500] @ P).reshape(-1, in_ch, hw, hw)
+                lg = model.logits(xp)
+                c += (lg.argmax(-1) == Y[i:i+500]).sum().item(); t += lg.shape[0]
+            return c / t
+        fr = [k / D for k in ks]
+        def auc(v): return sum((fr[i+1]-fr[i])*(v[i]+v[i+1])/2 for i in range(len(fr)-1)) / (fr[-1]-fr[0])
+        for name, V in [("odt", V_odt), ("pca", V_pca), ("ig", V_ig), ("random", V_rand)]:
+            agg[name]["deletion_auc"].append(auc([acc_proj(V, k, False) for k in ks]))
+            agg[name]["insertion_auc"].append(auc([acc_proj(V, k, True) for k in ks]))
+        torch.cuda.empty_cache()
+
+    def ms(v):
+        t = torch.tensor(v); return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+    result = {"clf_acc": ms(accs), **{m: {k: ms(v) for k, v in d.items()} for m, d in agg.items()},
+              "note": "deletion↓ insertion↑; odt is DATA-FREE (weights only), pca+ig are data-driven"}
+    with open(f"{VOL_PATH}/interp_baselines_clf.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def vla_bond_seeds(steps: int = 3000, seeds: int = 3):
+    """G5: error bars on the bond-decodability table (C-v2). Linear-probe R² for target
+    position at the input bond vs the post-attention action-query bond, over multiple seeds."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.attention import causal_mask
+    from xvla.train.synth_vla import make_batch, VOCAB
+    from xvla.train.train_lm import _lr_at, TrainConfig
+    dev = "cuda"; H = 4
+    inp_r2, post_r2 = [], []
+    for seed in range(seeds):
+        torch.manual_seed(seed)
+        tp = make_batch(8192, dev); probe = make_batch(3000, dev)
+        cfg = VLAConfig(image_size=32, patch_size=4, vit_dim=128, vit_layers=3, vit_heads=8,
+                        vocab_size=VOCAB, max_instr_len=16, state_dim=8, n_embodiments=4,
+                        dim=256, n_layers=6, n_heads=8, action_horizon=4, action_dim=7)
+        m = ChiVLA(cfg).to(dev)
+        opt = torch.optim.AdamW(m.parameters(), lr=1e-3, betas=(0.9, 0.95), weight_decay=0.05)
+        tc = TrainConfig(train_bin="", val_bin="", lr=1e-3, max_steps=steps, warmup_frac=0.05)
+        m.train()
+        for step in range(steps + 1):
+            for g in opt.param_groups: g["lr"] = _lr_at(step, tc)
+            i = torch.randint(8192, (256,), device=dev)
+            opt.zero_grad(set_to_none=True)
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                _, loss = m(tp["img"][i], tp["instr"][i], tp["state"][i], tp["embodiment"][i],
+                            target_actions=tp["actions"][i])
+            loss.backward(); torch.nn.utils.clip_grad_norm_(m.parameters(), 1.0); opt.step()
+        m.eval()
+        @torch.no_grad()
+        def feats(img, instr, state, emb):
+            B = img.shape[0]
+            x = torch.cat([m._visual_tokens(img), m.bos.expand(B, -1, -1), m.tok_emb(instr),
+                           m.state_proj(state)[:, None], m.embodiment_emb(emb)[:, None],
+                           m.action_queries.expand(B, -1, -1)], dim=1)
+            x = x + m.pos_emb[:, :x.shape[1]]
+            inp = x.mean(1)
+            xo = m.norm_out(m.backbone(x, mask=causal_mask(x.shape[1], device=dev, dtype=x.dtype)))
+            return inp.double(), xo[:, -H:].mean(1).double()
+        A = [feats(probe["img"][i:i+512], probe["instr"][i:i+512], probe["state"][i:i+512],
+                   probe["embodiment"][i:i+512]) for i in range(0, probe["img"].shape[0], 512)]
+        inp = torch.cat([a[0] for a in A]); post = torch.cat([a[1] for a in A])
+        tgt = torch.stack([probe["state"][:, 0] + H * probe["actions"][:, 0, 0],
+                           probe["state"][:, 1] + H * probe["actions"][:, 0, 1]], 1).double()
+        N = inp.shape[0]; ntr = int(0.7 * N)
+        def r2(F):
+            Fa = torch.cat([F[:ntr], torch.ones(ntr, 1, device=dev, dtype=torch.float64)], 1)
+            W = torch.linalg.solve(Fa.T @ Fa + 1e-2 * torch.eye(Fa.shape[1], device=dev, dtype=torch.float64), Fa.T @ tgt[:ntr])
+            Fte = torch.cat([F[ntr:], torch.ones(N - ntr, 1, device=dev, dtype=torch.float64)], 1)
+            pred = Fte @ W; yte = tgt[ntr:]
+            return (1 - ((yte - pred) ** 2).sum() / ((yte - yte.mean(0)) ** 2).sum()).item()
+        inp_r2.append(r2(inp)); post_r2.append(r2(post))
+        print(f"[seed {seed}] target-pos R²: input {inp_r2[-1]:.3f}  post-attn {post_r2[-1]:.3f}")
+    def ms(v):
+        t = torch.tensor(v); return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+    result = {"target_pos_R2_input": ms(inp_r2), "target_pos_R2_postattn": ms(post_r2)}
+    with open(f"{VOL_PATH}/vla_bond_seeds.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def vla_counterfactual(steps: int = 3000, seeds: int = 3):
+    """G4/G9: a WORKING causal intervention on the policy with quantitative calibration.
+    Keep the image+state fixed, but rewrite the instruction to name a DIFFERENT present
+    object → the correct target moves. Does the predicted action follow the NEW target?
+    Report R² of observed vs predicted counterfactual action (predicted = (new_target −
+    grip)/H) and switch-rate (action moved to the new target's side). Clean cause→effect
+    (change the named object) with calibration, and an open-loop behavioural proxy."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.train.synth_vla import make_batch, VOCAB, COLOR_TOK0, SHAPE_TOK0
+    from xvla.train.train_lm import _lr_at, TrainConfig
+
+    dev = "cuda"
+    H = 4
+    def r2(obs, pred):
+        return round((1 - ((obs - pred) ** 2).sum() / ((obs - obs.mean(0)) ** 2).sum()).item(), 3)
+
+    orig_r2, cf_r2, switch = [], [], []
+    for seed in range(seeds):
+        torch.manual_seed(seed)
+        train_pool = make_batch(8192, dev)
+        test = make_batch(2048, dev, k_objects=3)
+        cfg = VLAConfig(image_size=32, patch_size=4, vit_dim=128, vit_layers=3, vit_heads=8,
+                        vocab_size=VOCAB, max_instr_len=16, state_dim=8, n_embodiments=4,
+                        dim=256, n_layers=6, n_heads=8, action_horizon=4, action_dim=7)
+        model = ChiVLA(cfg).to(dev)
+        opt = torch.optim.AdamW(model.parameters(), lr=1e-3, betas=(0.9, 0.95), weight_decay=0.05)
+        tccfg = TrainConfig(train_bin="", val_bin="", lr=1e-3, max_steps=steps, warmup_frac=0.05)
+        model.train()
+        for step in range(steps + 1):
+            for g in opt.param_groups:
+                g["lr"] = _lr_at(step, tccfg)
+            idx = torch.randint(8192, (256,), device=dev)
+            opt.zero_grad(set_to_none=True)
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                _, loss = model(train_pool["img"][idx], train_pool["instr"][idx],
+                                train_pool["state"][idx], train_pool["embodiment"][idx],
+                                target_actions=train_pool["actions"][idx])
+            loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+        model.eval()
+
+        grip = test["state"][:, :2]
+        tgt_i = test["tgt_idx"]
+        cf_i = (tgt_i + 1) % 3                                   # a different present object
+        B = test["img"].shape[0]
+        ar = torch.arange(B, device=dev)
+        cf_pos = test["all_pos"][ar, cf_i]                       # (B,2) new target
+        tgt_pos = test["all_pos"][ar, tgt_i]
+        # counterfactual instruction: name object cf_i
+        instr_cf = test["instr"].clone()
+        instr_cf[:, 2] = COLOR_TOK0 + test["obj_pairs"][ar, cf_i, 0]
+        instr_cf[:, 3] = SHAPE_TOK0 + test["obj_pairs"][ar, cf_i, 1]
+
+        with torch.no_grad():
+            a_orig, _ = model(test["img"], test["instr"], test["state"], test["embodiment"])
+            a_cf, _ = model(test["img"], instr_cf, test["state"], test["embodiment"])
+        obs_orig = a_orig[:, :, :2].mean(1)                      # (B,2)
+        obs_cf = a_cf[:, :, :2].mean(1)
+        pred_orig = (tgt_pos - grip) / H
+        pred_cf = (cf_pos - grip) / H
+        orig_r2.append(r2(obs_orig, pred_orig))
+        cf_r2.append(r2(obs_cf, pred_cf))
+        # switch-rate: did the counterfactual action move to the new target's side?
+        d_new = (obs_cf - pred_cf).norm(dim=1)
+        d_old = (obs_cf - pred_orig).norm(dim=1)
+        switch.append(round((d_new < d_old).float().mean().item(), 3))
+        print(f"[seed {seed}] orig_R2 {orig_r2[-1]} cf_R2 {cf_r2[-1]} switch {switch[-1]}")
+
+    def ms(v):
+        t = torch.tensor(v, dtype=torch.float64); return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+    result = {"original_action_R2": ms(orig_r2), "counterfactual_action_R2": ms(cf_r2),
+              "switch_rate": ms(switch),
+              "note": "rewrite instruction to name a different present object; does action follow the predicted new target"}
+    with open(f"{VOL_PATH}/vla_counterfactual.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def topology_matched(epochs: int = 12):
+    """G3: isolate topology from capability. Sweep width per architecture → collect
+    (accuracy, atom-locality, params). If local-topology (conv/local-spatial) has higher
+    coherence than dense AT MATCHED ACCURACY (coherence-vs-accuracy Pareto), the coherence
+    gain is due to topology, not capacity — killing the 'conv-spatial just wins everything'
+    confound. SVHN, exact quadratic pipeline."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_conv import ShallowBilinear
+    from xvla.train.topology import class_quadratics, atom_report
+
+    tl, vl = _svhn_loaders(flatten=False)
+    vol.commit()
+    in_ch, hw = 3, 32
+    archs = [("dense", "global"), ("conv", "spatial"), ("local", "spatial")]
+    widths = [8, 16, 32, 64, 128]
+    rows = []
+    for mode, readout in archs:
+        for w in widths:
+            torch.manual_seed(0)
+            model = ShallowBilinear(mode=mode, readout=readout, grid=8, width=w, kernel=5,
+                                    in_ch=in_ch, hw=hw, num_classes=10)
+            lr = 1e-3 if mode == "local" else 2e-3
+            acc = _train_shallow(model, tl, vl, epochs, lr=lr)
+            params = model.num_params()
+            Q, _, _ = class_quadratics(model, "cuda")
+            al, rl = atom_report(Q, in_ch, hw, "cuda")
+            name = mode if mode == "dense" else f"{mode}-{readout}"
+            rows.append({"arch": name, "width": w, "acc": round(acc, 4),
+                         "params_M": round(params / 1e6, 4),
+                         "locality_ratio": round(al / rl, 3)})
+            print(f"[{name} w{w}] acc {acc:.4f} params {params/1e6:.3f}M locality {al/rl:.2f}×")
+            del Q; torch.cuda.empty_cache()
+
+    with open(f"{VOL_PATH}/topology_matched.json", "w") as f:
+        json.dump(rows, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(rows, indent=2))
+    return rows
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def interp_baselines(epochs: int = 15, seeds: int = 3):
+    """G1 (review-killer): compare the ODT global-Gram ranking against real baselines,
+    not just random/local-SVD. On the χ-ViT patch bond (downstream crosses all attention):
+    rank bond directions by (a) ODT output-sensitivity Gram [ours], (b) PCA of activations
+    [unsupervised], (c) random; score each by deletion & insertion AUC of model accuracy,
+    and by a linear-probe curve (class info in the top-k subspace). mean±std over seeds."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vit import ViTConfig
+    from xvla.train.train_vit import ViTTrainConfig, train_vit
+    from xvla.train.odt import random_projector
+
+    tl, vl = _svhn_loaders()
+    vol.commit()
+    ks = [1, 2, 4, 8, 16, 24, 32, 48, 64, 96, 128]
+    agg = {m: {"deletion_auc": [], "insertion_auc": [], "probe_auc": []}
+           for m in ["odt", "pca", "random"]}
+    accs = []
+    for seed in range(seeds):
+        torch.manual_seed(seed)
+        mcfg = ViTConfig(image_size=32, patch_size=4, dim=128, n_layers=4, n_heads=4,
+                         num_classes=10, norm="per_token", qk_norm="per_token", attn="bilinear")
+        h = train_vit(mcfg, ViTTrainConfig(epochs=epochs), tl, vl)
+        model = h["model"].cuda().eval(); accs.append(h["best_acc"]); D = mcfg.dim
+
+        def bond(imgs):
+            x = model.patch(imgs).flatten(2).transpose(1, 2) + model.pos_emb
+            return x
+
+        def from_bond(x, P):
+            x = x @ P.T
+            xo = model.norm_out(model.blocks(x))
+            return model.head(xo.mean(dim=1))
+
+        xs, ys = [], []
+        for imgs, labels in vl:
+            xs.append(imgs); ys.append(labels)
+            if sum(t.shape[0] for t in xs) >= 4000:
+                break
+        X = torch.cat(xs)[:4000].cuda(); Y = torch.cat(ys)[:4000].cuda()
+
+        # (a) ODT output-sensitivity Gram
+        G = torch.zeros(D, D, device="cuda", dtype=torch.float64); n = 0
+        for i in range(0, 2000, 200):
+            hb = bond(X[i:i+200]).detach().requires_grad_(True)
+            sel = from_bond(hb, torch.eye(D, device="cuda")).gather(1, Y[i:i+200, None]).sum()
+            g, = torch.autograd.grad(sel, hb)
+            g = g.reshape(-1, D).double(); G += g.T @ g; n += g.shape[0]
+        V_odt = torch.linalg.eigh(G / n)[1].flip(1)
+        # (b) PCA of bond activations
+        H = torch.cat([bond(X[i:i+500]).detach().reshape(-1, D) for i in range(0, 4000, 500)]).double()
+        Hm = H.mean(0); cov = (H - Hm).T @ (H - Hm) / H.shape[0]
+        V_pca = torch.linalg.eigh(cov)[1].flip(1)
+        # (c) random
+        rng = torch.Generator(device="cuda").manual_seed(seed)
+        V_rand = torch.linalg.qr(torch.randn(D, D, generator=rng, device="cuda", dtype=torch.float64))[0]
+
+        @torch.no_grad()
+        def acc(P):
+            c = t = 0
+            for i in range(0, X.shape[0], 500):
+                lg = from_bond(bond(X[i:i+500]), P.float())
+                c += (lg.argmax(-1) == Y[i:i+500]).sum().item(); t += lg.shape[0]
+            return c / t
+
+        @torch.no_grad()
+        def probe(Vk):
+            Xp = torch.cat([bond(X[i:i+500]).mean(1).detach() for i in range(0, X.shape[0], 500)]).double()
+            F = Xp @ Vk; ntr = int(0.7 * F.shape[0])
+            Fa = torch.cat([F[:ntr], torch.ones(ntr, 1, device="cuda", dtype=torch.float64)], 1)
+            Yt = torch.zeros(ntr, 10, device="cuda", dtype=torch.float64); Yt[torch.arange(ntr), Y[:ntr]] = 1
+            W = torch.linalg.solve(Fa.T @ Fa + 1e-2 * torch.eye(Fa.shape[1], device="cuda", dtype=torch.float64), Fa.T @ Yt)
+            Fte = torch.cat([F[ntr:], torch.ones(F.shape[0]-ntr, 1, device="cuda", dtype=torch.float64)], 1)
+            return ((Fte @ W).argmax(1) == Y[ntr:]).float().mean().item()
+
+        fr = [k / D for k in ks]
+        def auc(ys_):
+            return sum((fr[i+1]-fr[i])*(ys_[i]+ys_[i+1])/2 for i in range(len(fr)-1)) / (fr[-1]-fr[0])
+        for name, V in [("odt", V_odt), ("pca", V_pca), ("random", V_rand)]:
+            dele = [acc(torch.eye(D, device="cuda", dtype=torch.float64) - V[:, :k] @ V[:, :k].T) for k in ks]
+            ins = [acc(V[:, :k] @ V[:, :k].T) for k in ks]
+            prb = [probe(V[:, :k]) for k in ks]
+            agg[name]["deletion_auc"].append(auc(dele))     # lower=better (drop-top kills acc)
+            agg[name]["insertion_auc"].append(auc(ins))     # higher=better
+            agg[name]["probe_auc"].append(auc(prb))
+        del G, H, cov; torch.cuda.empty_cache()
+
+    def ms(v):
+        t = torch.tensor(v); return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+    result = {"vit_acc": ms(accs),
+              **{m: {k: ms(v) for k, v in d.items()} for m, d in agg.items()},
+              "note": "deletion_auc lower=better; insertion_auc & probe_auc higher=better"}
+    with open(f"{VOL_PATH}/interp_baselines.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def vla_steering(steps: int = 3000):
+    """Causal steering (Q2 payoff): is the nameable 'target-position' mechanism at the
+    post-attention bond *causally* responsible for the action? We patch each sample's
+    projection onto the 2D target-position subspace with a partner sample's, re-run the
+    action head, and measure how far the predicted action moves toward the partner's
+    action (transfer fraction). Compared to patching a RANDOM 2D subspace. High transfer
+    for the target subspace, ~0 for random ⇒ the extracted mechanism causally controls
+    the action — interpretability that predicts intervention, not just correlates."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.attention import causal_mask
+    from xvla.train.synth_vla import make_batch, VOCAB
+    from xvla.train.train_lm import _lr_at, TrainConfig
+
+    torch.manual_seed(0)
+    dev = "cuda"
+    train_pool = make_batch(8192, dev)
+    probe_pool = make_batch(3000, dev)
+    cfg = VLAConfig(image_size=32, patch_size=4, vit_dim=128, vit_layers=3, vit_heads=8,
+                    vocab_size=VOCAB, max_instr_len=16, state_dim=8, n_embodiments=4,
+                    dim=256, n_layers=6, n_heads=8, action_horizon=4, action_dim=7)
+    model = ChiVLA(cfg).to(dev)
+    opt = torch.optim.AdamW(model.parameters(), lr=1e-3, betas=(0.9, 0.95), weight_decay=0.05)
+    tccfg = TrainConfig(train_bin="", val_bin="", lr=1e-3, max_steps=steps, warmup_frac=0.05)
+
+    def sample(pool, bs=256):
+        idx = torch.randint(pool["img"].shape[0], (bs,), device=dev)
+        return (pool["img"][idx], pool["instr"][idx], pool["state"][idx],
+                pool["embodiment"][idx], pool["actions"][idx])
+
+    model.train()
+    for step in range(steps + 1):
+        for g in opt.param_groups:
+            g["lr"] = _lr_at(step, tccfg)
+        img, instr, state, emb, act = sample(train_pool)
+        opt.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            _, loss = model(img, instr, state, emb, target_actions=act)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        opt.step()
+        if step % 500 == 0:
+            print(f"  step {step} mse {loss.item():.5f}")
+    model.eval()
+    H, D = cfg.action_horizon, cfg.dim
+
+    @torch.no_grad()
+    def aq_bond(img, instr, state, emb):
+        B = img.shape[0]
+        vis = model._visual_tokens(img)
+        x = torch.cat([vis, model.bos.expand(B, -1, -1), model.tok_emb(instr),
+                       model.state_proj(state)[:, None], model.embodiment_emb(emb)[:, None],
+                       model.action_queries.expand(B, -1, -1)], dim=1)
+        x = x + model.pos_emb[:, :x.shape[1]]
+        mask = causal_mask(x.shape[1], device=x.device, dtype=x.dtype)
+        xo = model.norm_out(model.backbone(x, mask=mask))
+        return xo[:, -H:]                                   # (B, H, d) post-attention
+
+    p = probe_pool
+    aq = torch.cat([aq_bond(p["img"][i:i+512], p["instr"][i:i+512], p["state"][i:i+512],
+                            p["embodiment"][i:i+512]) for i in range(0, p["img"].shape[0], 512)]).double()
+    base_act = model.action_head(aq.float()).double()       # (N,H,7)
+    N = aq.shape[0]
+    tgt = torch.stack([p["state"][:, 0] + H * p["actions"][:, 0, 0],
+                       p["state"][:, 1] + H * p["actions"][:, 0, 1]], 1).double()  # (N,2)
+
+    # target-position subspace at the bond: ridge aq(pooled) -> target, orthonormalize weights
+    aqm = aq.mean(1)                                        # (N, d)
+    Fa = torch.cat([aqm, torch.ones(N, 1, device=dev, dtype=torch.float64)], 1)
+    W = torch.linalg.solve(Fa.T @ Fa + 1e-2 * torch.eye(D + 1, device=dev, dtype=torch.float64),
+                           Fa.T @ tgt)[:D]                  # (d, 2)
+    S_tgt = torch.linalg.qr(W)[0]                           # (d, 2) orthonormal
+    g = torch.Generator(device=dev).manual_seed(0)
+    S_rnd = torch.linalg.qr(torch.randn(D, 2, generator=g, device=dev, dtype=torch.float64))[0]
+    perm = torch.randperm(N, generator=g, device=dev)
+
+    @torch.no_grad()
+    def transfer(S):
+        proj = aq @ S                                       # (N,H,2)
+        patched = aq - proj @ S.T + (aq[perm] @ S) @ S.T    # swap S-projection with partner's
+        new_act = model.action_head(patched.float()).double()
+        d_act = (new_act - base_act)[..., :2].reshape(N, -1)          # position dims
+        target_dir = (base_act[perm] - base_act)[..., :2].reshape(N, -1)
+        num = (d_act * target_dir).sum(1)
+        den = (target_dir * target_dir).sum(1).clamp_min(1e-9)
+        return round((num / den).mean().item(), 3)         # fraction moved toward partner
+
+    r2 = round((1 - ((tgt - Fa @ torch.cat([W, torch.zeros(1, 2, device=dev, dtype=torch.float64)]))
+                     ** 2).sum() / ((tgt - tgt.mean(0)) ** 2).sum()).item(), 3)
+    result = {"target_decode_R2": r2,
+              "transfer_target_subspace": transfer(S_tgt),
+              "transfer_random_subspace": transfer(S_rnd)}
+    with open(f"{VOL_PATH}/vla_steering.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def topology_depth(epochs: int = 15, seeds: int = 2):
+    """Experiment A-depth (Q1 at depth): does topology→coherence hold in DEEP bilinear
+    nets? Dense (ChiMLP, flatten) vs conv (ConvBilinearDeep, local+spatial), depth 1 & 3,
+    on SVHN + CIFAR, analyzed via the data-driven input-space Gram (works at any depth).
+    Reports mean±std of accuracy, input-atom locality ratio, and global-vs-random input
+    truncation. depth=1 also cross-checks the data-driven method against Exp A's exact Q."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_mlp import ChiMLP, ChiMLPConfig
+    from xvla.models.chi_conv import ConvBilinearDeep
+    from xvla.train.topology import input_analysis
+
+    agg = {}
+    for ds in ["svhn", "cifar"]:
+        tl, vl = (_svhn_loaders(flatten=False) if ds == "svhn" else _cifar_loaders())
+        vol.commit()
+        xs, ys = [], []
+        for imgs, labels in vl:
+            xs.append(imgs); ys.append(labels)
+            if sum(t.shape[0] for t in xs) >= 2000:
+                break
+        X = torch.cat(xs)[:2000].cuda(); Y = torch.cat(ys)[:2000].cuda()
+        for arch in ["dense", "conv"]:
+            for depth in [1, 3]:
+                accs, ratios, g64, r64 = [], [], [], []
+                for seed in range(seeds):
+                    torch.manual_seed(seed)
+                    if arch == "dense":
+                        model = ChiMLP(ChiMLPConfig(in_dim=3072, dim=48, n_layers=depth,
+                                                    num_classes=10, norm="scalar_rbn"))
+                        f = lambda z: model(z)[0]
+                    else:
+                        model = ConvBilinearDeep(depth=depth, width=48, kernel=5, grid=8,
+                                                 in_ch=3, hw=32, num_classes=10)
+                        f = lambda z: model.logits(z)
+                    acc = _train_shallow(model, tl, vl, epochs, lr=2e-3)
+                    model.cuda().eval()
+                    res = input_analysis(f, X, Y, "cuda")
+                    accs.append(acc); ratios.append(res["locality_ratio"])
+                    g64.append(res["global_curve"][64]); r64.append(res["random_curve"][64])
+                    torch.cuda.empty_cache()
+
+                def ms(v):
+                    t = torch.tensor(v)
+                    return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+                key = f"{ds}/{arch}-d{depth}"
+                agg[key] = {"acc": ms(accs), "locality_ratio": ms(ratios),
+                            "global@64": ms(g64), "random@64": ms(r64)}
+                print(f"[{key}] acc {ms(accs)} locality_ratio {ms(ratios)} "
+                      f"global@64 {ms(g64)} random@64 {ms(r64)}")
+
+    with open(f"{VOL_PATH}/topology_depth.json", "w") as f:
+        json.dump(agg, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(agg, indent=2))
+    return agg
+
+
+@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def topology_derisk(epochs: int = 12, seeds: int = 3):
+    """De-risk Exp A across DATASETS (SVHN, CIFAR) and SEEDS (Q1/Q4 robustness).
+
+    Reuses the exact single-layer quadratic-form pipeline (tested), for the three
+    architectures that trained well and showed the effect. Reports mean±std over
+    seeds of accuracy, atom-locality ratio, and the faithfulness gap. (Depth is a
+    separate run — deep bilinear needs foldable-norm stability engineering.)
+    """
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_conv import ShallowBilinear
+    from xvla.train.topology import (class_quadratics, quad_logits, atom_report,
+                                     faithfulness)
+
+    in_ch, hw = 3, 32
+    D = in_ch * hw * hw
+    archs = [("dense", 5, "global"), ("conv", 5, "spatial"), ("local", 5, "spatial")]
+    datasets = ["svhn", "cifar"]
+    agg = {}
+    for ds in datasets:
+        tl, vl = (_svhn_loaders(flatten=False) if ds == "svhn" else _cifar_loaders())
+        vol.commit()
+        xs, ys = [], []
+        for imgs, labels in vl:
+            xs.append(imgs); ys.append(labels)
+            if sum(t.shape[0] for t in xs) >= 4000:
+                break
+        x = torch.cat(xs)[:4000].cuda().double().reshape(-1, D)
+        y = torch.cat(ys)[:4000].cuda()
+        for mode, k, readout in archs:
+            name = mode if mode == "dense" else f"{mode}-{readout}"
+            accs, ratios, dtop, drand = [], [], [], []
+            for seed in range(seeds):
+                torch.manual_seed(seed)
+                model = ShallowBilinear(mode=mode, readout=readout, grid=8, width=48,
+                                        kernel=k, in_ch=in_ch, hw=hw, num_classes=10)
+                lr = 1e-3 if mode == "local" else 2e-3
+                acc = _train_shallow(model, tl, vl, epochs, lr=lr)
+                Q, l, a = class_quadratics(model, "cuda")
+                al, rl = atom_report(Q, in_ch, hw, "cuda")
+                f = faithfulness(Q, l, a, x, y, [16, 64], "cuda")
+                accs.append(acc); ratios.append(al / rl)
+                dtop.append(f["drop_top"][64]); drand.append(f["drop_random"][64])
+                del Q; torch.cuda.empty_cache()
+            def ms(v):
+                t = torch.tensor(v)
+                return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+            agg[f"{ds}/{name}"] = {"acc_mean_std": ms(accs),
+                                   "locality_ratio_mean_std": ms(ratios),
+                                   "drop_top64_mean_std": ms(dtop),
+                                   "drop_random64_mean_std": ms(drand)}
+            print(f"[{ds}/{name}] acc {ms(accs)} locality_ratio {ms(ratios)} "
+                  f"drop_top64 {ms(dtop)} drop_rand64 {ms(drand)}")
+
+    with open(f"{VOL_PATH}/topology_derisk.json", "w") as f:
+        json.dump(agg, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(agg, indent=2))
+    return agg
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def topology_sweep(epochs: int = 12):
+    """Experiment A (Q1/Q4): does TOPOLOGY, not convertibility, drive coherence?
+
+    Shallow single-bilinear SVHN classifiers whose class logit is exactly a
+    quadratic form in the pixels. Same ODT-style analysis on each; only the
+    linL/linR topology differs. For every architecture: accuracy, params, exact
+    reconstruction, eigen-atom locality vs random (coherence), and the drop-top vs
+    drop-random faithfulness battery (causality). Prediction: conv locality ≫
+    dense; peaks then falls with kernel K; `local` (unshared) isolates weight-
+    sharing from mere locality.
+    """
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_conv import ShallowBilinear
+    from xvla.train.topology import (class_quadratics, quad_logits, atom_report,
+                                     faithfulness)
+
+    tl, vl = _svhn_loaders(flatten=False)
+    vol.commit()
+    in_ch, hw = 3, 32
+    D = in_ch * hw * hw
+
+    xs, ys = [], []
+    for imgs, labels in vl:
+        xs.append(imgs); ys.append(labels)
+        if sum(t.shape[0] for t in xs) >= 4000:
+            break
+    x = torch.cat(xs)[:4000].cuda().double().reshape(-1, D)
+    y = torch.cat(ys)[:4000].cuda()
+    ranks = [1, 2, 4, 8, 16, 32, 64]
+
+    # (mode, kernel, readout): dense baseline; conv/local with global vs spatial
+    # readout. `global` conv is translation-invariant + capacity-starved; `spatial`
+    # restores capacity and breaks translation-invariance — the fair comparison.
+    archs = [("dense", 5, "global"),
+             ("conv", 5, "global"), ("conv", 5, "spatial"),
+             ("local", 5, "global"), ("local", 5, "spatial")]
+    results = {}
+    for mode, k, readout in archs:
+        tag = mode if mode == "dense" else f"{mode}-K{k}-{readout}"
+        name = tag
+        torch.manual_seed(0)
+        model = ShallowBilinear(mode=mode, readout=readout, grid=8, width=48, kernel=k,
+                                in_ch=in_ch, hw=hw, num_classes=10)
+        lr = 1e-3 if mode == "local" else 2e-3
+        acc = _train_shallow(model, tl, vl, epochs, lr=lr)
+        params = model.num_params()
+
+        Q, l, a = class_quadratics(model, "cuda")
+        # exact reconstruction of the quadratic form vs the module
+        with torch.no_grad():
+            ref = model.double().logits(x.reshape(-1, in_ch, hw, hw))
+        recon = (ref - quad_logits(Q, l, a, x)).abs().max().item()
+        quad_acc = (quad_logits(Q, l, a, x).argmax(-1) == y).float().mean().item()
+        atom_loc, rand_loc = atom_report(Q, in_ch, hw, "cuda")
+        faith = faithfulness(Q, l, a, x, y, ranks, "cuda")
+
+        results[name] = {
+            "mode": mode, "kernel": k, "readout": readout, "val_acc": round(acc, 4),
+            "params_M": round(params / 1e6, 4), "recon_max_abs": recon,
+            "quad_acc": round(quad_acc, 4),
+            "atom_locality": round(atom_loc, 4), "random_locality": round(rand_loc, 4),
+            "locality_ratio": round(atom_loc / rand_loc, 3),
+            "faithfulness": faith,
+        }
+        print(f"[{name}] acc {acc:.4f} params {params/1e6:.3f}M recon {recon:.1e} "
+              f"locality {atom_loc:.3f} (ratio {atom_loc/rand_loc:.2f}×) "
+              f"drop_top@16 {faith['drop_top'][16]:.3f} drop_rand@16 {faith['drop_random'][16]:.3f}")
+        del Q; torch.cuda.empty_cache()
+
+    with open(f"{VOL_PATH}/topology_sweep.json", "w") as f:
+        json.dump(results, f, indent=2)
+    vol.commit()
+    summary = {n: {"acc": r["val_acc"], "params_M": r["params_M"],
+                   "locality_ratio": r["locality_ratio"],
+                   "drop_top@16": r["faithfulness"]["drop_top"][16],
+                   "drop_random@16": r["faithfulness"]["drop_random"][16]}
+               for n, r in results.items()}
+    print("RESULT:", json.dumps(summary, indent=2))
+    return results
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def odt_vla_bond(steps: int = 3000):
+    """Experiment C-v2 (Q2 completion): is the policy nameable at the RIGHT bond?
+
+    C-v1 found action mechanisms are not linearly readable at the backbone INPUT
+    bond (they're built downstream by attention). Here we linearly probe semantic
+    quantities at the input bond vs the POST-attention action-query bond:
+      * grip x/y (in the state token) — should decode at both,
+      * target color/shape (in the instruction tokens, linear embed) — both,
+      * TARGET position x/y (the *bound* quantity: needs attention to bind the named
+        identity to its location) — should be LOW at input, HIGH post-attention.
+    If so, the classifier recipe DOES work for policies at a post-attention bond, and
+    the mechanism (target-position) is genuinely nameable there.
+    """
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.attention import causal_mask
+    from xvla.train.synth_vla import (make_batch, VOCAB, COLOR_TOK0, SHAPE_TOK0,
+                                      N_COLORS, N_SHAPES)
+    from xvla.train.train_lm import _lr_at, TrainConfig
+
+    torch.manual_seed(0)
+    dev = "cuda"
+    train_pool = make_batch(8192, dev)
+    probe_pool = make_batch(3000, dev)
+    cfg = VLAConfig(image_size=32, patch_size=4, vit_dim=128, vit_layers=3, vit_heads=8,
+                    vocab_size=VOCAB, max_instr_len=16, state_dim=8, n_embodiments=4,
+                    dim=256, n_layers=6, n_heads=8, action_horizon=4, action_dim=7)
+    model = ChiVLA(cfg).to(dev)
+    opt = torch.optim.AdamW(model.parameters(), lr=1e-3, betas=(0.9, 0.95), weight_decay=0.05)
+    tccfg = TrainConfig(train_bin="", val_bin="", lr=1e-3, max_steps=steps, warmup_frac=0.05)
+
+    def sample(pool, bs=256):
+        idx = torch.randint(pool["img"].shape[0], (bs,), device=dev)
+        return (pool["img"][idx], pool["instr"][idx], pool["state"][idx],
+                pool["embodiment"][idx], pool["actions"][idx])
+
+    model.train()
+    for step in range(steps + 1):
+        for g in opt.param_groups:
+            g["lr"] = _lr_at(step, tccfg)
+        img, instr, state, emb, act = sample(train_pool)
+        opt.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            _, loss = model(img, instr, state, emb, target_actions=act)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        opt.step()
+        if step % 500 == 0:
+            print(f"  step {step} mse {loss.item():.5f}")
+    model.eval()
+
+    H = cfg.action_horizon
+
+    @torch.no_grad()
+    def bonds(img, instr, state, emb):
+        B = img.shape[0]
+        vis = model._visual_tokens(img)
+        x = torch.cat([vis, model.bos.expand(B, -1, -1), model.tok_emb(instr),
+                       model.state_proj(state)[:, None],
+                       model.embodiment_emb(emb)[:, None],
+                       model.action_queries.expand(B, -1, -1)], dim=1)
+        x = x + model.pos_emb[:, :x.shape[1]]
+        inp = x.mean(dim=1)                                     # input-bond feature
+        mask = causal_mask(x.shape[1], device=x.device, dtype=x.dtype)
+        xo = model.norm_out(model.backbone(x, mask=mask))
+        out = xo[:, -H:].mean(dim=1)                           # post-attention action-query
+        return inp.double(), out.double()
+
+    # features + ground-truth targets on the probe pool
+    p = probe_pool
+    inp_f, out_f = [], []
+    for i in range(0, p["img"].shape[0], 512):
+        sl = slice(i, i + 512)
+        a, b = bonds(p["img"][sl], p["instr"][sl], p["state"][sl], p["embodiment"][sl])
+        inp_f.append(a); out_f.append(b)
+    inp_f = torch.cat(inp_f); out_f = torch.cat(out_f)
+    N = inp_f.shape[0]
+    tgt_x = (p["state"][:, 0] + H * p["actions"][:, 0, 0]).double()
+    tgt_y = (p["state"][:, 1] + H * p["actions"][:, 0, 1]).double()
+    grip_x = p["state"][:, 0].double(); grip_y = p["state"][:, 1].double()
+    tgt_col = (p["instr"][:, 2] - COLOR_TOK0).long()
+    tgt_shape = (p["instr"][:, 3] - SHAPE_TOK0).long()
+
+    ntr = int(0.7 * N)
+
+    def ridge_r2(F, y):
+        Ftr, Fte = F[:ntr], F[ntr:]; ytr, yte = y[:ntr], y[ntr:]
+        Fa = torch.cat([Ftr, torch.ones(ntr, 1, device=dev, dtype=torch.float64)], 1)
+        W = torch.linalg.solve(Fa.T @ Fa + 1e-2 * torch.eye(Fa.shape[1], device=dev, dtype=torch.float64),
+                               Fa.T @ ytr[:, None])
+        Fte_a = torch.cat([Fte, torch.ones(N - ntr, 1, device=dev, dtype=torch.float64)], 1)
+        pred = (Fte_a @ W)[:, 0]
+        ss_res = ((yte - pred) ** 2).sum(); ss_tot = ((yte - yte.mean()) ** 2).sum()
+        return (1 - ss_res / ss_tot).item()
+
+    def lin_acc(F, y, ncls):
+        Ftr, Fte = F[:ntr], F[ntr:]; ytr, yte = y[:ntr], y[ntr:]
+        Y = torch.zeros(ntr, ncls, device=dev, dtype=torch.float64); Y[torch.arange(ntr), ytr] = 1
+        Fa = torch.cat([Ftr, torch.ones(ntr, 1, device=dev, dtype=torch.float64)], 1)
+        W = torch.linalg.solve(Fa.T @ Fa + 1e-2 * torch.eye(Fa.shape[1], device=dev, dtype=torch.float64),
+                               Fa.T @ Y)
+        Fte_a = torch.cat([Fte, torch.ones(N - ntr, 1, device=dev, dtype=torch.float64)], 1)
+        return ((Fte_a @ W).argmax(1) == yte).float().mean().item()
+
+    probe = {
+        "target_x_R2":   {"input": round(ridge_r2(inp_f, tgt_x), 3),  "post_attn": round(ridge_r2(out_f, tgt_x), 3)},
+        "target_y_R2":   {"input": round(ridge_r2(inp_f, tgt_y), 3),  "post_attn": round(ridge_r2(out_f, tgt_y), 3)},
+        "grip_x_R2":     {"input": round(ridge_r2(inp_f, grip_x), 3), "post_attn": round(ridge_r2(out_f, grip_x), 3)},
+        "grip_y_R2":     {"input": round(ridge_r2(inp_f, grip_y), 3), "post_attn": round(ridge_r2(out_f, grip_y), 3)},
+        "target_color_acc": {"input": round(lin_acc(inp_f, tgt_col, N_COLORS), 3),  "post_attn": round(lin_acc(out_f, tgt_col, N_COLORS), 3)},
+        "target_shape_acc": {"input": round(lin_acc(inp_f, tgt_shape, N_SHAPES), 3), "post_attn": round(lin_acc(out_f, tgt_shape, N_SHAPES), 3)},
+    }
+    with open(f"{VOL_PATH}/odt_vla_bond.json", "w") as f:
+        json.dump(probe, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(probe, indent=2))
+    return probe
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def odt_vla_action(steps: int = 3000):
+    """Experiment C (Q2): what does "interpretable" mean for a POLICY?
+
+    Trains the synthetic reach χ-VLA, then does ODT conditioned on each ACTION
+    dimension at the backbone-input bond (downstream = full causal transformer +
+    head). Tests three things that define an *action* coherence axis:
+      (i)   action-resolved: top-k subspaces of the x-step vs y-step Grams differ
+            (each action primitive selects its own mechanisms);
+      (ii)  causal: truncating the bond onto that action's top-k GLOBAL directions
+            keeps its MSE far better than a random k-subspace;
+      (iii) nameable: the top x-mechanism's bond projection correlates with the
+            ground-truth target x-position (recoverable as grip + H·step), i.e. the
+            mechanism literally *is* "where is the target in x".
+    """
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.attention import causal_mask
+    from xvla.train.synth_vla import make_batch, VOCAB
+    from xvla.train.train_lm import _lr_at, TrainConfig
+    from xvla.train.odt import random_projector
+
+    torch.manual_seed(0)
+    dev = "cuda"
+    train_pool = make_batch(8192, dev)
+    test_pool = make_batch(2048, dev)
+    cfg = VLAConfig(image_size=32, patch_size=4, vit_dim=128, vit_layers=3, vit_heads=8,
+                    vocab_size=VOCAB, max_instr_len=16, state_dim=8, n_embodiments=4,
+                    dim=256, n_layers=6, n_heads=8, action_horizon=4, action_dim=7)
+    model = ChiVLA(cfg).to(dev)
+    opt = torch.optim.AdamW(model.parameters(), lr=1e-3, betas=(0.9, 0.95), weight_decay=0.05)
+    tccfg = TrainConfig(train_bin="", val_bin="", lr=1e-3, max_steps=steps, warmup_frac=0.05)
+
+    def sample(pool, bs=256):
+        idx = torch.randint(pool["img"].shape[0], (bs,), device=dev)
+        return (pool["img"][idx], pool["instr"][idx], pool["state"][idx],
+                pool["embodiment"][idx], pool["actions"][idx])
+
+    model.train()
+    for step in range(steps + 1):
+        for g in opt.param_groups:
+            g["lr"] = _lr_at(step, tccfg)
+        img, instr, state, emb, act = sample(train_pool)
+        opt.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            _, loss = model(img, instr, state, emb, target_actions=act)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        opt.step()
+        if step % 500 == 0:
+            print(f"  step {step} mse {loss.item():.5f}")
+    model.eval()
+    D = cfg.dim
+
+    def to_bond(img, instr, state, emb):
+        B = img.shape[0]
+        vis = model._visual_tokens(img)
+        x = torch.cat([vis, model.bos.expand(B, -1, -1), model.tok_emb(instr),
+                       model.state_proj(state)[:, None],
+                       model.embodiment_emb(emb)[:, None],
+                       model.action_queries.expand(B, -1, -1)], dim=1)
+        return x + model.pos_emb[:, :x.shape[1]]
+
+    def from_bond(x, P=None):
+        if P is not None:
+            x = x @ P.T
+        mask = causal_mask(x.shape[1], device=x.device, dtype=x.dtype)
+        x = model.norm_out(model.backbone(x, mask=mask))
+        return model.action_head(x[:, -cfg.action_horizon:])       # (B,H,7)
+
+    # ---- action-conditioned Grams at the bond ----
+    grams = {}
+    for a in (0, 1, 6):
+        G = torch.zeros(D, D, device=dev, dtype=torch.float64)
+        n = 0
+        for i in range(0, 1024, 256):
+            img, instr, state, emb, _ = sample(test_pool, 256)
+            xb = to_bond(img, instr, state, emb).detach().requires_grad_(True)
+            act = from_bond(xb)
+            gsel, = torch.autograd.grad(act[:, :, a].sum(), xb)
+            g = gsel.reshape(-1, D).double()
+            G += g.T @ g; n += g.shape[0]
+        grams[a] = G / n
+
+    def topk_proj(G, k):
+        ev, V = torch.linalg.eigh(G)
+        return V.flip(1)[:, :k]
+
+    # ---- (ii) causal faithfulness per action dim ----
+    tp = test_pool
+    Xb = to_bond(tp["img"], tp["instr"], tp["state"], tp["embodiment"]).detach()
+    Atrue = tp["actions"]
+    ks = [1, 2, 4, 8, 16, 32, 64]
+    rng = torch.Generator(device=dev).manual_seed(0)
+
+    @torch.no_grad()
+    def dim_mse(P, a):
+        tot = n = 0.0
+        for i in range(0, Xb.shape[0], 512):
+            pred = from_bond(Xb[i:i + 512], P)
+            tot += (pred[:, :, a] - Atrue[i:i + 512, :, a]).pow(2).sum().item()
+            n += pred[:, :, a].numel()
+        return tot / n
+
+    faith = {}
+    for a, name in [(0, "x"), (1, "y")]:
+        Vg = topk_proj(grams[a], 64)
+        curve_g, curve_r = {}, {}
+        for k in ks:
+            Pg = (Vg[:, :k] @ Vg[:, :k].T).float()
+            curve_g[k] = dim_mse(Pg, a)
+            curve_r[k] = dim_mse(random_projector(D, k, dev, rng).float(), a)
+        faith[name] = {"global": curve_g, "random": curve_r}
+
+    # ---- (i) action-resolution: subspace overlap x vs y ----
+    def overlap(Ga, Gb, k):
+        Va, Vb = topk_proj(Ga, k), topk_proj(Gb, k)
+        return (torch.trace((Va @ Va.T) @ (Vb @ Vb.T)) / k).item()   # 0..1
+    resolution = {k: {"x_vs_y": round(overlap(grams[0], grams[1], k), 3),
+                      "random_baseline": round(k / D, 3)} for k in [4, 8, 16, 32]}
+
+    # ---- (iii) nameable: top mechanism vs ground-truth target position ----
+    H = cfg.action_horizon
+    tgt_x = tp["state"][:, 0] + H * Atrue[:, 0, 0]
+    tgt_y = tp["state"][:, 1] + H * Atrue[:, 0, 1]
+    bm = Xb.mean(dim=1).double()                                     # (B, D) pooled bond
+    def corr(v, t):
+        p = (bm @ v)
+        p = (p - p.mean()) / p.std().clamp_min(1e-9)
+        t = (t.double() - t.double().mean()) / t.double().std().clamp_min(1e-9)
+        return (p * t).mean().abs().item()
+    vx, vy = topk_proj(grams[0], 1)[:, 0], topk_proj(grams[1], 1)[:, 0]
+    naming = {
+        "xmech_vs_targetX": round(corr(vx, tgt_x), 3),
+        "xmech_vs_targetY": round(corr(vx, tgt_y), 3),
+        "ymech_vs_targetY": round(corr(vy, tgt_y), 3),
+        "ymech_vs_targetX": round(corr(vy, tgt_x), 3),
+    }
+
+    result = {"faithfulness": faith, "action_resolution": resolution, "naming": naming}
+    with open(f"{VOL_PATH}/odt_vla_action.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def odt_vit(epochs: int = 15):
+    """Experiment B (Q3): does causal + coherent ODT structure survive ATTENTION on
+    the real softmax-free χ-ViT?
+
+    A deep attention model is not a single quadratic, so we use the data-driven
+    output-sensitivity Gram at the patch bond (as in Finding 19 for a char LM), whose
+    downstream crosses every attention layer. We test (i) faithfulness: truncate the
+    bond onto the top-k GLOBAL directions vs a RANDOM k-subspace and measure accuracy
+    (global ≫ random ⇒ causal low-rank structure survives attention); (ii) coherence:
+    project the top global directions through the patch embedding to pixel patches.
+    """
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.vit import ViTConfig
+    from xvla.train.train_vit import ViTTrainConfig, train_vit
+    from xvla.train.odt import random_projector
+
+    tl, vl = _svhn_loaders()
+    vol.commit()
+    mcfg = ViTConfig(image_size=32, patch_size=4, dim=128, n_layers=4, n_heads=4,
+                     num_classes=10, norm="per_token", qk_norm="per_token", attn="bilinear")
+    h = train_vit(mcfg, ViTTrainConfig(epochs=epochs), tl, vl)
+    model = h["model"].cuda().eval()
+    D = mcfg.dim
+    print(f"χ-ViT dim={D} L={mcfg.n_layers}: acc {h['best_acc']:.4f}")
+
+    def bond(imgs):
+        x = model.patch(imgs).flatten(2).transpose(1, 2) + model.pos_emb
+        if model.use_cls:
+            x = torch.cat([model.cls.expand(imgs.shape[0], -1, -1), x], dim=1)
+        return x
+
+    def from_bond(x, P=None):
+        if P is not None:
+            x = x @ P.T
+        x = model.blocks(x); x = model.norm_out(x)
+        pooled = x[:, 0] if model.use_cls else x.mean(dim=1)
+        return model.head(pooled)
+
+    # gather calibration + test tensors
+    xs, ys = [], []
+    for imgs, labels in vl:
+        xs.append(imgs); ys.append(labels)
+        if sum(t.shape[0] for t in xs) >= 4000:
+            break
+    X = torch.cat(xs)[:4000].cuda(); Y = torch.cat(ys)[:4000].cuda()
+
+    # data-driven global Gram at the bond: G = E_tokens[ g gᵀ ], g = ∂(true-class logit)/∂h
+    G = torch.zeros(D, D, device="cuda", dtype=torch.float64)
+    ntok = 0
+    for i in range(0, 2000, 200):
+        imgs = X[i:i + 200]; y = Y[i:i + 200]
+        hb = bond(imgs).detach().requires_grad_(True)
+        logits = from_bond(hb)
+        sel = logits.gather(1, y[:, None]).sum()
+        g, = torch.autograd.grad(sel, hb)                    # (B, N, D)
+        g = g.reshape(-1, D).double()
+        G += g.T @ g; ntok += g.shape[0]
+    G /= ntok
+    evals, evecs = torch.linalg.eigh(G)
+    evecs = evecs.flip(1)                                     # top global directions first
+
+    @torch.no_grad()
+    def acc(P):
+        cor = tot = 0
+        for i in range(0, X.shape[0], 500):
+            lg = from_bond(bond(X[i:i + 500]), P)
+            cor += (lg.argmax(-1) == Y[i:i + 500]).sum().item(); tot += 500
+        return cor / tot
+
+    ks = [1, 2, 4, 8, 16, 32, 64, 128]
+    rng = torch.Generator(device="cuda").manual_seed(0)
+    glob, rand = {}, {}
+    for k in ks:
+        Vk = evecs[:, :k].double()
+        glob[k] = acc((Vk @ Vk.T).float())
+        rand[k] = acc(random_projector(D, k, "cuda", rng).float())
+        print(f"  k={k:3d}  global {glob[k]:.3f}  random {rand[k]:.3f}")
+
+    # coherence: top global directions → pixel patches through the patch embedding
+    pw = model.patch.weight.detach().double()                # (D, 3, ps, ps)
+    ps = mcfg.patch_size
+    def patch_locality(v):
+        pat = torch.einsum("d,dchw->chw", v, pw)             # (3, ps, ps)
+        e = (pat ** 2).sum(0).flatten()
+        kk = max(1, int(0.25 * e.numel()))
+        return (torch.topk(e, kk).values.sum() / e.sum().clamp_min(1e-30)).item(), pat
+    rand_loc = []
+    for _ in range(200):
+        v = torch.randn(D, device="cuda", dtype=torch.float64)
+        rand_loc.append(patch_locality(v)[0])
+    rand_loc = sum(rand_loc) / len(rand_loc)
+    atoms, atom_loc = [], []
+    for j in range(6):
+        loc, pat = patch_locality(evecs[:, j].double())
+        atom_loc.append(loc); atoms.append(pat.float())
+    _save_atom_grid([atoms], f"{VOL_PATH}/odt_vit_atoms.png", row_labels=["patch"])
+    atom_loc = sum(atom_loc) / len(atom_loc)
+
+    result = {
+        "acc": round(h["best_acc"], 4), "dim": D, "layers": mcfg.n_layers,
+        "global_curve": glob, "random_curve": rand,
+        "global_beats_random_at": [k for k in ks if glob[k] > rand[k] + 1e-4],
+        "patch_atom_locality": round(atom_loc, 4),
+        "patch_random_locality": round(rand_loc, 4),
+        "patch_locality_ratio": round(atom_loc / rand_loc, 3),
+    }
+    with open(f"{VOL_PATH}/odt_vit.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
     return result
 
 
