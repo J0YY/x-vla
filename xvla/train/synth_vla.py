@@ -46,10 +46,13 @@ def make_batch(bs, device, k_objects=3, instr_len=16, shuffle_instr=False, seed_
                                        indexing="ij"), -1).reshape(-1, 2)  # 16 pairs
     tgt_pos = torch.zeros(bs, 2, device=device)
     all_pos = torch.zeros(bs, k_objects, 2, device=device)
+    obj_pairs = torch.zeros(bs, k_objects, 2, device=device, dtype=torch.long)  # (color,shape)/obj
+    tgt_idx = torch.zeros(bs, device=device, dtype=torch.long)
     instr = torch.full((bs, instr_len), PAD, device=device, dtype=torch.long)
     for b in range(bs):
         pj = pairs[torch.randperm(16, device=device)[:k_objects]]
         cells = torch.randperm(GRID * GRID, device=device)[:k_objects]
+        obj_pairs[b] = pj
         for o in range(k_objects):
             col, sh = int(pj[o, 0]), int(pj[o, 1])
             cy, cx = int(cells[o] // GRID), int(cells[o] % GRID)
@@ -58,6 +61,7 @@ def make_batch(bs, device, k_objects=3, instr_len=16, shuffle_instr=False, seed_
             pos = torch.tensor([(cx + 0.5) / GRID, (cy + 0.5) / GRID], device=device)
             all_pos[b, o] = pos
         tgt = int(torch.randint(k_objects, (1,), device=device))
+        tgt_idx[b] = tgt
         tgt_pos[b] = all_pos[b, tgt]
         col, sh = int(pj[tgt, 0]), int(pj[tgt, 1])
         instr[b, :4] = torch.tensor([BOS, REACH, COLOR_TOK0 + col, SHAPE_TOK0 + sh], device=device)
@@ -87,4 +91,5 @@ def make_batch(bs, device, k_objects=3, instr_len=16, shuffle_instr=False, seed_
     blind_mse = (blind_actions - actions).pow(2).mean().item()
 
     return dict(img=img, instr=instr, state=state, embodiment=embodiment,
-                actions=actions, blind_mse=blind_mse)
+                actions=actions, blind_mse=blind_mse,
+                all_pos=all_pos, obj_pairs=obj_pairs, tgt_idx=tgt_idx)
