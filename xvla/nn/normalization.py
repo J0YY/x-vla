@@ -216,6 +216,97 @@ class HomotopyNorm(nn.Module):
         return self.running_rms + self.eps
 
 
+class RationalNorm(nn.Module):
+    """Per-instance normalization that stays inside a FOLDABLE tensor-network class.
+
+    The strict foldable model used a frozen SCALAR (RmsBatchNorm), which cannot capture
+    per-instance magnitude variation (a real capability tax). This recovers exact
+    per-instance normalization while remaining foldable, via the rational-TN result
+    (DEVLOG cont.31 / rational_norm_proto.py):
+
+      * ``variant="meansq"`` : n(x) = x / (mean(x²)+ε).  Exactly RATIONAL (no √) →
+        folds projectively to P(x)/Q(x).  But it inverts magnitude (out-RMS ∝ 1/in-RMS),
+        so it is a different, more aggressive normalization than RMSNorm.
+      * ``variant="nr_rsqrt"`` (default) : x · y, where y approximates 1/√(mean(x²)) by
+        ``nr_steps`` Newton-Raphson iterations  y ← y·(1.5 − 0.5·ms·y²)  from a FROZEN
+        constant initial guess y₀ = 1/√s₀ (s₀ = running mean-square, EMA in train, frozen
+        at export).  Each step is polynomial in ms (hence in x), so the map folds as an
+        ordinary polynomial TN; NR converges quadratically to true 1/√, so it BEHAVES like
+        RMSNorm (unit-RMS) — capability should match, unlike meansq or the frozen scalar.
+        Accurate across the measured thin activation tail (ρ≈2.8, DEVLOG Finding 18).
+
+    decode/export note: with s₀ frozen the output is a fixed polynomial in x → foldable;
+    ``running_ms`` is the only state, mirroring RmsBatchNorm's running scale.
+    """
+
+    def __init__(self, variant: str = "pade", nr_steps: int = 2,
+                 momentum: float = 0.99, eps: float = 1e-6,
+                 v_lo: float = 0.1, v_hi: float = 10.0, deg: int = 2):
+        super().__init__()
+        if variant not in ("nr_rsqrt", "meansq", "pade"):
+            raise ValueError(f"RationalNorm variant must be 'pade', 'nr_rsqrt' or 'meansq', got {variant!r}")
+        self.variant = variant
+        self.nr_steps = nr_steps
+        self.momentum = momentum
+        self.eps = eps
+        self.deg = deg
+        self.register_buffer("running_ms", torch.ones(()))
+        self.register_buffer("initialized", torch.zeros((), dtype=torch.bool))
+        self.frozen = False
+        if variant == "pade":
+            # Fit a FIXED [deg/deg] rational r(v)=P(v)/Q(v) ≈ v^{-1/2} on a log-grid over the
+            # operating range [v_lo,v_hi] (v = ms/s₀). Coefficients are constants → the forward
+            # is rational in x → folds to a rational tensor network P(x)/Q(x) (DEVLOG cont.31).
+            # Accurate across the whole range (unlike nr_rsqrt's frozen-init Newton basin) and
+            # bounded (unlike meansq's magnitude inversion): behaves like RMSNorm's 1/√.
+            import numpy as _np
+            v = _np.exp(_np.linspace(_np.log(v_lo), _np.log(v_hi), 400))
+            t = v ** -0.5
+            # rows: [1,v,...,v^deg,  -t·v,...,-t·v^deg] · [a_0..a_deg, b_1..b_deg] = t   (b_0≡1)
+            cols = [v ** k for k in range(deg + 1)] + [-t * v ** k for k in range(1, deg + 1)]
+            A = _np.stack(cols, axis=1)
+            coef, *_ = _np.linalg.lstsq(A, t, rcond=None)
+            a = coef[:deg + 1]
+            b = _np.concatenate([[1.0], coef[deg + 1:]])
+            self.register_buffer("pa", torch.tensor(a, dtype=torch.float32))   # numerator coeffs
+            self.register_buffer("pb", torch.tensor(b, dtype=torch.float32))   # denominator coeffs (b0=1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        xf = x.float()
+        ms = xf.pow(2).mean(dim=-1, keepdim=True) + self.eps          # (..., 1) per-token mean-square
+        if self.variant == "meansq":
+            return (xf / ms).to(x.dtype)
+        # running mean-square scale s₀ (EMA in train, frozen at export → a constant)
+        if self.training and not self.frozen:
+            with torch.no_grad():
+                bm = ms.mean()
+                if not bool(self.initialized):
+                    self.running_ms.copy_(bm); self.initialized.fill_(True)
+                else:
+                    self.running_ms.mul_(self.momentum).add_((1.0 - self.momentum) * bm)
+        s0 = self.running_ms.clamp_min(1e-12)
+        if self.variant == "pade":
+            v = ms / s0                                               # normalized mean-square
+            P = sum(self.pa[k] * v ** k for k in range(self.deg + 1))
+            Q = sum(self.pb[k] * v ** k for k in range(self.deg + 1))
+            inv_sqrt = (P / Q) * torch.rsqrt(s0)                      # ≈ 1/√ms, rational, bounded
+            return (xf * inv_sqrt).to(x.dtype)
+        # nr_rsqrt: polynomial (Newton) approx of 1/√ms — accurate only near s₀ (tail diverges)
+        y = torch.rsqrt(s0).expand_as(ms).clone()
+        for _ in range(self.nr_steps):
+            y = y * (1.5 - 0.5 * ms * y * y)
+        return (xf * y).to(x.dtype)
+
+    @torch.no_grad()
+    def freeze(self) -> None:
+        self.frozen = True
+
+    @property
+    def scale(self) -> torch.Tensor:
+        """Frozen scale s₀ (the NR initial-guess anchor); the fold uses the polynomial in ms."""
+        return self.running_ms + self.eps
+
+
 def make_norm(mode: str, momentum: float = 0.99, eps: float = 1e-6) -> nn.Module:
     """Factory for a normalization site.
 
@@ -230,6 +321,12 @@ def make_norm(mode: str, momentum: float = 0.99, eps: float = 1e-6) -> nn.Module
         return RmsBatchNorm(momentum=momentum, eps=eps)
     if mode == "homotopy":
         return HomotopyNorm(momentum=momentum, eps=eps)
+    if mode in ("rational", "pade"):
+        return RationalNorm(variant="pade", momentum=momentum, eps=eps)
+    if mode == "nr_rsqrt":
+        return RationalNorm(variant="nr_rsqrt", momentum=momentum, eps=eps)
+    if mode == "meansq":
+        return RationalNorm(variant="meansq", momentum=momentum, eps=eps)
     if mode == "none":
         return nn.Identity()
     raise ValueError(f"unknown norm mode {mode!r}")

@@ -25,7 +25,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-from xvla.nn.normalization import RmsBatchNorm, HomotopyNorm
+from xvla.nn.normalization import RmsBatchNorm, HomotopyNorm, RationalNorm
 
 
 def causal_mask(n: int, device=None, dtype=torch.float32) -> torch.Tensor:
@@ -107,8 +107,8 @@ class BilinearAttention(nn.Module):
         #   "none"       – raw projections.
         if qk_rbn is not None:  # back-compat: qk_rbn True/False overrides qk_norm
             qk_norm = "scalar_rbn" if qk_rbn else "none"
-        if qk_norm not in ("per_token", "scalar_rbn", "homotopy", "none"):
-            raise ValueError("qk_norm must be 'per_token', 'scalar_rbn', 'homotopy', or 'none'")
+        if qk_norm not in ("per_token", "scalar_rbn", "homotopy", "none", "rational"):
+            raise ValueError("qk_norm must be 'per_token', 'scalar_rbn', 'homotopy', 'rational', or 'none'")
         self.qk_norm = qk_norm
         if qk_norm == "scalar_rbn":
             self.rbn_q1 = RmsBatchNorm(momentum=rbn_momentum)
@@ -123,6 +123,14 @@ class BilinearAttention(nn.Module):
             self.rbn_k1 = HomotopyNorm(momentum=rbn_momentum)
             self.rbn_q2 = HomotopyNorm(momentum=rbn_momentum)
             self.rbn_k2 = HomotopyNorm(momentum=rbn_momentum)
+        elif qk_norm == "rational":
+            # FOLDABLE per-token QK-norm over head_dim via the tail-SAFE fitted rational
+            # (pade) 1/sqrt — NOT the old fixed-s0 Newton (tail-divergent, DEVLOG cont.45).
+            # Reuses the op-validated RationalNorm (matches RMSNorm <1% incl the rho~2.8 tail).
+            self.rn_q1 = RationalNorm(variant="pade", momentum=rbn_momentum)
+            self.rn_k1 = RationalNorm(variant="pade", momentum=rbn_momentum)
+            self.rn_q2 = RationalNorm(variant="pade", momentum=rbn_momentum)
+            self.rn_k2 = RationalNorm(variant="pade", momentum=rbn_momentum)
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -150,6 +158,12 @@ class BilinearAttention(nn.Module):
             def rms(t):  # RMS-norm over head_dim: ‖t_i‖² = d_h
                 return t * torch.rsqrt(t.pow(2).mean(dim=-1, keepdim=True) + self.norm_eps)
             q1, k1, q2, k2 = rms(q1), rms(k1), rms(q2), rms(k2)
+        elif self.qk_norm == "rational":
+            # FOLDABLE per-token QK-norm over head_dim via the tail-safe fitted rational (pade)
+            # 1/sqrt — the rational-class fix for the attention crux (Finding 16), tail-safe
+            # (unlike the old fixed-s0 Newton). RationalNorm normalizes over the last dim = head_dim.
+            q1, k1 = self.rn_q1(q1), self.rn_k1(k1)
+            q2, k2 = self.rn_q2(q2), self.rn_k2(k2)
         elif self.qk_norm == "scalar_rbn":
             q1, k1 = self.rbn_q1(q1), self.rbn_k1(k1)
             q2, k2 = self.rbn_q2(q2), self.rbn_k2(k2)
