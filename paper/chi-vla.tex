@@ -14,6 +14,7 @@
 \usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{caption}
+\usepackage{float}
 
 \newcommand{\chivla}{$\chi$-VLA}
 \newcommand{\chivit}{$\chi$-ViT}
@@ -68,10 +69,17 @@ bond-placement principle, extending prior bilinear-interpretability work. Honest
 interpretability payoff is a causal, rankable, topology-tunable basis and a locality
 \emph{metric}, not yet a gallery of nameable features. Our strongest closed-loop checkpoint
 reaches $94.2\%\pm1.2\%$ on eight of ten LIBERO-Object tasks, using a $600$-step cap and
-per-token RMS normalization. This is not a matched full-suite result. The OpenVLA study
-reports $88.4\%\pm0.8\%$ for OpenVLA and $92.5\%\pm0.7\%$ for Diffusion Policy over all ten
-tasks with a $280$-step cap \cite{openvla}. We therefore make no state-of-the-art claim.
-Convertibility, it turns out, is nearly free.
+per-token RMS normalization, its one remaining non-foldable operator. Replacing that operator
+with the rational per-instance norm and retraining from scratch makes every learned site a
+polynomial or rational tensor primitive by construction. This model reaches
+$\mathbf{94.5\%}$ ($189/200$) on all ten LIBERO-Object tasks in one seed. No capability loss
+is visible in this point estimate, although the per-token and rational evaluations differ in
+suite coverage and seed count. The OpenVLA study reports $88.4\%\pm0.8\%$ for OpenVLA and
+$92.5\%\pm0.7\%$ for Diffusion Policy over all ten tasks with a $280$-step cap
+\cite{openvla}. Our evaluation uses a looser $600$-step cap and fewer trials, so we make no
+state-of-the-art claim. A materialized whole-policy rational export also remains to be
+verified. The result establishes the narrower claim that rational tensor construction is
+compatible with competitive closed-loop control.
 \end{abstract}
 
 % ============================================================================
@@ -497,7 +505,9 @@ rather than rational. We therefore implement either the exact mean-square varian
 rational approximation of $1/\sqrt{\cdot}$. The latter is an approximation to RMSNorm, while
 its deployed map is exactly a rational function and can be represented by a rational tensor
 network. In operator tests it differs from per-token RMSNorm by less than $1\%$ over the
-measured activation range. Its end-to-end closed-loop evaluation is still in progress.
+measured activation range. Retraining the complete policy with this rational operator at every
+block and attention QK normalization site reaches $94.5\%$ ($189/200$) over all ten
+LIBERO-Object tasks in one seed (\S\ref{sec:substrate}).
 
 % ============================================================================
 \section{Exact global decomposition (ODT), in depth}
@@ -821,7 +831,8 @@ motivates causal over correlational interpretation.
 \label{subsec:realpolicyodt}
 
 The results above are on components (a classifier, a ViT, a synthetic reach policy). We close
-the loop on the actual object: the trained, fully-foldable, closed-loop LIBERO-Object policy
+the loop on the actual object: the trained, rational-by-construction, closed-loop
+LIBERO-Object policy
 (rational per-instance norm throughout, \S\ref{subsec:rationalnorm}; capability numbers in
 \S\ref{sec:substrate}). We build a data-driven output-sensitivity Gram at the
 \emph{visual-patch} bond (downstream of the bond: the entire causal bilinear-attention backbone
@@ -875,23 +886,23 @@ grounding gap on real LIBERO-Object behaviour cloning.
 \small
 \begin{tabular}{@{}p{0.23\textwidth}p{0.70\textwidth}@{}}
 \toprule
-\textbf{Part} & \textbf{Configuration of the $94.2\%$ run} \\
+\textbf{Part} & \textbf{Configuration of the $94.2\%$ and $94.5\%$ runs} \\
 \midrule
 Observation & One $64\times64$ agent-view RGB image, rotated $180^\circ$ into the training convention, plus an $8$-D robot state and one instruction \\
 Vision & One four-layer \chivit, $8\times8$ patches, $64$ visual tokens, width $192$, eight heads, bilinear attention and FFN rank $576$ \\
 Fusion & A single linear projection $192\to384$, with no second vision branch and no cross-bilinear projector \\
 Joint sequence & $64$ visual $+$ BOS $+$ $32$ instruction $+$ state $+$ embodiment $+$ eight action-query tokens, $107$ tokens total \\
-Backbone & Eight causal $\chi$-transformer layers, width $384$, twelve heads, bilinear attention, bilinear FFN rank $1152$, per-token RMS normalization \\
+Backbone & Eight causal $\chi$-transformer layers, width $384$, twelve heads, bilinear attention, bilinear FFN rank $1152$, with per-token RMS normalization for the $94.2\%$ run and rational normalization for the $94.5\%$ run \\
 Action output & One shared linear map $384\to7$ on each of eight action-query states, producing an $8\times7$ continuous action chunk \\
 Size & $20{,}137{,}352$ learned parameters with a $26$-token instruction vocabulary \\
 Training & $66{,}984$ demonstration frames, $40{,}000$ steps, batch $256$, AdamW, peak learning rate $8\times10^{-4}$, $5\%$ warmup, cosine decay to $8\times10^{-5}$, weight decay $0.05$, gradient clipping $1.0$, bfloat16, and EMA $0.999$ \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Exact architecture and training recipe for the reported $94.2\%$ checkpoint.}
-This run is simpler than the general architecture in Fig.~\ref{fig:arch-detail}. It uses one
-vision branch and a linear action head. Its per-token RMS normalization is the only learned-map
-operation that is not yet in the strict polynomial or rational export used by our exact
-foldability claim.}
+\caption{\textbf{Exact architecture and training recipe for the reported closed-loop
+checkpoints.} Both runs are simpler than the general architecture in
+Fig.~\ref{fig:arch-detail}. They use one vision branch and a linear action head. The
+$94.5\%$ run changes the block and attention QK normalization sites from per-token RMS to the
+fixed rational operator in \S\ref{subsec:rationalnorm}.}
 \label{tab:closedloop-config}
 \end{table}
 
@@ -901,33 +912,47 @@ $90.8\%\pm0.3\%$. The corrected local evaluation uses canonical initial states, 
 wait, weight EMA, $20$ trials per task, and a $600$-step post-settle cap. It evaluates the
 first eight of the ten LIBERO-Object tasks.
 
-\begin{table}[t]
+Earlier high-variance readings came from a weaker measurement and training recipe, including
+five trials per task, non-canonical resets, single-seed reporting, and only $6$k to $15$k
+training steps. The stronger linear-head result shows that the multimodal head was not the
+capability engine in this setting. It remains a representational contribution. The
+capability-first checkpoint above uses per-token RMS normalization, its one remaining
+non-foldable operation. \textbf{We then trained the same recipe with the rational per-instance
+norm throughout} (block norm and the attention QK norm both the fitted $[2/2]$ Pad\'e
+$1/\sqrt{\cdot}$ of \S\ref{subsec:rationalnorm}), making every learned site a polynomial or
+rational tensor primitive by construction. Trained from scratch, this model reaches, at $20$
+trials/task: $\mathbf{189/200 = 94.5\%}$ (soup $17/20$, cream cheese $19/20$, salad dressing
+$20/20$, bbq sauce $18/20$, ketchup $20/20$, tomato sauce $18/20$, butter $20/20$, milk
+$18/20$, chocolate pudding $20/20$, orange juice $19/20$). The first seven tasks completed
+before a six-hour function timeout. We resumed tasks eight through ten from the same saved
+checkpoint with task-indexed evaluation seeds, without retraining. This single-seed point
+estimate is consistent with the $3$-seed per-token mean ($94.2\%\pm1.2\%$), now over the full
+ten-task suite. Because suite coverage and seed count differ, it is not a matched estimate of
+the normalization cost. It nevertheless shows no visible capability loss from using rational
+normalization. Multi-seed replication and a materialized whole-policy rational export remain
+open.
+
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 \textbf{Method} & \textbf{Tasks} & \textbf{Step cap} & \textbf{Trials/task} & \textbf{Seeds} & \textbf{Success} \\
 \midrule
-\chivla\ linear head, this work & $8/10$ & $600$ & $20$ & $3$ & $\mathbf{94.2\%\pm1.2\%}$ \\
+\chivla\ linear, per-token RMS & $8/10$ & $600$ & $20$ & $3$ & $94.2\%\pm1.2\%$ \\
+\chivla\ linear, rational norm & $10/10$ & $600$ & $20$ & $1$ & $\mathbf{94.5\%}$ \\
 OpenVLA-7B \cite{openvla} & $10/10$ & $280$ & $50$ & $3$ & $88.4\%\pm0.8\%$ \\
 Diffusion Policy \cite{openvla} & $10/10$ & $280$ & $50$ & $3$ & $92.5\%\pm0.7\%$ \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Why $94.2\%$ is not a matched win over the published references.} The
-$92.5\%$ number in the OpenVLA paper belongs to Diffusion Policy, not OpenVLA. Our result is
-$1.7$ points above that value and $5.8$ points above OpenVLA numerically, but it omits two
-tasks, allows more than twice as many environment steps, and uses fewer trials. It therefore
-supports capability on our measured setting, not a full-suite state-of-the-art claim.}
+\caption{\textbf{Why the $\chi$-VLA results are not matched wins over the published
+references.} The $92.5\%$ number in the OpenVLA paper belongs to Diffusion Policy, not
+OpenVLA. The rational run covers the full suite and is numerically above both references, but
+it allows more than twice as many environment steps, uses fewer trials, and has one training
+seed. Both $\chi$-VLA rows therefore support capability in their measured settings, not a
+state-of-the-art claim.}
 \label{tab:closedloop-comparison}
 \end{table}
-
-Earlier high-variance readings came from a weaker measurement and training recipe, including
-five trials per task, non-canonical resets, single-seed reporting, and only $6$k to $15$k
-training steps. The stronger linear-head result shows that the multimodal head was not the
-capability engine in this setting. It remains a representational contribution. The
-capability-first checkpoint uses per-token RMS normalization, while the rational-normalized
-closed-loop run is still being evaluated. Bilinear attention, bilinear FFNs, patch embedding,
-and the linear head already fold exactly.
 
 The $450$M reference configuration is specified and its size verified ($448.2$M) but untrained,
 for lack of data-center hardware.
@@ -988,11 +1013,13 @@ small-residual-gain regime, which is a real constraint we did not need to pay an
 accuracy for at this scale but which may matter at larger scale. All experiments
 are small. The reference-scale model is specified and its size verified but not
 trained, for lack of data-center hardware. On the robot task we report both offline
-action error, language grounding, and closed-loop success. The strongest closed-loop result
-has low seed variance but covers only eight of ten tasks, uses a $600$-step cap rather than
-the $280$-step reference protocol, and uses the non-strict per-token-norm backbone. It is
-therefore capability evidence, not a matched full-suite comparison or an end-to-end
-foldability result.
+action error, language grounding, and closed-loop success. The per-token result has three
+seeds but covers only eight of ten tasks. The rational result covers all ten tasks but has one
+seed. Both use a $600$-step cap rather than the $280$-step reference protocol and only $20$
+trials per task rather than $50$. They are therefore capability evidence, not matched
+state-of-the-art comparisons. Every learned site in the rational model belongs to the
+polynomial or rational class by construction, but a materialized whole-policy rational export
+and numerical end-to-end fold check remain open.
 
 \paragraph{The cost boundary of convertibility, and how far it recedes.} Convertibility
 buys a causal, rankable basis, and (with the right topology) coherence. It is not free
@@ -1028,16 +1055,17 @@ advantage of the multimodal head over the linear one. We therefore make no super
 only that a multimodal action distribution can be represented and controlled entirely
 in-graph. For scale context, the OpenVLA study reports $88.4\%\pm0.8\%$ for OpenVLA and
 $92.5\%\pm0.7\%$ for Diffusion Policy over the full ten-task suite \cite{openvla}. Our
-$94.2\%\pm1.2\%$ linear-head result uses eight tasks and a longer horizon, so it does not
-establish state of the art. The claim is narrower and, for this
+$94.2\%\pm1.2\%$ per-token result uses eight tasks. Our $94.5\%$ rational result covers all
+ten tasks but has one seed. Both use a longer horizon, so neither establishes state of the
+art. The claim is narrower and, for this
 paper, more important: \emph{a tensor-pure multimodal head is not confined to the conditional
 mean, the apparent capability cost at multimodal decode is recovered within the
 tensor-network class, at no loss of decomposability} (every mode and gate core is a symmetric
 degree-2 object the same ODT machinery reads, folding to $\sim$$4\times10^{-16}$). One scope
-caveat, stated plainly: the reported $94.2\%$ rollouts use the non-strict backbone with
-per-token RMS normalization. The head is exactly foldable, and the rational-normalized
-backbone is implemented, but its full closed-loop result is still being measured and is not
-included in the number above.
+caveat, stated plainly: the reported product-head rollouts use the non-strict backbone with
+per-token RMS normalization. The product head itself is exactly foldable. The separate
+$94.5\%$ rational-normalized result uses a linear head and therefore establishes capability
+of the rational backbone, not superiority of the multimodal head.
 (ii) \textbf{Per-instance normalization} is an input-dependent division, so the strict
 \emph{polynomial} scheme approximates it with a frozen scalar. But this cost, too, largely
 recedes once the substrate is allowed to be \emph{rational} rather than merely polynomial:
@@ -1048,7 +1076,9 @@ applies to $P$ and $Q$ separately ($Q$ is the interpretable activation-energy fo
 one genuine residue is the square root in RMS: $\div\sqrt{\cdot}$ is \emph{algebraic}. The
 exact $10^{-14}$ fold uses the $\div$mean-square variant, which is rational and has no root.
 Our RMS-like deployed operator uses a fixed rational approximation of
-$1/\sqrt{\cdot}$. It is approximate relative to RMSNorm but exact as a rational map. This sharpens
+$1/\sqrt{\cdot}$. It is approximate relative to RMSNorm but exact as a rational map. The
+full rational-normalized policy reaches $94.5\%$ over all ten tasks in one seed, with the
+protocol caveats above. This sharpens
 the thesis into a scoping rule: \emph{tensor-convertibility is free for unimodal or binary
 outputs and polynomial mixing, and at the inherently nonlinear operations it need not cost
 capability either, provided the learned distribution stays in-graph (as a polynomial or
@@ -1079,17 +1109,22 @@ feed-forward blocks, softmax-free bilinear attention, a CP-core \emph{multimodal
 and rational per-instance normalization. Its multimodal head commits to a mode instead of
 averaging, though our matched seed results do not establish that it outperforms the linear
 head. Its exact mean-square normalizer and RMS-like rational approximation stay within the
-rational tensor-network class. The strongest capability-first checkpoint reaches
-$94.2\%\pm1.2\%$ on eight LIBERO-Object tasks, while the strict rational-normalized
-closed-loop evaluation remains in progress. One principle drives both recoveries: keep the learned distribution in-graph and
-polynomial/rational, and decode outside. Because the whole map is a tensor network it also
-folds exactly and admits an exact global diagonalization (ODT) whose ranking is causal and,
-at feed-forward bonds, data-free. Whether the resulting atoms are human-coherent is governed
-by topology, not by convertibility. Convertibility, we conclude, costs far less than
+rational tensor-network class. The rational-normalized policy reaches $94.5\%$ over all ten
+LIBERO-Object tasks in one seed, while the per-token model reaches $94.2\%\pm1.2\%$ over eight
+tasks in three seeds. The settings are not matched closely enough to estimate a precise
+normalization cost, but no capability loss is visible. One principle drives both recoveries:
+keep the learned distribution in-graph and polynomial or rational, and decode outside.
+Exact global ODT is established at feed-forward bonds. Through attention, including on the
+closed-loop rational policy, our ranking remains data-driven. At the real policy's visual
+bond, its top $64$ directions reduce action reconstruction error by $4.6$--$42\times$ over
+random subspaces, while spatial coherence remains only $1.08$--$1.41\times$ random. Whether
+the resulting atoms are human-coherent is governed by topology, not by convertibility.
+Convertibility, we conclude, costs far less than
 assumed: interpretability comes for free, and the capability tax, multimodal decoding,
 per-instance normalization, largely recedes. What remains genuinely open is the exact
 weight-only ODT contraction across attention, human-nameable (not merely localized) atoms,
-and closed-loop capability at full scale.
+a materialized whole-policy rational export, multi-seed rational replication, and matched
+closed-loop comparison at full scale.
 
 \appendix
 \section{Making the foldable model stable}

@@ -858,7 +858,7 @@ def rational_norm_check(nr_steps: int = 2):
     return out
 
 
-@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=6 * 3600)
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=12 * 3600)
 def libero_rollout_head(head: str = "flow", steps: int = 6000, n_frames: int = 20000,
                         horizon: int = 8, res: int = 64, eps_per_task: int = 20,
                         max_task: int = 10, max_steps: int = 280, num_steps_wait: int = 10,
@@ -870,7 +870,7 @@ def libero_rollout_head(head: str = "flow", steps: int = 6000, n_frames: int = 2
                         product_st: bool = False, seed: int = 0, qk_norm: str = "",
                         use_ema: bool = True, ema_decay: float = 0.999,
                         vision_encoder: str = "vit", conv_grid: int = 8,
-                        load_ckpt: str = ""):
+                        load_ckpt: str = "", start_task: int = 0):
     """CLOSED-LOOP eval with a TENSOR-PURE MULTIMODAL action head (flow-matching or
     product-routing) — the fix for the MSE mode-averaging that caused 0% closed-loop.
     Trains offline on LIBERO-Object then rolls out in MuJoCo. Unlike the linear-head
@@ -1045,7 +1045,7 @@ def libero_rollout_head(head: str = "flow", steps: int = 6000, n_frames: int = 2
     DUMMY = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -close_sign]     # arm still, gripper OPEN (settle)
     n_tasks = min(max_task, suite.n_tasks)
     sane, per_task, canonical_tasks = None, {}, 0
-    for ti in range(n_tasks):
+    for ti in range(start_task, n_tasks):
         task = suite.get_task(ti)
         bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
         env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
@@ -1092,11 +1092,13 @@ def libero_rollout_head(head: str = "flow", steps: int = 6000, n_frames: int = 2
     result = {"head": head, "overall": overall, "per_task": per_task,
               "offline_commit": offline, "state_sanity": sane, "steps": steps,
               "exec_h": exec_h, "flow_steps": flow_steps, "n_factors": n_factors,
-              "flow_decode": flow_decode, "tasks_evaluated": n_tasks,
+              "flow_decode": flow_decode, "start_task": start_task,
+              "task_indices": list(range(start_task, n_tasks)),
+              "tasks_evaluated": len(per_task),
               "suite_tasks": suite.n_tasks, "eps_per_task": eps_per_task,
               "max_steps": max_steps, "num_steps_wait": num_steps_wait,
               "canonical_init_tasks": canonical_tasks,
-              "canonical_init_states": canonical_tasks == n_tasks}
+              "canonical_init_states": canonical_tasks == len(per_task)}
     with open(f"{VOL_PATH}/libero_rollout_{head}{tag}.json", "w") as f:
         json.dump(result, f, indent=2)
     vol.commit()
