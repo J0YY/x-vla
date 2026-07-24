@@ -93,3 +93,67 @@ def make_batch(bs, device, k_objects=3, instr_len=16, shuffle_instr=False, seed_
     return dict(img=img, instr=instr, state=state, embodiment=embodiment,
                 actions=actions, blind_mse=blind_mse,
                 all_pos=all_pos, obj_pairs=obj_pairs, tgt_idx=tgt_idx)
+
+
+def make_ambiguous_batch(bs, device, sep=0.5, instr_len=16, seed_offset=0):
+    """Conditionally-BIMODAL reach: two IDENTICAL valid targets, one ambiguous instruction.
+
+    Each scene places TWO objects with the SAME (colour, shape) — the pair named by the
+    instruction "reach the {colour} {shape}" — at symmetric positions p_left, p_right about
+    the image centre, separated (in normalized [0,1] target-coords) by `sep`. A third
+    distractor object of a DIFFERENT pair is also placed. The instruction cannot pick which
+    of the two identical objects is meant, so the target chunk is drawn 50/50 toward one of
+    them: the SAME (image, instruction, state) admits TWO valid action chunks.
+
+    This is the minimal task on which a mean/MSE head PROVABLY fails: the L2-optimal
+    deterministic prediction is the mean = midpoint (p_left+p_right)/2 = empty space, which
+    for sep>2*eps_hit reaches neither object. Returns p_left/p_right so the eval can score
+    'commits to a valid mode' vs 'averages into the invalid middle'.
+    """
+    masks = _shape_masks(device)
+    colors = COLORS.to(device)
+    img = torch.zeros(bs, 3, 32, 32, device=device)
+    instr = torch.full((bs, instr_len), PAD, device=device, dtype=torch.long)
+    p_left = torch.zeros(bs, 2, device=device)
+    p_right = torch.zeros(bs, 2, device=device)
+    tgt_pos = torch.zeros(bs, 2, device=device)
+    grip = torch.rand(bs, 2, device=device)
+    H = 4
+    half = sep / 2.0
+
+    def _draw(b, col, sh, pos_xy):
+        # pos_xy in [0,1]^2 → nearest grid cell for rendering
+        cx = int(min(GRID - 1, max(0, round(float(pos_xy[0]) * GRID - 0.5))))
+        cy = int(min(GRID - 1, max(0, round(float(pos_xy[1]) * GRID - 0.5))))
+        patch = colors[col][:, None, None] * masks[sh][None]
+        img[b, :, cy * CELL:(cy + 1) * CELL, cx * CELL:(cx + 1) * CELL] = patch
+
+    for b in range(bs):
+        col = int(torch.randint(N_COLORS, (1,), device=device))
+        sh = int(torch.randint(N_SHAPES, (1,), device=device))
+        # symmetric pair about centre along a random axis
+        ang = float(torch.rand(1, device=device)) * 3.14159
+        off = torch.tensor([half * torch.cos(torch.tensor(ang)),
+                            half * torch.sin(torch.tensor(ang))], device=device)
+        centre = torch.tensor([0.5, 0.5], device=device)
+        pL = (centre - off).clamp(0.05, 0.95); pR = (centre + off).clamp(0.05, 0.95)
+        p_left[b] = pL; p_right[b] = pR
+        _draw(b, col, sh, pL); _draw(b, col, sh, pR)
+        # distractor: a different (colour,shape) pair, placed off-centre
+        dcol, dsh = (col + 1) % N_COLORS, (sh + 1) % N_SHAPES
+        _draw(b, dcol, dsh, torch.tensor([0.5, 0.05], device=device))
+        instr[b, :4] = torch.tensor([BOS, REACH, COLOR_TOK0 + col, SHAPE_TOK0 + sh], device=device)
+        # 50/50 choose which identical target this demo reaches
+        tgt_pos[b] = pL if float(torch.rand(1, device=device)) < 0.5 else pR
+
+    disp = tgt_pos - grip
+    step = disp / H
+    actions = torch.zeros(bs, H, 7, device=device)
+    actions[:, :, 0] = step[:, 0:1]
+    actions[:, :, 1] = step[:, 1:2]
+    actions[:, :, 6] = 1.0
+    state = torch.zeros(bs, 8, device=device)
+    state[:, :2] = grip
+    embodiment = torch.zeros(bs, device=device, dtype=torch.long)
+    return dict(img=img, instr=instr, state=state, embodiment=embodiment,
+                actions=actions, p_left=p_left, p_right=p_right, tgt_pos=tgt_pos)
