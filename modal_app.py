@@ -31,8 +31,10 @@ app = modal.App("xvla")
 vol = modal.Volume.from_name("xvla-data", create_if_missing=True)
 VOL_PATH = "/vol"
 
-# ---- LIBERO closed-loop simulator image (MuJoCo + robosuite + LIBERO, headless EGL) ----
-libero_image = (
+# ---- LIBERO closed-loop simulator base (MuJoCo + robosuite + LIBERO, headless EGL) ----
+# NOTE: build steps only; add_local_dir must come LAST (Modal forbids build steps after it),
+# so both libero_image and openvla_image derive from this base and add locals themselves.
+_libero_base = (
     modal.Image.debian_slim(python_version="3.10")
     .apt_install("git", "wget", "libgl1-mesa-dev", "libglib2.0-0", "libosmesa6-dev",
                  "libegl1-mesa-dev", "libgles2-mesa-dev", "libglfw3", "libglew-dev",
@@ -51,14 +53,355 @@ libero_image = (
     .env({"PYTHONPATH": "/opt/LIBERO",
           "MUJOCO_GL": "egl", "PYOPENGL_PLATFORM": "egl", "MUJOCO_EGL_DEVICE_ID": "0",
           "TOKENIZERS_PARALLELISM": "false"})
-    .add_local_dir(".", PROJ,
-                   ignore=["*.pdf", "__pycache__", "*.pyc", ".git", ".venv", "data", "out"])
 )
 
+_LOCAL = dict(ignore=["*.pdf", "__pycache__", "*.pyc", ".git", ".venv", "data", "out"])
+libero_image = _libero_base.add_local_dir(".", PROJ, **_LOCAL)
 
-@app.function(image=libero_image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
-def libero_rollout(steps: int = 6000, n_frames: int = 40000, horizon: int = 8, res: int = 64,
-                   eps_per_task: int = 10, max_task: int = 10, exec_h: int = 8):
+# ---- OpenVLA teacher image: LIBERO base + HF transformers stack, then locals LAST ----
+openvla_image = (
+    _libero_base
+    .pip_install("transformers==4.40.1", "timm==0.9.10", "tokenizers==0.19.1",
+                 "accelerate>=0.29", "sentencepiece", "protobuf")
+    .env({"HF_HOME": "/vol/hf", "HF_HUB_ENABLE_HF_TRANSFER": "0"})
+    .add_local_dir(".", PROJ, **_LOCAL)
+)
+
+OPENVLA_MODEL = "openvla/openvla-7b-finetuned-libero-object"
+
+
+def _apply_foldable_patch(vla, patch: str):
+    """Milestone-0 CONVERSION PROBE: monkeypatch OpenVLA's non-foldable ops with FOLDABLE
+    surrogates, NO finetune, to measure the per-op closed-loop fidelity drop before spending
+    any training compute. Deployed-graph foldability is what we're testing the cost of.
+      patch tokens (comma-joined): 'rmsnorm' (RMSNorm -> rational pade 1/sqrt), 'silu'
+      (SiLU -> degree-3 poly fit). Returns #modules patched.
+    NB: uses a per-forward scale s0=var.mean() (best-case centering) — an UPPER BOUND on
+    fidelity; true foldable deployment freezes a calibrated per-layer s0."""
+    import numpy as np
+    import torch
+    import torch.nn.functional as F
+    toks = set(patch.split(","))
+    n = 0
+    if "rmsnorm" in toks:
+        # fit a [2/2] rational r(v) ~ v^{-1/2} on the log range [0.1,10]
+        v = np.exp(np.linspace(np.log(0.1), np.log(10.0), 400)); t = v ** -0.5
+        A = np.stack([np.ones_like(v), v, v * v, -t * v, -t * v * v], 1)
+        c, *_ = np.linalg.lstsq(A, t, rcond=None)
+        a_c = torch.tensor([c[0], c[1], c[2]], dtype=torch.float32)
+        b_c = torch.tensor([1.0, c[3], c[4]], dtype=torch.float32)
+
+        def make_rmsnorm_fwd(weight, eps, a_c, b_c):
+            def fwd(x):
+                xf = x.float()
+                var = xf.pow(2).mean(-1, keepdim=True)
+                s0 = var.mean().clamp_min(1e-12)
+                vv = var / s0
+                P = a_c[0] + a_c[1] * vv + a_c[2] * vv * vv
+                Q = b_c[0] + b_c[1] * vv + b_c[2] * vv * vv
+                inv = (P / Q) * torch.rsqrt(s0)                       # rational ~ 1/sqrt(var)
+                return weight * (xf * inv).to(x.dtype)
+            return fwd
+
+        for m in vla.modules():
+            if "RMSNorm" in type(m).__name__ and hasattr(m, "weight"):
+                eps = getattr(m, "variance_epsilon", getattr(m, "eps", 1e-6))
+                aa = a_c.to(m.weight.device); bb = b_c.to(m.weight.device)
+                m.forward = make_rmsnorm_fwd(m.weight, eps, aa, bb)
+                n += 1
+    if "silu" in toks:
+        # SiLU(x)=x*sigmoid(x); fit a degree-3 polynomial on [-8,8] (activation range)
+        xs = np.linspace(-8, 8, 800); ys = xs / (1 + np.exp(-xs))
+        pc = np.polyfit(xs, ys, 3)                                    # [c3,c2,c1,c0]
+        pc_t = torch.tensor(pc[::-1].copy(), dtype=torch.float32)     # ascending
+
+        def make_silu_fwd(pc_t):
+            def fwd(x):
+                xf = x.float()
+                y = pc_t[0] + pc_t[1] * xf + pc_t[2] * xf * xf + pc_t[3] * xf * xf * xf
+                return y.to(x.dtype)
+            return fwd
+
+        for m in vla.modules():
+            if type(m).__name__ in ("SiLU", "SiLUActivation") or type(m).__name__.endswith("ACT2FN"):
+                m.forward = make_silu_fwd(pc_t.to(next(vla.parameters()).device))
+                n += 1
+    return n
+
+
+@app.function(image=openvla_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=6 * 3600)
+def openvla_collect(n_eps: int = 2, max_task: int = 2, res: int = 256, save_res: int = 64,
+                    horizon: int = 8, max_steps: int = 600, flip: str = "rot180",
+                    num_steps_wait: int = 10, center_crop: bool = True,
+                    use_init_states: bool = True, tag: str = "test", patch: str = "none"):
+    """TEACHER integration + trajectory collection for distillation.
+    Loads OpenVLA-7B (finetuned on LIBERO-Object), runs it IN our LIBERO sim, reports the
+    teacher's success rate (sanity: ~90% => image/gripper convention correct; ~0% => wrong,
+    try a different `flip`), and saves teacher trajectories (save_res image, instruction,
+    executed 7-dim action, per-step) to /vol for distilling the tensor-pure student.
+    Start SMALL (n_eps=2, max_task=2) to debug, then scale."""
+    _bootstrap()
+    import os, json, pickle
+    import numpy as np
+    import torch
+    from PIL import Image
+    from transformers import AutoModelForVision2Seq, AutoProcessor
+    dev = "cuda"
+    os.makedirs("/vol/hf", exist_ok=True)
+
+    print("loading OpenVLA teacher (first run downloads ~14GB to /vol/hf)...")
+    processor = AutoProcessor.from_pretrained(OPENVLA_MODEL, trust_remote_code=True)
+    vla = AutoModelForVision2Seq.from_pretrained(
+        OPENVLA_MODEL, attn_implementation="sdpa", torch_dtype=torch.bfloat16,
+        low_cpu_mem_usage=True, trust_remote_code=True).to(dev).eval()
+    print("teacher loaded.")
+    if patch != "none":
+        np_ = _apply_foldable_patch(vla, patch)
+        print(f"CONVERSION PROBE patch={patch}: monkeypatched {np_} modules (no finetune)")
+
+    def prep_img(agent):
+        if flip == "rot180":   a = agent[::-1, ::-1]
+        elif flip == "vflip":  a = agent[::-1]
+        elif flip == "hflip":  a = agent[:, ::-1]
+        else:                  a = agent
+        return np.ascontiguousarray(a)
+
+    def _crop(a):
+        # OpenVLA LIBERO finetunes were trained with center-crop aug; at eval crop central ~90%.
+        if not center_crop: return a
+        h, w = a.shape[:2]; m = int(round(0.05 * h))
+        return a[m:h - m, m:w - m]
+
+    @torch.no_grad()
+    def teacher_action(agent_img, instr):
+        # rot180, optional center crop, native res to the HF processor (which does the model's
+        # own resize; double-resizing to 224 first degrades OpenVLA).
+        img_in = Image.fromarray(_crop(prep_img(agent_img)))
+        prompt = f"In: What action should the robot take to {instr.lower()}?\nOut:"
+        inputs = processor(prompt, img_in).to(dev, dtype=torch.bfloat16)
+        act = vla.predict_action(**inputs, unnorm_key="libero_object", do_sample=False)
+        return np.asarray(act, dtype=np.float32)          # (7,)
+
+    DUMMY = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0]          # no-op, gripper open (LIBERO settle)
+
+    def fix_gripper(a):
+        # OpenVLA gripper is [0,1] and sign-INVERTED vs the LIBERO env (official eval:
+        # normalize_gripper_action [0,1]->[-1,1] + binarize, then invert_gripper_action).
+        a = a.copy()
+        g = 2.0 * float(a[-1]) - 1.0
+        g = 1.0 if g >= 0 else -1.0
+        a[-1] = -g
+        return a
+
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    from robosuite.utils.transform_utils import quat2axisangle
+    def build_state(obs):
+        return np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]),
+                               obs["robot0_gripper_qpos"]]).astype(np.float32)
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    n_tasks = min(max_task, suite.n_tasks)
+    traj, per_task, diag = [], {}, {}
+    for ti in range(n_tasks):
+        task = suite.get_task(ti)
+        bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+        init_states = None
+        if use_init_states:
+            try: init_states = suite.get_task_init_states(ti)
+            except Exception as e: print(f"no init states for {ti}: {e}")
+        succ = 0
+        for ep in range(n_eps):
+            env.seed(ti * 100 + ep); obs = env.reset()
+            if init_states is not None:                   # canonical eval init (official eval)
+                obs = env.set_init_state(init_states[ep % len(init_states)])
+            for _ in range(num_steps_wait):               # let objects settle
+                obs, _, _, _ = env.step(DUMMY)
+            ep_frames, done_ok = [], False
+            eef0 = build_state(obs)[:3].copy()
+            for t in range(max_steps):
+                agent = obs["agentview_image"]
+                st = build_state(obs)
+                a = teacher_action(agent, task.language)
+                if ti == 0 and ep == 0 and t < 5:
+                    diag.setdefault("first_actions", []).append(np.round(a, 3).tolist())
+                if ti == 0 and ep == 0 and t == 50:
+                    diag["eef_disp_50"] = np.round(build_state(obs)[:3] - eef0, 3).tolist()
+                a_env = fix_gripper(a)                     # env-convention action (arm unchanged)
+                img64 = np.asarray(Image.fromarray(prep_img(agent)).resize((save_res, save_res)),
+                                   dtype=np.uint8)
+                # (ti, ep, t, img64, instr, env-action(7), state(8)) — student learns env convention
+                ep_frames.append((ti, ep, t, img64, task.language, a_env.copy(), st))
+                obs, r, done, info = env.step(a_env.tolist())
+                if r > 0: done_ok = True
+                if done or done_ok: break
+            succ += int(done_ok)
+            # keep the trajectory regardless (successful ones are gold; failures still teach)
+            for f in ep_frames:
+                traj.append(f + (done_ok,))
+        env.close()
+        per_task[task.language] = round(succ / n_eps, 3)
+        print(f"[teacher task {ti}] {task.language}: {succ}/{n_eps}")
+        # INCREMENTAL SAVE after each task: a killed run leaves harvestable partial data
+        # (openvla is slow + autoregressive, so full collections can exceed the wrapper's life).
+        pickle.dump(traj, open(f"/vol/openvla_traj_{tag}.pkl", "wb"))
+        with open(f"/vol/openvla_collect_{tag}.json", "w") as f:
+            json.dump({"teacher_overall": round(float(np.mean(list(per_task.values()))), 3),
+                       "per_task": per_task, "flip": flip, "center_crop": center_crop,
+                       "use_init_states": use_init_states, "diag": diag,
+                       "n_traj_steps": len(traj), "tasks_done": ti + 1, "partial": True}, f, indent=2)
+        vol.commit()
+    overall = round(float(np.mean(list(per_task.values()))), 3)
+    out = f"/vol/openvla_traj_{tag}.pkl"
+    pickle.dump(traj, open(out, "wb")); vol.commit()
+    result = {"teacher_overall": overall, "per_task": per_task, "flip": flip,
+              "center_crop": center_crop, "use_init_states": use_init_states,
+              "diag": diag, "n_traj_steps": len(traj), "saved": out}
+    with open(f"/vol/openvla_collect_{tag}.json", "w") as f: json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=4 * 3600)
+def distill_student(traj_tag: str = "full", head: str = "product", steps: int = 15000,
+                    horizon: int = 8, res: int = 64, eps_per_task: int = 20, max_task: int = 10,
+                    max_steps: int = 280, num_steps_wait: int = 10,
+                    exec_h: int = 8, n_factors: int = 4, curriculum: bool = True,
+                    distill_teacher: bool = True, lambda_distill: float = 1.0,
+                    success_only: bool = True, tag: str = "distill"):
+    """Distill the tensor-pure student on OpenVLA teacher trajectories, then closed-loop rollout.
+    Data from /vol/openvla_traj_{traj_tag}.pkl (openvla_collect). Attacks the data-scarcity /
+    high-variance that caused seed s4=0.0: the teacher supplies many competent trajectories our
+    ~14 demos/task did not."""
+    _bootstrap()
+    import os, json, pickle
+    import numpy as np, torch
+    from collections import defaultdict
+    from PIL import Image
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.train.train_lm import _lr_at, TrainConfig
+    dev = "cuda"; H = horizon
+    traj = pickle.load(open(f"/vol/openvla_traj_{traj_tag}.pkl", "rb"))
+    if success_only:
+        traj = [f for f in traj if f[7]]
+    words = set()
+    for f in traj: words.update(f[4].lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words): vocab[w] = len(vocab)
+    T = 32
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T] + [0] * max(0, T - len(ids)))[:T]
+    eps = defaultdict(list)
+    for f in traj: eps[(f[0], f[1])].append(f)
+    samples = []
+    for _, fs in eps.items():
+        fs.sort(key=lambda z: z[2])
+        A = np.stack([f[5] for f in fs])
+        for i in range(len(fs) - H):
+            samples.append((fs[i][3], fs[i][4], fs[i][6], A[i:i + H]))   # img, instr, state, chunk
+    if not samples:
+        return {"error": "no samples", "n_traj": len(traj)}
+    d_a = int(np.asarray(samples[0][3]).shape[1])
+    state_dim = int(np.asarray(samples[0][2]).shape[0])
+    A = np.stack([s[3] for s in samples]); S = np.stack([s[2] for s in samples])
+    a_mu, a_sd = A.mean((0, 1)), A.std((0, 1)) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+    imgs = torch.tensor(np.stack([s[0] for s in samples])).permute(0, 3, 1, 2).float().div(255).to(dev)
+    instr = torch.tensor([encode(s[1]) for s in samples], device=dev)
+    states = torch.tensor((S - s_mu) / s_sd, dtype=torch.float32, device=dev)
+    actions = torch.tensor((A - a_mu) / a_sd, dtype=torch.float32, device=dev)
+    cfg = VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                    vocab_size=len(vocab), max_instr_len=T, state_dim=state_dim, n_embodiments=1,
+                    dim=384, n_layers=8, n_heads=12, action_horizon=H, action_dim=d_a,
+                    action_head=head, n_factors=n_factors, distill_teacher=distill_teacher,
+                    lambda_distill=lambda_distill, curriculum=curriculum)
+    model = ChiVLA(cfg).to(dev)
+    opt = torch.optim.AdamW(model.parameters(), lr=8e-4, betas=(0.9, 0.95), weight_decay=0.05)
+    tcfg = TrainConfig(train_bin="", val_bin="", lr=8e-4, max_steps=steps, warmup_frac=0.05)
+    model.train()
+    print(f"distilling head={head} on {len(samples)} teacher samples from {len(eps)} episodes")
+    for step in range(steps + 1):
+        for g in opt.param_groups: g["lr"] = _lr_at(step, tcfg)
+        idx = torch.randint(len(samples), (256,), device=dev)
+        opt.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            _, loss = model(imgs[idx], instr[idx], states[idx],
+                            torch.zeros(256, dtype=torch.long, device=dev),
+                            target_actions=actions[idx], progress=step / max(steps, 1))
+        loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+        if step % 1000 == 0: print(f"  step {step} loss {loss.item():.4f}")
+    model.eval()
+
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    from robosuite.utils.transform_utils import quat2axisangle
+    _ol = torch.load
+    torch.load = lambda *a, **k: _ol(*a, **{**k, "weights_only": False})
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    a_mu_t = torch.tensor(a_mu, device=dev); a_sd_t = torch.tensor(a_sd, device=dev)
+    s_mu_t = torch.tensor(s_mu, dtype=torch.float32); s_sd_t = torch.tensor(s_sd, dtype=torch.float32)
+    def build_state(obs):
+        v = np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]),
+                            obs["robot0_gripper_qpos"]]).astype(np.float32)
+        return v[:state_dim] if len(v) >= state_dim else np.pad(v, (0, state_dim - len(v)))
+    @torch.no_grad()
+    def predict_chunk(obs, instr_ids):
+        raw = build_state(obs)
+        img = np.asarray(Image.fromarray(np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])).resize((res, res)))
+        im = torch.tensor(img).permute(2, 0, 1).float().div(255).unsqueeze(0).to(dev)
+        st = ((torch.tensor(raw) - s_mu_t) / s_sd_t).float().unsqueeze(0).to(dev)
+        a, _ = model(im, instr_ids, st, torch.zeros(1, dtype=torch.long, device=dev))
+        return (a[0] * a_sd_t + a_mu_t).cpu().numpy()
+    n_tasks = min(max_task, suite.n_tasks); per_task = {}; canonical_tasks = 0
+    close_sign = 1.0
+    dummy = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -close_sign]
+    for ti in range(n_tasks):
+        task = suite.get_task(ti)
+        bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+        instr_ids = torch.tensor([encode(task.language)], device=dev); succ = 0
+        init_states = None
+        try:
+            init_states = suite.get_task_init_states(ti)
+        except Exception as e:
+            print(f"no init states for task {ti}: {e}")
+        if init_states is not None:
+            canonical_tasks += 1
+        for ep in range(eps_per_task):
+            env.seed(ti * 100 + ep); obs = env.reset(); ok = False; t = 0
+            if init_states is not None:
+                obs = env.set_init_state(init_states[ep % len(init_states)])
+                for _ in range(num_steps_wait):
+                    obs, _, _, _ = env.step(dummy)
+            while t < max_steps and not ok:
+                chunk = predict_chunk(obs, instr_ids)
+                for k in range(min(exec_h, H)):
+                    a = chunk[k].copy(); a[-1] = close_sign if a[-1] > 0 else -close_sign
+                    obs, r, done, info = env.step(a.tolist()); t += 1
+                    if r > 0: ok = True
+                    if done or ok or t >= max_steps: break
+            succ += int(ok)
+        env.close(); per_task[task.language] = round(succ / eps_per_task, 3)
+        print(f"[distill {head} task {ti}] {task.language}: {succ}/{eps_per_task}")
+    overall = round(float(np.mean(list(per_task.values()))), 3)
+    result = {"overall": overall, "per_task": per_task, "head": head, "traj_tag": traj_tag,
+              "n_samples": len(samples), "n_episodes": len(eps), "success_only": success_only,
+              "steps": steps, "tasks_evaluated": n_tasks, "suite_tasks": suite.n_tasks,
+              "eps_per_task": eps_per_task, "max_steps": max_steps,
+              "num_steps_wait": num_steps_wait, "canonical_init_tasks": canonical_tasks,
+              "canonical_init_states": canonical_tasks == n_tasks}
+    with open(f"/vol/distill_{head}_{tag}.json", "w") as f: json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps({"overall": overall, "n_samples": len(samples)}, indent=2))
+    return result
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def libero_rollout(steps: int = 6000, n_frames: int = 20000, horizon: int = 8, res: int = 64,
+                   eps_per_task: int = 20, max_task: int = 10, max_steps: int = 280,
+                   exec_h: int = 8):
     """CLOSED-LOOP eval (Q0): train the χ-VLA offline on LIBERO-Object (lerobot data,
     exact M4b pipeline) then roll it out in the MuJoCo/robosuite sim and report task
     success rate. Reconstructs the sim obs to match the training convention (agentview
@@ -170,43 +513,669 @@ def libero_rollout(steps: int = 6000, n_frames: int = 40000, horizon: int = 8, r
     @torch.no_grad()
     def act(obs, instr_ids):
         raw = build_state(obs)
-        img = np.asarray(Image.fromarray(obs["agentview_image"][::-1]).resize((res, res)))
+        img = np.asarray(Image.fromarray(np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])).resize((res, res)))
         im = torch.tensor(img).permute(2, 0, 1).float().div(255).unsqueeze(0).to(dev)
         st = ((torch.tensor(raw) - s_mu_t) / s_sd_t).float().unsqueeze(0).to(dev)
         a, _ = model(im, instr_ids, st, torch.zeros(1, dtype=torch.long, device=dev))
         return (a[0] * a_sd_t + a_mu_t).cpu().numpy()          # (H, d_a) un-normalized
 
+    # FIXES (from agent synthesis): (A#1) binarize the mode-averaged bimodal gripper with a
+    # hysteresis latch; (D#1) receding-horizon execution (re-predict every step) with ACT-style
+    # temporal ensembling of the ARM dims. Neither touches the learned tensor network.
+    close_sign = 1.0                                            # libero_diag: +1 closes gripper
     n_tasks = min(max_task, suite.n_tasks)
-    per_task, sane = {}, None
+    sane, by_tau = None, {}
+    for tau in [0.0, 0.1, 0.3]:                                 # gripper decision threshold sweep
+        per_task = {}
+        for ti in range(n_tasks):
+            task = suite.get_task(ti)
+            bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+            env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+            instr_ids = torch.tensor([encode(task.language)], device=dev)
+            succ = 0
+            for ep in range(eps_per_task):
+                env.seed(ti * 100 + ep); obs = env.reset()
+                if sane is None:
+                    sane = {"sim_state": np.round(build_state(obs), 3).tolist(),
+                            "train_state_mean": np.round(s_mu, 3).tolist()}
+                    print("STATE SANITY:", sane)
+                buf, latched, ep_success = {}, False, False
+                for t in range(max_steps):                      # re-predict every step
+                    chunk = act(obs, instr_ids)                 # (H, d_a) raw
+                    for k in range(H):
+                        buf.setdefault(t + k, []).append(chunk[k])
+                    preds = np.stack(buf.pop(t))                # predictions targeting step t
+                    w = np.exp(-0.1 * np.arange(len(preds))[::-1]); w /= w.sum()
+                    a = (w[:, None] * preds).sum(0)             # temporal-ensembled arm
+                    g_raw = float(preds[-1, -1])                # newest raw gripper
+                    if latched:
+                        if g_raw < tau - 0.3: latched = False   # hysteresis
+                    elif g_raw > tau:
+                        latched = True
+                    a[-1] = close_sign if latched else -close_sign
+                    obs, r, done, info = env.step(a.tolist())
+                    if r > 0:
+                        ep_success = True
+                    if done or ep_success:
+                        break
+                succ += int(ep_success)
+            env.close()
+            per_task[task.language] = round(succ / eps_per_task, 3)
+            print(f"[tau={tau} task {ti}] {task.language}: {succ}/{eps_per_task}")
+        by_tau[f"tau_{tau}"] = {"per_task": per_task,
+                               "overall": round(float(np.mean(list(per_task.values()))), 3)}
+        with open(f"{VOL_PATH}/libero_rollout.json", "w") as f:
+            json.dump({"by_tau": by_tau, "state_sanity": sane, "eps_per_task": eps_per_task,
+                       "fixes": "gripper_binarize+latch + receding-horizon temporal-ensemble(arm)"}, f, indent=2)
+        vol.commit()
+    print("RESULT:", json.dumps({k: v["overall"] for k, v in by_tau.items()}, indent=2))
+    return {"by_tau": by_tau, "state_sanity": sane}
+
+
+@app.function(image=image, volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def build_frame_cache(n_frames: int = 100000, res: int = 64):
+    """Stream + cache the LIBERO-Object frames to the volume (CPU, no GPU) so that
+    multiple scaled training jobs can reuse the same cache without a concurrent
+    first-download race. Idempotent: skips if the cache already exists."""
+    _bootstrap()
+    import os, pickle
+    import numpy as np
+    from datasets import load_dataset
+    from PIL import Image
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    if os.path.exists(cache):
+        frames = pickle.load(open(cache, "rb"))
+        print(f"cache exists: {len(frames)} frames at {cache}")
+        return {"cache": cache, "n_frames": len(frames), "existed": True}
+    name = "lerobot/libero_object_image"
+    ds = load_dataset(name, split="train", streaming=True); frames = []
+    for ex in ds:
+        img = ex["observation.images.image"]
+        if not isinstance(img, Image.Image): img = Image.fromarray(np.array(img))
+        frames.append((int(ex["episode_index"]), int(ex["frame_index"]),
+                       np.asarray(img.resize((res, res)), dtype=np.uint8),
+                       np.asarray(ex["observation.state"], dtype=np.float32),
+                       np.asarray(ex["action"], dtype=np.float32), int(ex["task_index"])))
+        if len(frames) >= n_frames: break
+        if len(frames) % 10000 == 0: print(f"  streamed {len(frames)}")
+    pickle.dump(frames, open(cache, "wb")); vol.commit()
+    from collections import Counter
+    tc = Counter(int(f[5]) for f in frames)
+    print(f"cached {len(frames)} frames; tasks={dict(sorted(tc.items()))}")
+    return {"cache": cache, "n_frames": len(frames), "tasks": dict(sorted(tc.items())), "existed": False}
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=1800)
+def rollout_obs_check(n_frames: int = 20000, res: int = 64):
+    """Decisive check for the 0% closed-loop: does the model see the SAME pixel
+    distribution at rollout as in training? Compares a TRAINING frame (lerobot
+    observation.images.image, resized) against the SIM agentview render under the
+    rollout preprocessing (agentview_image[::-1] resized) AND without the flip, for
+    the same task. Saves a side-by-side PNG and prints per-channel pixel stats — a
+    visual/statistical smoking-gun for a camera/flip/resize mismatch."""
+    _bootstrap()
+    import os, pickle, json
+    import numpy as np
+    from PIL import Image
+    from collections import defaultdict
+    # training frames for task 0
+    frames = pickle.load(open(f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl", "rb"))
+    by_task = defaultdict(list)
+    for f in frames:
+        by_task[int(f[5])].append(f)
+    stats = {}
+    train_imgs = {}
+    for ti in [0, 1]:
+        fs = sorted(by_task[ti], key=lambda z: (z[0], z[1]))
+        img = fs[0][2]                                   # first frame, uint8 (res,res,3)
+        train_imgs[ti] = img
+        stats[f"train_task{ti}"] = {"mean": np.round(img.mean(0).mean(0), 1).tolist(),
+                                    "std": round(float(img.std()), 1)}
+    # sim render for task 0/1
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    panels = []
+    for ti in [0, 1]:
+        task = suite.get_task(ti)
+        bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+        env.seed(ti * 100); obs = env.reset()
+        raw = np.ascontiguousarray(obs["agentview_image"])   # (res,res,3) uint8
+        variants = {"vflip": raw[::-1], "hflip": raw[:, ::-1], "rot180": raw[::-1, ::-1]}
+        cols = [train_imgs[ti]]
+        for nm, arr in variants.items():
+            v = np.asarray(Image.fromarray(np.ascontiguousarray(arr)).resize((res, res)))
+            cols.append(np.full((res, 4, 3), 255, np.uint8)); cols.append(v)
+        row = np.concatenate(cols, axis=1)
+        env.close()
+        panels.append(row)
+    composite = np.concatenate([panels[0], np.full((4, panels[0].shape[1], 3), 255, np.uint8),
+                                panels[1]], axis=0)
+    Image.fromarray(composite).resize((composite.shape[1] * 3, composite.shape[0] * 3),
+                                      Image.NEAREST).save(f"{VOL_PATH}/obs_check.png")
+    vol.commit()
+    print("OBS CHECK (columns: TRAIN | SIM_FLIP | SIM_NOFLIP; rows: task0, task1):")
+    print(json.dumps(stats, indent=2))
+    return stats
+
+
+@app.function(image=image, gpu="A10G", timeout=1800)
+def test_multimodal_heads(steps: int = 1500):
+    """Validate the tensor-pure multimodal action heads (flow-matching + product-routing)
+    BEFORE the expensive LIBERO run: (1) ChiVLA smoke for each head (forward+backward,
+    shapes); (2) the collapse test — train each head vs the linear+MSE baseline on a
+    synthetic CONDITIONAL-BIMODAL chunk and measure commit / mode-coverage. The linear
+    head must collapse to the between-modes mean (commit≈0); the multimodal heads must
+    commit to a real mode and cover both. Also checks BilinearFFN core foldability."""
+    _bootstrap()
+    import json
+    import torch, torch.nn as nn, torch.nn.functional as F
+    import numpy as np
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.flow_action import FlowMatchingActionHead
+    from xvla.nn.product_routing import ProductRoutingHead
+    dev = "cuda"; out = {}
+
+    # (1) ChiVLA smoke: forward+backward for each head type
+    for head in ["linear", "flow", "product", "quantile"]:
+        cfg = VLAConfig(image_size=32, patch_size=8, vit_dim=64, vit_layers=2, vit_heads=4,
+                        vocab_size=16, max_instr_len=8, state_dim=8, n_embodiments=1,
+                        dim=96, n_layers=2, n_heads=4, action_horizon=4, action_dim=7,
+                        action_head=head, flow_steps=5, n_factors=3)
+        m = ChiVLA(cfg).to(dev)
+        B = 8
+        img = torch.rand(B, 3, 32, 32, device=dev)
+        instr = torch.randint(0, 16, (B, 8), device=dev)
+        st = torch.randn(B, 8, device=dev)
+        emb = torch.zeros(B, dtype=torch.long, device=dev)
+        tgt = torch.randn(B, 4, 7, device=dev)
+        a, loss = m(img, instr, st, emb, target_actions=tgt)
+        loss.backward()
+        gnorm = sum(p.grad.abs().sum().item() for p in m.parameters() if p.grad is not None)
+        out[f"vla_{head}"] = {"action_shape": list(a.shape), "loss": round(float(loss), 4),
+                              "grad_flows": gnorm > 0, "params": m.num_params()}
+        print(f"[vla {head}] action {list(a.shape)} loss {float(loss):.4f} grad {gnorm > 0}")
+
+    # (2) collapse test on a synthetic conditional-bimodal chunk (heads in isolation)
+    torch.manual_seed(0)
+    dim, H, d_a = 32, 4, 7
+    m_flat = H * d_a
+    Wfeat = torch.randn(2, dim, device=dev)           # fixed context feature map
+    base = torch.randn(2, H, d_a, device=dev) * 0.3   # per-context base chunk
+    delta = torch.randn(H, d_a, device=dev)           # mode separation direction
+    delta = delta / delta.norm() * 3.0
+
+    def synth_batch(B):
+        c = torch.randint(0, 2, (B,), device=dev)
+        h = F.one_hot(c, 2).float() @ Wfeat            # (B, dim)
+        p_plus = torch.where(c == 1, 0.7, 0.3)         # mode prob depends on context
+        s = torch.where(torch.rand(B, device=dev) < p_plus, 1.0, -1.0)   # latent mode
+        chunk = base[c] + s[:, None, None] * delta[None]                 # (B,H,d_a)
+        chunk[:, :, -1] = s[:, None]                   # gripper dim = the mode sign
+        chunk = chunk + 0.05 * torch.randn_like(chunk)
+        return h, chunk, s
+
+    res = {}
+    # linear baseline
+    lin = nn.Linear(dim, m_flat).to(dev)
+    opt = torch.optim.Adam(lin.parameters(), 3e-3)
+    for _ in range(steps):
+        h, chunk, s = synth_batch(256)
+        loss = F.mse_loss(lin(h), chunk.reshape(-1, m_flat))
+        opt.zero_grad(); loss.backward(); opt.step()
+    h, chunk, s = synth_batch(2048)
+    with torch.no_grad():
+        pred = lin(h).reshape(-1, H, d_a)
+    g = pred[:, :, -1].mean(1)                          # decoded gripper
+    res["linear"] = {"gripper_commit_frac": round(float((g.abs() > 0.5).float().mean()), 3),
+                     "gripper_abs_mean": round(float(g.abs().mean()), 3),
+                     "gripper_sign_acc": round(float((g.sign() == s).float().mean()), 3)}
+
+    # flow head
+    flow = FlowMatchingActionHead(dim, d_a, H, depth=2, time_degree=3).to(dev)
+    opt = torch.optim.Adam(flow.parameters(), 3e-3)
+    for _ in range(steps):
+        h, chunk, s = synth_batch(256)
+        loss = flow.fm_loss(h, chunk)
+        opt.zero_grad(); loss.backward(); opt.step()
+    h, chunk, s = synth_batch(2048)
+    with torch.no_grad():
+        samp = flow.sample(h, n_steps=20, n_samples=8)  # (B,8,H,d_a)
+    g = samp[:, :, :, -1].mean(2)                        # (B,8) gripper per sample
+    committed = samp[:, 0, :, -1].mean(1)               # first-sample gripper
+    # coverage: across 8 samples for the ambiguous contexts, do we see both signs?
+    gs = samp[:, :, :, -1].mean(2)                       # (B,8)
+    both = ((gs > 0.3).any(1) & (gs < -0.3).any(1)).float().mean()
+    res["flow"] = {"gripper_commit_frac": round(float((committed.abs() > 0.5).float().mean()), 3),
+                   "gripper_abs_mean": round(float(committed.abs().mean()), 3),
+                   "gripper_sign_acc": round(float((committed.sign() == s).float().mean()), 3),
+                   "both_modes_covered_frac": round(float(both), 3),
+                   "final_fm_loss": round(float(loss), 4)}
+
+    # product head
+    prod = ProductRoutingHead(dim, d_a, H, n_factors=3).to(dev)
+    opt = torch.optim.Adam(prod.parameters(), 3e-3)
+    for _ in range(steps):
+        h, chunk, s = synth_batch(256)
+        loss, _ = prod.loss(h, chunk)
+        opt.zero_grad(); loss.backward(); opt.step()
+    h, chunk, s = synth_batch(2048)
+    with torch.no_grad():
+        dec = prod.decode(h)                             # (B,H,d_a)
+        modes = prod.enumerate_modes(h)                  # (B,2^G,H,d_a)
+    g = dec[:, :, -1].mean(1)
+    gm = modes[:, :, :, -1].mean(2)                      # (B,2^G)
+    both = ((gm > 0.3).any(1) & (gm < -0.3).any(1)).float().mean()
+    res["product"] = {"gripper_commit_frac": round(float((g.abs() > 0.5).float().mean()), 3),
+                      "gripper_abs_mean": round(float(g.abs().mean()), 3),
+                      "gripper_sign_acc": round(float((g.sign() == s).float().mean()), 3),
+                      "both_modes_available_frac": round(float(both), 3),
+                      "final_loss": round(float(loss), 4)}
+
+    # product head — Method 5 STC (straight-through Gumbel routing, temperature annealed)
+    prod_st = ProductRoutingHead(dim, d_a, H, n_factors=3).to(dev)
+    opt = torch.optim.Adam(prod_st.parameters(), 3e-3)
+    for i in range(steps):
+        h, chunk, s = synth_batch(256)
+        prog = i / max(steps - 1, 1)
+        st_temp = 1.5 * (0.3 / 1.5) ** prog
+        loss, _ = prod_st.loss(h, chunk, straight_through=True, st_temp=st_temp, st_samples=4)
+        opt.zero_grad(); loss.backward(); opt.step()
+    h, chunk, s = synth_batch(2048)
+    with torch.no_grad():
+        dec = prod_st.decode(h)
+        modes = prod_st.enumerate_modes(h)
+    g = dec[:, :, -1].mean(1)
+    gm = modes[:, :, :, -1].mean(2)
+    both = ((gm > 0.3).any(1) & (gm < -0.3).any(1)).float().mean()
+    res["product_st"] = {"gripper_commit_frac": round(float((g.abs() > 0.5).float().mean()), 3),
+                         "gripper_abs_mean": round(float(g.abs().mean()), 3),
+                         "gripper_sign_acc": round(float((g.sign() == s).float().mean()), 3),
+                         "both_modes_available_frac": round(float(both), 3),
+                         "final_loss": round(float(loss), 4)}
+
+    # (3) foldability: BilinearFFN core reproduces forward
+    from xvla.nn.bilinear import BilinearFFN
+    b = BilinearFFN(6, rank=8, out_dim=4, down_bias=False).to(dev).double()
+    x = torch.randn(5, 6, device=dev).double()
+    xb = torch.cat([torch.ones(5, 1, device=dev).double(), x], 1)
+    T = b.dense_core()
+    y_fold = torch.einsum("oij,bi,bj->bo", T, xb, xb)
+    fold_err = float((b(x) - y_fold).abs().max())
+    out["fold_err"] = fold_err
+    out["collapse_test"] = res
+    print("COLLAPSE TEST:", json.dumps(res, indent=2))
+    print("FOLD ERR:", fold_err)
+    return out
+
+
+@app.function(image=image, gpu="A10G", timeout=900)
+def rational_norm_check(nr_steps: int = 2):
+    """Milestone-0 op check: does the FOLDABLE rational NR-rsqrt norm behave like RMSNorm
+    (so it should preserve capability), and is it a fixed polynomial once s0 is frozen (so
+    it folds)? Compares RationalNorm(nr_rsqrt) vs PerTokenRmsNorm over unit-scale AND
+    tail-stressed inputs (the ρ≈2.8 regime), plus the attention head-dim variant."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.nn.normalization import RationalNorm, PerTokenRmsNorm
+    dev = "cuda"; torch.manual_seed(0)
+    rms = PerTokenRmsNorm().to(dev)
+    rn = RationalNorm(variant="pade").to(dev)                # the fitted minimax-rational 1/√
+    rn_nr = RationalNorm(variant="nr_rsqrt", nr_steps=nr_steps).to(dev)
+    out = {"nr_steps": nr_steps, "variant": "pade"}
+    # warm the running_ms on unit-scale activations (train mode), then freeze both
+    for m in (rn, rn_nr):
+        m.train()
+        for _ in range(50):
+            m(torch.randn(64, 384, device=dev))
+        m.freeze(); m.eval()
+    def reldiff(x, m=rn):
+        a = rms(x); b = m(x)
+        return float((a - b).norm() / (a.norm() + 1e-9))
+    # unit scale + tail-stressed (×k) inputs — RMSNorm is scale-invariant; a good rational
+    # approx should track it across the operating tail.
+    out["reldiff_unit"] = round(reldiff(torch.randn(2048, 384, device=dev)), 4)
+    out["pade_by_scale"] = {f"x{k}": round(reldiff(k * torch.randn(2048, 384, device=dev), rn), 4)
+                            for k in [0.3, 0.5, 1.0, 1.5, 2.0, 2.8, 4.0]}
+    out["nr_by_scale"] = {f"x{k}": round(reldiff(k * torch.randn(2048, 384, device=dev), rn_nr), 4)
+                          for k in [0.5, 1.0, 2.0, 2.8]}
+    # foldability sanity: with s0 frozen the map is a fixed function of the batch stats only
+    # through ms(x); check determinism (same input → same output) and finiteness.
+    xt = torch.randn(16, 384, device=dev)
+    out["deterministic"] = bool(torch.allclose(rn(xt), rn(xt)))
+    out["finite"] = bool(torch.isfinite(rn(xt)).all())
+    # attention head-dim variant (d_h=32): NR rsqrt from s0=1 vs true rms over head_dim
+    t = torch.randn(8, 8, 64, 32, device=dev)
+    tru = t * torch.rsqrt(t.pow(2).mean(-1, keepdim=True) + 1e-6)
+    y = torch.ones(8, 8, 64, 1, device=dev)
+    ms = t.pow(2).mean(-1, keepdim=True) + 1e-6
+    for _ in range(3):
+        y = y * (1.5 - 0.5 * ms * y * y)
+    out["qk_rational_reldiff"] = round(float(((t * y) - tru).norm() / tru.norm()), 4)
+    print("RATIONAL NORM CHECK:", json.dumps(out, indent=2))
+    return out
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=6 * 3600)
+def libero_rollout_head(head: str = "flow", steps: int = 6000, n_frames: int = 20000,
+                        horizon: int = 8, res: int = 64, eps_per_task: int = 20,
+                        max_task: int = 10, max_steps: int = 280, num_steps_wait: int = 10,
+                        exec_h: int = 8, flow_steps: int = 10,
+                        n_factors: int = 4, distill_teacher: bool = False,
+                        lambda_recon: float = 0.0, lambda_distill: float = 0.0,
+                        curriculum: bool = False, flow_decode: str = "mode",
+                        flow_kwta_samples: int = 16, tag: str = "", norm: str = "per_token",
+                        product_st: bool = False, seed: int = 0, qk_norm: str = "",
+                        use_ema: bool = True, ema_decay: float = 0.999,
+                        vision_encoder: str = "vit", conv_grid: int = 8,
+                        load_ckpt: str = ""):
+    """CLOSED-LOOP eval with a TENSOR-PURE MULTIMODAL action head (flow-matching or
+    product-routing) — the fix for the MSE mode-averaging that caused 0% closed-loop.
+    Trains offline on LIBERO-Object then rolls out in MuJoCo. Unlike the linear-head
+    rollout, the arm chunk is executed RECEDING-HORIZON WITHOUT cross-prediction
+    temporal-ensembling (averaging samples from different modes would re-collapse them);
+    the gripper is committed by the head itself (binarized by sign, an out-of-graph op).
+    Also logs an OFFLINE commit diagnostic (gripper |g|>0.5 fraction, mode coverage)."""
+    _bootstrap()
+    import json, os, pickle
+    import numpy as np
+    import torch
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download, list_repo_files
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.train.train_lm import _lr_at, TrainConfig
+    dev = "cuda"; H = horizon
+    torch.manual_seed(seed); np.random.seed(seed)      # controlled init for seed-variance study
+    name = "lerobot/libero_object_image"
+
+    tasks = {}
+    for tf in [f for f in list_repo_files(name, repo_type="dataset")
+               if "task" in f.lower() and f.endswith((".jsonl", ".json", ".parquet"))]:
+        try:
+            tp = hf_hub_download(name, tf, repo_type="dataset")
+            if tp.endswith(".parquet"):
+                import pandas as pd
+                df = pd.read_parquet(tp).reset_index()
+                tcol = "task" if "task" in df.columns else next(c for c in df.columns if df[c].dtype == object)
+                icol = "task_index" if "task_index" in df.columns else ("index" if "index" in df.columns else df.columns[0])
+                for _, r in df.iterrows(): tasks[int(r[icol])] = str(r[tcol])
+            else:
+                for line in open(tp): r = json.loads(line); tasks[int(r["task_index"])] = r["task"]
+            if tasks: break
+        except Exception as e: print(f"{tf}: {e}")
+    words = set()
+    for t in tasks.values(): words.update(t.lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words): vocab[w] = len(vocab)
+    T = 32
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T] + [0] * max(0, T - len(ids)))[:T]
+
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    if os.path.exists(cache):
+        frames = pickle.load(open(cache, "rb"))
+    else:
+        from PIL import Image
+        ds = load_dataset(name, split="train", streaming=True); frames = []
+        for ex in ds:
+            img = ex["observation.images.image"]
+            if not isinstance(img, Image.Image): img = Image.fromarray(np.array(img))
+            frames.append((int(ex["episode_index"]), int(ex["frame_index"]),
+                           np.asarray(img.resize((res, res)), dtype=np.uint8),
+                           np.asarray(ex["observation.state"], dtype=np.float32),
+                           np.asarray(ex["action"], dtype=np.float32), int(ex["task_index"])))
+            if len(frames) >= n_frames: break
+        pickle.dump(frames, open(cache, "wb")); vol.commit()
+    print(f"{len(frames)} frames, head={head}")
+    from collections import defaultdict
+    eps = defaultdict(list)
+    for f in frames: eps[f[0]].append(f)
+    samples = []
+    for ep, fs in eps.items():
+        fs.sort(key=lambda z: z[1])
+        for i in range(len(fs) - H):
+            samples.append((fs[i][2], fs[i][5], fs[i][3], np.stack([fs[i + k][4] for k in range(H)])))
+    d_a = samples[0][3].shape[1]; state_dim = samples[0][2].shape[0]
+    A = np.stack([s[3] for s in samples]); S = np.stack([s[2] for s in samples])
+    a_mu, a_sd = A.mean((0, 1)), A.std((0, 1)) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+    print(f"state_dim={state_dim} action_dim={d_a}")
+
+    imgs = torch.tensor(np.stack([s[0] for s in samples])).permute(0, 3, 1, 2).float().div(255).to(dev)
+    instr = torch.tensor([encode(tasks.get(s[1], "")) for s in samples], device=dev)
+    states = torch.tensor((S - s_mu) / s_sd, dtype=torch.float32, device=dev)
+    actions = torch.tensor((A - a_mu) / a_sd, dtype=torch.float32, device=dev)
+    cfg = VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                    vocab_size=len(vocab), max_instr_len=T, state_dim=state_dim, n_embodiments=1,
+                    dim=384, n_layers=8, n_heads=12, action_horizon=H, action_dim=d_a,
+                    action_head=head, flow_steps=flow_steps, n_factors=n_factors,
+                    distill_teacher=distill_teacher, lambda_recon=lambda_recon,
+                    lambda_distill=lambda_distill, curriculum=curriculum,
+                    flow_decode=flow_decode, flow_kwta_samples=flow_kwta_samples,
+                    norm=norm, qk_norm=(qk_norm or norm), product_st=product_st,
+                    vision_encoder=vision_encoder, conv_grid=conv_grid)
+    print(f"anchors: distill_teacher={distill_teacher} lambda_recon={lambda_recon} "
+          f"lambda_distill={lambda_distill} curriculum={curriculum} "
+          f"flow_decode={flow_decode}")
+    model = ChiVLA(cfg).to(dev)
+    ckpt_path = f"{VOL_PATH}/ckpt_{head}{tag}.pt"
+    if load_ckpt:
+        # CREDIT SAVER: skip the (expensive) training loop, load a saved model, go straight to
+        # rollout. Data is still loaded above (cheap, cached) so vocab/normalization match.
+        src = load_ckpt if load_ckpt.startswith("/") else f"{VOL_PATH}/{load_ckpt}"
+        model.load_state_dict(torch.load(src, map_location=dev, weights_only=True))
+        print(f"loaded checkpoint {src} — SKIPPING training")
+        model.eval()
+    else:
+        opt = torch.optim.AdamW(model.parameters(), lr=8e-4, betas=(0.9, 0.95), weight_decay=0.05)
+        tcfg = TrainConfig(train_bin="", val_bin="", lr=8e-4, max_steps=steps, warmup_frac=0.05)
+        # weight EMA for eval — averages out late-training weight jitter, a cheap variance reducer
+        ema = {n: p.detach().clone().float() for n, p in model.named_parameters()} if use_ema else None
+        model.train()
+        for step in range(steps + 1):
+            for g in opt.param_groups: g["lr"] = _lr_at(step, tcfg)
+            idx = torch.randint(len(samples), (256,), device=dev)
+            opt.zero_grad(set_to_none=True)
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                _, loss = model(imgs[idx], instr[idx], states[idx],
+                                torch.zeros(256, dtype=torch.long, device=dev),
+                                target_actions=actions[idx], progress=step / max(steps, 1))
+            loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+            if ema is not None:
+                with torch.no_grad():
+                    for n, p in model.named_parameters():
+                        ema[n].mul_(ema_decay).add_(p.detach().float(), alpha=1.0 - ema_decay)
+            if step % 1000 == 0: print(f"  step {step} loss {loss.item():.4f}")
+        if ema is not None:
+            with torch.no_grad():
+                for n, p in model.named_parameters():
+                    p.copy_(ema[n].to(p.dtype))
+        model.eval()
+        # CHECKPOINT the trained model so re-evaluation never re-pays for training.
+        torch.save(model.state_dict(), ckpt_path); vol.commit()
+        print(f"saved checkpoint -> {ckpt_path}")
+
+    a_mu_t = torch.tensor(a_mu, device=dev); a_sd_t = torch.tensor(a_sd, device=dev)
+
+    # ---- OFFLINE commit diagnostic (does the head commit the gripper vs collapse?) ----
+    with torch.no_grad():
+        idx = torch.randint(len(samples), (1024,), device=dev)
+        pred, _ = model(imgs[idx], instr[idx], states[idx],
+                        torch.zeros(1024, dtype=torch.long, device=dev))
+        praw = pred * a_sd_t + a_mu_t                      # (B,H,d_a) raw
+        graw = praw[:, :, -1].reshape(-1)                  # raw gripper commands
+        tgt_g = (actions[idx] * a_sd_t + a_mu_t)[:, :, -1].reshape(-1)
+        offline = {"gripper_commit_frac": round(float((graw.abs() > 0.5).float().mean()), 3),
+                   "gripper_abs_mean": round(float(graw.abs().mean()), 3),
+                   "target_gripper_abs_mean": round(float(tgt_g.abs().mean()), 3),
+                   "arm_pred_std": round(float(praw[:, :, :-1].std()), 3)}
+    print("OFFLINE COMMIT DIAG:", json.dumps(offline, indent=2))
+
+    # ---- rollout in sim ----
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    from robosuite.utils.transform_utils import quat2axisangle
+    from PIL import Image
+    # LIBERO init-state .pruned files are numpy pickles; PyTorch 2.6 defaults torch.load to
+    # weights_only=True and refuses them, silently dropping us back to reset()+seed (NOT the
+    # official protocol). These files are trusted → force weights_only=False so init states load.
+    _ol = torch.load
+    torch.load = lambda *a, **k: _ol(*a, **{**k, "weights_only": False})
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    s_mu_t = torch.tensor(s_mu, dtype=torch.float32); s_sd_t = torch.tensor(s_sd, dtype=torch.float32)
+
+    def build_state(obs):
+        v = np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]),
+                            obs["robot0_gripper_qpos"]]).astype(np.float32)
+        return v[:state_dim] if len(v) >= state_dim else np.pad(v, (0, state_dim - len(v)))
+
+    @torch.no_grad()
+    def predict_chunk(obs, instr_ids):
+        raw = build_state(obs)
+        img = np.asarray(Image.fromarray(np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])).resize((res, res)))
+        im = torch.tensor(img).permute(2, 0, 1).float().div(255).unsqueeze(0).to(dev)
+        st = ((torch.tensor(raw) - s_mu_t) / s_sd_t).float().unsqueeze(0).to(dev)
+        a, _ = model(im, instr_ids, st, torch.zeros(1, dtype=torch.long, device=dev))
+        return (a[0] * a_sd_t + a_mu_t).cpu().numpy()      # (H, d_a) raw committed chunk
+
+    close_sign = 1.0
+    DUMMY = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -close_sign]     # arm still, gripper OPEN (settle)
+    n_tasks = min(max_task, suite.n_tasks)
+    sane, per_task, canonical_tasks = None, {}, 0
     for ti in range(n_tasks):
         task = suite.get_task(ti)
         bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
         env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
         instr_ids = torch.tensor([encode(task.language)], device=dev)
+        # Canonical LIBERO initial states plus a settle wait. A published comparison must also
+        # match all ten tasks, the 280-step cap, and the number of trials. The OpenVLA paper
+        # reports 88.4% for OpenVLA and 92.5% for Diffusion Policy.
+        init_states = None
+        try:
+            init_states = suite.get_task_init_states(ti)
+        except Exception as e:
+            print(f"no init states for task {ti}: {e}")
+        if init_states is not None:
+            canonical_tasks += 1
         succ = 0
         for ep in range(eps_per_task):
             env.seed(ti * 100 + ep); obs = env.reset()
-            if sane is None:                                   # state-match sanity (once)
+            if init_states is not None:
+                obs = env.set_init_state(init_states[ep % len(init_states)])
+                for _ in range(num_steps_wait):
+                    obs, _, _, _ = env.step(DUMMY)
+            if sane is None:
                 sane = {"sim_state": np.round(build_state(obs), 3).tolist(),
                         "train_state_mean": np.round(s_mu, 3).tolist()}
                 print("STATE SANITY:", sane)
-            done = False
-            for t in range(220):
-                chunk = act(obs, instr_ids)
+            ep_success = False
+            # RECEDING-HORIZON: predict a committed chunk, execute exec_h steps, re-predict.
+            # NO cross-prediction averaging (would re-collapse multimodal samples).
+            t = 0
+            while t < max_steps and not ep_success:
+                chunk = predict_chunk(obs, instr_ids)       # (H, d_a) raw
                 for k in range(min(exec_h, H)):
-                    obs, r, done, info = env.step(chunk[k].tolist())
-                    if done: break
-                if done: break
-            succ += int(bool(done))
+                    a = chunk[k].copy()
+                    a[-1] = close_sign if a[-1] > 0 else -close_sign   # commit gripper by sign
+                    obs, r, done, info = env.step(a.tolist())
+                    t += 1
+                    if r > 0: ep_success = True
+                    if done or ep_success or t >= max_steps: break
+            succ += int(ep_success)
         env.close()
         per_task[task.language] = round(succ / eps_per_task, 3)
-        print(f"[task {ti}] {task.language}: {succ}/{eps_per_task}")
+        print(f"[{head} task {ti}] {task.language}: {succ}/{eps_per_task}")
     overall = round(float(np.mean(list(per_task.values()))), 3)
-    result = {"overall_success": overall, "n_tasks": n_tasks, "eps_per_task": eps_per_task,
-              "per_task": per_task, "state_sanity": sane, "train_action_mse_note": "see libero BC"}
-    with open(f"{VOL_PATH}/libero_rollout.json", "w") as f: json.dump(result, f, indent=2)
+    result = {"head": head, "overall": overall, "per_task": per_task,
+              "offline_commit": offline, "state_sanity": sane, "steps": steps,
+              "exec_h": exec_h, "flow_steps": flow_steps, "n_factors": n_factors,
+              "flow_decode": flow_decode, "tasks_evaluated": n_tasks,
+              "suite_tasks": suite.n_tasks, "eps_per_task": eps_per_task,
+              "max_steps": max_steps, "num_steps_wait": num_steps_wait,
+              "canonical_init_tasks": canonical_tasks,
+              "canonical_init_states": canonical_tasks == n_tasks}
+    with open(f"{VOL_PATH}/libero_rollout_{head}{tag}.json", "w") as f:
+        json.dump(result, f, indent=2)
     vol.commit()
-    print("RESULT:", json.dumps({"overall_success": overall, "per_task": per_task}, indent=2))
+    print("RESULT:", json.dumps({"head": head, "overall": overall, "offline": offline}, indent=2))
+    return result
+
+
+@app.function(image=image, volumes={VOL_PATH: vol}, timeout=600)
+def libero_taskcov(n_frames: int = 20000, res: int = 64):
+    """Is the training data actually spread across the eval tasks? The 20k frames are
+    streamed in dataset order (task-blocked) → the tail tasks may have ZERO data →
+    structurally 0% closed-loop. Histogram task_index over the cached frames."""
+    import pickle, json
+    from collections import Counter, defaultdict
+    frames = pickle.load(open(f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl", "rb"))
+    fc = Counter(int(f[5]) for f in frames)
+    ep = defaultdict(set)
+    for f in frames:
+        ep[int(f[5])].add(int(f[0]))
+    cov = {t: {"frames": fc[t], "episodes": len(ep[t])} for t in sorted(fc)}
+    print("TASK COVERAGE:", json.dumps(cov, indent=2))
+    print(f"distinct tasks with data: {len(cov)}  (eval uses task 0..7)")
+    return cov
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=1800)
+def libero_diag(res: int = 64, n_frames: int = 20000):
+    """Diagnostic for the 0% closed-loop: is the action/gripper convention right?
+    (a) print raw lerobot action stats (esp. gripper dim encoding); (b) drive the sim
+    with scripted actions and check the robot responds — which gripper sign closes, and
+    whether a -z command lowers the end-effector. Isolates env/action convention from
+    the model, no training/demos needed."""
+    _bootstrap()
+    import os, pickle, json
+    import numpy as np
+    # (a) lerobot raw action stats
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    astats = {}
+    if os.path.exists(cache):
+        frames = pickle.load(open(cache, "rb"))
+        A = np.stack([f[4] for f in frames])                   # (N, d_a) raw actions
+        astats = {"d_a": A.shape[1],
+                  "per_dim_min": np.round(A.min(0), 3).tolist(),
+                  "per_dim_max": np.round(A.max(0), 3).tolist(),
+                  "per_dim_mean": np.round(A.mean(0), 3).tolist(),
+                  "gripper_dim_unique_sample": np.round(np.unique(np.round(A[:2000, -1], 2))[:10], 2).tolist()}
+        print("LEROBOT ACTION STATS:", json.dumps(astats, indent=2))
+    # (b) scripted sim tests
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    task = suite.get_task(0)
+    bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+    env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+    env.seed(0); obs = env.reset()
+    d_a = astats.get("d_a", 7)
+    def zeros(): return [0.0] * d_a
+    g0 = float(np.mean(np.abs(obs["robot0_gripper_qpos"])))
+    a = zeros(); a[-1] = 1.0
+    for _ in range(30): obs, *_ = env.step(a)
+    g_plus = float(np.mean(np.abs(obs["robot0_gripper_qpos"])))
+    obs = env.reset(); a = zeros(); a[-1] = -1.0
+    for _ in range(30): obs, *_ = env.step(a)
+    g_minus = float(np.mean(np.abs(obs["robot0_gripper_qpos"])))
+    obs = env.reset(); z0 = float(obs["robot0_eef_pos"][2]); a = zeros(); a[2] = -1.0; a[-1] = -1.0
+    for _ in range(20): obs, *_ = env.step(a)
+    z1 = float(obs["robot0_eef_pos"][2])
+    env.close()
+    scripted = {"gripper_open_qpos_abs": round(g0, 4),
+                "gripper_qpos_abs_after_+1": round(g_plus, 4),
+                "gripper_qpos_abs_after_-1": round(g_minus, 4),
+                "which_sign_closes": "+1" if g_plus < g_minus else "-1",
+                "eef_z_start": round(z0, 4), "eef_z_after_-z_cmd": round(z1, 4),
+                "z_went_down": z1 < z0}
+    print("SCRIPTED SIM TEST:", json.dumps(scripted, indent=2))
+    result = {"lerobot_action_stats": astats, "scripted_sim_test": scripted}
+    with open(f"{VOL_PATH}/libero_diag.json", "w") as f: json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
     return result
 
 
@@ -247,7 +1216,7 @@ def _bootstrap():
         sys.path.insert(0, PROJ)
 
 
-@app.function(image=image, gpu="A100", timeout=300)
+@app.function(image=image, gpu="A10G", timeout=300)
 def a100_check():
     """Smoke test: is A100 unlocked now that a payment method is on file?
     Reports the GPU, does a trivial matmul, prints memory — a few seconds of A100."""
@@ -699,6 +1668,189 @@ def train_vla_libero(steps: int = 4000, n_frames: int = 20000, horizon: int = 8,
         "state_only_already_explains": round(1 - mse_state / base, 3),
     }
     with open(f"{VOL_PATH}/vla_libero.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def train_vla_libero_phase(steps: int = 4000, n_frames: int = 20000, horizon: int = 8,
+                           res: int = 64, n_phases: int = 3):
+    """PROTOTYPE (tensor-pure multimodal action via discrete-latent conditioning).
+
+    Tests the thesis: p(a|obs) = Σ_z p(z|obs) p(a|obs,z). z = a PHASE latent labelled
+    FOR FREE from the demo gripper signal (reach/grasp/lift). We (a) measure, on the
+    data alone, how much conditioning on z unimodalizes the action distribution
+    (esp. the bimodal gripper dim); (b) train a phase-CONDITIONED χ-VLA (z enters as
+    one extra token, action head stays linear+MSE, a LINEAR phase head emits p(z|obs)
+    logits) vs a phase-BLIND baseline; (c) report action MSE (blind vs conditioned on
+    true z vs conditioned on OUT-OF-GRAPH argmax ẑ) + gripper-dim MSE + phase-head acc.
+    Everything nonlinear (argmax over z) is out-of-graph; the exported graph stays
+    linear/foldable. Requires the frame cache from train_vla_libero."""
+    _bootstrap()
+    import json, os, pickle
+    from collections import defaultdict
+    import numpy as np
+    import torch
+    from huggingface_hub import hf_hub_download, list_repo_files
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.train.train_lm import _lr_at, TrainConfig
+    from xvla.train.phase import (label_chunks_sign, reach_grasp_lift_phase,
+                                  conditional_vs_marginal_spread)
+
+    name = "lerobot/libero_object_image"
+    tasks = {}
+    for tf in [f for f in list_repo_files(name, repo_type="dataset")
+               if "task" in f.lower() and f.endswith((".jsonl", ".json", ".parquet"))]:
+        try:
+            tp = hf_hub_download(name, tf, repo_type="dataset")
+            if tp.endswith(".parquet"):
+                import pandas as pd
+                df = pd.read_parquet(tp).reset_index()
+                tcol = "task" if "task" in df.columns else next(c for c in df.columns if df[c].dtype == object)
+                icol = "task_index" if "task_index" in df.columns else ("index" if "index" in df.columns else df.columns[0])
+                for _, r in df.iterrows():
+                    tasks[int(r[icol])] = str(r[tcol])
+            else:
+                for line in open(tp):
+                    r = json.loads(line); tasks[int(r["task_index"])] = r["task"]
+            if tasks:
+                break
+        except Exception as e:
+            print(f"  {tf} failed: {e}")
+
+    words = set()
+    for t in tasks.values():
+        words.update(t.lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words):
+        vocab[w] = len(vocab)
+    T = 32
+
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T] + [0] * max(0, T - len(ids)))[:T]
+
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    assert os.path.exists(cache), f"run train_vla_libero first to build {cache}"
+    with open(cache, "rb") as f:
+        frames = pickle.load(f)
+    print(f"{len(frames)} frames")
+
+    # Group by episode; per episode compute the reach/grasp/lift phase timeline from
+    # the gripper action dim (index -1), then build (img, instr, state, chunk, phase).
+    H = horizon
+    eps = defaultdict(list)
+    for fr in frames:
+        eps[fr[0]].append(fr)
+    samples, phases = [], []
+    for ep, fs in eps.items():
+        fs.sort(key=lambda z: z[1])
+        grip_seq = np.array([fr[4][-1] for fr in fs], dtype=np.float32)   # gripper timeline
+        if n_phases == 3:
+            ph_seq = reach_grasp_lift_phase(grip_seq, close_positive=True)
+        for i in range(len(fs) - H):
+            acts = np.stack([fs[i + k][4] for k in range(H)])
+            samples.append((fs[i][2], fs[i][5], fs[i][3], acts))
+            phases.append(int(ph_seq[i]) if n_phases == 3 else None)
+    A = np.stack([s[3] for s in samples]); S = np.stack([s[2] for s in samples])
+    if n_phases == 2:
+        lab_np = label_chunks_sign(A, gripper_dim=-1, close_positive=True)
+    else:
+        lab_np = np.array(phases, dtype=np.int64)
+    d_a = A.shape[-1]; state_dim = S.shape[-1]
+
+    # (a) DATA-ONLY unimodalization diagnostic (no model).
+    spread = conditional_vs_marginal_spread(A, lab_np, gripper_dim=-1)
+    print("UNIMODALIZATION (data-only):", json.dumps(
+        {k: spread[k] for k in ("gripper_marginal_std", "gripper_within_phase_std", "gripper_ratio")}, indent=2))
+    print("  per-phase counts:", {int(z): int((lab_np == z).sum()) for z in np.unique(lab_np)})
+
+    a_mu, a_sd = A.mean((0, 1)), A.std((0, 1)) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+    dev = "cuda"
+    imgs = torch.tensor(np.stack([s[0] for s in samples])).permute(0, 3, 1, 2).float().div(255).to(dev)
+    instr = torch.tensor([encode(tasks.get(s[1], "")) for s in samples], device=dev)
+    states = torch.tensor((S - s_mu) / s_sd, dtype=torch.float32, device=dev)
+    actions = torch.tensor((A - a_mu) / a_sd, dtype=torch.float32, device=dev)
+    labels = torch.tensor(lab_np, device=dev)
+    grip_idx = d_a - 1
+    n = len(samples); perm = torch.randperm(n, device=dev); ntr = int(n * 0.9)
+    tr, te = perm[:ntr], perm[ntr:]
+
+    def make_cfg(np_):
+        return VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                         vocab_size=len(vocab), max_instr_len=T, state_dim=state_dim,
+                         n_embodiments=1, dim=384, n_layers=8, n_heads=12,
+                         action_horizon=H, action_dim=d_a, n_phases=np_)
+
+    def train(model, conditioned):
+        opt = torch.optim.AdamW(model.parameters(), lr=8e-4, betas=(0.9, 0.95), weight_decay=0.05)
+        tcfg = TrainConfig(train_bin="", val_bin="", lr=8e-4, max_steps=steps, warmup_frac=0.05)
+        model.train()
+        for step in range(steps + 1):
+            for g in opt.param_groups:
+                g["lr"] = _lr_at(step, tcfg)
+            idx = tr[torch.randint(len(tr), (256,), device=dev)]
+            opt.zero_grad(set_to_none=True)
+            e = torch.zeros(len(idx), dtype=torch.long, device=dev)
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                if conditioned:
+                    _, loss, _ = model(imgs[idx], instr[idx], states[idx], e,
+                                       target_actions=actions[idx], phase_id=labels[idx],
+                                       phase_labels=labels[idx], phase_weight=1.0, return_phase=True)
+                else:
+                    _, loss = model(imgs[idx], instr[idx], states[idx], e, target_actions=actions[idx])
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            opt.step()
+            if step % 500 == 0:
+                print(f"  [{'cond' if conditioned else 'blind'}] step {step} loss {loss.item():.5f}")
+
+    @torch.no_grad()
+    def eval_mse(model, mode):
+        """mode: blind | true_phase | pred_phase (out-of-graph argmax over p(z|obs))."""
+        model.eval(); tot = cnt = gtot = gcnt = 0.0; pcorr = ptot = 0
+        for i in range(0, len(te), 512):
+            b = te[i:i + 512]; e = torch.zeros(len(b), dtype=torch.long, device=dev)
+            if mode == "blind":
+                a, _ = model(imgs[b], instr[b], states[b], e)
+            else:
+                # one pass to read LINEAR phase logits p(z|obs)
+                _, _, logits = model(imgs[b], instr[b], states[b], e, return_phase=True)
+                zhat = logits.argmax(-1)                       # OUT-OF-GRAPH argmax
+                pcorr += int((zhat == labels[b]).sum()); ptot += len(b)
+                z = labels[b] if mode == "true_phase" else zhat
+                a, _, _ = model(imgs[b], instr[b], states[b], e, phase_id=z, return_phase=True)
+            d = (a - actions[b]).pow(2)
+            tot += d.sum().item(); cnt += a.numel()
+            gtot += d[:, :, grip_idx].sum().item(); gcnt += d[:, :, grip_idx].numel()
+        acc = (pcorr / ptot) if ptot else None
+        return {"mse": tot / cnt, "gripper_mse": gtot / gcnt, "phase_acc": acc}
+
+    torch.manual_seed(0)
+    blind = ChiVLA(make_cfg(0)).to(dev)
+    print(f"blind params={blind.num_params()/1e6:.2f}M ; conditioned n_phases={n_phases}")
+    train(blind, conditioned=False)
+    r_blind = eval_mse(blind, "blind")
+
+    torch.manual_seed(0)
+    cond = ChiVLA(make_cfg(n_phases)).to(dev)
+    train(cond, conditioned=True)
+    r_true = eval_mse(cond, "true_phase")
+    r_pred = eval_mse(cond, "pred_phase")
+
+    result = {
+        "n_samples": n, "n_phases": n_phases, "d_a": d_a,
+        "data_unimodalization": {k: spread[k] for k in
+            ("gripper_marginal_std", "gripper_within_phase_std", "gripper_ratio",
+             "unimodalization_ratio")},
+        "blind":         {k: round(v, 5) if isinstance(v, float) else v for k, v in r_blind.items()},
+        "cond_true_z":   {k: round(v, 5) if isinstance(v, float) else v for k, v in r_true.items()},
+        "cond_pred_z":   {k: round(v, 5) if isinstance(v, float) else v for k, v in r_pred.items()},
+    }
+    with open(f"{VOL_PATH}/vla_libero_phase.json", "w") as f:
         json.dump(result, f, indent=2)
     vol.commit()
     print("RESULT:", json.dumps(result, indent=2))
@@ -1432,7 +2584,7 @@ def _train_shallow(model, tl, vl, epochs, lr=2e-3):
     return acc
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def interp_baselines_clf(epochs: int = 12, seeds: int = 2):
     """G1b/G7: the DATA-FREE claim, done right. On the exact feedforward χ-classifier
     (conv-spatial, SVHN), rank input directions by (a) ODT [DATA-FREE, from weights:
@@ -1520,7 +2672,7 @@ def interp_baselines_clf(epochs: int = 12, seeds: int = 2):
     return result
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def vla_bond_seeds(steps: int = 3000, seeds: int = 3):
     """G5: error bars on the bond-decodability table (C-v2). Linear-probe R² for target
     position at the input bond vs the post-attention action-query bond, over multiple seeds."""
@@ -1586,7 +2738,7 @@ def vla_bond_seeds(steps: int = 3000, seeds: int = 3):
     return result
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def vla_counterfactual(steps: int = 3000, seeds: int = 3):
     """G4/G9: a WORKING causal intervention on the policy with quantitative calibration.
     Keep the image+state fixed, but rewrite the instruction to name a DIFFERENT present
@@ -1669,7 +2821,120 @@ def vla_counterfactual(steps: int = 3000, seeds: int = 3):
     return result
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def _stl_loaders(batch=128, root="/vol/stl", res=64):
+    import torch
+    import torchvision as tv
+    import torchvision.transforms as T
+    tf = T.Compose([T.Resize(res), T.ToTensor(),
+                    T.Normalize((0.447, 0.440, 0.407), (0.260, 0.257, 0.271))])
+    tr = tv.datasets.STL10(root, split="train", download=True, transform=tf)
+    te = tv.datasets.STL10(root, split="test", download=True, transform=tf)
+    return (torch.utils.data.DataLoader(tr, batch, shuffle=True, num_workers=4, drop_last=True),
+            torch.utils.data.DataLoader(te, batch, shuffle=False, num_workers=4))
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def g7_basis_overlap(epochs: int = 12):
+    """G7: does the DATA-FREE weight-only ODT basis coincide with the DATA-DRIVEN
+    output-sensitivity Gram basis (the fallback used through attention)? On the exact
+    conv-spatial classifier, compute both input-space bases and their top-k subspace
+    overlap. High overlap ⇒ the data-driven method (all we can compute through attention)
+    is a faithful proxy for the weight-only one — licensing the 'weight-derived' story
+    past feed-forward bonds."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_conv import ShallowBilinear
+    from xvla.train.topology import class_quadratics, input_gram
+    tl, vl = _svhn_loaders(flatten=False)
+    vol.commit()
+    torch.manual_seed(0)
+    model = ShallowBilinear(mode="conv", readout="spatial", grid=8, width=48, kernel=5,
+                            in_ch=3, hw=32, num_classes=10)
+    acc = _train_shallow(model, tl, vl, epochs, lr=2e-3)
+    model = model.cuda().double().eval()
+    D = 3 * 32 * 32
+    xs, ys = [], []
+    for imgs, labels in vl:
+        xs.append(imgs); ys.append(labels)
+        if sum(t.shape[0] for t in xs) >= 2000:
+            break
+    X = torch.cat(xs)[:2000].cuda().double(); Y = torch.cat(ys)[:2000].cuda()
+    # data-free weight-only basis: eigvecs of Σ_c Q_c²
+    Q, _, _ = class_quadratics(model, "cuda")
+    Gwf = torch.zeros(D, D, device="cuda", dtype=torch.float64)
+    for c in range(Q.shape[0]):
+        Gwf += Q[c] @ Q[c]
+    Vw = torch.linalg.eigh(Gwf)[1].flip(1); del Q, Gwf; torch.cuda.empty_cache()
+    # data-driven basis: input output-sensitivity Gram
+    Gdd = input_gram(lambda z: model.logits(z), X, Y, "cuda")
+    Vd = torch.linalg.eigh(Gdd)[1].flip(1)
+    ks = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    overlap = {int(k): round((Vw[:, :k].T @ Vd[:, :k]).pow(2).sum().item() / k, 3) for k in ks}
+    rand_base = {int(k): round(k / D, 3) for k in ks}
+    result = {"clf_acc": round(acc, 4), "subspace_overlap": overlap,
+              "random_baseline": rand_base,
+              "note": "overlap in [0,1]; weight-only (data-free) vs data-driven Gram basis, top-k"}
+    with open(f"{VOL_PATH}/g7_basis_overlap.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+def topology_scale_stl(epochs: int = 20, seeds: int = 2):
+    """G8: does topology→coherence hold BEYOND 32×32? STL-10 at 64×64 (D=12288),
+    dense (ChiMLP) vs conv (ConvBilinearDeep), depth-3, via the data-driven input-space
+    Gram (exact-Q is memory-bound at this resolution). Reports acc + atom locality ratio
+    + global-vs-random faithfulness, mean±std over seeds."""
+    _bootstrap()
+    import json
+    import torch
+    from xvla.models.chi_mlp import ChiMLP, ChiMLPConfig
+    from xvla.models.chi_conv import ConvBilinearDeep
+    from xvla.train.topology import input_analysis
+    tl, vl = _stl_loaders(res=64)
+    vol.commit()
+    D = 3 * 64 * 64
+    xs, ys = [], []
+    for imgs, labels in vl:
+        xs.append(imgs); ys.append(labels)
+        if sum(t.shape[0] for t in xs) >= 1500:
+            break
+    X = torch.cat(xs)[:1500].cuda(); Y = torch.cat(ys)[:1500].cuda()
+    agg = {}
+    for arch in ["dense", "conv"]:
+        accs, ratios, g64, r64 = [], [], [], []
+        for seed in range(seeds):
+            torch.manual_seed(seed)
+            if arch == "dense":
+                model = ChiMLP(ChiMLPConfig(in_dim=D, dim=48, n_layers=3, num_classes=10,
+                                            norm="scalar_rbn"))
+                f = lambda z: model(z)[0]
+            else:
+                model = ConvBilinearDeep(depth=3, width=48, kernel=5, grid=8, in_ch=3, hw=64,
+                                         num_classes=10)
+                f = lambda z: model.logits(z)
+            acc = _train_shallow(model, tl, vl, epochs, lr=2e-3)
+            model.cuda().eval()
+            res = input_analysis(f, X, Y, "cuda", ks=(1, 2, 4, 8, 16, 32, 64, 128, 256))
+            accs.append(acc); ratios.append(res["locality_ratio"])
+            g64.append(res["global_curve"][64]); r64.append(res["random_curve"][64])
+            torch.cuda.empty_cache()
+        def ms(v):
+            t = torch.tensor(v); return [round(t.mean().item(), 3), round(t.std().item(), 3)]
+        agg[arch] = {"acc": ms(accs), "locality_ratio": ms(ratios),
+                     "global@64": ms(g64), "random@64": ms(r64)}
+        print(f"[STL64 {arch}] acc {ms(accs)} locality {ms(ratios)} g@64 {ms(g64)} r@64 {ms(r64)}")
+    with open(f"{VOL_PATH}/topology_scale_stl.json", "w") as f:
+        json.dump(agg, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(agg, indent=2))
+    return agg
+
+
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def topology_matched(epochs: int = 12):
     """G3: isolate topology from capability. Sweep width per architecture → collect
     (accuracy, atom-locality, params). If local-topology (conv/local-spatial) has higher
@@ -1712,7 +2977,7 @@ def topology_matched(epochs: int = 12):
     return rows
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def interp_baselines(epochs: int = 15, seeds: int = 3):
     """G1 (review-killer): compare the ODT global-Gram ranking against real baselines,
     not just random/local-SVD. On the χ-ViT patch bond (downstream crosses all attention):
@@ -1813,7 +3078,7 @@ def interp_baselines(epochs: int = 15, seeds: int = 3):
     return result
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def vla_steering(steps: int = 3000):
     """Causal steering (Q2 payoff): is the nameable 'target-position' mechanism at the
     post-attention bond *causally* responsible for the action? We patch each sample's
@@ -1915,7 +3180,7 @@ def vla_steering(steps: int = 3000):
     return result
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def topology_depth(epochs: int = 15, seeds: int = 2):
     """Experiment A-depth (Q1 at depth): does topology→coherence hold in DEEP bilinear
     nets? Dense (ChiMLP, flatten) vs conv (ConvBilinearDeep, local+spatial), depth 1 & 3,
@@ -1975,7 +3240,7 @@ def topology_depth(epochs: int = 15, seeds: int = 2):
     return agg
 
 
-@app.function(image=image, gpu="A100", volumes={VOL_PATH: vol}, timeout=3 * 3600)
+@app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def topology_derisk(epochs: int = 12, seeds: int = 3):
     """De-risk Exp A across DATASETS (SVHN, CIFAR) and SEEDS (Q1/Q4 robustness).
 
@@ -2393,6 +3658,215 @@ def odt_vla_action(steps: int = 3000):
     return result
 
 
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=2 * 3600)
+def odt_libero_action(ckpt: str = "ckpt_linear_rat_vit_s0_v2.pt", n_frames: int = 100000,
+                      res: int = 64, horizon: int = 8, vision_encoder: str = "vit",
+                      norm: str = "rational", n_eval: int = 2048):
+    """Interpretability PAYOFF on the ACTUAL trained LIBERO policy (not a component, not the
+    synthetic VLA) — promotes Exp B/C's causal-low-rank result to the real, closed-loop-
+    competitive checkpoint. Loads a saved libero_rollout_head checkpoint (default: the
+    fully-foldable rational-norm ViT model, DEVLOG cont.51-52), builds the data-driven
+    output-sensitivity Gram at the VISUAL-PATCH bond (downstream = the full causal bilinear-
+    attention backbone + linear head) per action GROUP {eef-translation, rotation, gripper},
+    then measures OFFLINE action faithfulness: truncating the bond onto its top-k GLOBAL
+    eigendirections vs a random k-subspace. Honesty: this is a data-driven Gram (norm-agnostic,
+    transfers verbatim to any checkpoint via `ckpt`), NOT exact weight-only ODT — the
+    causal/softmax-free-attention backbone is Level-C/open (odt.py); exact fold only applies to
+    feedforward chains. No training, no sim — pure forward/backward on cached frames."""
+    _bootstrap()
+    import json, os, pickle
+    import numpy as np
+    import torch
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download, list_repo_files
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.attention import causal_mask
+    from xvla.train.odt import random_projector
+
+    dev = "cuda"; H = horizon
+    name = "lerobot/libero_object_image"
+    tasks = {}
+    for tf in [f for f in list_repo_files(name, repo_type="dataset")
+               if "task" in f.lower() and f.endswith((".jsonl", ".json", ".parquet"))]:
+        try:
+            tp = hf_hub_download(name, tf, repo_type="dataset")
+            if tp.endswith(".parquet"):
+                import pandas as pd
+                df = pd.read_parquet(tp).reset_index()
+                tcol = "task" if "task" in df.columns else next(c for c in df.columns if df[c].dtype == object)
+                icol = "task_index" if "task_index" in df.columns else ("index" if "index" in df.columns else df.columns[0])
+                for _, r in df.iterrows(): tasks[int(r[icol])] = str(r[tcol])
+            else:
+                for line in open(tp): r = json.loads(line); tasks[int(r["task_index"])] = r["task"]
+            if tasks: break
+        except Exception as e: print(f"{tf}: {e}")
+    words = set()
+    for t in tasks.values(): words.update(t.lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words): vocab[w] = len(vocab)
+    T = 32
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T] + [0] * max(0, T - len(ids)))[:T]
+
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    if os.path.exists(cache):
+        frames = pickle.load(open(cache, "rb"))
+    else:
+        from PIL import Image
+        ds = load_dataset(name, split="train", streaming=True); frames = []
+        for ex in ds:
+            img = ex["observation.images.image"]
+            if not isinstance(img, Image.Image): img = Image.fromarray(np.array(img))
+            frames.append((int(ex["episode_index"]), int(ex["frame_index"]),
+                           np.asarray(img.resize((res, res)), dtype=np.uint8),
+                           np.asarray(ex["observation.state"], dtype=np.float32),
+                           np.asarray(ex["action"], dtype=np.float32), int(ex["task_index"])))
+            if len(frames) >= n_frames: break
+        pickle.dump(frames, open(cache, "wb")); vol.commit()
+    print(f"{len(frames)} frames")
+    from collections import defaultdict
+    eps = defaultdict(list)
+    for f in frames: eps[f[0]].append(f)
+    samples = []
+    for ep, fs in eps.items():
+        fs.sort(key=lambda z: z[1])
+        for i in range(len(fs) - H):
+            samples.append((fs[i][2], fs[i][5], fs[i][3], np.stack([fs[i + k][4] for k in range(H)])))
+    d_a = samples[0][3].shape[1]; state_dim = samples[0][2].shape[0]
+    A = np.stack([s[3] for s in samples]); S = np.stack([s[2] for s in samples])
+    a_mu, a_sd = A.mean((0, 1)), A.std((0, 1)) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+
+    cfg = VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                    vocab_size=len(vocab), max_instr_len=T, state_dim=state_dim, n_embodiments=1,
+                    dim=384, n_layers=8, n_heads=12, action_horizon=H, action_dim=d_a,
+                    action_head="linear", norm=norm, qk_norm=norm, vision_encoder=vision_encoder)
+    model = ChiVLA(cfg).to(dev)
+    model.load_state_dict(torch.load(f"{VOL_PATH}/{ckpt}", map_location=dev, weights_only=True))
+    model.eval()
+    D = cfg.dim
+    print(f"loaded {ckpt}: D={D} d_a={d_a} n_samples={len(samples)}")
+
+    # ---- held-out eval batch ----
+    rng_np = np.random.default_rng(0)
+    idx = rng_np.choice(len(samples), size=min(n_eval, len(samples)), replace=False)
+    imgs = torch.tensor(np.stack([samples[i][0] for i in idx])).permute(0, 3, 1, 2).float().div(255).to(dev)
+    instr = torch.tensor([encode(tasks.get(samples[i][1], "")) for i in idx], device=dev)
+    states_raw = np.stack([samples[i][2] for i in idx])
+    states = torch.tensor((states_raw - s_mu) / s_sd, dtype=torch.float32, device=dev)
+    actions_raw = np.stack([samples[i][3] for i in idx])
+    Atrue = torch.tensor((actions_raw - a_mu) / a_sd, dtype=torch.float32, device=dev)   # (B,H,d_a)
+    emb0 = torch.zeros(len(idx), dtype=torch.long, device=dev)
+
+    def build_seq(vis, sl):
+        B = vis.shape[0]
+        bos = model.bos.expand(B, -1, -1)
+        instr_e = model.tok_emb(instr[sl])
+        st = model.state_proj(states[sl])[:, None]
+        embe = model.embodiment_emb(emb0[sl])[:, None]
+        aq = model.action_queries.expand(B, -1, -1)
+        x = torch.cat([vis, bos, instr_e, st, embe, aq], dim=1)
+        return x + model.pos_emb[:, :x.shape[1]]
+
+    @torch.no_grad()
+    def vis_tokens_fixed():
+        return model._visual_tokens(imgs)                          # (B, Nv, D) — the bond
+
+    def from_vis(vis_in, sl, P=None):
+        v = vis_in @ P.T if P is not None else vis_in               # project each patch (B,Nv,D)
+        x = build_seq(v, sl)
+        mask = causal_mask(x.shape[1], device=x.device, dtype=x.dtype)
+        h = model.backbone(x, mask=mask)
+        h = model.norm_out(h)
+        return model.action_head(h[:, -H:])                        # (B,H,d_a)
+
+    groups = {"eef_transl": list(range(min(3, d_a))), "rotation": list(range(3, min(6, d_a))),
+              "gripper": [d_a - 1]}
+
+    # ---- action-GROUP-conditioned Grams at the visual-patch bond ----
+    vis_fixed = vis_tokens_fixed()
+    grams = {}
+    for gname, dims in groups.items():
+        if not dims: continue
+        G = torch.zeros(D, D, device=dev, dtype=torch.float64)
+        n = 0
+        for i in range(0, vis_fixed.shape[0], 256):
+            sl = slice(i, i + 256)
+            vb = vis_fixed[sl].detach().requires_grad_(True)
+            act = from_vis(vb, sl)
+            sel = act[:, :, dims].sum()
+            gsel, = torch.autograd.grad(sel, vb)
+            g = gsel.reshape(-1, D).double()
+            G += g.T @ g; n += g.shape[0]
+        grams[gname] = G / n
+    print("built Grams for groups:", list(grams.keys()))
+
+    def topk_proj(G, k):
+        ev, V = torch.linalg.eigh(G)
+        return V.flip(1)[:, :k]
+
+    ks = [4, 8, 16, 32, 64]
+    rng = torch.Generator(device=dev).manual_seed(0)
+
+    @torch.no_grad()
+    def group_mse(P, dims):
+        tot = n = 0.0
+        for i in range(0, vis_fixed.shape[0], 256):
+            sl = slice(i, i + 256)
+            pred = from_vis(vis_fixed[sl], sl, P)
+            tot += (pred[:, :, dims] - Atrue[sl][:, :, dims]).pow(2).sum().item()
+            n += pred[:, :, dims].numel()
+        return round(tot / n, 5)
+
+    faith = {}
+    full_mse = {}
+    for gname, dims in groups.items():
+        if not dims or gname not in grams: continue
+        full_mse[gname] = group_mse(None, dims)
+        Vg = topk_proj(grams[gname], max(ks))
+        curve_g, curve_r = {}, {}
+        for k in ks:
+            Pg = (Vg[:, :k] @ Vg[:, :k].T).float()
+            curve_g[k] = group_mse(Pg, dims)
+            curve_r[k] = group_mse(random_projector(D, k, dev, rng).float(), dims)
+        faith[gname] = {"full_D": D, "full_mse": full_mse[gname], "global": curve_g, "random": curve_r}
+
+    # ---- SPATIAL COHERENCE of the top causal direction per group (ties to the topology
+    # thesis: does the visual-patch mechanism concentrate on a few patches, or stay diffuse?
+    # This is the first time this is measured on a real, deployed, closed-loop policy rather
+    # than an SVHN/CIFAR classifier). Nv patches laid out on a sqrt(Nv) x sqrt(Nv) grid.
+    Nv = vis_fixed.shape[1]
+    grid = int(round(Nv ** 0.5))
+    frac = 0.1
+    k_top = max(1, int(round(frac * Nv)))
+    rng_loc = torch.Generator(device=dev).manual_seed(0)
+
+    @torch.no_grad()
+    def patch_locality(v):
+        # v: (D,) direction. Score each patch position by |vis . v|^2, averaged over the batch.
+        proj = torch.einsum("bnd,d->bn", vis_fixed.double(), v.double())    # (B, Nv)
+        energy = (proj ** 2).mean(0)                                        # (Nv,)
+        return (torch.topk(energy, k_top).values.sum() / energy.sum().clamp_min(1e-30)).item()
+
+    coherence = {}
+    for gname in grams:
+        v_top = topk_proj(grams[gname], 1)[:, 0]
+        rand_locs = [patch_locality(torch.randn(D, generator=rng_loc, device=dev)) for _ in range(30)]
+        coherence[gname] = {"top_causal_dir_locality": round(patch_locality(v_top), 4),
+                            "random_dir_locality_mean": round(sum(rand_locs) / len(rand_locs), 4),
+                            "grid": grid, "frac": frac}
+    print("COHERENCE:", json.dumps(coherence, indent=2))
+
+    result = {"ckpt": ckpt, "norm": norm, "vision_encoder": vision_encoder, "D": D, "d_a": d_a,
+              "n_eval": len(idx), "faithfulness_by_group": faith, "coherence_by_group": coherence}
+    with open(f"{VOL_PATH}/odt_libero_action_{vision_encoder}_{norm}.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
 @app.function(image=image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=3 * 3600)
 def odt_vit(epochs: int = 15):
     """Experiment B (Q3): does causal + coherent ODT structure survive ATTENTION on
@@ -2670,6 +4144,303 @@ def debug(steps: int = 60):
     h = train_lm(cfg, tc)
     return {"final_val_loss": h["final_val_loss"], "params_M": h["params_M"],
             "train_loss_tail": h["train_loss"][-5:]}
+
+
+@app.function(image=image, volumes={VOL_PATH: vol}, timeout=2 * 3600)
+def libero_action_multimodality(n_frames: int = 20000, res: int = 64, horizon: int = 8,
+                                n_anchors: int = 2000, k: int = 40, n_img_pc: int = 32,
+                                state_weight: float = 1.0, gap_tau: float = 2.0,
+                                mass_tau: float = 0.2, per_task: bool = True,
+                                source: str = "lerobot", success_only: bool = True):
+    """EMPIRICAL test of CONDITIONAL action MULTIMODALITY in the LIBERO demos.
+
+    Question (DEVLOG cont.17): given (near-)identical observations, is the distribution
+    of next-action-chunks unimodal or multimodal? If near-unimodal, LIBERO-Object is the
+    WRONG task to demonstrate a multimodal head beating a mean head (the MSE conditional
+    mean is already near-optimal → explains linear 25% > flow/product 0%).
+
+    Method (CPU, no GPU, reads the frame cache):
+      1. Observation embedding e_i = [ z(PCA(gray 16x16 image)) | state_weight * z(state) ].
+         (Same obs the policy conditions on: image + proprio; language is constant per task.)
+      2. For each of n_anchors sampled frames, find its k nearest neighbours in obs space
+         *from DIFFERENT episodes* (independent rollouts through a near-identical state — the
+         only way to observe conditional multimodality; same-episode neighbours are trivially
+         autocorrelated). This is the empirical conditional P(A | O ≈ o_i).
+      3. Action chunk a_i = per-dim-standardized next-H actions (H*d_a), split into ARM
+         (dims 0..d_a-2) and GRIPPER (dim d_a-1) — the gripper open/close is the obvious
+         nuisance bimodality; the arm is the claim under test.
+      4. Per neighbourhood, three complementary multimodality statistics:
+         (a) DISPERSION: within-neighbourhood action std / global std. ≪1 ⇒ action is
+             tightly determined by the obs (necessary, not sufficient, for unimodality).
+         (b) BIMODALITY (gap test, dip-test cousin): project the neighbourhood's chunks onto
+             the GLOBAL leading arm action-PC; fit optimal 1-D 2-means; standardized
+             gap = |μ2-μ1|/pooled_within_std and mass balance min(n1,n2)/n. A neighbourhood
+             is "bimodal" iff gap>gap_tau AND mass>mass_tau AND permutation p<0.05 vs a
+             Gaussian (unimodal) null of the SAME size (gap is shift/scale-invariant so the
+             null depends only on k+1 → computed once). Reports bimodal fraction + dip-style
+             bimodality coefficient BC=(skew^2+1)/kurtosis (>0.555 ⇒ non-unimodal).
+         (c) INVALID-MEAN (the closed-loop-relevant one): d_mean = ||mean_chunk −
+             nearest_real_chunk|| / (median within-neighbourhood pairwise dist). If the
+             conditional MEAN action is itself a valid demo action (d_mean small) the linear
+             MSE head is safe; if the mean falls in an empty valley between modes (d_mean≫1)
+             averaging produces an invalid middle → a mean head MUST fail and a multimodal
+             head is needed. This is exactly the failure the closed-loop measures.
+
+    VERDICT:
+      NEAR-UNIMODAL (confirms cont.17, LIBERO-Object is the wrong demo task) if
+        median dispersion_ratio < ~0.35  AND  arm bimodal_frac < ~0.10  AND
+        invalid_mean p90 (arm) < ~1.0 (mean is a valid action almost everywhere).
+      GENUINELY MULTIMODAL (refutes; re-open the flow/product 0% as NOT task-mismatch) if
+        arm bimodal_frac > ~0.25 with well-separated modes AND invalid_mean median > ~1.5.
+    """
+    _bootstrap()
+    import os, pickle, json
+    import numpy as np
+    from collections import defaultdict
+
+    if source.startswith("openvla_"):
+        # Teacher trajectories (openvla_collect layout): (ti, ep, t, img64, instr, action7, state8, done_ok).
+        # Remap to the lerobot frame layout this fn expects: (episode, step, img, state, action, task).
+        # Measures the multimodality of EXACTLY the data we distilled the student on.
+        tag = source.split("openvla_", 1)[1]
+        raw = pickle.load(open(f"{VOL_PATH}/openvla_traj_{tag}.pkl", "rb"))
+        if success_only:
+            raw = [f for f in raw if f[7]]
+        frames = [(int(f[0]) * 1000 + int(f[1]), int(f[2]), f[3],
+                   np.asarray(f[6], dtype=np.float32), np.asarray(f[5], dtype=np.float32),
+                   int(f[0])) for f in raw]
+        print(f"{len(frames)} teacher frames from openvla_traj_{tag}.pkl "
+              f"(success_only={success_only})")
+    else:
+        cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+        frames = pickle.load(open(cache, "rb"))
+        print(f"{len(frames)} frames from {cache}")
+
+    # ---- group by episode, build per-frame (obs, next-H chunk) aligned arrays ----
+    eps = defaultdict(list)
+    for f in frames:
+        eps[int(f[0])].append(f)
+    imgs, states, chunks, epi, task = [], [], [], [], []
+    for ep, fs in eps.items():
+        fs.sort(key=lambda z: int(z[1]))
+        acts = np.stack([f[4] for f in fs]).astype(np.float32)           # (T, d_a)
+        for i in range(len(fs) - horizon):
+            imgs.append(fs[i][2]); states.append(fs[i][3])
+            chunks.append(acts[i:i + horizon].reshape(-1))               # (H*d_a,)
+            epi.append(ep); task.append(int(fs[i][5]))
+    imgs = np.stack(imgs); states = np.stack(states).astype(np.float32)
+    chunks = np.stack(chunks).astype(np.float32)
+    epi = np.asarray(epi); task = np.asarray(task)
+    N, d_a = len(chunks), states.shape[0] if states.ndim == 1 else None
+    d_a = frames[0][4].shape[0]
+    print(f"{N} obs/chunk samples, d_a={d_a}, H={horizon}, episodes={len(eps)}")
+
+    # ---- observation embedding: PCA(16x16 gray) + z(state) ----
+    gray = imgs.astype(np.float32).mean(-1)                              # (N,res,res)
+    b = res // 16
+    gray = gray[:, :b * 16, :b * 16].reshape(N, 16, b, 16, b).mean((2, 4)).reshape(N, -1)
+    gray = (gray - gray.mean(0)) / (gray.std(0) + 1e-6)
+    # PCA via SVD on (mean-centered) gray
+    U, S, Vt = np.linalg.svd(gray - gray.mean(0), full_matrices=False)
+    img_emb = (gray @ Vt[:n_img_pc].T)
+    img_emb = (img_emb - img_emb.mean(0)) / (img_emb.std(0) + 1e-6)
+    st_emb = (states - states.mean(0)) / (states.std(0) + 1e-6)
+    obs_emb = np.concatenate([img_emb, state_weight * st_emb], axis=1).astype(np.float32)
+
+    # ---- action normalization + global arm PC1 ----
+    a_mu, a_sd = chunks.mean(0), chunks.std(0) + 1e-6
+    chunks_n = (chunks - a_mu) / a_sd
+    arm_cols = np.array([j for j in range(horizon * d_a) if j % d_a != d_a - 1])
+    grip_cols = np.array([j for j in range(horizon * d_a) if j % d_a == d_a - 1])
+    arm = chunks_n[:, arm_cols]; grip = chunks_n[:, grip_cols]
+    Ua, Sa, Vta = np.linalg.svd(arm - arm.mean(0), full_matrices=False)
+    arm_pc1 = Vta[0]                                                     # leading arm direction
+    global_arm_std = arm.std(0).mean(); global_grip_std = grip.std(0).mean()
+
+    # ---- Gaussian (unimodal) null for the standardized 2-means gap at size k+1 ----
+    def two_means_gap(x):
+        x = np.sort(x); n = len(x)
+        if n < 8: return 0.0, 0.0
+        cs = np.cumsum(x); cs2 = np.cumsum(x * x)
+        w_best, j_best = None, 1
+        for j in range(1, n):
+            n1, n2 = j, n - j
+            s1 = cs[j - 1]; s2 = cs[-1] - s1
+            ss1 = cs2[j - 1] - s1 * s1 / n1
+            ss2 = (cs2[-1] - cs2[j - 1]) - s2 * s2 / n2
+            w = ss1 + ss2
+            if w_best is None or w < w_best: w_best, j_best = w, j
+        j = j_best; mu1 = cs[j - 1] / j; mu2 = (cs[-1] - cs[j - 1]) / (n - j)
+        pooled = np.sqrt(max(w_best / (n - 2), 1e-12))
+        return abs(mu2 - mu1) / (pooled + 1e-9), min(j, n - j) / n
+
+    rng = np.random.default_rng(0)
+    null = np.array([two_means_gap(rng.standard_normal(k + 1))[0] for _ in range(2000)])
+    def gap_pvalue(g): return float((1 + (null >= g).sum()) / (len(null) + 1))
+
+    def bimodality_coefficient(x):
+        x = np.asarray(x); n = len(x); m = x.mean(); s = x.std() + 1e-9
+        z = (x - m) / s
+        skew = (z ** 3).mean(); kurt = (z ** 4).mean()
+        g1 = skew; g2 = kurt - 3.0
+        denom = g2 + 3 * (n - 1) ** 2 / ((n - 2) * (n - 3) + 1e-9)
+        return float((g1 ** 2 + 1) / (denom + 1e-9))
+
+    # ---- sample anchors, kNN over obs (cross-episode), compute per-neighbourhood stats ----
+    anchors = rng.choice(N, size=min(n_anchors, N), replace=False)
+    agg = {"arm_disp": [], "grip_disp": [], "arm_gap": [], "arm_mass": [], "arm_p": [],
+           "arm_bc": [], "grip_gap": [], "invalid_mean_arm": [], "invalid_mean_full": [],
+           "grip_bimodal": []}
+    by_task = defaultdict(lambda: {"arm_bimodal": [], "invalid_mean_arm": [], "arm_disp": []})
+    CH = 4096
+    for ai in anchors:
+        d = obs_emb - obs_emb[ai]
+        # chunked squared distance to keep memory flat
+        dist = np.empty(N, np.float32)
+        for s in range(0, N, CH):
+            dist[s:s + CH] = (d[s:s + CH] ** 2).sum(1)
+        dist[epi == epi[ai]] = np.inf                                   # cross-episode only
+        nn = np.argpartition(dist, k)[:k]
+        nn = nn[np.isfinite(dist[nn])]
+        if len(nn) < max(8, k // 2): continue
+        idx = np.concatenate([[ai], nn])
+        ca = chunks_n[idx]                                              # (k+1, H*d_a)
+        arm_n = ca[:, arm_cols]; grip_n = ca[:, grip_cols]
+        agg["arm_disp"].append(float(arm_n.std(0).mean() / (global_arm_std + 1e-9)))
+        agg["grip_disp"].append(float(grip_n.std(0).mean() / (global_grip_std + 1e-9)))
+        # bimodality on arm PC1
+        proj = arm_n @ arm_pc1
+        g, mb = two_means_gap(proj)
+        agg["arm_gap"].append(g); agg["arm_mass"].append(mb)
+        agg["arm_p"].append(gap_pvalue(g)); agg["arm_bc"].append(bimodality_coefficient(proj))
+        # gripper bimodality (mean gripper over chunk per neighbour)
+        gm = grip_n.mean(1)
+        gg, gmb = two_means_gap(gm)
+        agg["grip_gap"].append(gg)
+        agg["grip_bimodal"].append(int(gg > gap_tau and gmb > mass_tau and gap_pvalue(gg) < 0.05))
+        # invalid-mean: dist(mean chunk, nearest real chunk) / median pairwise
+        mean_arm = arm_n.mean(0)
+        d_to_real = np.linalg.norm(arm_n - mean_arm, axis=1)
+        med_pair = np.median(np.linalg.norm(arm_n - arm_n.mean(0), axis=1)) + 1e-9
+        agg["invalid_mean_arm"].append(float(d_to_real.min() / med_pair))
+        mean_full = ca.mean(0)
+        d_full = np.linalg.norm(ca - mean_full, axis=1)
+        med_full = np.median(np.linalg.norm(ca - ca.mean(0), axis=1)) + 1e-9
+        agg["invalid_mean_full"].append(float(d_full.min() / med_full))
+        bimodal = int(g > gap_tau and mb > mass_tau and agg["arm_p"][-1] < 0.05)
+        if per_task:
+            t = int(task[ai])
+            by_task[t]["arm_bimodal"].append(bimodal)
+            by_task[t]["invalid_mean_arm"].append(agg["invalid_mean_arm"][-1])
+            by_task[t]["arm_disp"].append(agg["arm_disp"][-1])
+
+    def q(a, p): return round(float(np.percentile(a, p)), 3)
+    A = {kk: np.asarray(v, float) for kk, v in agg.items() if len(v)}
+    arm_bimodal = ((A["arm_gap"] > gap_tau) & (A["arm_mass"] > mass_tau) & (A["arm_p"] < 0.05))
+    summary = {
+        "n_anchors_used": int(len(A["arm_disp"])), "k": k,
+        "dispersion_ratio_arm": {"median": q(A["arm_disp"], 50), "p90": q(A["arm_disp"], 90)},
+        "dispersion_ratio_grip": {"median": q(A["grip_disp"], 50), "p90": q(A["grip_disp"], 90)},
+        "arm_bimodal_frac": round(float(arm_bimodal.mean()), 3),
+        "arm_gap_median": q(A["arm_gap"], 50), "arm_bc_median": q(A["arm_bc"], 50),
+        "arm_bc_frac_gt_0.555": round(float((A["arm_bc"] > 0.555).mean()), 3),
+        "grip_bimodal_frac": round(float(np.mean(A["grip_bimodal"])), 3),
+        "invalid_mean_arm": {"median": q(A["invalid_mean_arm"], 50),
+                             "p90": q(A["invalid_mean_arm"], 90)},
+        "invalid_mean_full": {"median": q(A["invalid_mean_full"], 50),
+                              "p90": q(A["invalid_mean_full"], 90)},
+    }
+    near_unimodal = (summary["dispersion_ratio_arm"]["median"] < 0.35
+                     and summary["arm_bimodal_frac"] < 0.10
+                     and summary["invalid_mean_arm"]["p90"] < 1.0)
+    summary["verdict"] = ("NEAR-UNIMODAL (mean head suffices; LIBERO-Object is the wrong "
+                          "demo for multimodal benefit)" if near_unimodal else
+                          "MULTIMODAL SIGNAL PRESENT (re-open flow/product 0% as NOT task-mismatch)")
+    if per_task:
+        summary["per_task"] = {int(t): {
+            "arm_bimodal_frac": round(float(np.mean(d["arm_bimodal"])), 3),
+            "invalid_mean_arm_median": round(float(np.median(d["invalid_mean_arm"])), 3),
+            "arm_disp_median": round(float(np.median(d["arm_disp"])), 3),
+        } for t, d in sorted(by_task.items()) if d["arm_bimodal"]}
+    _sfx = "" if source == "lerobot" else f"_{source}"
+    with open(f"{VOL_PATH}/libero_action_multimodality{_sfx}.json", "w") as f:
+        json.dump(summary, f, indent=2)
+    vol.commit()
+    print("MULTIMODALITY:", json.dumps(summary, indent=2))
+    return summary
+
+
+@app.function(image=image, gpu="A10G", timeout=2 * 3600)
+def synth_multimodal_eval(steps: int = 4000, sep: float = 0.5, eps_hit: float = 0.12,
+                          flow_steps: int = 20, n_factors: int = 3):
+    """DEMONSTRATION task where a multimodal head PROVABLY beats a mean head.
+
+    AMBIGUOUS REACH (xvla/train/synth_vla.make_ambiguous_batch): the scene contains TWO
+    identical valid targets (same colour+shape) at symmetric positions p_L, p_R separated
+    by `sep`; the instruction ("reach the {colour} {shape}") does NOT disambiguate which.
+    Demos are 50/50: each trajectory reaches ONE of the two (a genuine conditional bimodal
+    target — the SAME obs+instruction maps to two valid chunks). Everything else matches
+    synth_vla (32x32 render, ChiVLA, on-device, no downloads).
+
+    WHY A MEAN HEAD MUST FAIL (provable): the L2-optimal deterministic map given a 50/50
+    bimodal target is the MEAN = the midpoint (p_L+p_R)/2, which is the EMPTY SPACE between
+    the two objects. With sep > 2*eps_hit the midpoint is > eps_hit from BOTH targets ⇒ the
+    linear head's endpoint lands on nothing ⇒ commit_rate = 0 by construction. A multimodal
+    head (flow / product) represents both chunks and commits to one valid target.
+
+    METRIC (separates 'commits to a valid mode' from 'averages into an invalid middle'):
+      endpoint e = gripper_start + Σ_h step_h (integrate the predicted chunk).
+      commit  = min(||e-p_L||, ||e-p_R||) < eps_hit           (reached a real target)
+      average = ||e - midpoint|| < eps_hit AND not commit      (stuck in the empty valley)
+    Report per head: commit_rate (higher=better, the multimodal win) and average_rate
+    (higher=worse, the mean-collapse signature). Expectation: linear commit≈0/average≈1;
+    flow & product commit≫0.
+    """
+    _bootstrap()
+    import json
+    import numpy as np
+    import torch
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.train.synth_vla import make_ambiguous_batch, VOCAB
+    dev = "cuda"; H = 4
+
+    def train_eval(head):
+        cfg = VLAConfig(image_size=32, patch_size=8, vit_dim=128, vit_layers=3, vit_heads=8,
+                        vocab_size=VOCAB, max_instr_len=16, state_dim=8, n_embodiments=1,
+                        dim=256, n_layers=6, n_heads=8, action_horizon=H, action_dim=7,
+                        action_head=head, flow_steps=flow_steps, n_factors=n_factors,
+                        # symmetric-bimodal task → flow needs KWTA decode (mode maps to
+                        # the empty valley on a symmetric conditional; DEVLOG cont.19 #3).
+                        flow_decode="kwta")
+        m = ChiVLA(cfg).to(dev)
+        opt = torch.optim.AdamW(m.parameters(), lr=6e-4, betas=(0.9, 0.95), weight_decay=0.05)
+        m.train()
+        for step in range(steps):
+            batch = make_ambiguous_batch(128, dev, sep=sep)
+            opt.zero_grad(set_to_none=True)
+            _, loss = m(batch["img"], batch["instr"], batch["state"], batch["embodiment"],
+                        target_actions=batch["actions"])
+            loss.backward(); torch.nn.utils.clip_grad_norm_(m.parameters(), 1.0); opt.step()
+            if step % 1000 == 0: print(f"[{head}] step {step} loss {loss.item():.4f}")
+        m.eval()
+        with torch.no_grad():
+            b = make_ambiguous_batch(2048, dev, sep=sep)
+            pred, _ = m(b["img"], b["instr"], b["state"], b["embodiment"])   # (B,H,7)
+            start = b["state"][:, :2]                                        # gripper start
+            e = start + pred[:, :, :2].sum(1)                                # endpoint (x,y)
+            pL, pR = b["p_left"], b["p_right"]; mid = (pL + pR) / 2
+            dL = (e - pL).norm(dim=1); dR = (e - pR).norm(dim=1)
+            dmid = (e - mid).norm(dim=1)
+            commit = (torch.minimum(dL, dR) < eps_hit)
+            average = (dmid < eps_hit) & (~commit)
+        return {"commit_rate": round(float(commit.float().mean()), 3),
+                "average_rate": round(float(average.float().mean()), 3),
+                "mean_endpoint_err_to_nearest": round(float(torch.minimum(dL, dR).mean()), 3)}
+
+    out = {h: train_eval(h) for h in ["linear", "flow", "product", "quantile"]}
+    out["config"] = {"sep": sep, "eps_hit": eps_hit, "steps": steps}
+    print("SYNTH MULTIMODAL EVAL:", json.dumps(out, indent=2))
+    return out
 
 
 @app.local_entrypoint()
