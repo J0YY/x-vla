@@ -14,6 +14,7 @@ different weights/objectives; that is expressed by instantiating two χ-ViTs.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -86,6 +87,68 @@ class ChiViT(nn.Module):
         logits = self.head(pooled)
         loss = None if targets is None else F.cross_entropy(logits, targets)
         return logits, loss
+
+    def num_params(self) -> int:
+        return sum(p.numel() for p in self.parameters())
+
+
+class ChiConvEncoder(nn.Module):
+    """Fully tensor-decomposable CONVOLUTIONAL vision encoder (drop-in for ChiViT).
+
+    The from-scratch ChiViT (a single strided-conv patch embed + bilinear transformer) is the
+    weakest component on a pixel task: ViTs need ~1M+ images or distillation to match a CNN in
+    the small-data regime, whereas convolution gives the right locality/weight-sharing inductive
+    bias for free (and the repo's own topology study found conv >> dense for coherent features).
+    This is a ResNet-style FOLDABLE stem: a stack of strided BILINEAR conv layers
+    ``h = convL(n(h)) * convR(n(h))`` (each degree-2, tensor-convertible) with a foldable norm
+    between them to tame the degree-2^depth magnitude growth, downsampling to a ``grid x grid``
+    token map fed to the joint transformer. Same ``.features(img) -> (B, N, dim)`` contract as
+    ChiViT, so it swaps in via ``VLAConfig.vision_encoder='conv'`` with zero downstream changes.
+    With ``norm='rational'`` the whole encoder folds (bilinear conv = CP core, rational norm =
+    P(x)/Q(x)); with ``norm='per_token'`` it is the non-strict capability-first variant.
+    """
+
+    def __init__(self, cfg: ViTConfig, kernel: int = 3, grid: int = 8, norm: str | None = None):
+        super().__init__()
+        self.cfg = cfg
+        w = cfg.dim
+        self.grid = grid
+        norm = norm or cfg.norm
+        n_down = max(1, int(round(math.log2(max(cfg.image_size, grid) / grid))))  # stride-2 stages
+        p = kernel // 2
+        self.convL = nn.ModuleList()
+        self.convR = nn.ModuleList()
+        self.norms = nn.ModuleList()
+        c_in = cfg.in_chans
+        for _ in range(n_down):
+            self.convL.append(nn.Conv2d(c_in, w, kernel, stride=2, padding=p))
+            self.convR.append(nn.Conv2d(c_in, w, kernel, stride=2, padding=p))
+            self.norms.append(make_norm(norm, momentum=cfg.rbn_momentum))
+            c_in = w
+        self.norm_out = make_norm(norm, momentum=cfg.rbn_momentum)
+        self.pos_emb = nn.Parameter(torch.zeros(1, grid * grid, w))
+        nn.init.normal_(self.pos_emb, std=w ** -0.5)
+
+    @staticmethod
+    def _norm_c(n: nn.Module, h: torch.Tensor) -> torch.Tensor:
+        # apply a (last-dim) norm over the CHANNEL axis of a (B,C,H,W) feature map
+        return n(h.permute(0, 2, 3, 1)).permute(0, 3, 1, 2).contiguous()
+
+    def features(self, imgs: torch.Tensor) -> torch.Tensor:
+        """Pixels (B,3,H,W) -> spatial token features (B, grid*grid, dim)."""
+        h = imgs
+        for lL, lR, n in zip(self.convL, self.convR, self.norms):
+            h = lL(h) * lR(h)                       # bilinear conv (downsamples by 2)
+            h = self._norm_c(n, h)                  # foldable norm over channels
+        if h.shape[-1] != self.grid:
+            h = F.adaptive_avg_pool2d(h, self.grid)
+        h = self._norm_c(self.norm_out, h)
+        tok = h.flatten(2).transpose(1, 2)          # (B, grid*grid, dim)
+        return tok + self.pos_emb
+
+    def forward(self, imgs: torch.Tensor, targets: torch.Tensor | None = None):
+        # classifier path (for standalone SVHN/CIFAR sanity), mean-pool + head-less caller uses features()
+        return self.features(imgs)
 
     def num_params(self) -> int:
         return sum(p.numel() for p in self.parameters())
