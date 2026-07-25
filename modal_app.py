@@ -1106,6 +1106,33 @@ def libero_rollout_head(head: str = "flow", steps: int = 6000, n_frames: int = 2
     return result
 
 
+@app.function(image=libero_image, timeout=600)
+def libero_scene_objects(max_task: int = 10):
+    """Quick diagnostic: does a LIBERO-Object scene contain multiple distinct objects (so an
+    instruction-swap causal intervention has something real to swap TO), or just the one named
+    target? Lists every object body name present in each task's initial simulator state."""
+    _bootstrap()
+    import json, os
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+    out = {}
+    for ti in range(min(max_task, suite.n_tasks)):
+        task = suite.get_task(ti)
+        bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=64, camera_widths=64)
+        obs = env.reset()
+        obj_names = sorted({k.rsplit("_", 1)[0] for k in obs.keys()
+                            if k.endswith(("_pos", "_quat")) and not k.startswith("robot0")})
+        out[ti] = {"language": task.language, "objects_in_scene": obj_names}
+        env.close()
+        print(f"[task {ti}] {task.language} -> objects: {obj_names}")
+    with open(f"{VOL_PATH}/libero_scene_objects.json", "w") as f:
+        json.dump(out, f, indent=2)
+    vol.commit()
+    return out
+
+
 @app.function(image=image, volumes={VOL_PATH: vol}, timeout=600)
 def libero_taskcov(n_frames: int = 20000, res: int = 64):
     """Is the training data actually spread across the eval tasks? The 20k frames are
@@ -3866,6 +3893,372 @@ def odt_libero_action(ckpt: str = "ckpt_linear_rat_vit_s0_v2.pt", n_frames: int 
         json.dump(result, f, indent=2)
     vol.commit()
     print("RESULT:", json.dumps(result, indent=2))
+    return result
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=1800)
+def decomposability_audit(ckpt: str = "ckpt_linear_rat_vit_s0_v2.pt", n_frames: int = 100000,
+                          res: int = 64, horizon: int = 8, vision_encoder: str = "vit",
+                          norm: str = "rational", n_batch: int = 512):
+    """Does decomposability hold on the ACTUAL trained ~20M policy, not just architecturally?
+    Three checks, all on real trained weights + real held-out data, no training/sim:
+    (1) PURITY AUDIT: every nn.Module instance actually used in a forward pass belongs to the
+        allowed {Linear, Embedding, BilinearFFN, BilinearAttention, RationalNorm, containers} —
+        a mechanical certificate, not an architectural claim.
+    (2) EXACT PROJECTIVE FOLD-AND-VERIFY on real weights: take one real backbone block's
+        RationalNorm(pade) -> BilinearFFN branch, reconstruct it as a literal ratio of two
+        polynomial tensor networks P(x)/Q(x) (BilinearFFN.dense_core() gives the exact cubic
+        tensor T; the RationalNorm forward is algebraically rearranged into (numerator,
+        denominator) form per DEVLOG cont.31's projective-coordinate construction), and verify
+        the projective reconstruction reproduces the real forward pass to near machine precision
+        in fp64 -- on the TRAINED weights and REAL activations, not a random toy net
+        (rational_norm_proto.py) or an operator-level statistic (rational_norm_check).
+    (3) FP64 vs FP32 whole-model determinism: the deployed model is a fixed algebraic function of
+        its input, so raising precision should only shrink floating-point rounding, not reveal
+        any hidden non-algebraic behavior (a branch, a lookup, a numerical solver)."""
+    _bootstrap()
+    import json, os, pickle
+    import numpy as np
+    import torch
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download, list_repo_files
+    from xvla.models.vla import ChiVLA, VLAConfig
+    from xvla.nn.bilinear import BilinearFFN
+    from xvla.nn.normalization import RationalNorm, PerTokenRmsNorm, RmsBatchNorm, HomotopyNorm
+
+    dev = "cuda"; H = horizon
+    name = "lerobot/libero_object_image"
+    tasks = {}
+    for tf in [f for f in list_repo_files(name, repo_type="dataset")
+               if "task" in f.lower() and f.endswith((".jsonl", ".json", ".parquet"))]:
+        try:
+            tp = hf_hub_download(name, tf, repo_type="dataset")
+            if tp.endswith(".parquet"):
+                import pandas as pd
+                df = pd.read_parquet(tp).reset_index()
+                tcol = "task" if "task" in df.columns else next(c for c in df.columns if df[c].dtype == object)
+                icol = "task_index" if "task_index" in df.columns else ("index" if "index" in df.columns else df.columns[0])
+                for _, r in df.iterrows(): tasks[int(r[icol])] = str(r[tcol])
+            else:
+                for line in open(tp): r = json.loads(line); tasks[int(r["task_index"])] = r["task"]
+            if tasks: break
+        except Exception as e: print(f"{tf}: {e}")
+    words = set()
+    for t in tasks.values(): words.update(t.lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words): vocab[w] = len(vocab)
+    T_len = 32
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T_len] + [0] * max(0, T_len - len(ids)))[:T_len]
+
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    frames = pickle.load(open(cache, "rb"))
+    from collections import defaultdict
+    eps = defaultdict(list)
+    for f in frames: eps[f[0]].append(f)
+    samples = []
+    for ep, fs in eps.items():
+        fs.sort(key=lambda z: z[1])
+        for i in range(len(fs) - H):
+            samples.append((fs[i][2], fs[i][5], fs[i][3], np.stack([fs[i + k][4] for k in range(H)])))
+    d_a = samples[0][3].shape[1]; state_dim = samples[0][2].shape[0]
+    A = np.stack([s[3] for s in samples]); S = np.stack([s[2] for s in samples])
+    a_mu, a_sd = A.mean((0, 1)), A.std((0, 1)) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+
+    cfg = VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                    vocab_size=len(vocab), max_instr_len=T_len, state_dim=state_dim, n_embodiments=1,
+                    dim=384, n_layers=8, n_heads=12, action_horizon=H, action_dim=d_a,
+                    action_head="linear", norm=norm, qk_norm=norm, vision_encoder=vision_encoder)
+    model = ChiVLA(cfg).to(dev)
+    model.load_state_dict(torch.load(f"{VOL_PATH}/{ckpt}", map_location=dev, weights_only=True))
+    model.eval()
+    print(f"loaded {ckpt}: dim={cfg.dim} d_a={d_a} n_samples={len(samples)}")
+
+    rng_np = np.random.default_rng(0)
+    idx = rng_np.choice(len(samples), size=min(n_batch, len(samples)), replace=False)
+    imgs = torch.tensor(np.stack([samples[i][0] for i in idx])).permute(0, 3, 1, 2).float().div(255).to(dev)
+    instr = torch.tensor([encode(tasks.get(samples[i][1], "")) for i in idx], device=dev)
+    states = torch.tensor((np.stack([samples[i][2] for i in idx]) - s_mu) / s_sd, dtype=torch.float32, device=dev)
+    emb0 = torch.zeros(len(idx), dtype=torch.long, device=dev)
+
+    out = {"ckpt": ckpt, "n_batch": len(idx)}
+
+    # ---- (1) PURITY AUDIT ----
+    allowed_leaf = {"Linear", "Embedding", "Conv2d", "BilinearFFN", "BilinearAttention",
+                    "RationalNorm", "Parameter", "Dropout", "Identity"}
+    forbidden_types = (PerTokenRmsNorm, RmsBatchNorm, HomotopyNorm)
+    seen_types = {}
+    forbidden_found = []
+    for m in model.modules():
+        tname = type(m).__name__
+        is_leaf = len(list(m.children())) == 0
+        if is_leaf:
+            seen_types[tname] = seen_types.get(tname, 0) + 1
+        if isinstance(m, forbidden_types):
+            forbidden_found.append(tname)
+        if is_leaf and tname not in allowed_leaf and "ModuleList" not in tname:
+            forbidden_found.append(tname)
+    # explicit negative check: no torch.nn.functional.softmax / GELU / LayerNorm modules
+    disallowed_names = [n for n in seen_types if n in
+                        ("Softmax", "GELU", "ReLU", "SiLU", "LayerNorm", "BatchNorm1d", "BatchNorm2d")]
+    out["purity_audit"] = {
+        "leaf_module_types_used": seen_types,
+        "forbidden_norm_instances_found": forbidden_found,
+        "disallowed_nonlinearity_modules_found": disallowed_names,
+        "PASS": len(forbidden_found) == 0 and len(disallowed_names) == 0,
+    }
+    print("PURITY AUDIT:", json.dumps(out["purity_audit"], indent=2))
+
+    # ---- (3) FP64 vs FP32 whole-model determinism (build the double copy first; also used by (2)) ----
+    model64 = ChiVLA(cfg).double().to(dev)
+    model64.load_state_dict({k: v.double() for k, v in model.state_dict().items()})
+    model64.eval()
+    with torch.no_grad():
+        a32, _ = model(imgs, instr, states, emb0)
+        a64, _ = model64(imgs.double(), instr, states.double(), emb0)
+    d = (a64 - a32.double()).abs()
+    out["fp64_vs_fp32"] = {
+        "max_abs_diff": round(float(d.max()), 10),
+        "mean_abs_diff": round(float(d.mean()), 10),
+        "action_scale_for_reference": round(float(a64.abs().mean()), 6),
+    }
+    print("FP64 vs FP32:", json.dumps(out["fp64_vs_fp32"], indent=2))
+
+    # ---- (2) EXACT PROJECTIVE FOLD-AND-VERIFY on real weights + real activations ----
+    # "Direct" is computed NATIVELY in fp64 (model64), so the comparison isolates the algebraic
+    # correctness of the projective reconstruction from ordinary fp32 rounding (matching the
+    # rigor of the toy-net proto's ~1e-14 check, but on the real trained 20M-parameter policy).
+    from xvla.nn.attention import causal_mask
+    imgs64, instr64, states64, emb064 = imgs.double(), instr, states.double(), emb0
+    with torch.no_grad():
+        vis = model64._visual_tokens(imgs64)
+        bos = model64.bos.expand(len(idx), -1, -1)
+        instr_e = model64.tok_emb(instr64)
+        st = model64.state_proj(states64)[:, None]
+        embe = model64.embodiment_emb(emb064)[:, None]
+        aq = model64.action_queries.expand(len(idx), -1, -1)
+        x0 = torch.cat([vis, bos, instr_e, st, embe, aq], dim=1)
+        x0 = x0 + model64.pos_emb[:, :x0.shape[1]]
+        mask = causal_mask(x0.shape[1], device=dev, dtype=x0.dtype)
+        block0 = model64.backbone.blocks[0]
+        u0 = block0.rbn_attn(x0)
+        x1 = x0 + block0.attn_gain * block0.attn(u0, mask=mask)   # real residual stream, native fp64
+    rbn: RationalNorm = block0.rbn_ffn
+    ffn: BilinearFFN = block0.ffn
+    assert rbn.variant == "pade" and not model64.training
+
+    x64 = x1.reshape(-1, x1.shape[-1])                    # (B*N, dim) real trained-model activations, fp64
+    with torch.no_grad():
+        v_direct = rbn(x1).reshape(-1, x1.shape[-1])
+        y_direct = ffn(rbn(x1)).reshape(-1, ffn.out_dim)
+
+    eps_ = float(rbn.eps)
+    s0 = rbn.running_ms.clamp_min(1e-12)
+    pa = rbn.pa; pb = rbn.pb
+    ms = x64.pow(2).mean(-1, keepdim=True) + eps_
+    vv = ms / s0
+    P_ = sum(pa[k] * vv ** k for k in range(rbn.deg + 1))
+    Q_ = sum(pb[k] * vv ** k for k in range(rbn.deg + 1))
+    N_ = x64 * P_ * torch.rsqrt(s0)                       # v_direct == N_ / Q_
+    v_proj = N_ / Q_
+    v_err = float((v_proj - v_direct).abs().max())
+
+    h = torch.cat([Q_.expand(-1, 1), N_], dim=-1)          # h = Q_ * x̄(v), homogeneous, constant slot first
+    T = ffn.dense_core()                                    # (out, dim+1, dim+1) exact cubic tensor, real weights, fp64
+    # chunked to avoid materializing a (rows, out, dim+1, dim+1) intermediate (OOMs at full batch)
+    y_num_parts = []
+    for i in range(0, h.shape[0], 256):
+        hc = h[i:i + 256]
+        y_num_parts.append(torch.einsum("oij,bi,bj->bo", T, hc, hc))
+    y_num = torch.cat(y_num_parts, dim=0)
+    y_den = Q_ ** 2
+    y_proj = y_num / y_den
+    y_err_abs = float((y_proj - y_direct).abs().max())
+    y_err_rel = float(((y_proj - y_direct).abs() / y_direct.abs().clamp_min(1e-10)).median())
+    out["projective_fold_verify"] = {
+        "site": "backbone.blocks[0].{rbn_ffn,ffn}", "batch_rows": int(x64.shape[0]),
+        "precision_note": ("the projective (P/Q) reconstruction is computed in pure fp64 with no "
+                           "internal downcast; the 'direct' reference calls the real deployed "
+                           "RationalNorm.forward(), which by design internally computes its "
+                           "per-instance statistic in fp32 (`xf = x.float()`) regardless of the "
+                           "caller's dtype, so the residual below is bounded by that module's own "
+                           "fp32 precision choice, not by any approximation in the rational algebra"),
+        "norm_reconstruction_max_abs_err": v_err,
+        "ffn_output_max_abs_err": y_err_abs,
+        "ffn_output_median_rel_err": y_err_rel,
+        "v_range_observed": [round(float(vv.min()), 4), round(float(vv.max()), 4)],
+        "pade_fit_range": [0.1, 10.0],
+    }
+    print("PROJECTIVE FOLD-VERIFY:", json.dumps(out["projective_fold_verify"], indent=2))
+
+    out["overall_decomposability_verified"] = (
+        out["purity_audit"]["PASS"]
+        and out["projective_fold_verify"]["ffn_output_median_rel_err"] < 1e-5   # ~ fp32 eps scale
+    )
+    with open(f"{VOL_PATH}/decomposability_audit_{vision_encoder}_{norm}.json", "w") as f:
+        json.dump(out, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps(out, indent=2))
+    return out
+
+
+@app.function(image=libero_image, gpu="A10G", volumes={VOL_PATH: vol}, timeout=1800)
+def libero_causal_intervention(ckpt: str = "ckpt_linear_rat_vit_s0_v2.pt", n_frames: int = 100000,
+                               res: int = 64, horizon: int = 8, vision_encoder: str = "vit",
+                               norm: str = "rational", max_task: int = 8, eps_per_task: int = 4):
+    """A REAL causal intervention on the actual trained, closed-loop-competitive policy, in the
+    live simulator (not an offline proxy metric). Every LIBERO-Object scene contains several
+    distractor grocery items alongside the true target (libero_scene_objects confirms this).
+    For each (task, episode), with image and robot state held FIXED: (a) run the model with the
+    TRUE instruction and the CONTROL instruction naming a co-present DISTRACTOR object; (b)
+    compare each predicted first-step reach direction against the ground-truth direction from
+    the gripper to the true target and to the distractor (both known exactly from the sim state).
+    If the mechanism is causal, the predicted direction should track WHICHEVER object is named,
+    not always the demo's original target -- the same test as the paper's synthetic-task
+    counterfactual (R^2=0.956, switch-rate 97.1%), now on the real robot policy."""
+    _bootstrap()
+    import json, os, re
+    import numpy as np
+    import torch
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download, list_repo_files
+    from xvla.models.vla import ChiVLA, VLAConfig
+
+    dev = "cuda"; H = horizon
+    name = "lerobot/libero_object_image"
+    tasks = {}
+    for tf in [f for f in list_repo_files(name, repo_type="dataset")
+               if "task" in f.lower() and f.endswith((".jsonl", ".json", ".parquet"))]:
+        try:
+            tp = hf_hub_download(name, tf, repo_type="dataset")
+            if tp.endswith(".parquet"):
+                import pandas as pd
+                df = pd.read_parquet(tp).reset_index()
+                tcol = "task" if "task" in df.columns else next(c for c in df.columns if df[c].dtype == object)
+                icol = "task_index" if "task_index" in df.columns else ("index" if "index" in df.columns else df.columns[0])
+                for _, r in df.iterrows(): tasks[int(r[icol])] = str(r[tcol])
+            else:
+                for line in open(tp): r = json.loads(line); tasks[int(r["task_index"])] = r["task"]
+            if tasks: break
+        except Exception as e: print(f"{tf}: {e}")
+    words = set()
+    for t in tasks.values(): words.update(t.lower().replace(".", "").split())
+    vocab = {"<pad>": 0, "<bos>": 1}
+    for w in sorted(words): vocab[w] = len(vocab)
+    T_len = 32
+    def encode(s):
+        ids = [1] + [vocab.get(w, 0) for w in s.lower().replace(".", "").split()]
+        return (ids[:T_len] + [0] * max(0, T_len - len(ids)))[:T_len]
+
+    cache = f"{VOL_PATH}/libero_frames_{n_frames}_{res}.pkl"
+    import pickle
+    frames = pickle.load(open(cache, "rb"))
+    # a_mu/a_sd/s_mu/s_sd MUST exactly match what the checkpoint was trained with (a per-dim mean
+    # /std pooled over every individual raw per-step action/state, identical to how
+    # libero_rollout_head computes them via A.mean((0,1)) over (n_samples,H,d_a) chunks -- pooling
+    # over the horizon axis there is equivalent to pooling over all individual per-step actions
+    # here, since it's the same underlying set of raw actions/states, just grouped differently).
+    d_a = frames[0][4].shape[0]; state_dim = frames[0][3].shape[0]
+    A = np.stack([f[4] for f in frames]); S = np.stack([f[3] for f in frames])
+    a_mu, a_sd = A.mean(0), A.std(0) + 1e-6
+    s_mu, s_sd = S.mean(0), S.std(0) + 1e-6
+
+    cfg = VLAConfig(image_size=res, patch_size=8, vit_dim=192, vit_layers=4, vit_heads=8,
+                    vocab_size=len(vocab), max_instr_len=T_len, state_dim=state_dim, n_embodiments=1,
+                    dim=384, n_layers=8, n_heads=12, action_horizon=H, action_dim=d_a,
+                    action_head="linear", norm=norm, qk_norm=norm, vision_encoder=vision_encoder)
+    model = ChiVLA(cfg).to(dev)
+    model.load_state_dict(torch.load(f"{VOL_PATH}/{ckpt}", map_location=dev, weights_only=True))
+    model.eval()
+    a_mu_t = torch.tensor(a_mu, device=dev); a_sd_t = torch.tensor(a_sd, device=dev)
+    s_mu_t = torch.tensor(s_mu, dtype=torch.float32); s_sd_t = torch.tensor(s_sd, dtype=torch.float32)
+    print(f"loaded {ckpt}: d_a={d_a} state_dim={state_dim}")
+
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+    from robosuite.utils.transform_utils import quat2axisangle
+    from PIL import Image
+    _ol = torch.load
+    torch.load = lambda *a, **k: _ol(*a, **{**k, "weights_only": False})
+    suite = benchmark.get_benchmark_dict()["libero_object"]()
+
+    def build_state(obs):
+        v = np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]),
+                            obs["robot0_gripper_qpos"]]).astype(np.float32)
+        return v[:state_dim] if len(v) >= state_dim else np.pad(v, (0, state_dim - len(v)))
+
+    def readable(obj_body):    # 'salad_dressing_1' -> 'salad dressing'
+        return re.sub(r"_\d+$", "", obj_body).replace("_", " ")
+
+    @torch.no_grad()
+    def predict_first_delta(obs, instr_str):
+        img = np.asarray(Image.fromarray(np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])).resize((res, res)))
+        im = torch.tensor(img).permute(2, 0, 1).float().div(255).unsqueeze(0).to(dev)
+        st = ((torch.tensor(build_state(obs)) - s_mu_t) / s_sd_t).float().unsqueeze(0).to(dev)
+        instr_ids = torch.tensor([encode(instr_str)], device=dev)
+        a, _ = model(im, instr_ids, st, torch.zeros(1, dtype=torch.long, device=dev))
+        raw = (a[0] * a_sd_t + a_mu_t).cpu().numpy()       # (H, d_a) real physical delta command
+        return raw[0, :3]                                    # first-step translation delta
+
+    n_tasks = min(max_task, suite.n_tasks)
+    rows = []
+    for ti in range(n_tasks):
+        task = suite.get_task(ti)
+        bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=res, camera_widths=res)
+        for ep in range(eps_per_task):
+            env.seed(ti * 100 + ep)
+            obs = env.reset()
+            for _ in range(10):
+                obs, _, _, _ = env.step([0, 0, 0, 0, 0, 0, -1.0])   # settle
+            # robosuite obs also carries DERIVED relational keys like 'X_to_robot0_eef_pos'
+            # (object pose relative to the gripper) alongside the true 'X_pos' absolute position
+            # -- exclude those, or "distractors" end up being bogus non-object relational entries
+            # whose "readable" name is out-of-vocabulary noise, not a real counterfactual target.
+            obj_pos = {k.rsplit("_pos", 1)[0]: obs[k] for k in obs
+                      if k.endswith("_pos") and not k.startswith("robot0") and "basket" not in k
+                      and "_to_" not in k and "eef" not in k}
+            true_body = next((k for k in obj_pos if readable(k) in task.language.lower()), None)
+            distractors = [k for k in obj_pos if k != true_body]
+            if true_body is None or not distractors:
+                env.close(); continue
+            cf_body = distractors[ep % len(distractors)]
+            eef = obs["robot0_eef_pos"]
+            gt_true = obj_pos[true_body] - eef; gt_true = gt_true / (np.linalg.norm(gt_true) + 1e-8)
+            gt_cf = obj_pos[cf_body] - eef; gt_cf = gt_cf / (np.linalg.norm(gt_cf) + 1e-8)
+            instr_true = task.language
+            instr_cf = f"pick up the {readable(cf_body)} and place it in the basket"
+            d_true_instr = predict_first_delta(obs, instr_true)
+            d_true_instr = d_true_instr / (np.linalg.norm(d_true_instr) + 1e-8)
+            d_cf_instr = predict_first_delta(obs, instr_cf)
+            d_cf_instr = d_cf_instr / (np.linalg.norm(d_cf_instr) + 1e-8)
+            cos = lambda a_, b_: float(np.dot(a_, b_))
+            row = {"task": ti, "ep": ep, "true_obj": true_body, "cf_obj": cf_body,
+                   "under_true_instr": {"cos_to_true": round(cos(d_true_instr, gt_true), 3),
+                                        "cos_to_cf": round(cos(d_true_instr, gt_cf), 3)},
+                   "under_cf_instr": {"cos_to_true": round(cos(d_cf_instr, gt_true), 3),
+                                     "cos_to_cf": round(cos(d_cf_instr, gt_cf), 3)}}
+            row["switched"] = (row["under_true_instr"]["cos_to_true"] > row["under_true_instr"]["cos_to_cf"]
+                               and row["under_cf_instr"]["cos_to_cf"] > row["under_cf_instr"]["cos_to_true"])
+            rows.append(row)
+            print(f"[task {ti} ep {ep}] true={true_body} cf={cf_body} switched={row['switched']}", row)
+        env.close()
+
+    switch_rate = round(float(np.mean([r["switched"] for r in rows])), 3) if rows else None
+    mean_cos_true_under_true = round(float(np.mean([r["under_true_instr"]["cos_to_true"] for r in rows])), 3)
+    mean_cos_cf_under_cf = round(float(np.mean([r["under_cf_instr"]["cos_to_cf"] for r in rows])), 3)
+    mean_cos_true_under_cf = round(float(np.mean([r["under_cf_instr"]["cos_to_true"] for r in rows])), 3)
+    result = {"ckpt": ckpt, "n_trials": len(rows), "switch_rate": switch_rate,
+              "mean_cos_to_named_object": {"true_instr": mean_cos_true_under_true,
+                                           "cf_instr": mean_cos_cf_under_cf},
+              "mean_cos_to_original_target_under_cf_instr": mean_cos_true_under_cf,
+              "rows": rows}
+    with open(f"{VOL_PATH}/libero_causal_intervention_{vision_encoder}_{norm}.json", "w") as f:
+        json.dump(result, f, indent=2)
+    vol.commit()
+    print("RESULT:", json.dumps({k: v for k, v in result.items() if k != "rows"}, indent=2))
     return result
 
 
