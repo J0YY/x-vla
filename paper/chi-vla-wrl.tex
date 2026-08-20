@@ -24,8 +24,8 @@
 \newcommand{\R}{\mathbb{R}}
 
 \title{\textbf{Specialist Physical AI Need Not Be Opaque}\\[0.15em]
-\textbf{A Fully Tensor-Decomposable VLA Policy}\\[0.35em]
-\large Protocol-aligned control, failure analysis, and weight-derived causal structure}
+\textbf{A Fully Tensor-Decomposable VLA Policy}\par\vspace{0.35em}
+{\large Protocol-aligned control, failure analysis, and weight-derived causal structure}}
 \author{}
 \date{}
 
@@ -33,39 +33,42 @@
 \maketitle
 
 \begin{abstract}
-Can a specialist robot policy be both capable and structurally inspectable? We introduce
-\chivla, a $20.1$M-parameter vision-language-action policy built entirely from bilinear, linear,
-and rational learned operations. A mechanical audit finds no softmax, standard activation, or
-ordinary normalization, and explicit reconstructions match deployed computation near the
-float32 precision floor. Trained from scratch on LIBERO-Object, convolutional \chivla\ reaches
-$93.7\%\pm0.8\%$ over three seeds under the published $280$-step, $50$-trial protocol. A
-three-checkpoint prediction ensemble reaches $96.2\%$ at three times the inference cost. Exact
-weight-derived attention subspaces outperform equal-rank random controls in all $36$ primary
-block-head tests. At the policy's visual bond, retaining $64$ of $384$ causally ranked
-dimensions preserves $18/20$ successes, while a random subspace preserves none. Yet an
-$80$-trial instruction intervention exposes a scene-identity shortcut, and the first direct
-coefficient-edit screen fails its preregistered selectivity gate. These results establish
-competitive specialist control and a concrete weight-analysis surface, not zero-shot robotic
-generalization, robust language grounding, or negligible cost against a matched conventional
-twin.
+Tensor decomposition turns a large table of learned interactions into simpler low-rank factors
+that can be ranked and inspected. Conventional robot policies contain operations that block this
+direct weight-level view. We introduce \chivla, a $20.1$M-parameter vision-language-action policy
+built only from bilinear, linear, and rational learned operations. Its weights can therefore be
+reorganized into explicit interaction tensors rather than treated only as an opaque checkpoint.
+A mechanical audit and numerical reconstructions verify that the deployed policy preserves this
+form. Trained from scratch on LIBERO-Object, convolutional \chivla\ reaches
+$93.7\%\pm0.8\%$ over three seeds under the published protocol. Exact weight-derived attention
+subspaces beat equal-rank random controls in all $36$ primary block-head tests. Retaining $64$
+of $384$ causally ranked visual dimensions preserves $18/20$ successes, while a random subspace
+preserves none. Yet an $80$-trial instruction intervention exposes a scene-identity shortcut,
+and the first direct coefficient edit fails its selectivity gate. The result is a capable and
+structurally inspectable specialist, not a zero-shot generalist or a solved editing interface.
 \end{abstract}
 
 % ============================================================================
 \section{Introduction}
 % ============================================================================
 
-Most robot policies mix linear maps with softmax attention, smooth activations, and
-input-dependent normalization. These operations are effective, but they prevent the complete
-learned map from being represented as one explicit polynomial or rational tensor network.
-Prior work showed that bilinear language and vision models expose useful weight structure
-\cite{pearce,chinets}. It remained unclear whether the same restriction could support a
-continuous closed-loop robot policy.
+Modern robot policies can achieve high success while giving little indication of why an action
+was chosen. Their checkpoints contain millions of weights, but those weights do not directly
+show which image regions, words, and robot-state coordinates interact. Post-hoc probes can find
+correlated activations, yet a correlation is not automatically a mechanism or a safe editing
+target.
 
-The control setting is demanding for two reasons. First, small action errors compound when the
-policy observes and corrects its own trajectory. Second, per-instance normalization and
-multimodal continuous actions do not transfer automatically from the language-model setting.
-A token model can place a discrete sample outside its learned logit map. A continuous policy
-must preserve precise actions while avoiding an invalid average of distinct valid modes.
+A tensor is simply a multidimensional table. Tensor decomposition rewrites that table as a sum
+of low-rank factors, analogous to finding dominant directions in a matrix. If every learned block
+uses additions, multiplications, and ratios of polynomials, the full policy retains an explicit
+interaction table defined by its weights. Its decomposed factors then provide candidate control
+mechanisms that can be compared across layers and tested by intervention \cite{pearce,chinets}.
+This is what we mean by a fully tensor-decomposable policy.
+
+The restriction is nontrivial in robotics. Softmax, ordinary activations, and square-root
+normalization break the algebraic form, while continuous actions require precise closed-loop
+outputs. The potential payoff is also concrete: a weight-derived mechanism could help diagnose
+whether a policy follows language, keys on a visual shortcut, or uses a fragile control feature.
 
 We study the narrower but testable question:
 
@@ -75,13 +78,10 @@ learned operation is polynomial or rational, and does the resulting structure pr
 weight-based analysis surface?}
 \end{quote}
 
-The stronger thesis motivating the next experiments is a three-part conjunction. A compact
-class of specialist manipulation policies should incur no more than a predeclared capability
-loss relative to matched conventional twins. Its trained weights should expose stable
-behaviorally causal interaction terms. Direct edits to those terms should then produce
-predicted and selective changes in closed-loop behavior without retraining. Each component has
-precedent in isolation. Their conjunction in a competitive visuomotor policy is the intended
-contribution.
+The stronger thesis asks for three results on the same policies: small capability cost, stable
+weight-derived causal structure, and selective edits without retraining. We establish the first
+two only partially and report the failed first surgery screen rather than treating algebraic
+representability as proof of interpretability.
 
 Our contributions are:
 
@@ -113,6 +113,10 @@ matched post-hoc methods.
 
 \subsection{Tensor-compatible primitives}
 
+Each primitive replaces a familiar transformer component while keeping explicit coefficients.
+Linear maps contribute first-order terms, while multiplying learned projections creates
+higher-order interactions that remain determined by the weights.
+
 \paragraph{Homogeneous coordinate.}
 We write $\bar x=[1;x]$. The constant coordinate allows a multiplicative layer to represent
 bias, linear, and quadratic terms in one contraction.
@@ -126,7 +130,8 @@ For $L,R\in\R^{r\times(d+1)}$ and $D\in\R^{d\times r}$,
 y_o=\sum_{i,j}\left(\sum_{\rho}D_{o\rho}L_{\rho i}R_{\rho j}\right)\bar x_i\bar x_j .
 \label{eq:bffn}
 \end{equation}
-The three matrices are a CP factorization of the order-three coefficient tensor.
+The inner sum is a table indexed by one output and two input coordinates. The three matrices
+give its CP factorization, the tensor analogue of a low-rank matrix factorization.
 
 \paragraph{Softmax-free bilinear attention.}
 Each head forms two query-key systems and one value stream:
@@ -136,7 +141,7 @@ Y=C\left[M\odot(Q_1K_1^\top)\odot(Q_2K_2^\top)/s\right]V .
 \end{equation}
 Here $M$ is a fixed causal mask, $C$ is fixed row scaling, and $s$ is fixed. All learned
 query, key, value, and output maps are linear. Equation~\ref{eq:attention} is therefore a
-polynomial in its input activations.
+polynomial in its input activations, with interaction coefficients determined by the weights.
 
 \paragraph{Rational per-instance normalization.}
 RMS normalization contains an input-dependent square root. We instead deploy a fixed rational
@@ -145,45 +150,9 @@ approximation $r(z)=P(z)/Q(z)$ to $1/\sqrt{z+\epsilon}$:
 \mathrm{RNorm}(x)=x\,r\!\left(\frac{1}{d}\sum_{j=1}^{d}x_j^2\right).
 \label{eq:rnorm}
 \end{equation}
-The deployed function is exactly rational. Projective coordinates carry each activation as a
-pair $(N,D)$ representing $N/D$. Linear, bilinear, residual, and normalization operations
-update the numerator and denominator without introducing a non-rational learned operation.
-
-\begin{figure}[H]
-\centering
-\resizebox{0.96\textwidth}{!}{%
-\begin{tikzpicture}[
-  font=\footnotesize,
-  box/.style={draw,rounded corners,align=center,minimum height=7mm,inner sep=3pt},
-  inp/.style={box,fill=gray!12},
-  prim/.style={box,fill=green!12},
-  output/.style={box,fill=blue!10},
-  arr/.style={-{Latex[length=1.8mm]},thick,gray!65!black},
-  node distance=6mm and 7mm,
-]
-\node[inp] (img) {RGB image};
-\node[inp, below=of img] (txt) {instruction};
-\node[inp, below=of txt] (state) {robot state};
-\node[prim, right=of img] (vision) {rational $\chi$ vision encoder\\bilinear attention and FFN};
-\node[prim, right=of txt] (embed) {linear embeddings};
-\node[prim, right=9mm of vision, minimum width=34mm] (joint) {rational joint transformer\\eight bilinear blocks};
-\node[output, right=of joint] (action) {linear action queries\\$8\times7$ action chunk};
-\draw[arr] (img) -- (vision);
-\draw[arr] (txt) -- (embed);
-\draw[arr] (state) -- (embed);
-\draw[arr] (vision) -- (joint);
-\draw[arr] (embed) -- (joint);
-\draw[arr] (joint) -- (action);
-\begin{scope}[on background layer]
-\node[draw=green!50!black,dashed,rounded corners,fit=(vision)(embed)(joint)(action),
-      inner sep=4mm,label={[green!40!black,font=\scriptsize\bfseries]above:one deployed rational tensor program}] {};
-\end{scope}
-\end{tikzpicture}}
-\caption{\textbf{Deployed \chivla\ map.} The strongest checkpoints use one vision stream and a
-linear continuous-action head. Every learned component inside the dashed boundary is linear,
-bilinear, or rational.}
-\label{fig:architecture}
-\end{figure}
+Here rational means a ratio of polynomials. Projective coordinates carry each activation as a
+numerator-denominator pair $(N,D)$ representing $N/D$. Updating this pair preserves
+input-specific rescaling without leaving the rational tensor representation.
 
 \subsection{Architecture and training}
 
@@ -284,8 +253,9 @@ before restoring the stronger title claim that convertibility is nearly free.
 \subsection{Exact layerwise construction}
 
 Equation~\ref{eq:attention} contains two query-key products and one value stream. Expanding
-the linear maps gives a high-order coefficient object determined entirely by the weights,
-mask, and fixed scaling. On a tiny four-token, width-four, one-head layer, direct evaluation
+the linear maps gives a coefficient table whose entries measure how combinations of query,
+key, and value coordinates contribute to an output. No examples or fitted probe are needed to
+construct it. On a tiny four-token, width-four, one-head layer, direct evaluation
 and an independent explicit polynomial agree to $2.00\times10^{-15}$. The internal core
 identity agrees to $1.24\times10^{-14}$.
 
@@ -298,16 +268,16 @@ ranges from $3.10\times10^{-7}$ to $1.03\times10^{-5}$ because the deployed impl
 intentionally casts the statistic to float32.
 
 Naively materializing the real width-$384$ coefficient tensor would require approximately
-$3.2\times10^{15}$ values. We instead contract the CP factors into an $O(d^2)$ reduced Gram.
-At toy multi-head scale, the reduced calculation matches brute-force materialization to
-$2.13\times10^{-14}$.
+$3.2\times10^{15}$ values. We instead form an $O(d^2)$ reduced Gram. Like a covariance
+matrix, its leading eigenvectors rank important directions without constructing the full
+table. It matches brute-force materialization to $2.13\times10^{-14}$ at toy scale.
 
 \subsection{Trained policy result}
 
 We apply the exact weight-derived calculation to all twelve heads in early, middle-late, and
 final backbone blocks $0$, $6$, and $7$. Random projector banks are sampled once, then fixed
-and reused for all evaluation examples. Real cached activations are used only to evaluate how
-faithfully the selected weight-derived subspaces preserve the layer's computation.
+and reused for all examples. The weights choose the subspace, while cached activations are
+used only afterward to score how well it preserves the layer's computation.
 
 At ranks $8$, $32$, and $128$, respectively, $80.6\%$, $91.7\%$, and $100\%$ of the $36$
 block-head pairs favor the exact subspace. Their median ratios are $1.028$, $1.171$, and
@@ -329,10 +299,11 @@ task success reflects robust use of the language input.
 \subsection{Causal visual subspace}
 
 At the visual bond before the joint backbone, we rank directions separately for translation,
-rotation, and gripper actions. We compare the selected subspace with random equal-width
-subspaces in offline action reconstruction and closed-loop intervention. This ranking uses
-held-out activations and downstream sensitivity. It is causal, but not a weight-only discovery
-result.
+rotation, and gripper actions. A subspace is a smaller coordinate system inside the model's
+$384$-dimensional visual representation. Retaining it means zeroing all other directions, then
+running the actual policy. We compare selected and random equal-width subspaces. Because the
+ranking uses held-out activations and downstream sensitivity, it tests a causal bottleneck but
+is not a weight-only discovery result.
 
 \begin{figure}[H]
 \centering
