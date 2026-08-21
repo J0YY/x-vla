@@ -9,8 +9,13 @@
 set -euo pipefail
 
 cd /work/joy/x-vla-workshop
+output="results/visual_taskmap_blind_rank96_summary.json"
+if [[ -e "$output" ]]; then
+  echo "Refusing to overwrite existing corrected summary: $output" >&2
+  exit 1
+fi
 python3 athena/summarize_blind_subspace.py \
   --results-dir results \
-  --output results/visual_blind_rank96_summary.json \
+  --output "$output" \
   --bootstrap-samples 20000 \
   --seed 20260821
