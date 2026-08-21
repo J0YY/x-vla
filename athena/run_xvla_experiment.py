@@ -188,12 +188,12 @@ def load_cache_statistics(cache_path: Path, horizon: int) -> dict[str, Any]:
 
 def make_config(
     architecture: str,
-    vision_encoder: str,
     vocab_size: int,
     state_dim: int,
     action_dim: int,
     res: int,
     horizon: int,
+    vision_encoder: str = "vit",
 ) -> VLAConfig:
     kwargs: dict[str, Any] = {
         "image_size": res,
@@ -237,12 +237,12 @@ def load_model(
 ) -> ChiVLA:
     config = make_config(
         args.architecture,
-        args.vision_encoder,
         vocab_size,
         stats["state_dim"],
         stats["action_dim"],
         args.res,
         args.horizon,
+        vision_encoder=args.vision_encoder,
     )
     model = ChiVLA(config).cuda()
     checkpoint_path = args.checkpoint if checkpoint is None else checkpoint
