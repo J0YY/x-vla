@@ -18,7 +18,7 @@ from PIL import Image
 import athena.run_xvla_experiment as evaluator
 
 
-SCHEMA_VERSION = "xvla-mujoco-version-forensics-v1"
+SCHEMA_VERSION = "xvla-mujoco-version-forensics-v3"
 EPISODE_FORENSICS: list[dict[str, Any]] = []
 ACTIVE_FORENSIC_RECORD: dict[str, Any] | None = None
 NUM_WAIT_STEPS = 10
@@ -73,13 +73,54 @@ def package_version(name: str) -> str:
     return importlib.metadata.version(name)
 
 
-def install_record_sha256(name: str) -> str | None:
+def distribution_identity(name: str) -> dict[str, Any]:
     distribution = importlib.metadata.distribution(name)
-    for relative in distribution.files or []:
+    files: list[tuple[str, str]] = []
+    native: dict[str, str] = {}
+    record_sha256 = None
+    for relative in sorted(distribution.files or [], key=str):
+        path = Path(distribution.locate_file(relative)).resolve()
+        if path.suffix in (".pyc", ".pyo") or "__pycache__" in path.parts:
+            continue
+        if not path.is_file():
+            continue
+        file_sha256 = sha256_file(path)
+        files.append((str(relative), file_sha256))
         if str(relative).endswith(".dist-info/RECORD"):
-            path = Path(distribution.locate_file(relative))
-            return sha256_file(path)
-    return None
+            record_sha256 = file_sha256
+        if path.suffix in (".so", ".dylib", ".dll", ".pyd") or ".so." in path.name:
+            native[str(path)] = file_sha256
+    tree_material = "\n".join(
+        f"{relative}\0{file_sha256}" for relative, file_sha256 in files
+    )
+    return {
+        "version": distribution.version,
+        "record_sha256": record_sha256,
+        "distribution_tree_sha256": sha256_bytes(tree_material.encode("utf-8")),
+        "native_library_sha256": native,
+    }
+
+
+def source_manifest() -> dict[str, str]:
+    return {path: sha256_file(Path(path)) for path in SOURCE_FILES}
+
+
+def loaded_mujoco_native_libraries() -> dict[str, str]:
+    maps = Path("/proc/self/maps")
+    if not maps.is_file():
+        raise RuntimeError("Linux process maps are required for MuJoCo runtime identity")
+    loaded = {}
+    for line in maps.read_text().splitlines():
+        fields = line.split()
+        if not fields or not fields[-1].startswith("/"):
+            continue
+        path = Path(fields[-1]).resolve()
+        if "mujoco" not in str(path).lower() or not path.is_file():
+            continue
+        loaded[str(path)] = sha256_file(path)
+    if not loaded:
+        raise RuntimeError("No loaded MuJoCo native libraries were found in process maps")
+    return dict(sorted(loaded.items()))
 
 
 def patch_environment() -> None:
@@ -179,6 +220,8 @@ def patch_environment() -> None:
         if ACTIVE_FORENSIC_RECORD is None:
             raise RuntimeError("Prediction called before canonical state recording")
         query = {
+            "query_index": len(ACTIVE_FORENSIC_RECORD["policy_queries"]),
+            "executed_action_start": len(ACTIVE_FORENSIC_RECORD["policy_actions"]),
             "raw_image_sha256": hash_array(obs["agentview_image"]),
             "model_image_sha256": hash_array(model_image(obs)),
             "robot_state_sha256": hash_array(
@@ -223,9 +266,15 @@ def environment_identity() -> dict[str, Any]:
         ],
         text=True,
     ).strip()
+    distribution = distribution_identity("mujoco")
+    loaded_native = loaded_mujoco_native_libraries()
+    runtime_version = str(mujoco.__version__)
+    if runtime_version != package_version("mujoco"):
+        raise RuntimeError("Imported MuJoCo version differs from distribution metadata")
     identity = {
         "schema_version": SCHEMA_VERSION,
         "conda_prefix": os.environ.get("CONDA_PREFIX"),
+        "mujoco_overlay": os.environ.get("XVLA_MUJOCO_OVERLAY"),
         "python_executable": sys.executable,
         "python_executable_sha256": sha256_file(Path(sys.executable)),
         "python_version": sys.version,
@@ -239,7 +288,13 @@ def environment_identity() -> dict[str, Any]:
             for name in ("torch", "pillow", "mujoco", "robosuite", "libero")
         },
         "mujoco_module": str(Path(mujoco.__file__).resolve()),
-        "mujoco_install_record_sha256": install_record_sha256("mujoco"),
+        "mujoco_runtime_version": runtime_version,
+        "mujoco_install_record_sha256": distribution["record_sha256"],
+        "mujoco_distribution_tree_sha256": distribution[
+            "distribution_tree_sha256"
+        ],
+        "mujoco_native_library_sha256": distribution["native_library_sha256"],
+        "mujoco_loaded_native_library_sha256": loaded_native,
         "forensic_runner_sha256": sha256_file(source_path),
         "evaluator_sha256": sha256_file(evaluator_path),
         "torch_flags": {
@@ -263,6 +318,9 @@ def environment_identity() -> dict[str, Any]:
                 "PYTHONPATH",
                 "PYTHONNOUSERSITE",
                 "LD_LIBRARY_PATH",
+                "CUDA_VISIBLE_DEVICES",
+                "CUBLAS_WORKSPACE_CONFIG",
+                "XVLA_MUJOCO_OVERLAY",
             )
         },
     }
@@ -271,8 +329,12 @@ def environment_identity() -> dict[str, Any]:
         for key in (
             "python_executable_sha256",
             "python_version",
+            "mujoco_overlay",
             "pip_freeze_sha256",
             "mujoco_install_record_sha256",
+            "mujoco_distribution_tree_sha256",
+            "mujoco_native_library_sha256",
+            "mujoco_loaded_native_library_sha256",
             "forensic_runner_sha256",
             "evaluator_sha256",
             "torch_flags",
@@ -295,8 +357,13 @@ def main() -> None:
     if args.matmul_precision != "highest":
         raise ValueError("Version isolation is frozen at highest matrix precision")
 
+    source_sha256_start = source_manifest()
     patch_environment()
     evaluator.main()
+
+    source_sha256_end = source_manifest()
+    if source_sha256_start != source_sha256_end:
+        raise RuntimeError("Source files changed during the forensic evaluation")
 
     result = json.loads(args.output.read_text())
     capability = result["capability"]
@@ -310,6 +377,14 @@ def main() -> None:
         forensic["steps"] = outcome["steps"]
         if len(forensic["policy_actions"]) != outcome["steps"]:
             raise RuntimeError("Recorded action count differs from evaluator step count")
+        queries = forensic["policy_queries"]
+        for index, query in enumerate(queries):
+            stop = (
+                queries[index + 1]["executed_action_start"]
+                if index + 1 < len(queries)
+                else len(forensic["policy_actions"])
+            )
+            query["executed_action_count"] = stop - query["executed_action_start"]
         required = (
             "post_wait_sim_state_sha256",
             "initial_raw_image_sha256",
@@ -325,16 +400,42 @@ def main() -> None:
         "episodes": EPISODE_FORENSICS,
         "records_all_executed_policy_actions": True,
         "records_all_raw_action_chunks": True,
+        "protocol": {
+            "mode": args.mode,
+            "architecture": args.architecture,
+            "vision_encoder": args.vision_encoder,
+            "suite": args.suite,
+            "training_suite": args.training_suite,
+            "checkpoint": str(args.checkpoint),
+            "cache": str(args.cache),
+            "seed": args.seed,
+            "matmul_precision": args.matmul_precision,
+            "task_start": args.task_start,
+            "task_end": args.task_end,
+            "eps_per_task": args.eps_per_task,
+            "max_steps": args.max_steps,
+            "num_steps_wait": args.num_steps_wait,
+            "exec_h": args.exec_h,
+            "res": args.res,
+            "horizon": args.horizon,
+            "profile_iters": args.profile_iters,
+        },
         "frozen_inputs": {
             "checkpoint_sha256": sha256_file(args.checkpoint),
             "cache_sha256": sha256_file(args.cache),
-            "source_sha256": {
-                path: sha256_file(Path(path)) for path in SOURCE_FILES
-            },
+            "source_sha256": source_sha256_start,
+            "source_sha256_start": source_sha256_start,
+            "source_sha256_end": source_sha256_end,
+            "source_snapshot_stable": True,
         },
         "initial_image_definition": (
             "Observation after canonical reset and ten dummy settle actions. The model image "
             "applies the evaluator's 180-degree rotation and PIL resize."
+        ),
+        "treatment_scope": (
+            "The treatment is the complete MuJoCo Python wheel and bundled native "
+            "distribution. It jointly covers renderer and physics-engine behavior and "
+            "does not isolate a solver-only mechanism."
         ),
     }
     temporary = args.output.with_suffix(args.output.suffix + ".forensics.tmp")

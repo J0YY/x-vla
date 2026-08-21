@@ -13,10 +13,11 @@ conda activate safesae-openvla
 cd /work/joy/x-vla-workshop
 
 python -u athena/summarize_mujoco_version_control.py \
-  --result results/mujoco_version_control/base350_vit_s1_task5.json \
-  --result results/mujoco_version_control/base350_vit_s0_task3.json \
-  --result results/mujoco_version_control/clone316_vit_s1_task5.json \
-  --result results/mujoco_version_control/clone316_vit_s0_task3.json \
+  --environment-setup results/mujoco_version_overlay_control/environment_setup.json \
+  --result results/mujoco_version_overlay_control/base350_vit_s1_task5.json \
+  --result results/mujoco_version_overlay_control/base350_vit_s0_task3.json \
+  --result results/mujoco_version_overlay_control/overlay316_vit_s1_task5.json \
+  --result results/mujoco_version_overlay_control/overlay316_vit_s0_task3.json \
   --historical results/precision_ab_vit_s1_task5_highest.json \
   --historical results/precision_ab_vit_s0_task3_highest.json \
-  --output results/mujoco_version_control/summary.json
+  --output results/mujoco_version_overlay_control/summary.json
