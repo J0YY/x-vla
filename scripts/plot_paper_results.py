@@ -283,6 +283,10 @@ def appendix_counterfactual_grounding() -> None:
 
 
 def main_causal_subspace() -> None:
+    raise RuntimeError(
+        "Retired: this figure used the pre-correction cache task map. "
+        "Use scripts/plot_corrected_visual_bottleneck.py after the hardened summary passes."
+    )
     ks = np.array([4, 8, 16, 32, 64])
     global_mse = {
         "Translation": np.array([1.62466, 1.72915, 0.96152, 0.36517, 0.05780]),
@@ -382,6 +386,10 @@ def main_causal_subspace() -> None:
 
 
 def main_causal_subspace_replication() -> None:
+    raise RuntimeError(
+        "Retired: this figure used the pre-correction cache task map. "
+        "Use scripts/plot_corrected_visual_bottleneck.py after the hardened summary passes."
+    )
     checkpoint_labels = ["Checkpoint 0", "Checkpoint 1", "Checkpoint 2"]
     conditions = ["Full 384", "Selected 96", "Median random 96"]
     successes = np.array(
@@ -481,6 +489,10 @@ def main_causal_subspace_replication() -> None:
 
 
 def appendix_causal_rank_curve() -> None:
+    raise RuntimeError(
+        "Retired: this figure used the pre-correction cache task map. "
+        "Use scripts/plot_corrected_visual_bottleneck.py after the hardened summary passes."
+    )
     ranks = np.array([64, 96, 128, 192])
     selected_success = np.array([30, 50, 50, 51])
     selected_trials = 60
@@ -745,6 +757,10 @@ def appendix_decomposability_audit() -> None:
 
 
 def appendix_ensemble_per_task() -> None:
+    raise RuntimeError(
+        "Retired with the historical capability aggregates. "
+        "Use scripts/plot_verified_vit_capability.py after artifact verification."
+    )
     tasks = ["Soup", "Cream\ncheese", "Salad", "BBQ", "Ketchup", "Tomato", "Butter", "Milk", "Pudding", "Orange"]
     seeds = np.array(
         [
@@ -863,11 +879,7 @@ def appendix_surgery_sweep() -> None:
 if __name__ == "__main__":
     appendix_matched_architecture_cost()
     appendix_counterfactual_grounding()
-    main_causal_subspace()
-    main_causal_subspace_replication()
-    appendix_causal_rank_curve()
     main_exact_attention_odt()
     appendix_decomposability_audit()
-    appendix_ensemble_per_task()
     appendix_surgery_sweep()
     print(f"Wrote publication figures to {OUT}")
