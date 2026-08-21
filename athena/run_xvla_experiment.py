@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import math
 import os
@@ -29,6 +30,90 @@ from PIL import Image
 
 from athena.libero_dataset_metadata import load_dataset_task_languages
 from xvla.models.vla import ChiVLA, VLAConfig
+
+
+FROZEN_GENERALIST_MANIFEST_SHA256 = (
+    "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd"
+)
+FROZEN_GENERALIST_SUITES = (
+    "libero_object",
+    "libero_spatial",
+    "libero_goal",
+    "libero_10",
+)
+FROZEN_GENERALIST_SUITE_OFFSETS = {
+    "libero_object": 0,
+    "libero_spatial": 10,
+    "libero_goal": 20,
+    "libero_10": 30,
+}
+FROZEN_GENERALIST_EVALUATION_GPU_FAMILY = "a6000"
+FROZEN_GENERALIST_EVALUATION_GPU_NAME = "NVIDIA RTX A6000"
+FROZEN_GENERALIST_CACHES = {
+    "libero_object": {
+        "path": "artifacts/libero_frames_100000_64.pkl",
+        "repository": "lerobot/libero_object_image",
+        "sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+        "frame_count": 66984,
+        "sample_count": 63352,
+        "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f",
+        "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+    },
+    "libero_spatial": {
+        "path": "artifacts/libero_spatial_frames_100000_64.pkl",
+        "repository": "lerobot/libero_spatial_image",
+        "sha256": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb",
+        "frame_count": 52970,
+        "sample_count": 49514,
+        "revision": "d86c0b94922572b3b657e1d1a3d01f0952ddeb46",
+        "metadata_sha256": "90ef6a4278e2f2307d64f1649ecd4f84ee481cff5007f15d8683f1f9cc917af3",
+    },
+    "libero_goal": {
+        "path": "artifacts/libero_goal_frames_100000_64.pkl",
+        "repository": "lerobot/libero_goal_image",
+        "sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550",
+        "frame_count": 52042,
+        "sample_count": 48618,
+        "revision": "91a97115558b5b611200a432d9c82e4f30991b60",
+        "metadata_sha256": "80f750568ef991a406e9e1ffcdfe638eaa2dcf452c5e69c1b911c7dae0de8986",
+    },
+    "libero_10": {
+        "path": "artifacts/libero_10_frames_100000_64.pkl",
+        "repository": "lerobot/libero_10_image",
+        "sha256": "571691dac732f9aa6c0837dbd3505e497b8dd18ea247b35ae10038c476eb44d0",
+        "frame_count": 100000,
+        "sample_count": 97008,
+        "revision": "7e324b526699f444044952c82ce3f438e8d300d0",
+        "metadata_sha256": "10bb12686977333e729ef5c444cb9eb06377fff5b08a6f87f422dc6bf232205e",
+    },
+}
+
+# Conservative closure of repository sources imported by the four-suite model.
+# The evaluator and trainer verify this table both before and after their work.
+FROZEN_GENERALIST_IMPORTED_SOURCES = {
+    "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+    "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+    "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+    "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+    "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+    "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+    "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+    "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+    "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+    "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+    "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+    "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+    "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+    "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+    "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+    "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+    "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+    "xvla/train/__init__.py": "b1a7a347ca176ef4626ecc1f1d3318dcff63aa5350a9f6df7b8eee19e6058f42",
+    "xvla/train/balance.py": "c444c959dfef3935bbad316f514a3175de92a7f5c1df5dea3f1a5e3e146a6208",
+    "xvla/train/calibrate.py": "f40387995adeca41a94d1d2c2d524b5fa4bfcd1f1bfda3fa6f7555f2648426f7",
+    "xvla/train/data.py": "2b2dd182c654979aff8905097ba577d97c82a386d6d36220dd9e2a49b142c992",
+    "xvla/train/exact_odt_attention_proto.py": "048e094f384ef6064cbd02c6d5668024a49ed8a218d4c318f7846e66d47e3238",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -204,21 +289,67 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def source_bundle_sha256(sources: dict[str, str]) -> str:
+    payload = "".join(
+        f"{path}\0{digest}\n" for path, digest in sorted(sources.items())
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def generalist_imported_source_snapshot() -> dict[str, str]:
+    repository_root = Path(__file__).resolve().parents[1]
+    return {
+        path: file_sha256(repository_root / path)
+        for path in FROZEN_GENERALIST_IMPORTED_SOURCES
+    }
+
+
+def validate_generalist_imported_sources(sources: dict[str, str]) -> None:
+    if sources != FROZEN_GENERALIST_IMPORTED_SOURCES:
+        changed = {
+            path: {
+                "expected": FROZEN_GENERALIST_IMPORTED_SOURCES.get(path),
+                "observed": sources.get(path),
+            }
+            for path in sorted(
+                set(FROZEN_GENERALIST_IMPORTED_SOURCES) | set(sources)
+            )
+            if FROZEN_GENERALIST_IMPORTED_SOURCES.get(path) != sources.get(path)
+        }
+        raise RuntimeError(f"Frozen generalist source mismatch: {changed}")
+
+
+def array_sha256(value: Any) -> str:
+    if isinstance(value, torch.Tensor):
+        value = value.detach().cpu().numpy()
+    array = np.ascontiguousarray(np.asarray(value))
+    digest = hashlib.sha256()
+    digest.update(str(array.dtype).encode())
+    digest.update(b"\0")
+    digest.update(json.dumps(list(array.shape)).encode())
+    digest.update(b"\0")
+    digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
+def installed_version(distribution: str) -> str | None:
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
 def validate_model_metadata(
     args: argparse.Namespace,
     metadata: dict[str, Any],
     vocab: dict[str, int],
     fixed_stats: dict[str, np.ndarray],
     evaluation_stats: dict[str, Any],
+    cache_task_metadata: dict[str, Any],
 ) -> None:
     """Reject stale or mismatched metadata before loading a generalist checkpoint."""
     errors = []
-    expected_suites = (
-        "libero_object",
-        "libero_spatial",
-        "libero_goal",
-        "libero_10",
-    )
+    expected_suites = FROZEN_GENERALIST_SUITES
     if metadata.get("format") != "xvla_multisuite_checkpoint_v1":
         errors.append("unsupported metadata format")
     if tuple(metadata.get("training_suites", ())) != expected_suites:
@@ -248,12 +379,33 @@ def validate_model_metadata(
         errors.append("action dimension does not match the evaluation cache")
     if int(metadata.get("task_count", -1)) != 40:
         errors.append("metadata does not contain exactly 40 tasks")
+    if metadata.get("manifest_sha256") != FROZEN_GENERALIST_MANIFEST_SHA256:
+        errors.append("metadata does not name the frozen generalist manifest")
+    if metadata.get("recipe_version") != "multisuite_balanced_v1":
+        errors.append("training recipe version is not multisuite_balanced_v1")
+    expected_steps = 10 if "smoke" in args.checkpoint.stem else 160000
+    expected_recipe = {
+        "steps": expected_steps,
+        "batch_size": 256,
+        "suite_batch_size": 64,
+        "lr": 8e-4,
+        "ema_decay": 0.999,
+        "res": 64,
+        "horizon": 8,
+        "state_dim": 8,
+        "action_dim": 7,
+    }
+    for key, expected in expected_recipe.items():
+        if metadata.get(key) != expected:
+            errors.append(
+                f"training metadata {key}={metadata.get(key)!r}, expected {expected!r}"
+            )
     if vocab.get("<pad>") != 0 or vocab.get("<bos>") != 1:
         errors.append("reserved vocabulary identifiers are invalid")
     if sorted(vocab.values()) != list(range(len(vocab))):
         errors.append("vocabulary identifiers are not contiguous")
-    if set(metadata.get("suite_task_offsets", {})) != set(expected_suites):
-        errors.append("suite task offsets are incomplete")
+    if metadata.get("suite_task_offsets") != FROZEN_GENERALIST_SUITE_OFFSETS:
+        errors.append("suite task offsets do not match the frozen offsets")
     if len(metadata.get("task_languages", {})) != 40:
         errors.append("task-language table does not contain 40 entries")
     if fixed_stats["state_mean"].shape != (evaluation_stats["state_dim"],):
@@ -268,6 +420,59 @@ def validate_model_metadata(
         errors.append("normalization contains non-finite values")
     if not all((fixed_stats[key] > 0).all() for key in ("state_std", "action_std")):
         errors.append("normalization scales must be positive")
+
+    source_caches = metadata.get("source_caches", {})
+    if set(source_caches) != set(expected_suites):
+        errors.append("source-cache table does not contain exactly the four suites")
+    for suite_name, expected in FROZEN_GENERALIST_CACHES.items():
+        source = source_caches.get(suite_name, {})
+        for key in ("path", "sha256", "frame_count", "sample_count"):
+            if source.get(key) != expected[key]:
+                errors.append(
+                    f"{suite_name} source {key}={source.get(key)!r}, "
+                    f"expected {expected[key]!r}"
+                )
+        task_metadata = source.get("task_metadata", {})
+        for source_key, expected_key in (
+            ("repository", "repository"),
+            ("revision", "revision"),
+            ("metadata_sha256", "metadata_sha256"),
+        ):
+            if task_metadata.get(source_key) != expected[expected_key]:
+                errors.append(
+                    f"{suite_name} task metadata {source_key} is not frozen"
+                )
+    expected_evaluation_cache = FROZEN_GENERALIST_CACHES[args.suite]
+    if args.cache.as_posix() != expected_evaluation_cache["path"]:
+        errors.append("evaluation cache path is not the frozen suite cache")
+    elif file_sha256(args.cache) != expected_evaluation_cache["sha256"]:
+        errors.append("evaluation cache SHA-256 does not match the frozen cache")
+    if cache_task_metadata != source_caches.get(args.suite, {}).get("task_metadata"):
+        errors.append("live task metadata does not match checkpoint metadata")
+
+    manifest_path_value = metadata.get("source_manifest")
+    if not manifest_path_value:
+        errors.append("source manifest path is missing")
+    else:
+        manifest_path = Path(str(manifest_path_value))
+        if manifest_path.as_posix() != "artifacts/libero_all_manifest.json":
+            errors.append("source manifest path is not the frozen path")
+        elif not manifest_path.is_file():
+            errors.append("source manifest file is missing")
+        else:
+            live_manifest_sha = file_sha256(manifest_path)
+            if live_manifest_sha != FROZEN_GENERALIST_MANIFEST_SHA256:
+                errors.append("live manifest SHA-256 is not frozen")
+            else:
+                with manifest_path.open() as handle:
+                    live_manifest = json.load(handle)
+                for key, value in live_manifest.items():
+                    if key == "format":
+                        continue
+                    if metadata.get(key) != value:
+                        errors.append(
+                            f"checkpoint metadata differs from live manifest at {key}"
+                        )
     if errors:
         raise ValueError("Invalid model metadata: " + "; ".join(errors))
 
@@ -702,6 +907,7 @@ def run_capability(
     dummy_action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0]
     per_task: dict[str, float] = {}
     episode_records: list[dict[str, Any]] = []
+    task_protocol: dict[str, dict[str, Any]] = {}
     started = time.perf_counter()
 
     for task_index in range(args.task_start, task_end):
@@ -716,6 +922,14 @@ def run_capability(
         )
         instruction = torch.tensor([encode(task.language)], dtype=torch.long, device="cuda")
         init_states = official_init_states(suite, task_index)
+        task_protocol[str(task_index)] = {
+            "language": str(task.language),
+            "problem_folder": str(task.problem_folder),
+            "bddl_file": str(task.bddl_file),
+            "bddl_sha256": file_sha256(Path(bddl_path)),
+            "init_state_count": len(init_states),
+            "init_states_sha256": array_sha256(init_states),
+        }
         successes = 0
         for episode in range(args.eps_per_task):
             env.seed(task_index * 100 + episode)
@@ -774,6 +988,7 @@ def run_capability(
         "num_steps_wait": args.num_steps_wait,
         "exec_h": args.exec_h,
         "canonical_init_states": True,
+        "task_protocol": task_protocol,
         "elapsed_s": time.perf_counter() - started,
     }
 
@@ -1846,6 +2061,10 @@ def json_ready(value: Any) -> Any:
 
 def main() -> None:
     args = parse_args()
+    if args.mode == "smoke":
+        args.task_end = min(args.task_start + 1, args.task_end)
+        args.eps_per_task = min(1, args.eps_per_task)
+        args.max_steps = min(8, args.max_steps)
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -1853,6 +2072,42 @@ def main() -> None:
     torch.set_float32_matmul_precision(args.matmul_precision)
     if not torch.cuda.is_available():
         raise RuntimeError("This Athena runner requires a CUDA compute node")
+
+    generalist_source_start = None
+    evaluator_start_sha256 = None
+    expected_evaluator_sha256 = None
+    evaluation_gpu_family = None
+    if args.model_metadata is not None:
+        evaluator_start_sha256 = file_sha256(Path(__file__))
+        expected_evaluator_sha256 = os.environ.get("XVLA_FROZEN_EVALUATOR_SHA256")
+        if expected_evaluator_sha256 is None:
+            raise RuntimeError("XVLA_FROZEN_EVALUATOR_SHA256 is required")
+        if evaluator_start_sha256 != expected_evaluator_sha256:
+            raise RuntimeError(
+                "Evaluator source does not match the Slurm wrapper's frozen SHA-256"
+            )
+        evaluation_gpu_family = os.environ.get(
+            "XVLA_FROZEN_EVALUATION_GPU_FAMILY"
+        )
+        if evaluation_gpu_family != FROZEN_GENERALIST_EVALUATION_GPU_FAMILY:
+            raise RuntimeError(
+                "XVLA_FROZEN_EVALUATION_GPU_FAMILY must be "
+                f"{FROZEN_GENERALIST_EVALUATION_GPU_FAMILY!r}"
+            )
+        if torch.cuda.get_device_name(0) != FROZEN_GENERALIST_EVALUATION_GPU_NAME:
+            raise RuntimeError(
+                "Generalist evaluation must run on "
+                f"{FROZEN_GENERALIST_EVALUATION_GPU_NAME}"
+            )
+        imported_sources = generalist_imported_source_snapshot()
+        validate_generalist_imported_sources(imported_sources)
+        generalist_source_start = {
+            "evaluator_sha256": evaluator_start_sha256,
+            "evaluation_gpu_family": evaluation_gpu_family,
+            "evaluation_gpu_name": torch.cuda.get_device_name(0),
+            "imported_sources": imported_sources,
+            "imported_bundle_sha256": source_bundle_sha256(imported_sources),
+        }
 
     suite = load_suite(args.suite)
     tasks = task_languages(suite)
@@ -1864,7 +2119,24 @@ def main() -> None:
         print(f"Loading one profile sample from {args.cache}", flush=True)
         stats = load_cache_profile_sample(args.cache, args.horizon)
         vocab, fixed_stats, model_metadata = load_model_metadata(args.model_metadata)
-        validate_model_metadata(args, model_metadata, vocab, fixed_stats, stats)
+        validate_model_metadata(
+            args,
+            model_metadata,
+            vocab,
+            fixed_stats,
+            stats,
+            cache_task_metadata,
+        )
+        generalist_source_start.update(
+            {
+                "checkpoint_sha256": file_sha256(args.checkpoint),
+                "model_metadata_sha256": file_sha256(args.model_metadata),
+                "manifest_sha256": file_sha256(
+                    Path(str(model_metadata["source_manifest"]))
+                ),
+                "evaluation_cache_sha256": file_sha256(args.cache),
+            }
+        )
         stats.update(fixed_stats)
         stats["sample_count"] = int(
             model_metadata["source_caches"][args.suite]["sample_count"]
@@ -1935,6 +2207,17 @@ def main() -> None:
             "cuda_version": torch.version.cuda,
             "cuda_matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
             "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+            "libero_version": installed_version("libero"),
+            "robosuite_version": installed_version("robosuite"),
+            "mujoco_version": installed_version("mujoco"),
+        },
+        "evaluation_protocol": {
+            "res": args.res,
+            "horizon": args.horizon,
+            "num_steps_wait": args.num_steps_wait,
+            "exec_h": args.exec_h,
+            "eps_per_task": args.eps_per_task,
+            "max_steps": args.max_steps,
         },
         "vocab_size": len(vocab),
         "cache_stats": stats,
@@ -1959,12 +2242,6 @@ def main() -> None:
     }
 
     if args.mode == "smoke":
-        original_end = args.task_end
-        original_eps = args.eps_per_task
-        original_steps = args.max_steps
-        args.task_end = min(args.task_start + 1, original_end)
-        args.eps_per_task = min(1, original_eps)
-        args.max_steps = min(8, original_steps)
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "capability":
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
@@ -2007,6 +2284,34 @@ def main() -> None:
         result["surgery"] = run_weight_surgery(
             args, model, suite, tasks, encode, stats
         )
+
+    if args.model_metadata is not None:
+        evaluator_end_sha256 = file_sha256(Path(__file__))
+        imported_sources_end = generalist_imported_source_snapshot()
+        validate_generalist_imported_sources(imported_sources_end)
+        generalist_source_end = {
+            "evaluator_sha256": evaluator_end_sha256,
+            "evaluation_gpu_family": evaluation_gpu_family,
+            "evaluation_gpu_name": torch.cuda.get_device_name(0),
+            "imported_sources": imported_sources_end,
+            "imported_bundle_sha256": source_bundle_sha256(imported_sources_end),
+            "checkpoint_sha256": file_sha256(args.checkpoint),
+            "model_metadata_sha256": file_sha256(args.model_metadata),
+            "manifest_sha256": file_sha256(
+                Path(str(model_metadata["source_manifest"]))
+            ),
+            "evaluation_cache_sha256": file_sha256(args.cache),
+        }
+        if generalist_source_end != generalist_source_start:
+            raise RuntimeError(
+                "Generalist source, checkpoint, metadata, manifest, or cache "
+                "changed during evaluation"
+            )
+        result["source_identity"] = {
+            "expected_evaluator_sha256": expected_evaluator_sha256,
+            "start": generalist_source_start,
+            "end": generalist_source_end,
+        }
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")

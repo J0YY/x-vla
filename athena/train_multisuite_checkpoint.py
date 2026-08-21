@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import pickle
 import time
 from collections import defaultdict
@@ -15,7 +16,17 @@ from typing import Any
 import numpy as np
 import torch
 
-from athena.run_xvla_experiment import build_encoder, make_config
+from athena.run_xvla_experiment import (
+    FROZEN_GENERALIST_CACHES,
+    FROZEN_GENERALIST_IMPORTED_SOURCES,
+    FROZEN_GENERALIST_MANIFEST_SHA256,
+    FROZEN_GENERALIST_SUITE_OFFSETS,
+    build_encoder,
+    generalist_imported_source_snapshot,
+    make_config,
+    source_bundle_sha256,
+    validate_generalist_imported_sources,
+)
 from xvla.models.vla import ChiVLA
 from xvla.train.train_lm import TrainConfig, _lr_at
 
@@ -27,6 +38,10 @@ EXPECTED_SUITES = (
     "libero_10",
 )
 RECIPE_VERSION = "multisuite_balanced_v1"
+FROZEN_TRAINER_ADDITIONAL_SOURCES = {
+    "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+    "xvla/train/train_lm.py": "e6ecdcc12a9a252afb3b5fcb75de7ff2728a81183b6c05710fd0c23bf6e2f525",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,6 +77,70 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def trainer_imported_source_snapshot() -> dict[str, str]:
+    repository_root = Path(__file__).resolve().parents[1]
+    sources = generalist_imported_source_snapshot()
+    sources.update(
+        {
+            path: file_sha256(repository_root / path)
+            for path in FROZEN_TRAINER_ADDITIONAL_SOURCES
+        }
+    )
+    return sources
+
+
+def validate_trainer_imported_sources(sources: dict[str, str]) -> None:
+    validate_generalist_imported_sources(
+        {path: sources[path] for path in FROZEN_GENERALIST_IMPORTED_SOURCES}
+    )
+    expected = {
+        **FROZEN_GENERALIST_IMPORTED_SOURCES,
+        **FROZEN_TRAINER_ADDITIONAL_SOURCES,
+    }
+    if sources != expected:
+        changed = {
+            path: {"expected": expected.get(path), "observed": sources.get(path)}
+            for path in sorted(set(expected) | set(sources))
+            if expected.get(path) != sources.get(path)
+        }
+        raise RuntimeError(f"Frozen generalist trainer source mismatch: {changed}")
+
+
+def validate_frozen_manifest(path: Path, manifest: dict[str, Any]) -> None:
+    if path.as_posix() != "artifacts/libero_all_manifest.json":
+        raise ValueError(f"Unexpected generalist manifest path {path}")
+    if file_sha256(path) != FROZEN_GENERALIST_MANIFEST_SHA256:
+        raise ValueError("Generalist manifest SHA-256 is not the frozen identity")
+    expected_scalars = {
+        "format": "xvla_multisuite_v1",
+        "training_suites": list(EXPECTED_SUITES),
+        "suite_task_offsets": FROZEN_GENERALIST_SUITE_OFFSETS,
+        "task_count": 40,
+        "res": 64,
+        "horizon": 8,
+        "state_dim": 8,
+        "action_dim": 7,
+    }
+    for key, expected in expected_scalars.items():
+        if manifest.get(key) != expected:
+            raise ValueError(
+                f"Frozen manifest {key}={manifest.get(key)!r}, expected {expected!r}"
+            )
+    if set(manifest.get("source_caches", {})) != set(EXPECTED_SUITES):
+        raise ValueError("Frozen manifest source-cache suite set is invalid")
+    for suite_name, expected in FROZEN_GENERALIST_CACHES.items():
+        source = manifest["source_caches"][suite_name]
+        for key in ("path", "sha256", "frame_count", "sample_count"):
+            if source.get(key) != expected[key]:
+                raise ValueError(f"Frozen manifest {suite_name} {key} is invalid")
+        task_metadata = source.get("task_metadata", {})
+        for key in ("repository", "revision", "metadata_sha256"):
+            if task_metadata.get(key) != expected[key]:
+                raise ValueError(
+                    f"Frozen manifest {suite_name} task metadata {key} is invalid"
+                )
+
+
 def load_manifest(path: Path) -> dict[str, Any]:
     with path.open() as handle:
         manifest = json.load(handle)
@@ -71,6 +150,7 @@ def load_manifest(path: Path) -> dict[str, Any]:
         raise ValueError(
             f"Expected suite order {EXPECTED_SUITES}, got {manifest['training_suites']}"
         )
+    validate_frozen_manifest(path, manifest)
     return manifest
 
 
@@ -191,6 +271,73 @@ def main() -> None:
         raise ValueError("steps must be positive")
     if args.recovery_interval <= 0:
         raise ValueError("recovery-interval must be positive")
+    if args.manifest.as_posix() != "artifacts/libero_all_manifest.json":
+        raise ValueError("The frozen generalist run requires artifacts/libero_all_manifest.json")
+    is_smoke = "smoke" in args.checkpoint_output.stem
+    expected_recipe = {
+        "vision_encoder": "vit",
+        "steps": 10 if is_smoke else 160000,
+        "batch_size": 256,
+        "lr": 8e-4,
+        "ema_decay": 0.999,
+        "recovery_interval": 10000,
+    }
+    for key, expected in expected_recipe.items():
+        if getattr(args, key) != expected:
+            raise ValueError(
+                f"Frozen recipe requires {key}={expected!r}, got {getattr(args, key)!r}"
+            )
+    if is_smoke:
+        if args.seed != 0:
+            raise ValueError("Hardened generalist smokes require seed 0")
+        expected_outputs = {
+            "checkpoint_output": Path(
+                f"artifacts/ckpt_generalist_hardened_{args.architecture}_smoke.pt"
+            ),
+            "metadata_output": Path(
+                f"artifacts/ckpt_generalist_hardened_{args.architecture}_smoke.json"
+            ),
+            "result_output": Path(
+                f"results/train_generalist_hardened_{args.architecture}_smoke.json"
+            ),
+            "recovery_output": None,
+        }
+    else:
+        if args.seed not in (0, 1, 2):
+            raise ValueError("Full generalist runs require seed 0, 1, or 2")
+        expected_outputs = {
+            "checkpoint_output": Path(
+                f"artifacts/ckpt_generalist_hardened_{args.architecture}_s{args.seed}.pt"
+            ),
+            "metadata_output": Path(
+                f"artifacts/ckpt_generalist_hardened_{args.architecture}_s{args.seed}.json"
+            ),
+            "result_output": Path(
+                f"results/train_generalist_hardened_{args.architecture}_s{args.seed}.json"
+            ),
+            "recovery_output": Path(
+                f"artifacts/recovery_generalist_hardened_{args.architecture}_s{args.seed}.pt"
+            ),
+        }
+    for key, expected in expected_outputs.items():
+        if getattr(args, key) != expected:
+            raise ValueError(
+                f"Hardened run requires {key}={expected}, got {getattr(args, key)}"
+            )
+    for output in (args.checkpoint_output, args.metadata_output, args.result_output):
+        if output.exists():
+            raise FileExistsError(f"Refusing to overwrite frozen output {output}")
+
+    trainer_start_sha256 = file_sha256(Path(__file__))
+    expected_trainer_sha256 = os.environ.get("XVLA_FROZEN_TRAINER_SHA256")
+    if expected_trainer_sha256 is None:
+        raise RuntimeError("XVLA_FROZEN_TRAINER_SHA256 is required")
+    if trainer_start_sha256 != expected_trainer_sha256:
+        raise RuntimeError(
+            "Trainer source does not match the Slurm wrapper's frozen SHA-256"
+        )
+    imported_sources_start = trainer_imported_source_snapshot()
+    validate_trainer_imported_sources(imported_sources_start)
 
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
@@ -199,12 +346,16 @@ def main() -> None:
     rng = np.random.default_rng(args.seed)
 
     manifest_hash = file_sha256(args.manifest)
-    trainer_hash = file_sha256(Path(__file__))
+    trainer_hash = trainer_start_sha256
     manifest = load_manifest(args.manifest)
     vocab = {str(token): int(index) for token, index in manifest["vocab"].items()}
     encode = build_encoder(vocab)
     suite_data = {
         suite_name: load_suite_samples(suite_name, manifest, encode)
+        for suite_name in EXPECTED_SUITES
+    }
+    source_cache_hashes_start = {
+        suite_name: file_sha256(Path(manifest["source_caches"][suite_name]["path"]))
         for suite_name in EXPECTED_SUITES
     }
     sample_counts = {
@@ -242,9 +393,17 @@ def main() -> None:
         args.recovery_output is not None and args.recovery_output.exists()
     )
     if recovery_exists and not args.resume_recovery:
-        raise RuntimeError(
-            f"Recovery file already exists at {args.recovery_output}. "
-            "Pass --resume-recovery only for an intentional continuation."
+        slurm_restart_count = int(os.environ.get("SLURM_RESTART_COUNT", "0"))
+        if slurm_restart_count <= 0:
+            raise RuntimeError(
+                f"Recovery file already exists at {args.recovery_output}. "
+                "Pass --resume-recovery only for an intentional continuation."
+            )
+        args.resume_recovery = True
+        print(
+            f"Slurm restart {slurm_restart_count}: validating and resuming "
+            f"{args.recovery_output}",
+            flush=True,
         )
     if args.resume_recovery and not recovery_exists:
         raise RuntimeError("--resume-recovery requested but recovery file is absent")
@@ -265,6 +424,7 @@ def main() -> None:
             recovery.get("manifest_sha256"),
             recovery.get("recipe_version"),
             recovery.get("trainer_sha256"),
+            recovery.get("imported_bundle_sha256"),
         )
         expected_identity = (
             args.architecture,
@@ -279,6 +439,7 @@ def main() -> None:
             manifest_hash,
             RECIPE_VERSION,
             trainer_hash,
+            source_bundle_sha256(imported_sources_start),
         )
         if recovery_identity != expected_identity:
             raise RuntimeError(
@@ -354,6 +515,9 @@ def main() -> None:
                     "manifest_sha256": manifest_hash,
                     "recipe_version": RECIPE_VERSION,
                     "trainer_sha256": trainer_hash,
+                    "imported_bundle_sha256": source_bundle_sha256(
+                        imported_sources_start
+                    ),
                     "completed_steps": completed_steps,
                     "elapsed_s": recovered_elapsed + time.perf_counter() - started,
                     "model": model.state_dict(),
@@ -370,6 +534,54 @@ def main() -> None:
             parameter.copy_(ema[name].to(parameter.dtype))
     torch.cuda.synchronize()
     elapsed = recovered_elapsed + time.perf_counter() - started
+
+    if last_loss is None or not np.isfinite(last_loss):
+        raise RuntimeError(f"Final training loss is not finite: {last_loss}")
+    nonfinite_parameters = [
+        name
+        for name, parameter in model.named_parameters()
+        if not torch.isfinite(parameter).all()
+    ]
+    if nonfinite_parameters:
+        raise RuntimeError(f"Non-finite trained parameters: {nonfinite_parameters}")
+    trainer_end_sha256 = file_sha256(Path(__file__))
+    imported_sources_end = trainer_imported_source_snapshot()
+    validate_trainer_imported_sources(imported_sources_end)
+    source_cache_hashes_end = {
+        suite_name: file_sha256(Path(manifest["source_caches"][suite_name]["path"]))
+        for suite_name in EXPECTED_SUITES
+    }
+    manifest_end_sha256 = file_sha256(args.manifest)
+    if trainer_end_sha256 != trainer_start_sha256:
+        raise RuntimeError("Trainer source changed during training")
+    if imported_sources_end != imported_sources_start:
+        raise RuntimeError("Imported model sources changed during training")
+    if source_cache_hashes_end != source_cache_hashes_start:
+        raise RuntimeError("A source cache changed during training")
+    if manifest_end_sha256 != manifest_hash:
+        raise RuntimeError("The generalist manifest changed during training")
+    source_identity = {
+        "expected_trainer_sha256": expected_trainer_sha256,
+        "trainer_start_sha256": trainer_start_sha256,
+        "trainer_end_sha256": trainer_end_sha256,
+        "imported_sources_start": imported_sources_start,
+        "imported_sources_end": imported_sources_end,
+        "imported_bundle_start_sha256": source_bundle_sha256(
+            imported_sources_start
+        ),
+        "imported_bundle_end_sha256": source_bundle_sha256(imported_sources_end),
+        "manifest_start_sha256": manifest_hash,
+        "manifest_end_sha256": manifest_end_sha256,
+        "source_cache_hashes_start": source_cache_hashes_start,
+        "source_cache_hashes_end": source_cache_hashes_end,
+    }
+    training_environment = {
+        "torch_version": torch.__version__,
+        "cuda_version": torch.version.cuda,
+        "gpu": torch.cuda.get_device_name(0),
+        "matmul_precision": torch.get_float32_matmul_precision(),
+        "autocast_dtype": "bfloat16",
+    }
 
     args.checkpoint_output.parent.mkdir(parents=True, exist_ok=True)
     temporary_checkpoint = args.checkpoint_output.with_suffix(".tmp")
@@ -395,6 +607,8 @@ def main() -> None:
             "manifest_sha256": manifest_hash,
             "recipe_version": RECIPE_VERSION,
             "trainer_sha256": trainer_hash,
+            "source_identity": source_identity,
+            "training_environment": training_environment,
         }
     )
     atomic_json(args.metadata_output, metadata)
@@ -429,6 +643,8 @@ def main() -> None:
         "recipe_version": RECIPE_VERSION,
         "trainer_sha256": trainer_hash,
         "ema_decay": args.ema_decay,
+        "source_identity": source_identity,
+        "training_environment": training_environment,
     }
     atomic_json(args.result_output, result)
     print("RESULT", json.dumps(result, indent=2), flush=True)
