@@ -27,6 +27,7 @@ import numpy as np
 import torch
 from PIL import Image
 
+from athena.libero_dataset_metadata import load_dataset_task_languages
 from xvla.models.vla import ChiVLA, VLAConfig
 
 
@@ -1148,6 +1149,8 @@ def run_visual_subspace_intervention(
     model: ChiVLA,
     suite,
     tasks: dict[int, str],
+    cache_tasks: dict[int, str],
+    cache_task_metadata: dict[str, Any],
     encode,
     stats: dict[str, Any],
 ) -> dict[str, Any]:
@@ -1162,16 +1165,28 @@ def run_visual_subspace_intervention(
     for frame in frames:
         episodes[int(frame[0])].append(frame)
     samples = []
+    dataset_to_official = {
+        int(dataset_index): int(official_index)
+        for dataset_index, official_index in cache_task_metadata[
+            "dataset_to_official_task"
+        ].items()
+    }
     for episode_frames in episodes.values():
         episode_frames.sort(key=lambda item: int(item[1]))
         for index in range(len(episode_frames) - args.horizon):
             frame = episode_frames[index]
-            task_index = int(frame[5])
-            if args.gram_task_start <= task_index < args.gram_task_end:
+            dataset_task_index = int(frame[5])
+            official_task_index = dataset_to_official[dataset_task_index]
+            if (
+                args.gram_task_start
+                <= official_task_index
+                < args.gram_task_end
+            ):
                 samples.append(
                     (
                         np.asarray(frame[2], dtype=np.uint8),
-                        task_index,
+                        dataset_task_index,
+                        official_task_index,
                         np.asarray(frame[3], dtype=np.float32),
                     )
                 )
@@ -1198,11 +1213,11 @@ def run_visual_subspace_intervention(
             .cuda()
         )
         instructions = torch.tensor(
-            [encode(tasks[samples[index][1]]) for index in indices],
+            [encode(cache_tasks[samples[index][1]]) for index in indices],
             dtype=torch.long,
             device="cuda",
         )
-        states_array = np.stack([samples[index][2] for index in indices])
+        states_array = np.stack([samples[index][3] for index in indices])
         states = torch.tensor(
             (states_array - stats["state_mean"]) / stats["state_std"],
             dtype=torch.float32,
@@ -1431,6 +1446,8 @@ def run_visual_subspace_intervention(
         "ambient_dimension": model.cfg.dim,
         "gram_samples": len(gram_indices),
         "gram_task_range": [args.gram_task_start, args.gram_task_end],
+        "gram_task_index_space": "official LIBERO task indices",
+        "cache_task_metadata": cache_task_metadata,
         "offline_eval_samples": len(offline_eval_indices),
         "offline_eval_disjoint_from_gram": True,
         "gradient_rows": gradient_rows,
@@ -1480,7 +1497,8 @@ def run_visual_subspace_intervention(
         },
         "by_condition": by_condition,
         "discovery_scope": (
-            f"The {args.gram_action_group} visual-bond subspace is estimated from the training cache. "
+            f"The {args.gram_action_group} visual-bond subspace is estimated from the training cache "
+            "after translating pinned dataset task IDs to official LIBERO task IDs. "
             "Offline reconstruction uses a disjoint cache sample, while closed-loop evaluation "
             "uses independent canonical simulator states. This is a data-driven causal "
             "bottleneck, not a weight-only whole-policy decomposition."
@@ -1838,6 +1856,9 @@ def main() -> None:
 
     suite = load_suite(args.suite)
     tasks = task_languages(suite)
+    cache_tasks, cache_task_metadata = load_dataset_task_languages(
+        args.suite, tasks
+    )
     model_metadata = None
     if args.model_metadata is not None:
         print(f"Loading one profile sample from {args.cache}", flush=True)
@@ -1879,7 +1900,9 @@ def main() -> None:
         cp_pruning = apply_cp_term_pruning(
             model, args.prune_fraction, args.prune_strategy, args.seed
         )
-    sample_tensors = tensorize_sample(stats["first_sample"], encode, tasks, stats)
+    sample_tensors = tensorize_sample(
+        stats["first_sample"], encode, cache_tasks, stats
+    )
     with torch.inference_mode():
         prediction, _ = model(*sample_tensors)
     if not torch.isfinite(prediction).all():
@@ -1903,6 +1926,7 @@ def main() -> None:
         ),
         "cp_pruning": cp_pruning,
         "cache": str(args.cache),
+        "cache_task_metadata": cache_task_metadata,
         "model_metadata": str(args.model_metadata) if args.model_metadata else None,
         "seed": args.seed,
         "matmul_precision": torch.get_float32_matmul_precision(),
@@ -1954,7 +1978,7 @@ def main() -> None:
         if args.suite != args.training_suite:
             raise ValueError("offline_diagnostic requires suite=training_suite")
         result["offline_diagnostic"] = run_offline_checkpoint_diagnostic(
-            args, model, tasks, encode, stats
+            args, model, cache_tasks, encode, stats
         )
     elif args.mode == "causal":
         result["causal"] = run_causal_intervention(args, model, suite, tasks, encode, stats)
@@ -1964,7 +1988,14 @@ def main() -> None:
         if args.suite != "libero_object" or args.training_suite != "libero_object":
             raise ValueError("visual_subspace currently requires Object training and evaluation")
         result["visual_subspace"] = run_visual_subspace_intervention(
-            args, model, suite, tasks, encode, stats
+            args,
+            model,
+            suite,
+            tasks,
+            cache_tasks,
+            cache_task_metadata,
+            encode,
+            stats,
         )
     elif args.mode == "exact_attention":
         if args.architecture != "chi":

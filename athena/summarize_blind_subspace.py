@@ -102,8 +102,19 @@ def main() -> None:
 
     for seed in SEEDS:
         for task in TASKS:
-            path = args.results_dir / f"visual_activation_energy_s{seed}_r96_t{task}.json"
+            path = (
+                args.results_dir
+                / f"visual_taskmap_activation_s{seed}_r96_t{task}.json"
+            )
             visual = load_visual(path)
+            if visual.get("gram_task_index_space") != "official LIBERO task indices":
+                raise RuntimeError(f"Uncorrected Gram task indexing in {path}")
+            if visual.get("gram_task_range") != [0, 4]:
+                raise RuntimeError(f"Unexpected Gram split in {path}")
+            if visual.get("cache_task_metadata", {}).get(
+                "ordering_matches_official"
+            ) is not False:
+                raise RuntimeError(f"Missing verified dataset task permutation in {path}")
             conditions = visual["by_condition"]
             full = episode_map(conditions["full"])
             jacobian = episode_map(conditions["causal_topk"])
@@ -139,8 +150,15 @@ def main() -> None:
     for seed in SEEDS:
         seed_rows = []
         for task in TASKS:
-            path = args.results_dir / f"visual_balanced_vit_s{seed}_r96_blind_t{task}.json"
+            path = (
+                args.results_dir
+                / f"visual_taskmap_vit_s{seed}_r96_blind_t{task}.json"
+            )
             visual = load_visual(path)
+            if visual.get("gram_task_index_space") != "official LIBERO task indices":
+                raise RuntimeError(f"Uncorrected Gram task indexing in {path}")
+            if visual.get("gram_task_range") != [0, 4]:
+                raise RuntimeError(f"Unexpected Gram split in {path}")
             conditions = visual["by_condition"]
             full = episode_map(conditions["full"])
             jacobian = episode_map(conditions["causal_topk"])
