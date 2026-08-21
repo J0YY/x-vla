@@ -52,7 +52,9 @@ checkpoint artifacts derive the softmax-free attention decomposition and numeric
 attention module on one fixed cached input per checkpoint, with worst relative error
 $2.56\times10^{-7}$. In a seed-$0$
 ViT checkpoint, all $36$ primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
-median fidelity ratio $2.44$. The evidence establishes strong specialist capability and exact
+median fidelity ratio $2.44$. Separately, prospectively fixed rank-$96$ visual projectors retain
+$95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
+random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong specialist capability and exact
 layerwise access to trained attention coefficients. It does not establish broad robotic
 generalization, robust instruction grounding, or an exact end-to-end decomposition of the full
 policy.
@@ -113,7 +115,9 @@ Our contributions are:
   \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
-        reduced-Gram calculation that avoids materializing the full high-order tensor.
+        reduced-Gram calculation that avoids materializing the full high-order tensor. In a
+        separate closed-loop audit, learned rank-$96$ visual projectors retain $95.2$--$98.2\%$ of
+        baseline successes, versus $3.3$--$13.6\%$ for random projectors.
 \end{enumerate}
 
 This paper does not claim current state of the art. It also does not claim that comparable
@@ -387,6 +391,17 @@ This extends exact weight-only construction through individual attention layers.
 exact end-to-end decomposition of the complete policy. Composition across all eight blocks
 still faces rapid degree and representation growth.
 
+A separate intervention tests behavioral sufficiency at the visual-to-joint interface rather
+than deriving a projector from the exact attention factors. An action-Jacobian projector estimated
+on official Object tasks $0$--$3$, with rank $96$ fixed before corrected outcomes, retains $259/272$ full-policy
+successes on tasks $8$--$9$ across three ViT checkpoints. These tasks are absent from corrected
+projector construction. An activation-energy
+projector retains $267/272$, while three equal-rank random projectors retain $37/272$, $9/272$, and
+$22/272$. All ten tasks appeared during policy training. This establishes a structured
+low-dimensional visual bottleneck relative to random projectors, not unseen-task generalization,
+unique action-Jacobian specificity, or a causal link to the exact weight factors.
+Appendix~\ref{app:visual-bottleneck} reports the paired controls and stability intervals.
+
 % ============================================================================
 \section{Related work}
 % ============================================================================
@@ -452,8 +467,8 @@ Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, langu
 states, actions, and resized images matched exactly for every frame.
 The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
 behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
-verifiers independently recompute the capability totals and the convolutional-attention and
-RationalNorm certificate decisions. Preflight checks
+verifiers independently recompute the capability totals, visual-bottleneck counts and intervals,
+and the convolutional-attention and RationalNorm certificate decisions. Preflight checks
 fail if canonical initial states cannot be loaded.
 
 % ============================================================================
@@ -552,6 +567,34 @@ rank $128$, $83/96$ block-head pairs favor the exact weight-derived subspace. Th
 is $1.94$, the mean is $2.58$, and blocks $2$ and $3$ provide useful depth controls.
 At ranks $8$ and $32$, only $54/96$ and $60/96$ pairs favor the exact subspace. The effect is
 therefore depth-dependent and strongest at the wider tested rank.
+
+\subsection{Prospectively fixed-rank visual bottleneck}
+\label{app:visual-bottleneck}
+
+The behavioral intervention acts at the width-$384$ visual-to-joint interface and keeps rank
+$96$. Projector construction uses official Object tasks $0$--$3$. Rank $96$ was fixed before any
+corrected-basis outcome was observed, and the frozen evaluation uses tasks $8$--$9$. Across three checkpoints and $300$
+canonical episodes, the full policy succeeds on $272$ trials. The action-Jacobian projector
+retains $259/272=95.2\%$ of those successes, with a paired checkpoint-task-episode resampling
+interval of $91.2$--$98.6\%$. The activation-energy projector retains $267/272=98.2\%$, with an
+interval of $95.8$--$100.0\%$. Three fixed equal-rank random projectors retain $37/272=13.6\%$,
+$9/272=3.3\%$, and $22/272=8.1\%$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/visual_bottleneck_verified.pdf}
+\caption{\textbf{Corrected closed-loop visual bottleneck.} Both learned rank-$96$ projectors
+preserve nearly all baseline successes across three checkpoints, while equal-rank random
+projectors do not. Error bars in panel (a) are deterministic paired cluster-resampling intervals.
+Tasks $8$--$9$ are absent from corrected projector construction, but not from policy training.
+This is not a clean rank-selection-holdout result.}
+\label{fig:visual-bottleneck}
+\end{figure}
+
+The action-Jacobian basis does not outperform the matched activation-energy basis. The stronger
+action-specificity gate therefore does not pass. The supported claim is structured visual
+sufficiency relative to random projectors. This intervention is data-derived and remains separate
+from the exact weight-only attention decomposition.
 
 \clearpage
 \subsection{Numerical scope of rational conversion}

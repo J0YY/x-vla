@@ -48,9 +48,10 @@ worst relative error $2.56\times10^{-7}$. An $O(d^2)$ reduced Gram avoids materi
 coefficient tensor. In a seed-$0$ ViT checkpoint, all $36$ primary block-head tests favor the
 rank-$128$ weight-derived subspace over fixed random controls. Across the same three ViT
 checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
-per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. A separate
-convolutional instantiation passes an independent $4{,}608$-case joint-attention certificate with worst relative error
-$6.36\times10^{-16}$. We therefore establish a capable model family with exact layerwise
+per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. A separate Conv
+audit reconstructs $4{,}608$ attention-head cases, while learned rank-$96$ visual projectors retain
+$95.2$--$98.2\%$ of baseline successes, versus $3.3$--$13.6\%$ for random projectors. We therefore
+establish a capable model family with exact layerwise
 structure derived from trained coefficients. We do not yet provide an exact end-to-end
 decomposition of the complete policy.
 \end{abstract}
@@ -379,8 +380,8 @@ coefficient-edit interface.
 \paragraph{Reproducibility.}
 The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
 behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
-verifiers independently recompute the capability totals and the convolutional-attention and
-RationalNorm certificate decisions. Historical Modal
+verifiers independently recompute the capability totals, visual-bottleneck counts and intervals,
+and the convolutional-attention and RationalNorm certificate decisions. Historical Modal
 cache-backed analyses read dataset-native task metadata. The
 replacement Athena pipeline pins that metadata and maps dataset identifiers to official
 identifiers before defining task splits. A source-level audit compared all $271{,}996$ cached
@@ -485,6 +486,34 @@ rank $128$, $83/96$ block-head pairs favor the exact weight-derived subspace. Th
 is $1.94$, the mean is $2.58$, and blocks $2$ and $3$ provide useful depth controls.
 At ranks $8$ and $32$, only $54/96$ and $60/96$ pairs favor the exact subspace. The effect is
 therefore depth-dependent and strongest at the wider tested rank.
+
+\subsection{Prospectively fixed-rank visual bottleneck}
+\label{app:visual-bottleneck}
+
+The behavioral intervention acts at the width-$384$ visual-to-joint interface and keeps rank
+$96$. Projector construction uses official Object tasks $0$--$3$. Rank $96$ was fixed before any
+corrected-basis outcome was observed, and the frozen evaluation uses tasks $8$--$9$. Across three checkpoints and $300$
+canonical episodes, the full policy succeeds on $272$ trials. The action-Jacobian projector
+retains $259/272=95.2\%$ of those successes, with a paired checkpoint-task-episode resampling
+interval of $91.2$--$98.6\%$. The activation-energy projector retains $267/272=98.2\%$, with an
+interval of $95.8$--$100.0\%$. Three fixed equal-rank random projectors retain $37/272=13.6\%$,
+$9/272=3.3\%$, and $22/272=8.1\%$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/visual_bottleneck_verified.pdf}
+\caption{\textbf{Corrected closed-loop visual bottleneck.} Both learned rank-$96$ projectors
+preserve nearly all baseline successes across three checkpoints, while equal-rank random
+projectors do not. Error bars in panel (a) are deterministic paired cluster-resampling intervals.
+Tasks $8$--$9$ are absent from corrected projector construction, but not from policy training.
+This is not a clean rank-selection-holdout result.}
+\label{fig:visual-bottleneck}
+\end{figure}
+
+The action-Jacobian basis does not outperform the matched activation-energy basis. The stronger
+action-specificity gate therefore does not pass. The supported claim is structured visual
+sufficiency relative to random projectors. This intervention is data-derived and remains separate
+from the exact weight-only attention decomposition.
 
 \clearpage
 \subsection{Numerical scope of rational conversion}
