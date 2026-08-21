@@ -80,9 +80,9 @@ cmp "$result_dir/base_pip_freeze.txt" "$result_dir/base_pip_freeze_after_overlay
 env PYTHONPATH="$overlay" XVLA_MUJOCO_OVERLAY="$overlay" \
   "$base/bin/python" -m pip freeze --all | LC_ALL=C sort \
   > "$result_dir/overlay_pip_freeze.txt"
-grep -vi '^mujoco==' "$result_dir/base_pip_freeze.txt" \
+grep -Evi '^mujoco([=@[:space:]]|$)' "$result_dir/base_pip_freeze.txt" \
   > "$result_dir/base_without_mujoco.txt"
-grep -vi '^mujoco==' "$result_dir/overlay_pip_freeze.txt" \
+grep -Evi '^mujoco([=@[:space:]]|$)' "$result_dir/overlay_pip_freeze.txt" \
   > "$result_dir/overlay_without_mujoco.txt"
 cmp "$result_dir/base_without_mujoco.txt" "$result_dir/overlay_without_mujoco.txt"
 grep -ix 'mujoco==3.5.0' "$result_dir/base_pip_freeze.txt"

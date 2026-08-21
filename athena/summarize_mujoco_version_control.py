@@ -168,7 +168,11 @@ def load(path: Path) -> dict[str, Any]:
 def normalized_freeze_sha256(path: Path, *, without_mujoco: bool = False) -> str:
     lines = sorted(line.strip() for line in path.read_text().splitlines() if line.strip())
     if without_mujoco:
-        lines = [line for line in lines if not line.lower().startswith("mujoco==")]
+        lines = [
+            line
+            for line in lines
+            if not line.lower().startswith(("mujoco==", "mujoco @"))
+        ]
     return sha256_bytes("\n".join(lines).encode("utf-8"))
 
 

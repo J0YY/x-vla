@@ -254,7 +254,9 @@ def environment_identity() -> dict[str, Any]:
 
     freeze = pip_freeze()
     freeze_without_mujoco = [
-        line for line in freeze if not line.lower().startswith("mujoco==")
+        line
+        for line in freeze
+        if not line.lower().startswith(("mujoco==", "mujoco @"))
     ]
     source_path = Path(__file__).resolve()
     evaluator_path = Path(evaluator.__file__).resolve()
