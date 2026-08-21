@@ -111,6 +111,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--gram-probes", type=int, default=4)
     parser.add_argument("--random-controls", type=int, default=1)
+    parser.add_argument(
+        "--activation-energy-control",
+        action="store_true",
+        help=(
+            "Add a same-rank projector onto the top uncentered visual-activation "
+            "energy directions as a gradient-free compression baseline."
+        ),
+    )
     parser.add_argument("--subspace-offline-only", action="store_true")
     parser.add_argument("--offline-samples", type=int, default=4096)
     parser.add_argument(
@@ -1069,16 +1077,22 @@ def run_visual_subspace_intervention(
     if args.random_controls <= 0:
         raise ValueError("random_controls must be positive")
     gram = torch.zeros(model.cfg.dim, model.cfg.dim, dtype=torch.float64, device="cuda")
+    activation_gram = torch.zeros_like(gram)
     component_grams = [
         torch.zeros_like(gram) for _ in range(model.cfg.action_dim)
     ]
     gradient_rows = 0
+    activation_rows = 0
     gram_batch_size = 128
     probe_rng = torch.Generator(device="cuda").manual_seed(args.seed + 17011)
     for start in range(0, len(gram_indices), gram_batch_size):
         stop = min(start + gram_batch_size, len(gram_indices))
         with torch.no_grad():
             visual = model._visual_tokens(gram_images[start:stop])
+            if args.activation_energy_control:
+                flat_visual = visual.reshape(-1, model.cfg.dim).double()
+                activation_gram += flat_visual.T @ flat_visual
+                activation_rows += flat_visual.shape[0]
         visual = visual.detach().requires_grad_(True)
         with torch.enable_grad():
             prediction = forward_from_visual_tokens(
@@ -1134,6 +1148,16 @@ def run_visual_subspace_intervention(
     eigenvalues = eigenvalues.flip(0)
     top_basis = eigenvectors.flip(1)[:, : args.rank]
     top_projector = (top_basis @ top_basis.T).float()
+    activation_eigenvalues = None
+    activation_projector = None
+    if args.activation_energy_control:
+        activation_gram /= max(activation_rows, 1)
+        activation_eigenvalues, activation_eigenvectors = torch.linalg.eigh(
+            activation_gram
+        )
+        activation_eigenvalues = activation_eigenvalues.flip(0)
+        activation_basis = activation_eigenvectors.flip(1)[:, : args.rank]
+        activation_projector = (activation_basis @ activation_basis.T).float()
     random_projectors = []
     for control_index in range(args.random_controls):
         torch_rng = torch.Generator(device="cuda").manual_seed(
@@ -1153,6 +1177,8 @@ def run_visual_subspace_intervention(
         ("full", None),
         ("causal_topk", top_projector),
     ]
+    if activation_projector is not None:
+        condition_projectors.append(("activation_energy_topk", activation_projector))
     for control_index, projector in enumerate(random_projectors):
         condition = "random_topk" if control_index == 0 else f"random_topk_{control_index}"
         condition_projectors.append((condition, projector))
@@ -1208,6 +1234,13 @@ def run_visual_subspace_intervention(
         for condition in offline_mse
         if condition.startswith("random_topk")
     }
+    activation_to_causal_ratios = None
+    if "activation_energy_topk" in offline_mse:
+        activation_to_causal_ratios = {
+            group: offline_mse["activation_energy_topk"][group]
+            / max(offline_mse["causal_topk"][group], 1e-30)
+            for group in action_groups
+        }
     by_condition = {}
     if not args.subspace_offline_only:
         for condition, projector in condition_projectors:
@@ -1230,6 +1263,8 @@ def run_visual_subspace_intervention(
         "offline_eval_samples": len(offline_eval_indices),
         "offline_eval_disjoint_from_gram": True,
         "gradient_rows": gradient_rows,
+        "activation_energy_control": args.activation_energy_control,
+        "activation_rows": activation_rows,
         "gram_action_group": args.gram_action_group,
         "gram_probes": args.gram_probes,
         "random_controls": args.random_controls,
@@ -1239,7 +1274,21 @@ def run_visual_subspace_intervention(
             eigenvalues[: args.rank].clamp_min(0).sum()
             / eigenvalues.clamp_min(0).sum().clamp_min(1e-30)
         ),
+        "activation_top_eigenvalues": (
+            activation_eigenvalues[:16].detach().cpu().tolist()
+            if activation_eigenvalues is not None
+            else None
+        ),
+        "activation_top_rank_spectral_mass": (
+            float(
+                activation_eigenvalues[: args.rank].clamp_min(0).sum()
+                / activation_eigenvalues.clamp_min(0).sum().clamp_min(1e-30)
+            )
+            if activation_eigenvalues is not None
+            else None
+        ),
         "offline_mse_to_full": offline_mse,
+        "offline_activation_to_causal_mse_ratio": activation_to_causal_ratios,
         "offline_random_to_causal_mse_ratio": random_ratios["random_topk"],
         "offline_random_controls_to_causal_mse_ratio": random_ratios,
         "offline_median_random_to_causal_mse_ratio": {
