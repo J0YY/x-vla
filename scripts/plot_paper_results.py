@@ -207,10 +207,16 @@ def appendix_matched_architecture_cost() -> None:
 
 def appendix_counterfactual_grounding() -> None:
     records = []
+    labels = []
     for seed in range(3):
         path = ROOT / "athena" / "results" / f"causal_s{seed}.json"
         with path.open() as handle:
             records.append(json.load(handle)["causal"])
+        labels.append(f"χ-{seed}")
+    conventional_path = ROOT / "athena" / "results" / "causal_conventional_s0.json"
+    with conventional_path.open() as handle:
+        records.append(json.load(handle)["causal"])
+    labels.append("Conventional")
 
     shifts = np.array([record["mean_paired_preference_shift_m"] for record in records])
     intervals = np.array(
@@ -222,26 +228,29 @@ def appendix_counterfactual_grounding() -> None:
     ended = np.array(
         [record["fraction_counterfactual_ended_closer_to_named_object"] for record in records]
     ) * 100
-    positions = np.arange(3)
+    positions = np.arange(len(records))
 
     fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.25))
     ax = axes[0]
     error = np.vstack([shifts - intervals[:, 0], intervals[:, 1] - shifts])
-    ax.errorbar(
-        positions,
-        shifts,
-        yerr=error,
-        fmt="o",
-        color=COLORS["blue"],
-        ecolor=COLORS["blue"],
-        markersize=7,
-        elinewidth=1.6,
-        capsize=4,
-    )
+    for index, position in enumerate(positions):
+        color = COLORS["blue"] if index < 3 else COLORS["gray"]
+        ax.errorbar(
+            position,
+            shifts[index],
+            yerr=error[:, index : index + 1],
+            fmt="o",
+            color=color,
+            ecolor=color,
+            markersize=7,
+            elinewidth=1.6,
+            capsize=4,
+        )
     ax.axhline(0, color=COLORS["gray"], linestyle="--", linewidth=1)
+    ax.axvline(2.5, color=COLORS["grid"], linewidth=1)
     for position, value in zip(positions, shifts):
         ax.text(position, value + 0.011, f"{value:.3f} m", ha="center", fontweight="bold")
-    ax.set_xticks(positions, [f"χ checkpoint {seed}" for seed in range(3)])
+    ax.set_xticks(positions, labels)
     ax.set_ylim(-0.01, max(intervals[:, 1]) + 0.055)
     ax.set_ylabel("Paired preference shift (m)")
     ax.set_title("Trajectory response to renamed object")
@@ -268,7 +277,8 @@ def appendix_counterfactual_grounding() -> None:
         ax.text(x, value + 2, f"{value:.0f}%", ha="center", fontsize=8, fontweight="bold")
     for x, value in zip(positions + width / 2, ended):
         ax.text(x, value + 2, f"{value:.0f}%", ha="center", fontsize=8, fontweight="bold")
-    ax.set_xticks(positions, [f"χ checkpoint {seed}" for seed in range(3)])
+    ax.axvline(2.5, color=COLORS["grid"], linewidth=1)
+    ax.set_xticks(positions, labels)
     ax.set_ylim(0, 120)
     ax.set_ylabel("Paired rollouts (%)")
     ax.set_title("Direction changes more often than outcome")
@@ -280,7 +290,7 @@ def appendix_counterfactual_grounding() -> None:
     fig.text(
         0.5,
         -0.025,
-        "Each checkpoint uses 100 paired canonical states and 80-step rollouts. Error bars are "
+        "Each model uses 100 paired canonical states and 80-step rollouts. Error bars are "
         "trial-bootstrap 95% intervals. Proximity is a behavioral grounding outcome, not "
         "counterfactual task success.",
         ha="center",
