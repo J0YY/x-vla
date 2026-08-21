@@ -1,0 +1,275 @@
+{
+  "artifact_version": 1,
+  "cache_identity": {
+    "path": "artifacts/libero_frames_100000_64.pkl",
+    "provenance_path": "athena/results/cache_provenance_libero_object.json",
+    "provenance_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    "sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662"
+  },
+  "checkpoint_identities": [
+    {
+      "path": "artifacts/ckpt_linear_rat_vit_s0_v2.pt",
+      "seed": 0,
+      "sha256": "96f11093701d6b52deefb50b7921b46e2c987e5b9dbce947997882f7c59da6c9"
+    },
+    {
+      "path": "artifacts/ckpt_linear_rat_vit_s1.pt",
+      "seed": 1,
+      "sha256": "cc0780b989165a80a449c03cbb3574e2f56b2e5747a64cf32d1fde418df8ec3c"
+    },
+    {
+      "path": "artifacts/ckpt_linear_rat_vit_s2.pt",
+      "seed": 2,
+      "sha256": "413a770071bd8f16b924c5604f7c7a58567d2eb6c40c66aab202bcf046fec910"
+    }
+  ],
+  "description": "Immutable identities and frozen arithmetic for the anonymous ViT capability artifact.",
+  "expected": {
+    "ensemble": {
+      "gain_over_best_member_percentage_points": 3.400000000000003,
+      "gain_over_best_member_percentage_points_rounded_1dp": 3.4,
+      "gain_over_member_mean_percentage_points": 8.066666666666666,
+      "gain_over_member_mean_percentage_points_rounded_1dp": 8.1,
+      "per_task_successes": [
+        43,
+        47,
+        50,
+        43,
+        50,
+        42,
+        48,
+        46,
+        48,
+        50
+      ],
+      "success_rate": 0.934,
+      "successes": 467,
+      "trials": 500
+    },
+    "members": [
+      {
+        "per_task_successes": [
+          37,
+          45,
+          49,
+          23,
+          48,
+          41,
+          49,
+          38,
+          49,
+          47
+        ],
+        "seed": 0,
+        "success_rate": 0.852,
+        "successes": 426,
+        "trials": 500
+      },
+      {
+        "per_task_successes": [
+          43,
+          38,
+          49,
+          41,
+          46,
+          19,
+          50,
+          35,
+          34,
+          49
+        ],
+        "seed": 1,
+        "success_rate": 0.808,
+        "successes": 404,
+        "trials": 500
+      },
+      {
+        "per_task_successes": [
+          32,
+          43,
+          49,
+          41,
+          50,
+          45,
+          47,
+          47,
+          49,
+          47
+        ],
+        "seed": 2,
+        "success_rate": 0.9,
+        "successes": 450,
+        "trials": 500
+      }
+    ],
+    "member_success_rate_mean": 0.8533333333333334,
+    "member_success_rate_sample_sd": 0.04601449047129971
+  },
+  "protocol": {
+    "architecture": "chi",
+    "canonical_init_states": true,
+    "episodes_per_task": 50,
+    "execution_horizon": 8,
+    "max_steps": 280,
+    "settle_steps": 10,
+    "shards": [
+      [
+        0,
+        3
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        8,
+        10
+      ]
+    ],
+    "suite": "libero_object",
+    "vision_encoder": "vit"
+  },
+  "raw_results": [
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s0_t0_3.json",
+      "seed": 0,
+      "sha256": "70ea48682824ac2ea732a911bd6da50755247d4e73062c8c680393dcd17f6d12",
+      "task_end": 3,
+      "task_start": 0
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s0_t3_6.json",
+      "seed": 0,
+      "sha256": "be504cb12352b8e1d2eab80581508f2e0529ec75f764edbbc817f611a47266aa",
+      "task_end": 6,
+      "task_start": 3
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s0_t6_8.json",
+      "seed": 0,
+      "sha256": "5d72acaa2b42341ab617ed4907760b7b581ce522df33fe2e9f1cab9a1da8d9a3",
+      "task_end": 8,
+      "task_start": 6
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s0_t8_10.json",
+      "seed": 0,
+      "sha256": "d030bed432c435cd56c0114fa16f8ca540d35cc8afa712c2f46fb0e582fed67b",
+      "task_end": 10,
+      "task_start": 8
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s1_t0_3.json",
+      "seed": 1,
+      "sha256": "b771e49b62f505b3430c58921357e9c1a2960ee32f4e85fd4b9e8e07d83a0c95",
+      "task_end": 3,
+      "task_start": 0
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s1_t3_6.json",
+      "seed": 1,
+      "sha256": "405496135f33b5188da74eda9d07258c1f31b494ffb97022aba68041d9ae367f",
+      "task_end": 6,
+      "task_start": 3
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s1_t6_8.json",
+      "seed": 1,
+      "sha256": "cc6cd769e2cf658c547197a802484e6e5643435a7d4a448b57429e2785dd71c7",
+      "task_end": 8,
+      "task_start": 6
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s1_t8_10.json",
+      "seed": 1,
+      "sha256": "970fad2c9ad7898cc7ab863b4dc29ae58ec6745a9cc94d5f34c74a512cb74f7d",
+      "task_end": 10,
+      "task_start": 8
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s2_t0_3.json",
+      "seed": 2,
+      "sha256": "ab3b535640f8901c0d89c97f6975244366366564518057e0b42d4e3209a41fd7",
+      "task_end": 3,
+      "task_start": 0
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s2_t3_6.json",
+      "seed": 2,
+      "sha256": "30786a52bb471f8c1de0e091cd5814a363c7bf7b190af06d6798cc6e2ee8b098",
+      "task_end": 6,
+      "task_start": 3
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s2_t6_8.json",
+      "seed": 2,
+      "sha256": "c63649120727972de0e086462e8f9d195734a83393f1b6488b0c2a636a686df7",
+      "task_end": 8,
+      "task_start": 6
+    },
+    {
+      "cohort": "member",
+      "path": "athena/results/chi_s2_t8_10.json",
+      "seed": 2,
+      "sha256": "f872a0e40f7dc83767efc1ff6a7fd2f3c95df8ea6e62a004cde745f25ef46e06",
+      "task_end": 10,
+      "task_start": 8
+    },
+    {
+      "cohort": "ensemble",
+      "path": "athena/results/ensemble_mean_t0_3.json",
+      "sha256": "9e4a42f6180926fa9383fe8391b874bd23e815311e80f7316d1db07f40b59368",
+      "task_end": 3,
+      "task_start": 0
+    },
+    {
+      "cohort": "ensemble",
+      "path": "athena/results/ensemble_mean_t3_6.json",
+      "sha256": "da9bd406822f0cb81ebbd604cb139fdd5a312569ff1edc72d888be19869e8b53",
+      "task_end": 6,
+      "task_start": 3
+    },
+    {
+      "cohort": "ensemble",
+      "path": "athena/results/ensemble_mean_t6_8.json",
+      "sha256": "5d8d85a793fb5586b55f39f39bc47392756b8ebc76fe23cbd573c87a285f619b",
+      "task_end": 8,
+      "task_start": 6
+    },
+    {
+      "cohort": "ensemble",
+      "path": "athena/results/ensemble_mean_t8_10.json",
+      "sha256": "f4287c52ada10e6d4d71dc6fc7e1940ecc06ea85904267a1fd4e7557982a1b63",
+      "task_end": 10,
+      "task_start": 8
+    }
+  ],
+  "schema": "anonymous-vit-capability-artifact-v1",
+  "tasks": [
+    "pick up the alphabet soup and place it in the basket",
+    "pick up the cream cheese and place it in the basket",
+    "pick up the salad dressing and place it in the basket",
+    "pick up the bbq sauce and place it in the basket",
+    "pick up the ketchup and place it in the basket",
+    "pick up the tomato sauce and place it in the basket",
+    "pick up the butter and place it in the basket",
+    "pick up the milk and place it in the basket",
+    "pick up the chocolate pudding and place it in the basket",
+    "pick up the orange juice and place it in the basket"
+  ]
+}
