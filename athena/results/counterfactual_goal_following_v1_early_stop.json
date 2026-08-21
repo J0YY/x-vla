@@ -1,0 +1,44 @@
+{
+  "schema": "xvla.counterfactual_goal_following.early_stop.v1",
+  "recorded_at_utc": "2026-08-21T18:36:59Z",
+  "decision": "principled_mathematical_early_stop",
+  "reason": "The first complete frozen checkpoint achieved 49/500 counterfactual-goal matching successes (0.098), below the prospectively frozen minimum of 0.20 required in every checkpoint. Later checkpoints cannot repair an all-checkpoints gate.",
+  "triggering_frozen_gate": {
+    "name": "minimum_counterfactual_goal_matching_success_every_checkpoint",
+    "threshold": 0.2,
+    "checkpoint": 0,
+    "successes": 49,
+    "trials": 500,
+    "rate": 0.098,
+    "pass": false
+  },
+  "complete_checkpoint_0": {
+    "four_arm_units": 500,
+    "rollouts": 2000,
+    "condition_counts": {
+      "original_goal_original_prompt": 440,
+      "original_goal_counterfactual_prompt": 102,
+      "counterfactual_goal_counterfactual_prompt": 49,
+      "counterfactual_goal_original_prompt": 0
+    },
+    "original_goal_matching_success": 0.88,
+    "counterfactual_goal_matching_success": 0.098,
+    "original_goal_directional_gap": 0.676,
+    "counterfactual_goal_directional_gap": 0.098,
+    "symmetric_aligned_prompt_gap": 0.387
+  },
+  "validated_raw_sha256": {
+    "counterfactual_goal_following_v1_s0_t0_2.json": "b74db47d76f2ae2686c5ee5fead8cf506fb9a595b1a6b5140b71faa0cc32066a",
+    "counterfactual_goal_following_v1_s0_t2_4.json": "13450ae8ac002bce0d50eb31ab3657f7e316633c137ad768c99e5f8ae08e870d",
+    "counterfactual_goal_following_v1_s0_t4_6.json": "7682ea7b45a6d1a2243a1ad5f904da06161efb61004edc82b7035614db038063",
+    "counterfactual_goal_following_v1_s0_t6_8.json": "4b4b2046ffc25fa931b3d5df0ab0bb6555c314f75d0e0db6584f3319372948e4",
+    "counterfactual_goal_following_v1_s0_t8_10.json": "80bc0d1f18dcc62f4424481bd941301821a077f701dceb8aa030d3e45dbd9905"
+  },
+  "manifest_sha256": "159ce6416a19eb47e17f91030d7fabcba256c3d2c40c029963aa6be53a7548e6",
+  "smoke_sha256": "3620f197c3b3a487b59406d81dd6b2e51e481f8e3ae012cd2ef778a8b591619c",
+  "completed_full_jobs": [831394, 831395, 831396, 831397, 831398],
+  "cancelled_descendants": [831399, 831400, 831401, 831402, 831403, 831404, 831405, 831406, 831407, 831408],
+  "cancelled_held_summary": 831409,
+  "paper_integration_allowed": false,
+  "note": "This negative factorial endpoint is retained as an auditable stopped experiment and is not promoted as paper evidence. Frozen scientific sources and completed raw artifacts were not altered."
+}
