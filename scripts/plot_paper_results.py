@@ -1,0 +1,626 @@
+"""Generate publication-oriented χ-VLA result figures.
+
+The constants below are copied from verified result JSONs on the `xvla-data`
+Modal volume and from the matched-protocol table in DEVLOG.md:
+
+  odt_libero_action_vit_rational.json
+  libero_gram_ablation_closedloop_vit_rational.json
+  odt_attention_real_weights_ckpt_linear_rat_vit_s0_v2.json
+  decomposability_audit_vit_rational.json
+  DEVLOG.md entries 67 and 69
+
+The script writes both PNG previews and vector PDF files.
+"""
+
+import json
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "paper_figures"
+OUT.mkdir(exist_ok=True)
+
+COLORS = {
+    "ink": "#18252E",
+    "muted": "#60717C",
+    "grid": "#DCE3E7",
+    "gray": "#9DA8AE",
+    "blue": "#356FA8",
+    "cyan": "#66AFC4",
+    "green": "#2D8C78",
+    "gold": "#D89B2B",
+    "red": "#B94747",
+    "purple": "#7657A6",
+}
+
+plt.rcParams.update(
+    {
+        "font.family": "DejaVu Sans",
+        "font.size": 9,
+        "axes.titlesize": 11,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 9,
+        "axes.edgecolor": COLORS["gray"],
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "xtick.color": COLORS["ink"],
+        "ytick.color": COLORS["ink"],
+        "text.color": COLORS["ink"],
+        "axes.labelcolor": COLORS["ink"],
+        "figure.facecolor": "white",
+        "axes.facecolor": "white",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    }
+)
+
+
+def panel_label(ax: plt.Axes, label: str) -> None:
+    ax.text(
+        -0.12,
+        1.06,
+        label,
+        transform=ax.transAxes,
+        fontsize=12,
+        fontweight="bold",
+        va="top",
+    )
+
+
+def save_both(fig: plt.Figure, stem: str) -> None:
+    fig.savefig(OUT / f"{stem}.png", dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(OUT / f"{stem}.pdf", bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
+
+def wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float, float]:
+    p = successes / total
+    denom = 1 + z * z / total
+    center = (p + z * z / (2 * total)) / denom
+    half = z * np.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / denom
+    return center - half, center + half
+
+
+def main_capability() -> None:
+    labels = [
+        "OpenVLA-7B\npublished",
+        "Diffusion Policy\npublished",
+        "χ-VLA ViT\nrational",
+        "χ-VLA conv\nrational",
+        "χ-VLA conv\n3-model ensemble",
+    ]
+    means = np.array([88.4, 92.5, 92.8, 93.7, 96.2])
+    reported_sd = np.array([0.8, 0.7, 2.1, 0.8])
+    vit_seeds = np.array([89.8, 94.4, 94.2])
+    conv_seeds = np.array([94.0, 94.4, 92.8])
+    colors = [COLORS["gray"], COLORS["cyan"], COLORS["blue"], COLORS["green"], COLORS["gold"]]
+
+    fig, ax = plt.subplots(figsize=(7.5, 3.6))
+    y = np.arange(len(labels))[::-1]
+    error_colors = [COLORS["muted"], COLORS["muted"], COLORS["blue"], COLORS["green"]]
+    for value, yi, error, color in zip(means[:4], y[:4], reported_sd, error_colors):
+        ax.errorbar(
+            value,
+            yi,
+            xerr=error,
+            fmt="none",
+            ecolor=color,
+            elinewidth=1.5,
+            capsize=3,
+            zorder=2,
+        )
+    for value, yi, color in zip(means, y, colors):
+        marker = "*" if yi == y[-1] else "o"
+        size = 180 if marker == "*" else 62
+        ax.scatter(value, yi, s=size, marker=marker, color=color, edgecolor="white", linewidth=0.8, zorder=4)
+
+    jitter = np.array([-0.12, 0.0, 0.12])
+    ax.scatter(vit_seeds, np.full(3, y[2]) + jitter, s=18, color=COLORS["blue"], alpha=0.45, zorder=3)
+    ax.scatter(conv_seeds, np.full(3, y[3]) + jitter, s=18, color=COLORS["green"], alpha=0.45, zorder=3)
+
+    for value, yi in zip(means, y):
+        ax.text(value + 0.35, yi, f"{value:.1f}%", va="center", fontweight="bold")
+
+    ax.axvline(92.5, color=COLORS["cyan"], linewidth=0.8, linestyle=":", alpha=0.7)
+    ax.set_yticks(y, labels)
+    ax.set_xlim(86.5, 98.3)
+    ax.set_xlabel("Closed-loop success (%)")
+    ax.grid(axis="x", color=COLORS["grid"], linewidth=0.8)
+    ax.set_title("Matched-protocol LIBERO-Object capability", pad=10)
+    ax.text(
+        0,
+        1.01,
+        "10 tasks, 50 trials/task, 280-step cap, canonical initial states",
+        transform=ax.transAxes,
+        color=COLORS["muted"],
+        fontsize=8.5,
+    )
+    fig.text(
+        0.01,
+        -0.015,
+        "Whiskers show reported across-seed variation where available. Small dots show χ-VLA seed values. "
+        "The ensemble star is one fixed aggregate evaluated over 500 trials, with 3× inference and no extra training.",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "main_capability")
+
+
+def appendix_matched_architecture_cost() -> None:
+    labels = ["Conventional twin", "Rational χ-VLA"]
+    success = np.array([89.8, 89.8])
+    latency = np.array([6.36, 35.4])
+    colors = [COLORS["gray"], COLORS["blue"]]
+    low, high = wilson_interval(449, 500)
+    error = np.array([[89.8 - 100 * low], [100 * high - 89.8]])
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.3, 3.15))
+    ax = axes[0]
+    positions = np.arange(2)
+    ax.bar(positions, success, color=colors, width=0.62)
+    ax.errorbar(
+        positions,
+        success,
+        yerr=np.repeat(error, 2, axis=1),
+        fmt="none",
+        ecolor=COLORS["ink"],
+        elinewidth=1.2,
+        capsize=3,
+    )
+    for position, value in zip(positions, success):
+        ax.text(position, value + 1.0, f"{value:.1f}%", ha="center", fontweight="bold")
+    ax.set_xticks(positions, labels)
+    ax.set_ylim(80, 95)
+    ax.set_ylabel("Closed-loop success (%)")
+    ax.set_title("Capability, seed 0")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    ax.bar(positions, latency, color=colors, width=0.62)
+    for position, value in zip(positions, latency):
+        ax.text(position, value + 1.0, f"{value:.2f} ms", ha="center", fontweight="bold")
+    ax.set_xticks(positions, labels)
+    ax.set_ylim(0, 41)
+    ax.set_ylabel("Eager batch-one latency (ms)")
+    ax.set_title("Current A6000 implementation")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    panel_label(ax, "b")
+
+    fig.suptitle("Matched architecture control: equal success, unequal eager runtime", y=1.03)
+    fig.text(
+        0.5,
+        -0.02,
+        "Both policies succeed in 449/500 canonical trials. Parameter counts are 20,138,632 "
+        "and 20,137,352. Error bars are 95% Wilson intervals over trials.",
+        ha="center",
+        fontsize=7.7,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "appendix_matched_architecture_cost")
+
+
+def appendix_counterfactual_grounding() -> None:
+    records = []
+    for seed in range(3):
+        path = ROOT / "athena" / "results" / f"causal_s{seed}.json"
+        with path.open() as handle:
+            records.append(json.load(handle)["causal"])
+
+    shifts = np.array([record["mean_paired_preference_shift_m"] for record in records])
+    intervals = np.array(
+        [record["mean_paired_preference_shift_95pct_bootstrap_ci_m"] for record in records]
+    )
+    toward = np.array(
+        [record["fraction_shift_toward_counterfactual_named_object"] for record in records]
+    ) * 100
+    ended = np.array(
+        [record["fraction_counterfactual_ended_closer_to_named_object"] for record in records]
+    ) * 100
+    positions = np.arange(3)
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.25))
+    ax = axes[0]
+    error = np.vstack([shifts - intervals[:, 0], intervals[:, 1] - shifts])
+    ax.errorbar(
+        positions,
+        shifts,
+        yerr=error,
+        fmt="o",
+        color=COLORS["blue"],
+        ecolor=COLORS["blue"],
+        markersize=7,
+        elinewidth=1.6,
+        capsize=4,
+    )
+    ax.axhline(0, color=COLORS["gray"], linestyle="--", linewidth=1)
+    for position, value in zip(positions, shifts):
+        ax.text(position, value + 0.011, f"{value:.3f} m", ha="center", fontweight="bold")
+    ax.set_xticks(positions, [f"χ checkpoint {seed}" for seed in range(3)])
+    ax.set_ylim(-0.01, max(intervals[:, 1]) + 0.055)
+    ax.set_ylabel("Paired preference shift (m)")
+    ax.set_title("Trajectory response to renamed object")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    width = 0.34
+    ax.bar(
+        positions - width / 2,
+        toward,
+        width,
+        color=COLORS["green"],
+        label="Shift toward renamed object",
+    )
+    ax.bar(
+        positions + width / 2,
+        ended,
+        width,
+        color=COLORS["gold"],
+        label="End closer to renamed object",
+    )
+    for x, value in zip(positions - width / 2, toward):
+        ax.text(x, value + 2, f"{value:.0f}%", ha="center", fontsize=8, fontweight="bold")
+    for x, value in zip(positions + width / 2, ended):
+        ax.text(x, value + 2, f"{value:.0f}%", ha="center", fontsize=8, fontweight="bold")
+    ax.set_xticks(positions, [f"χ checkpoint {seed}" for seed in range(3)])
+    ax.set_ylim(0, 120)
+    ax.set_ylabel("Paired rollouts (%)")
+    ax.set_title("Direction changes more often than outcome")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    ax.legend(frameon=False, fontsize=7.4, loc="upper center")
+    panel_label(ax, "b")
+
+    fig.suptitle("Language reliably changes motion, but often does not overcome the scene prior", y=1.03)
+    fig.text(
+        0.5,
+        -0.025,
+        "Each checkpoint uses 100 paired canonical states and 80-step rollouts. Error bars are "
+        "trial-bootstrap 95% intervals. Proximity is a behavioral grounding outcome, not "
+        "counterfactual task success.",
+        ha="center",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "appendix_counterfactual_grounding")
+
+
+def main_causal_subspace() -> None:
+    ks = np.array([4, 8, 16, 32, 64])
+    global_mse = {
+        "Translation": np.array([1.62466, 1.72915, 0.96152, 0.36517, 0.05780]),
+        "Rotation": np.array([1.65144, 1.73598, 1.33522, 0.84604, 0.12104]),
+        "Gripper": np.array([1.04071, 0.93834, 0.71632, 0.07590, 0.00670]),
+    }
+    random_mse = {
+        "Translation": np.array([1.03016, 1.49419, 0.92472, 0.70817, 0.27626]),
+        "Rotation": np.array([0.79328, 0.93897, 0.91378, 0.71070, 0.56058]),
+        "Gripper": np.array([0.80667, 0.71972, 0.88879, 0.56080, 0.28005]),
+    }
+    line_colors = {
+        "Translation": COLORS["blue"],
+        "Rotation": COLORS["purple"],
+        "Gripper": COLORS["green"],
+    }
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.55), gridspec_kw={"width_ratios": [1.35, 0.9]})
+
+    ax = axes[0]
+    for group in global_mse:
+        ratio = random_mse[group] / global_mse[group]
+        ax.plot(ks, ratio, marker="o", linewidth=2, color=line_colors[group], label=group)
+        ax.text(66, ratio[-1], f"{ratio[-1]:.1f}×", color=line_colors[group], va="center", fontsize=8)
+    ax.axhline(1, color=COLORS["gray"], linestyle="--", linewidth=1)
+    ax.set_xscale("log", base=2)
+    ax.set_yscale("log")
+    ax.set_xticks(ks, [str(k) for k in ks])
+    ax.set_ylim(0.4, 65)
+    ax.set_xlim(3.5, 82)
+    ax.set_xlabel("Retained visual-bond dimensions")
+    ax.set_ylabel("Random MSE / causal-subspace MSE")
+    ax.grid(which="major", color=COLORS["grid"], linewidth=0.8)
+    ax.legend(frameon=False, loc="upper left")
+    ax.set_title("Offline action faithfulness")
+    ax.text(
+        0.02,
+        0.03,
+        "Above 1 means the causal subspace is better",
+        transform=ax.transAxes,
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    conditions = ["Full\n384 dims", "Causal top 64\nof 384", "Random 64\nof 384"]
+    successes = np.array([19, 18, 0])
+    total = 20
+    rates = successes / total * 100
+    intervals = np.array([wilson_interval(int(s), total) for s in successes]) * 100
+    yerr = np.vstack([rates - intervals[:, 0], intervals[:, 1] - rates])
+    bars = ax.bar(
+        np.arange(3),
+        rates,
+        color=[COLORS["ink"], COLORS["green"], COLORS["red"]],
+        width=0.65,
+        zorder=3,
+    )
+    ax.errorbar(
+        np.arange(3),
+        rates,
+        yerr=yerr,
+        fmt="none",
+        ecolor=COLORS["ink"],
+        elinewidth=1,
+        capsize=3,
+        zorder=4,
+    )
+    for bar, s in zip(bars, successes):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            max(bar.get_height() + 3, 2),
+            f"{s}/{total}",
+            ha="center",
+            fontweight="bold",
+        )
+    ax.set_ylim(0, 108)
+    ax.set_xticks(np.arange(3), conditions)
+    ax.set_ylabel("Closed-loop success (%)")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8, zorder=0)
+    ax.set_title("Behavioral intervention")
+    ax.text(
+        0.5,
+        0.96,
+        "4 tasks × 5 trials, matched seeds",
+        transform=ax.transAxes,
+        ha="center",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    panel_label(ax, "b")
+
+    fig.suptitle("Causally selected visual directions preserve policy behavior", fontsize=12, fontweight="bold", y=1.03)
+    fig.tight_layout()
+    save_both(fig, "main_causal_subspace")
+
+
+BLOCK_IDS = [0, 6, 7]
+RATIOS_BY_RANK = {
+    8: [
+        [1.029899, 1.034935, 1.000332, 0.967630, 1.025700, 1.044299, 1.017759, 1.006163, 1.016473, 1.029717, 0.987108, 1.006097],
+        [1.235524, 1.318516, 0.894439, 1.369967, 1.204505, 0.821915, 1.105911, 2.842439, 1.104515, 1.005638, 0.917139, 1.771876],
+        [2.068100, 1.016185, 1.162671, 1.020562, 0.976551, 1.003895, 1.033514, 1.077219, 1.041281, 0.946057, 1.011031, 1.226104],
+    ],
+    32: [
+        [1.178920, 1.036237, 1.198454, 1.074969, 1.206168, 1.163979, 1.054716, 1.129669, 1.049042, 1.001247, 1.030287, 1.014755],
+        [1.136727, 3.288572, 1.208132, 2.298111, 1.220563, 0.809650, 1.442885, 3.735143, 1.830604, 1.263818, 1.123355, 1.890609],
+        [1.930893, 1.144411, 1.063623, 1.220404, 0.960104, 1.081003, 1.001907, 2.080034, 1.203653, 1.179349, 0.952055, 1.224754],
+    ],
+    128: [
+        [4.193511, 1.066657, 10.135155, 2.026207, 4.136808, 2.756692, 2.902461, 2.127159, 1.761359, 1.492354, 1.589449, 2.775945],
+        [1.798980, 5.809215, 2.288232, 3.798864, 3.265137, 1.487944, 3.697289, 7.458778, 3.336510, 3.124641, 2.087070, 3.303461],
+        [5.456413, 2.518422, 2.364107, 1.928278, 1.699979, 1.862740, 2.240150, 3.715455, 2.043569, 1.890129, 1.986659, 3.054431],
+    ],
+}
+
+
+def main_exact_attention_odt() -> None:
+    ks = np.array([8, 32, 128])
+    flattened = {k: np.concatenate(RATIOS_BY_RANK[k]) for k in ks}
+    medians = np.array([np.median(flattened[k]) for k in ks])
+    q25 = np.array([np.quantile(flattened[k], 0.25) for k in ks])
+    q75 = np.array([np.quantile(flattened[k], 0.75) for k in ks])
+    favor = np.array([np.mean(flattened[k] > 1) * 100 for k in ks])
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.7, 3.55), gridspec_kw={"width_ratios": [0.85, 1.45]})
+
+    ax = axes[0]
+    ax.fill_between(ks, q25, q75, color=COLORS["cyan"], alpha=0.25, label="Interquartile range")
+    ax.plot(ks, medians, marker="o", color=COLORS["blue"], linewidth=2, label="Median over 36 block-head pairs")
+    ax.axhline(1, color=COLORS["gray"], linestyle="--", linewidth=1)
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(ks, [str(k) for k in ks])
+    ax.set_ylim(0.75, 3.15)
+    ax.set_xlabel("Retained dimensions")
+    ax.set_ylabel("Top-subspace / random faithfulness ratio")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    ax.set_title("Rank dependence")
+    for x, y, pct in zip(ks, medians, favor):
+        ax.text(x, y + 0.15, f"{pct:.0f}% > 1", ha="center", fontsize=7.5, color=COLORS["muted"])
+    ax.legend(frameon=False, loc="upper left", fontsize=7.5)
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    rng = np.random.default_rng(7)
+    k128_by_block = RATIOS_BY_RANK[128]
+    positions = np.arange(len(BLOCK_IDS))
+    for position, values in enumerate(k128_by_block):
+        jitter = rng.uniform(-0.16, 0.16, len(values))
+        ax.scatter(
+            np.full(len(values), position) + jitter,
+            values,
+            s=18,
+            color=COLORS["blue"],
+            alpha=0.45,
+            edgecolor="none",
+            zorder=2,
+        )
+    means = np.array([np.mean(v) for v in k128_by_block])
+    med_block = np.array([np.median(v) for v in k128_by_block])
+    ax.plot(positions, med_block, color=COLORS["ink"], marker="o", linewidth=1.8, label="Block median", zorder=4)
+    ax.plot(positions, means, color=COLORS["gold"], marker="D", linewidth=1.2, label="Block mean", zorder=3)
+    ax.axhline(1, color=COLORS["gray"], linestyle="--", linewidth=1)
+    ax.set_yscale("log")
+    ax.set_ylim(0.7, 13)
+    ax.set_xticks(positions, [str(block) for block in BLOCK_IDS])
+    ax.set_xlabel("Transformer block")
+    ax.set_ylabel("Faithfulness ratio at rank 128")
+    ax.grid(axis="y", which="major", color=COLORS["grid"], linewidth=0.8)
+    ax.set_title("Exact real-weight structure by depth")
+    ax.legend(frameon=False, fontsize=7.5, ncol=2, loc="upper left")
+    ax.annotate(
+        f"Block 6 mean {means[1]:.2f}×",
+        xy=(1, means[1]),
+        xytext=(0.95, 7.2),
+        arrowprops={"arrowstyle": "->", "color": COLORS["gold"], "lw": 1},
+        color="#7A5612",
+        fontsize=8,
+    )
+    ax.annotate(
+        f"Block 7 median {med_block[2]:.2f}×",
+        xy=(2, med_block[2]),
+        xytext=(1.45, 1.02),
+        arrowprops={"arrowstyle": "->", "color": COLORS["green"], "lw": 1},
+        color=COLORS["green"],
+        fontsize=8,
+    )
+    panel_label(ax, "b")
+
+    fig.suptitle("Exact weight-only decomposition exposes learned attention structure", fontsize=12, fontweight="bold", y=1.03)
+    fig.text(
+        0.01,
+        -0.015,
+        "Real trained weights and real LIBERO activations. Each point in panel b is one attention head. "
+        "Ratios above 1 favor the exact weight-derived subspace over a random subspace of the same rank.",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "main_exact_attention_odt")
+
+
+def appendix_decomposability_audit() -> None:
+    module_labels = ["Linear", "RationalNorm", "Embedding", "Patch projection"]
+    module_counts = np.array([112, 74, 2, 1])
+    errors = np.array([1.6362595e-6, 1.3954528e-7])
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.1, 3.2), gridspec_kw={"width_ratios": [1.15, 0.85]})
+
+    ax = axes[0]
+    y = np.arange(len(module_labels))[::-1]
+    ax.barh(y, module_counts, color=[COLORS["blue"], COLORS["green"], COLORS["gray"], COLORS["cyan"]])
+    ax.set_yticks(y, module_labels)
+    ax.set_xlabel("Leaf modules invoked")
+    ax.grid(axis="x", color=COLORS["grid"], linewidth=0.8)
+    for yi, count in zip(y, module_counts):
+        ax.text(count + 2, yi, str(count), va="center", fontweight="bold")
+    ax.set_xlim(0, 125)
+    ax.set_title("Deployed operator inventory")
+    ax.text(
+        0.98,
+        0.05,
+        "Forbidden normalization: 0\nSoftmax / GELU / ReLU: 0\nAUDIT PASS",
+        transform=ax.transAxes,
+        ha="right",
+        va="bottom",
+        color=COLORS["green"],
+        fontsize=8.2,
+        fontweight="bold",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#EAF5F1", "edgecolor": COLORS["green"], "lw": 0.8},
+    )
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    labels = ["Norm reconstruction\nmax absolute error", "Bilinear FFN\nmedian relative error"]
+    bars = ax.bar(np.arange(2), errors, color=[COLORS["cyan"], COLORS["green"]], width=0.58, zorder=3)
+    ax.set_yscale("log")
+    ax.set_ylim(5e-9, 5e-5)
+    ax.set_xticks(np.arange(2), labels)
+    ax.set_ylabel("Error")
+    ax.grid(axis="y", which="major", color=COLORS["grid"], linewidth=0.8, zorder=0)
+    ax.set_title("Explicit P(x) / Q(x) verification")
+    for bar, error in zip(bars, errors):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            error * 1.6,
+            f"{error:.2e}",
+            ha="center",
+            fontweight="bold",
+            fontsize=8,
+        )
+    ax.text(
+        0.5,
+        0.84,
+        "54,784 real activation rows\nResidual is bounded by deployed float32 statistics",
+        transform=ax.transAxes,
+        ha="center",
+        fontsize=6.8,
+        color=COLORS["muted"],
+    )
+    panel_label(ax, "b")
+
+    fig.suptitle("Mechanical decomposability audit of the trained 189/200 checkpoint", fontsize=12, fontweight="bold", y=1.03)
+    fig.tight_layout()
+    save_both(fig, "appendix_decomposability_audit")
+
+
+def appendix_ensemble_per_task() -> None:
+    tasks = ["Soup", "Cream\ncheese", "Salad", "BBQ", "Ketchup", "Tomato", "Butter", "Milk", "Pudding", "Orange"]
+    seeds = np.array(
+        [
+            [94, 94, 88],
+            [98, 98, 98],
+            [98, 98, 100],
+            [88, 88, 80],
+            [90, 96, 96],
+            [82, 80, 80],
+            [86, 100, 96],
+            [100, 98, 100],
+            [100, 100, 98],
+            [100, 98, 96],
+        ],
+        dtype=float,
+    )
+    ensemble = np.array([92, 100, 98, 88, 98, 88, 100, 98, 100, 100], dtype=float)
+    single_mean = seeds.mean(axis=1)
+    delta = ensemble - single_mean
+
+    fig, axes = plt.subplots(2, 1, figsize=(8.4, 4.8), gridspec_kw={"height_ratios": [2.1, 0.8]}, sharex=True)
+    ax = axes[0]
+    x = np.arange(len(tasks))
+    for seed_idx in range(3):
+        ax.scatter(x, seeds[:, seed_idx], color=COLORS["gray"], s=18, alpha=0.55, zorder=2)
+    ax.plot(x, single_mean, color=COLORS["blue"], marker="o", linewidth=1.6, label="Mean of single checkpoints")
+    ax.plot(x, ensemble, color=COLORS["gold"], marker="D", linewidth=1.8, label="Prediction ensemble")
+    ax.set_ylim(76, 102)
+    ax.set_ylabel("Success (%)")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    ax.legend(frameon=False, ncol=2, loc="lower right")
+    ax.set_title("Full matched-protocol ensemble by task")
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    ax.bar(x, delta, color=[COLORS["green"] if d >= 0 else COLORS["red"] for d in delta], width=0.65)
+    ax.axhline(0, color=COLORS["ink"], linewidth=0.8)
+    ax.set_ylabel("Gain\n(points)")
+    ax.set_xticks(x, tasks)
+    ax.set_ylim(-2, 8)
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    panel_label(ax, "b")
+
+    fig.text(
+        0.01,
+        -0.005,
+        "Overall: mean of single checkpoints 93.9%, ensemble 96.2%. Gray dots are individual checkpoints.",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "appendix_ensemble_per_task")
+
+
+if __name__ == "__main__":
+    main_capability()
+    appendix_matched_architecture_cost()
+    appendix_counterfactual_grounding()
+    main_causal_subspace()
+    main_exact_attention_odt()
+    appendix_decomposability_audit()
+    appendix_ensemble_per_task()
+    print(f"Wrote publication figures to {OUT}")

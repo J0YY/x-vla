@@ -1001,6 +1001,7 @@ def main() -> None:
         "profile": profile,
         "prediction_shape": list(prediction.shape),
         "prediction_finite": True,
+        "prediction_sample": prediction[0].detach().float().cpu().tolist(),
     }
 
     if args.mode == "smoke":
