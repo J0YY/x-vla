@@ -43,6 +43,10 @@ A runtime operator audit of the seed-$0$ $20.1$M ViT checkpoint and local numeri
 its operator-level form. Across three independently trained $20.1$M ViT policies, closed-loop
 LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A fixed
 elementwise prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
+Across the three checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
+states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
+co-present control instruction and $78/300=26.0\%$ with an empty instruction. The paired gaps are
+positive for every checkpoint aggregate and every task aggregate.
 A separate convolutional instantiation passes independent $4{,}608$-case joint-attention,
 $384$-case joint-FFN, and $384$-case complete joint-block certificates. Their respective worst
 relative errors are $6.36\times10^{-16}$, $1.39\times10^{-15}$, and
@@ -54,7 +58,8 @@ $36$ primary block-head tests. Separately, prospectively fixed rank-$96$ visual 
 $95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
 random projectors retain only $3.3$--$13.6\%$. The result is a
 capable and structurally inspectable specialist family with exact access to trained attention
-coefficients. It does not yet provide an exact end-to-end decomposition of the full policy.
+coefficients and bounded familiar-task instruction necessity. It does not establish counterfactual
+goal following, zero-shot language use, or an exact end-to-end decomposition of the full policy.
 \end{abstract}
 
 % ============================================================================
@@ -265,6 +270,18 @@ The result shows that the rational architecture supports high closed-loop specia
 It is an existence claim for a compact tensor-decomposable policy, not a
 claim of broad robotic generalization or state of the art.
 
+\subsection{Familiar-task instruction necessity}
+\label{sec:instruction-necessity-summary}
+
+Before observing these outcomes, we fixed a paired full-horizon test on $100$ unique canonical
+states across the same three checkpoints. Correct instructions succeed on $247/300=82.3\%$ of
+checkpoint-state pairs, compared with $72/300=24.0\%$ for an observation-verified co-present
+control instruction and $78/300=26.0\%$ for an empty instruction. Both gaps are positive for every
+checkpoint aggregate and every task aggregate. The exact tests and a state-cluster bootstrap also
+pass their frozen gates. Appendix~\ref{sec:instruction-necessity} gives the protocol, statistics,
+and plot. Every tested task and instruction appeared during training, so this is instruction
+necessity for familiar tasks, not zero-shot language generalization or counterfactual goal following.
+
 % ============================================================================
 \section{Exact weight-derived structure through attention}
 \label{sec:exactattention}
@@ -370,22 +387,18 @@ The benchmark is one specialist suite, so it does not establish broad robotic ge
 Exact reconstruction is certified layer by layer and does not yet produce one compact symbolic
 contraction of the full policy. The ViT records connect capability, exact attention, and the
 reduced-Gram screen through common checkpoint basenames. Separate convolutional files replicate the joint-attention equation
-certificate across another visual encoder. Evaluation uses fixed task instructions and does not establish robust instruction
-grounding. Within that scope, rational restrictions support
+certificate across another visual encoder. A paired familiar-task audit establishes instruction
+necessity for the original goal, but not counterfactual goal following, zero-shot language use, or
+broad grounding. Within that scope, rational restrictions support
 strong LIBERO-Object control and exact trained-weight certificates. We do not claim a direct
 coefficient-edit interface.
 
 \paragraph{Reproducibility.}
-The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
-behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
-verifiers independently recompute the capability totals, visual-bottleneck counts and intervals,
-and the attention, FFN, complete-block, modality-partition, and RationalNorm certificate decisions. Historical Modal
-cache-backed analyses read dataset-native task metadata. The
-replacement Athena pipeline pins that metadata and maps dataset identifiers to official
-identifiers before defining task splits. A source-level audit compared all $271{,}996$ cached
-frames across Object, Spatial, Goal, and LIBERO-10 with their pinned LeRobot revisions. Task
-identifiers, language joins, states, actions, and resized images matched exactly for every frame.
-Canonical-state checks fail loudly when requested states are unavailable.
+The artifact releases raw structural certificates, all $2{,}000$ capability rows, and all $900$
+instruction-control rollouts. SHA-256 manifests and verifiers recompute capability, instruction,
+visual-bottleneck, and structural decisions. Athena pins official task metadata. A source audit
+matched task identifiers, language, states, actions, and images for all $271{,}996$ cached frames
+across four LIBERO suites. Canonical-state checks fail loudly when states are unavailable.
 
 % ============================================================================
 \clearpage
@@ -474,6 +487,11 @@ G.~Chrysos et al.
 \raggedbottom
 \section{Supporting results and decisions}
 % ============================================================================
+
+\input{instruction_necessity_section}
+
+For WRL, the specialist uses familiar task language, but every tested task and instruction appeared
+during training. The result is therefore not zero-shot language generalization.
 
 \subsection{Expanded attention screen}
 \label{app:expanded-mechanisms}

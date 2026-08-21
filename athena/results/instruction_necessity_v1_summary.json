@@ -1,0 +1,656 @@
+{
+  "bootstrap_scope": "Each draw resamples ten episode states within every task, for 100 state clusters total, and retains all three checkpoint outcomes for each sampled state.",
+  "by_checkpoint": {
+    "0": {
+      "copresent_distractor_prompt": {
+        "control_only": 1,
+        "control_success_rate": 0.22,
+        "control_successes": 22,
+        "correct_only": 62,
+        "correct_success_rate": 0.83,
+        "correct_successes": 83,
+        "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 100,
+        "paired_gap": 0.61,
+        "pooled_pair_mcnemar_one_sided_exact_p": 6.938893903907228e-18
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.15,
+        "control_successes": 15,
+        "correct_only": 68,
+        "correct_success_rate": 0.83,
+        "correct_successes": 83,
+        "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 100,
+        "paired_gap": 0.68,
+        "pooled_pair_mcnemar_one_sided_exact_p": 3.3881317890172014e-21
+      }
+    },
+    "1": {
+      "copresent_distractor_prompt": {
+        "control_only": 3,
+        "control_success_rate": 0.27,
+        "control_successes": 27,
+        "correct_only": 53,
+        "correct_success_rate": 0.77,
+        "correct_successes": 77,
+        "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 100,
+        "paired_gap": 0.5,
+        "pooled_pair_mcnemar_one_sided_exact_p": 4.0685510516169643e-13
+      },
+      "empty_instruction": {
+        "control_only": 3,
+        "control_success_rate": 0.4,
+        "control_successes": 40,
+        "correct_only": 40,
+        "correct_success_rate": 0.77,
+        "correct_successes": 77,
+        "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 100,
+        "paired_gap": 0.37,
+        "pooled_pair_mcnemar_one_sided_exact_p": 1.5106706996448338e-09
+      }
+    },
+    "2": {
+      "copresent_distractor_prompt": {
+        "control_only": 3,
+        "control_success_rate": 0.23,
+        "control_successes": 23,
+        "correct_only": 67,
+        "correct_success_rate": 0.87,
+        "correct_successes": 87,
+        "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 100,
+        "paired_gap": 0.64,
+        "pooled_pair_mcnemar_one_sided_exact_p": 4.847230743957459e-17
+      },
+      "empty_instruction": {
+        "control_only": 3,
+        "control_success_rate": 0.23,
+        "control_successes": 23,
+        "correct_only": 67,
+        "correct_success_rate": 0.87,
+        "correct_successes": 87,
+        "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 100,
+        "paired_gap": 0.64,
+        "pooled_pair_mcnemar_one_sided_exact_p": 4.847230743957459e-17
+      }
+    }
+  },
+  "by_task": {
+    "0": {
+      "copresent_distractor_prompt": {
+        "control_only": 2,
+        "control_success_rate": 0.3,
+        "control_successes": 9,
+        "correct_only": 12,
+        "correct_success_rate": 0.6333333333333333,
+        "correct_successes": 19,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.3333333333333333,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.0064697265625
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.23333333333333334,
+        "control_successes": 7,
+        "correct_only": 12,
+        "correct_success_rate": 0.6333333333333333,
+        "correct_successes": 19,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.4,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.000244140625
+      }
+    },
+    "1": {
+      "copresent_distractor_prompt": {
+        "control_only": 0,
+        "control_success_rate": 0.0,
+        "control_successes": 0,
+        "correct_only": 23,
+        "correct_success_rate": 0.7666666666666667,
+        "correct_successes": 23,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.7666666666666667,
+        "pooled_pair_mcnemar_one_sided_exact_p": 1.1920928955078125e-07
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.0,
+        "control_successes": 0,
+        "correct_only": 23,
+        "correct_success_rate": 0.7666666666666667,
+        "correct_successes": 23,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.7666666666666667,
+        "pooled_pair_mcnemar_one_sided_exact_p": 1.1920928955078125e-07
+      }
+    },
+    "2": {
+      "copresent_distractor_prompt": {
+        "control_only": 1,
+        "control_success_rate": 0.2,
+        "control_successes": 6,
+        "correct_only": 24,
+        "correct_success_rate": 0.9666666666666667,
+        "correct_successes": 29,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.7666666666666667,
+        "pooled_pair_mcnemar_one_sided_exact_p": 7.748603820800781e-07
+      },
+      "empty_instruction": {
+        "control_only": 1,
+        "control_success_rate": 0.3,
+        "control_successes": 9,
+        "correct_only": 21,
+        "correct_success_rate": 0.9666666666666667,
+        "correct_successes": 29,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.6666666666666666,
+        "pooled_pair_mcnemar_one_sided_exact_p": 5.4836273193359375e-06
+      }
+    },
+    "3": {
+      "copresent_distractor_prompt": {
+        "control_only": 2,
+        "control_success_rate": 0.26666666666666666,
+        "control_successes": 8,
+        "correct_only": 11,
+        "correct_success_rate": 0.5666666666666667,
+        "correct_successes": 17,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.3,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.01123046875
+      },
+      "empty_instruction": {
+        "control_only": 1,
+        "control_success_rate": 0.13333333333333333,
+        "control_successes": 4,
+        "correct_only": 14,
+        "correct_success_rate": 0.5666666666666667,
+        "correct_successes": 17,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.43333333333333335,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.00048828125
+      }
+    },
+    "4": {
+      "copresent_distractor_prompt": {
+        "control_only": 0,
+        "control_success_rate": 0.3,
+        "control_successes": 9,
+        "correct_only": 21,
+        "correct_success_rate": 1.0,
+        "correct_successes": 30,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.7,
+        "pooled_pair_mcnemar_one_sided_exact_p": 4.76837158203125e-07
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.16666666666666666,
+        "control_successes": 5,
+        "correct_only": 25,
+        "correct_success_rate": 1.0,
+        "correct_successes": 30,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.8333333333333334,
+        "pooled_pair_mcnemar_one_sided_exact_p": 2.9802322387695312e-08
+      }
+    },
+    "5": {
+      "copresent_distractor_prompt": {
+        "control_only": 1,
+        "control_success_rate": 0.13333333333333333,
+        "control_successes": 4,
+        "correct_only": 17,
+        "correct_success_rate": 0.6666666666666666,
+        "correct_successes": 20,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.5333333333333333,
+        "pooled_pair_mcnemar_one_sided_exact_p": 7.2479248046875e-05
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.0,
+        "control_successes": 0,
+        "correct_only": 20,
+        "correct_success_rate": 0.6666666666666666,
+        "correct_successes": 20,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.6666666666666666,
+        "pooled_pair_mcnemar_one_sided_exact_p": 9.5367431640625e-07
+      }
+    },
+    "6": {
+      "copresent_distractor_prompt": {
+        "control_only": 0,
+        "control_success_rate": 0.6,
+        "control_successes": 18,
+        "correct_only": 11,
+        "correct_success_rate": 0.9666666666666667,
+        "correct_successes": 29,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.36666666666666664,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.00048828125
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.4666666666666667,
+        "control_successes": 14,
+        "correct_only": 15,
+        "correct_success_rate": 0.9666666666666667,
+        "correct_successes": 29,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.5,
+        "pooled_pair_mcnemar_one_sided_exact_p": 3.0517578125e-05
+      }
+    },
+    "7": {
+      "copresent_distractor_prompt": {
+        "control_only": 0,
+        "control_success_rate": 0.06666666666666667,
+        "control_successes": 2,
+        "correct_only": 25,
+        "correct_success_rate": 0.9,
+        "correct_successes": 27,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.8333333333333334,
+        "pooled_pair_mcnemar_one_sided_exact_p": 2.9802322387695312e-08
+      },
+      "empty_instruction": {
+        "control_only": 0,
+        "control_success_rate": 0.13333333333333333,
+        "control_successes": 4,
+        "correct_only": 23,
+        "correct_success_rate": 0.9,
+        "correct_successes": 27,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.7666666666666667,
+        "pooled_pair_mcnemar_one_sided_exact_p": 1.1920928955078125e-07
+      }
+    },
+    "8": {
+      "copresent_distractor_prompt": {
+        "control_only": 1,
+        "control_success_rate": 0.23333333333333334,
+        "control_successes": 7,
+        "correct_only": 20,
+        "correct_success_rate": 0.8666666666666667,
+        "correct_successes": 26,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.6333333333333333,
+        "pooled_pair_mcnemar_one_sided_exact_p": 1.049041748046875e-05
+      },
+      "empty_instruction": {
+        "control_only": 2,
+        "control_success_rate": 0.7,
+        "control_successes": 21,
+        "correct_only": 7,
+        "correct_success_rate": 0.8666666666666667,
+        "correct_successes": 26,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.16666666666666666,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.08984375
+      }
+    },
+    "9": {
+      "copresent_distractor_prompt": {
+        "control_only": 0,
+        "control_success_rate": 0.3,
+        "control_successes": 9,
+        "correct_only": 18,
+        "correct_success_rate": 0.9,
+        "correct_successes": 27,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.6,
+        "pooled_pair_mcnemar_one_sided_exact_p": 3.814697265625e-06
+      },
+      "empty_instruction": {
+        "control_only": 2,
+        "control_success_rate": 0.4666666666666667,
+        "control_successes": 14,
+        "correct_only": 15,
+        "correct_success_rate": 0.9,
+        "correct_successes": 27,
+        "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+        "paired_checkpoint_state_pairs": 30,
+        "paired_gap": 0.43333333333333335,
+        "pooled_pair_mcnemar_one_sided_exact_p": 0.0011749267578125
+      }
+    }
+  },
+  "claim_boundaries": "This establishes instruction necessity only for familiar Object-suite prompts, objects, scenes, tasks, and checkpoints. It does not establish paraphrase robustness, unseen-object or compositional grounding, broad generalization, physical transfer, or a benefit unique to tensor decomposability. Episodes 40 through 49 overlap the failed local endpoint's states, while the 280-step original-goal success outcome is new. This endpoint was frozen after the local displacement-rank endpoint became impossible and is not a rescue reanalysis. Co-presence is verified from simulator observation fields and does not guarantee visual visibility. Empty instruction encodes tokenizer BOS plus 31 unmasked PAD tokens, together with the model's common learned BOS token. The pooled exact McNemar tests use 300 checkpoint-state pairs and are not cluster-robust inference.",
+  "claim_eligible": true,
+  "claim_if_passed": "Across three fixed chi-ViT checkpoints and 300 paired checkpoint-state evaluations over 100 canonical LIBERO-Object states, correct familiar instructions improve original-goal closed-loop success by at least 20 percentage points relative to both one outcome-independent observation-verified co-present distractor instruction and the empty-string instruction encoding.",
+  "correct_success_by_checkpoint": {
+    "0": 0.83,
+    "1": 0.77,
+    "2": 0.87
+  },
+  "correct_success_pooled": 0.8233333333333334,
+  "design_provenance": {
+    "declaration": "This is a new exploratory-confirmatory endpoint designed after a different frozen endpoint became impossible. It is not a rescue reanalysis. No local specificity score, rank, threshold, or outcome selects any condition, state, distractor, task, checkpoint, or gate in this protocol.",
+    "designed_after_partial_local_specificity_failure_became_mathematically_forced": true,
+    "different_endpoint": "280-step paired closed-loop original-goal success under correct, one deterministic observation-verified co-present-distractor, and empty-string instruction encodings",
+    "failed_endpoint_not_reanalyzed": "eight-action displacement specificity ranks against absent-prompt contrasts",
+    "failed_gate_threshold": 0.75,
+    "maximum_possible_final_mean_rank": {
+      "0": 0.6363333333333333,
+      "1": 0.658916666666667,
+      "2": 0.6454583333333335
+    },
+    "observation_time_local": "2026-08-21T08:04:00-07:00",
+    "partial_rows_observed": {
+      "0": 345,
+      "1": 339,
+      "2": 362
+    },
+    "pre_outcome_semantic_and_inference_hardening": {
+      "canceled_unstarted_graphs": [
+        [
+          831332,
+          831333,
+          831334,
+          831335,
+          831336,
+          831337,
+          831338,
+          831339,
+          831340,
+          831341,
+          831342,
+          831343,
+          831344,
+          831345,
+          831346,
+          831347,
+          831348,
+          831349
+        ],
+        [
+          831352,
+          831353,
+          831354,
+          831355,
+          831356,
+          831357,
+          831358,
+          831359,
+          831360,
+          831361,
+          831362,
+          831363,
+          831364,
+          831365,
+          831366,
+          831367,
+          831368,
+          831369
+        ]
+      ],
+      "changes": "renamed controls to copresent_distractor_prompt and empty_instruction, documented their exact semantics, and added a task-stratified state-cluster bootstrap retaining all three checkpoint outcomes together",
+      "commit_preceded_submission": true,
+      "commit_time_local": "2026-08-21T08:40:15-07:00",
+      "first_submission_time_local": "2026-08-21T08:41:26-07:00",
+      "outcomes_observed_before_change": false,
+      "reason": "independent code review before any preflight or rollout began"
+    }
+  },
+  "failed_local_summary_sha256": "4d2c82cf1eed5d2495f9bfdc7e7fc384f270760cd4445854d5af571f49f74131",
+  "frozen_gates": {
+    "all_three_checkpoints_must_pass": true,
+    "each_control_margin_strictly_positive_every_checkpoint": true,
+    "minimum_correct_minus_copresent_distractor_pooled": 0.2,
+    "minimum_correct_minus_empty_instruction_pooled": 0.2,
+    "minimum_correct_success_every_checkpoint": 0.6,
+    "minimum_correct_success_pooled": 0.7,
+    "minimum_tasks_with_strictly_positive_gap_per_control": 8,
+    "negative_task_gaps_allowed_per_control": 0,
+    "one_sided_paired_exact_p_at_most": 0.01,
+    "state_cluster_retains_all_three_checkpoint_outcomes": true,
+    "task_stratified_state_cluster_bootstrap_draws": 20000,
+    "task_stratified_state_cluster_bootstrap_lower_strictly_above": 0.0
+  },
+  "gates": {
+    "at_least_eight_strictly_positive_tasks_per_control": true,
+    "both_margins_positive_every_checkpoint": true,
+    "both_one_sided_paired_exact_p_at_most_0p01": true,
+    "both_task_stratified_state_cluster_bootstrap_lowers_above_zero": true,
+    "correct_minus_copresent_distractor_at_least_0p20": true,
+    "correct_minus_empty_instruction_at_least_0p20": true,
+    "correct_success_every_checkpoint_at_least_0p60": true,
+    "correct_success_pooled_at_least_0p70": true,
+    "no_negative_task_gap_for_either_control": true
+  },
+  "identity_validated": true,
+  "input_results": {
+    "results/instruction_necessity_v1_s0_t0_2.json": {
+      "sha256": "a0db5f67787dd8805c1024829078e2f4f2b1bab4294c89f838e400f97ab2be59"
+    },
+    "results/instruction_necessity_v1_s0_t2_4.json": {
+      "sha256": "e19f636414e076d4bfa3c175b86ca179aa7a519565582d2e9a21d67d68290cd7"
+    },
+    "results/instruction_necessity_v1_s0_t4_6.json": {
+      "sha256": "9ea72f0c9ff0cb8b05fd73be30da20bd1a7c8a538cef8dd245d84ccbc64e1546"
+    },
+    "results/instruction_necessity_v1_s0_t6_8.json": {
+      "sha256": "879aab04e18961e30632cfaf8a5103f386d8e0921a28f841f6fc18976985c162"
+    },
+    "results/instruction_necessity_v1_s0_t8_10.json": {
+      "sha256": "5ab3cb67af97c748156e3aed2125247b89d9b539f2c02fbc40073f5a58c250bb"
+    },
+    "results/instruction_necessity_v1_s1_t0_2.json": {
+      "sha256": "bfca3335a1cd7a8b9d707978ee2601d402b701ffdcba7f700607fba885f1c3ed"
+    },
+    "results/instruction_necessity_v1_s1_t2_4.json": {
+      "sha256": "ff3f8af511d570f2c38749ce87c2ae185fa4eb86517082bdc59a103cbdc18fb9"
+    },
+    "results/instruction_necessity_v1_s1_t4_6.json": {
+      "sha256": "2b377e55d9b27e7da926cedbd4fd720ec2888ad1c78055f35aa58ec254cb509f"
+    },
+    "results/instruction_necessity_v1_s1_t6_8.json": {
+      "sha256": "c17cfe541065e7ab99166bc95509cc6e16e74b52f73b47faf7c4baebef336561"
+    },
+    "results/instruction_necessity_v1_s1_t8_10.json": {
+      "sha256": "0698f339b30389fc6fb66b2c8404339a7ae08c9032d6d150afef820098a489f8"
+    },
+    "results/instruction_necessity_v1_s2_t0_2.json": {
+      "sha256": "bc4288bbca0a2a041b38c9be6d8ff651d1f9b8f148fe23e87248f626e9621963"
+    },
+    "results/instruction_necessity_v1_s2_t2_4.json": {
+      "sha256": "f9e93bcacccca85b0ece709cd177dfbb2b127aa547187a42d337a67d1b3e8407"
+    },
+    "results/instruction_necessity_v1_s2_t4_6.json": {
+      "sha256": "6352c128f6ea1ea45f2812b6791e881afce508d5b166974b57568fc6ebd0f584"
+    },
+    "results/instruction_necessity_v1_s2_t6_8.json": {
+      "sha256": "7b58ba92588f09b13f716c7d3e99cd0990bdef53358cdbd69507cb2ab3a2e911"
+    },
+    "results/instruction_necessity_v1_s2_t8_10.json": {
+      "sha256": "f9c3dfd70da9d4a415c634be20450b91d70d8226b596eef957b3c9df8f875513"
+    }
+  },
+  "manifest": "artifacts/instruction_necessity_v1_manifest.json",
+  "manifest_sha256": "b2cae89dfa933d5d7493437696565d1c29f305fac9a8ae88432b2604ded42bd3",
+  "overall_pass": true,
+  "pooled": {
+    "copresent_distractor_prompt": {
+      "control_only": 7,
+      "control_success_rate": 0.24,
+      "control_successes": 72,
+      "correct_only": 182,
+      "correct_success_rate": 0.8233333333333334,
+      "correct_successes": 247,
+      "mcnemar_scope": "exact over 300 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 300,
+      "paired_gap": 0.5833333333333334,
+      "pooled_pair_mcnemar_one_sided_exact_p": 2.023734186134146e-45
+    },
+    "empty_instruction": {
+      "control_only": 6,
+      "control_success_rate": 0.26,
+      "control_successes": 78,
+      "correct_only": 175,
+      "correct_success_rate": 0.8233333333333334,
+      "correct_successes": 247,
+      "mcnemar_scope": "exact over 300 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 300,
+      "paired_gap": 0.5633333333333334,
+      "pooled_pair_mcnemar_one_sided_exact_p": 1.5167728565700382e-44
+    }
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "canonical_episode_end_exclusive": 50,
+    "canonical_episode_start": 40,
+    "checkpoint_seeds": [
+      0,
+      1,
+      2
+    ],
+    "checkpoint_state_pairs_per_checkpoint": 100,
+    "condition_order": "one of six permutations selected by SHA-256 of instruction-necessity-v1-order|checkpoint|task|episode",
+    "conditions": [
+      "correct_prompt",
+      "copresent_distractor_prompt",
+      "empty_instruction"
+    ],
+    "copresent_distractor_selector": "minimum SHA-256 of instruction-necessity-v1|task|episode|prompt_id over the five observation-verified co-present non-target prompt IDs",
+    "copresent_semantics": "co-presence is verified from simulator observation fields and does not assert camera visibility or unoccluded pixels",
+    "cublas_workspace_config": ":4096:8",
+    "cudnn_benchmark": false,
+    "deterministic_algorithms": true,
+    "empty_instruction_semantics": "the empty string encodes tokenizer BOS plus 31 unmasked PAD tokens; the model also prepends its common learned BOS token",
+    "execution_horizon": 8,
+    "gpu_compute_capability": [
+      8,
+      6
+    ],
+    "gpu_family": "a6000",
+    "gpu_name": "NVIDIA RTX A6000",
+    "matmul_precision": "highest",
+    "max_steps": 280,
+    "resolution": 64,
+    "rollouts_per_checkpoint": 300,
+    "runtime_versions": {
+      "cuda": "12.6",
+      "mujoco": "3.5.0",
+      "numpy": "1.26.4",
+      "pillow": "12.1.1",
+      "python": "3.10.19",
+      "robosuite": "1.4.1",
+      "torch": "2.7.1",
+      "torch_build": "2.7.1+cu126"
+    },
+    "settle_steps": 10,
+    "suite": "libero_object",
+    "task_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "task_shards": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        8,
+        10
+      ]
+    ],
+    "total_checkpoint_state_pairs": 300,
+    "total_rollouts": 900,
+    "unique_paired_states": 100
+  },
+  "schema": "xvla-instruction-necessity-summary-v1",
+  "smoke": "results/instruction_necessity_v1_smoke.json",
+  "smoke_sha256": "c4ad4f73dbdb3b0500cd132d446567f36e0be2348910d491513935e361af0db2",
+  "summary_source_sha256": "07ba645e823fa2954fef76b6fa12c383ed8eee8d8806f4ef316294b6e6bc3014",
+  "task_consistency": {
+    "copresent_distractor_prompt": {
+      "gaps_by_task": {
+        "0": 0.3333333333333333,
+        "1": 0.7666666666666667,
+        "2": 0.7666666666666667,
+        "3": 0.3,
+        "4": 0.7,
+        "5": 0.5333333333333333,
+        "6": 0.36666666666666664,
+        "7": 0.8333333333333334,
+        "8": 0.6333333333333333,
+        "9": 0.6
+      },
+      "negative_tasks": 0,
+      "strictly_positive_tasks": 10
+    },
+    "empty_instruction": {
+      "gaps_by_task": {
+        "0": 0.4,
+        "1": 0.7666666666666667,
+        "2": 0.6666666666666666,
+        "3": 0.43333333333333335,
+        "4": 0.8333333333333334,
+        "5": 0.6666666666666666,
+        "6": 0.5,
+        "7": 0.7666666666666667,
+        "8": 0.16666666666666666,
+        "9": 0.43333333333333335
+      },
+      "negative_tasks": 0,
+      "strictly_positive_tasks": 10
+    }
+  },
+  "task_stratified_state_cluster_bootstrap_intervals": {
+    "copresent_distractor_prompt": [
+      0.51,
+      0.6566666666666666
+    ],
+    "empty_instruction": [
+      0.5,
+      0.6233333333333333
+    ]
+  }
+}

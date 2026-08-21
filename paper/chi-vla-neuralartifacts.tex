@@ -48,14 +48,18 @@ worst relative error $2.016119\times10^{-7}$. An $O(d^2)$ reduced Gram avoids ma
 coefficient tensor. In a seed-$0$ ViT checkpoint, all $36$ primary block-head tests favor the
 rank-$128$ weight-derived subspace over fixed random controls. Across the same three ViT
 checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
-per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. Separate Conv
+per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. Across the three
+checkpoints, a prospectively frozen paired test on $100$ unique familiar-task states finds
+$247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a co-present control
+instruction and $78/300=26.0\%$ with an empty instruction. The paired gaps are positive for every
+checkpoint aggregate and every task aggregate. Separate Conv
 audits reconstruct $4{,}608$ attention-head cases, $384$ joint-FFN module-input cases, and $384$
 complete joint-block input cases, with worst relative errors $6.36\times10^{-16}$,
 $1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Learned rank-$96$ visual projectors retain
 $95.2$--$98.2\%$ of baseline successes, versus $3.3$--$13.6\%$ for random projectors. We therefore
-establish a capable model family with exact layerwise
-structure derived from trained coefficients. We do not yet provide an exact end-to-end
-decomposition of the complete policy.
+establish a capable model family with exact layerwise structure derived from trained coefficients
+and bounded familiar-task instruction necessity. We do not provide counterfactual goal-following
+evidence or an exact end-to-end decomposition of the complete policy.
 \end{abstract}
 
 % ============================================================================
@@ -285,6 +289,12 @@ The result shows that the rational architecture supports high closed-loop specia
 It is an existence claim for a compact tensor-decomposable policy, not a
 claim of broad robotic generalization or state of the art.
 
+\input{instruction_necessity_section}
+
+For Neural Artifacts, this adds a prospectively specified behavioral audit to the algebraic
+reconstruction checks. The result constrains checkpoint behavior, but it does not make the
+decomposed factors human-nameable or semantic.
+
 % ============================================================================
 \section{Exact weight-derived structure through attention}
 \label{sec:exactattention}
@@ -420,8 +430,9 @@ The benchmark is one specialist suite, so it does not establish broad robotic ge
 Exact reconstruction is certified layer by layer and does not yet produce one compact symbolic
 contraction of the full policy. The ViT records connect capability, exact attention, and the
 reduced-Gram screen through common checkpoint basenames. Separate convolutional files replicate the joint-attention equation
-certificate across another visual encoder. Evaluation uses fixed task instructions and does not establish robust instruction
-grounding. Within that scope, rational restrictions support
+certificate across another visual encoder. A paired familiar-task audit establishes instruction
+necessity for the original goal, but not counterfactual goal following, zero-shot language use, or
+broad grounding. Within that scope, rational restrictions support
 strong LIBERO-Object control and exact trained-weight certificates. We do not claim a direct
 coefficient-edit interface.
 

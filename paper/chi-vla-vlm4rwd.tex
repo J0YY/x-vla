@@ -45,6 +45,10 @@ reproduce its deployed rational and bilinear branches near the float32 precision
 Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Object success is
 $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
 prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
+Across the three checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
+states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
+co-present control instruction and $78/300=26.0\%$ with an empty instruction. The paired gaps are
+positive for every checkpoint aggregate and every task aggregate.
 On a separate three-checkpoint convolutional instantiation, independent reconstruction covers all
 $4{,}608$ joint-attention head-input cases, all $384$ joint-FFN module-input cases, and all $384$
 complete joint-block input cases. The respective worst relative errors are
@@ -56,10 +60,11 @@ ViT checkpoint, all $36$ primary block-head tests favor its rank-$128$ subspace 
 median fidelity ratio $2.44$. Separately, prospectively fixed rank-$96$ visual projectors retain
 $95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
 random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong specialist capability together
-with exact, checkpoint-native access to learned attention structure. Such access is relevant when
-deployment failures may involve visual shortcuts or weak language use. The present results do not
-establish broad robotic generalization, robust instruction grounding, selective behavioral
-editing, or an exact end-to-end decomposition of the full policy.
+with exact, checkpoint-native access to learned attention structure and bounded familiar-task
+instruction necessity. Such access is relevant when deployment failures may involve visual
+shortcuts or weak language use. The present results do not establish broad robotic generalization,
+counterfactual goal following, selective behavioral editing, or an exact end-to-end decomposition
+of the full policy.
 \end{abstract}
 
 % ============================================================================
@@ -337,6 +342,12 @@ The result shows that the rational architecture supports high closed-loop specia
 capability. It is an existence claim for a compact tensor-decomposable
 policy, not a claim of broad robotic generalization or state of the art.
 
+\input{instruction_necessity_section}
+
+For the VLM4RWD setting, this separates familiar-task language use from deployment-grade grounding.
+The control changes the instruction while holding the initial physical input fixed, but it does not
+test policy-unseen language or scenes.
+
 % ============================================================================
 \section{Exact weight-derived structure through attention}
 \label{sec:exactattention}
@@ -479,9 +490,10 @@ auditable rational graph and exact layerwise attention analysis. This combinatio
 deployment diagnostics because it exposes trained coefficient structure without fitting a
 separate probe.
 
-The scope is deliberately specific. LIBERO-Object is one specialist suite with fixed task
-instructions. The experiments do not show that the policy follows language when visual cues
-conflict, generalizes across task distributions, or transfers to physical robots. Exact
+The scope is deliberately specific. On familiar LIBERO-Object tasks, the paired controls establish
+that the correct instruction is necessary for high success on the original goal. They do not show
+counterfactual goal following, generalization across task distributions, or transfer to physical
+robots. Exact
 reconstruction is certified layer by layer and does not yet yield one compact symbolic
 contraction of the full policy. The three-checkpoint ensemble trades three forward passes for its
 strongest capability result.
@@ -489,8 +501,8 @@ strongest capability result.
 We therefore present \chivla\ as diagnostic infrastructure, not as a deployment-ready or robustly
 grounded robot policy. The ViT records connect capability, exact attention, and the reduced-Gram
 screen through common checkpoint basenames. Separate convolutional files replicate the joint-attention equation
-certificate across another visual encoder. Broader suites, counterfactual instruction
-tests, and physical-robot evaluation remain necessary for deployment claims. We do not claim a
+certificate across another visual encoder. Counterfactual goal-following tests, broader suites,
+and physical-robot evaluation remain necessary for deployment claims. We do not claim a
 direct coefficient-edit interface.
 
 \paragraph{Reproducibility.}
