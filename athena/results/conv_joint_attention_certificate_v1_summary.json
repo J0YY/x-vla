@@ -1,0 +1,125 @@
+{
+  "aggregate": {
+    "all_finite": true,
+    "all_three_checkpoints_pass": true,
+    "checkpoints_audited": 3,
+    "head_evaluations": 4608,
+    "inputs_audited": 48,
+    "max_relative_l2_error": 6.351840509279301e-16,
+    "module_evaluations": 384,
+    "relative_l2_gate": 1e-06
+  },
+  "boundaries": [
+    "This is a same-checkpoint numerical identity, not a comparison with the ViT policy.",
+    "The certificate covers joint bilinear attention only. The convolutional stem, FFNs, residual composition, output normalization, and action head are not rebuilt.",
+    "The selected inputs come from the verified training-domain Object cache. They do not establish cross-suite behavior or robustness outside those fixed observations.",
+    "The audit is layerwise and input-conditioned. It does not materialize one compact symbolic contraction for the complete policy.",
+    "Passing establishes independent numerical reproduction from learned weights on the preregistered inputs. It is not a symbolic or exhaustive operator proof and does not establish that the recovered factors are human-nameable, causally selective, or uniquely useful for interpretation."
+  ],
+  "checkpoints": [
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s0.pt",
+      "checkpoint_sha256": "4f9f3eef4bd661934b7c66af117995f02bdfc777368f52464f03d229ccb3e72d",
+      "head_evaluations": 1536,
+      "inputs_audited": 16,
+      "max_head_relative_l2_error": 6.351840509279301e-16,
+      "max_module_relative_l2_error": 5.135546630501312e-16,
+      "max_relative_l2_error": 6.351840509279301e-16,
+      "module_evaluations": 128,
+      "passed": true,
+      "seed": 0,
+      "source_file": "results/conv_joint_attention_certificate_v1_s0.json",
+      "source_file_sha256": "691c6b7de74f9bd5f763083e994d0c017ae98aa6a15d5634e7826b748e213f76"
+    },
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s1_matched.pt",
+      "checkpoint_sha256": "9d8df0c30583222490536b21aac040b47c5f89556aa23c08265605f7c2bc8cb6",
+      "head_evaluations": 1536,
+      "inputs_audited": 16,
+      "max_head_relative_l2_error": 5.534957680222928e-16,
+      "max_module_relative_l2_error": 4.990976009838451e-16,
+      "max_relative_l2_error": 5.534957680222928e-16,
+      "module_evaluations": 128,
+      "passed": true,
+      "seed": 1,
+      "source_file": "results/conv_joint_attention_certificate_v1_s1.json",
+      "source_file_sha256": "2449d4dab33b954828ecee0f05f7218904f92a85d800f1f13fb73224419e3c13"
+    },
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s2_matched.pt",
+      "checkpoint_sha256": "fc2e0bfa1a2ea2737ed0af13b168cd2562e4b0e36b159d0f98f3c5038131ace5",
+      "head_evaluations": 1536,
+      "inputs_audited": 16,
+      "max_head_relative_l2_error": 6.332110419208384e-16,
+      "max_module_relative_l2_error": 4.968011644707872e-16,
+      "max_relative_l2_error": 6.332110419208384e-16,
+      "module_evaluations": 128,
+      "passed": true,
+      "seed": 2,
+      "source_file": "results/conv_joint_attention_certificate_v1_s2.json",
+      "source_file_sha256": "f4fe8fda1b4d5691cbf602f9cf6f2101779fc9cfe8fed3d9443a8705fea20d36"
+    }
+  ],
+  "claim_if_passed": "On 16 deterministic SHA-256-ranked LIBERO-Object cache inputs for each of three fixed legacy convolutional \u03c7-VLA checkpoints, independent layerwise float64 reconstruction reproduced all eight joint attention modules and all twelve heads per module with finite outputs and maximum relative L2 error at most 1e-6.",
+  "identity": {
+    "cache_basename": "libero_frames_100000_64.pkl",
+    "cache_frames": 66984,
+    "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+    "dataset_metadata": {
+      "dataset_to_official_task": {
+        "0": 9,
+        "1": 4,
+        "2": 1,
+        "3": 3,
+        "4": 0,
+        "5": 7,
+        "6": 2,
+        "7": 6,
+        "8": 5,
+        "9": 8
+      },
+      "language_set_matches_official": true,
+      "metadata_file": "meta/tasks.parquet",
+      "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+      "ordering_matches_official": false,
+      "repository": "lerobot/libero_object_image",
+      "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f"
+    },
+    "provenance_canonical_content_sha256": "01bc724b9bf8c158b983e34b82bbb40dce9dba2cb86dd9be2a5bf8910be341c7",
+    "provenance_job_id": "830988",
+    "provenance_result": "results/cache_provenance_libero_object.json",
+    "provenance_result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    "source_sha256": {
+      "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+      "athena/run_conv_joint_attention_certificate.py": "1e838bfb61cb16a946a48f9c75ed0291008d9c1a87eb953444f949998a688325",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/summarize_conv_joint_attention_certificate.py": "f6300d7bfe969663f5d8d596533504945d057f40e960ccc96a5bea3b604d8b62",
+      "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+      "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+      "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+      "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+      "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+      "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9"
+    }
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "architecture": "chi",
+    "full_inputs_per_checkpoint": 16,
+    "heads_per_module": 12,
+    "input_selection": "lexicographically smallest SHA256(protocol_id || checkpoint_sha256 || canonical_cache_record_sha256) over every record in the frozen cache",
+    "joint_modules_per_input": 8,
+    "matmul_precision": "highest",
+    "reconstruction": "independent NumPy float64 affine projections, rational QK normalization, bilinear head contractions, concatenation, and output projection",
+    "reference": "explicit PyTorch float64 attention equation evaluated from the trained weights",
+    "relative_l2_gate": 1e-06,
+    "resolution": 64,
+    "smoke_inputs": 1,
+    "suite": "libero_object",
+    "vision_encoder": "conv"
+  },
+  "schema": "xvla-conv-joint-attention-certificate-summary-v1"
+}
