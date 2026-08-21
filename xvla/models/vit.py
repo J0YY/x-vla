@@ -38,6 +38,7 @@ class ViTConfig:
     norm: str = "per_token"           # "per_token" | "scalar_rbn" | "homotopy"
     qk_norm: str = "per_token"
     attn: str = "bilinear"            # "bilinear" (χ) | "softmax" (matched baseline)
+    ffn: str = "bilinear"             # "bilinear" (χ) | "swiglu" (matched baseline)
     pool: str = "mean"                # "mean" | "cls"
     rbn_momentum: float = 0.99
 
@@ -66,6 +67,7 @@ class ChiViT(nn.Module):
         self.blocks = ChiTransformer(
             cfg.dim, cfg.n_layers, cfg.n_heads, ffn_rank=cfg.ffn_rank,
             causal=False, norm=cfg.norm, qk_norm=cfg.qk_norm, attn=cfg.attn,
+            ffn=cfg.ffn,
             rbn_momentum=cfg.rbn_momentum)
         self.norm_out = make_norm(cfg.norm, momentum=cfg.rbn_momentum)
         self.head = nn.Linear(cfg.dim, cfg.num_classes)

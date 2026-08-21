@@ -55,6 +55,9 @@ class VLAConfig:
     n_layers: int = 8
     n_heads: int = 12
     ffn_rank: int | None = None
+    vit_ffn_rank: int | None = None
+    attn: str = "bilinear"             # "bilinear" | "softmax"
+    ffn: str = "bilinear"              # "bilinear" | "swiglu"
     norm: str = "per_token"
     qk_norm: str = "per_token"
     # action
@@ -114,7 +117,8 @@ class VLAConfig:
     def vit_config(self):
         return ViTConfig(image_size=self.image_size, patch_size=self.patch_size,
                          dim=self.vit_dim, n_layers=self.vit_layers, n_heads=self.vit_heads,
-                         norm=self.norm, qk_norm=self.qk_norm, num_classes=1)
+                         ffn_rank=self.vit_ffn_rank, norm=self.norm, qk_norm=self.qk_norm,
+                         attn=self.attn, ffn=self.ffn, num_classes=1)
 
 
 class ChiVLA(nn.Module):
@@ -172,7 +176,8 @@ class ChiVLA(nn.Module):
 
         self.backbone = ChiTransformer(cfg.dim, cfg.n_layers, cfg.n_heads,
                                        ffn_rank=cfg.ffn_rank, causal=True,
-                                       norm=cfg.norm, qk_norm=cfg.qk_norm)
+                                       norm=cfg.norm, qk_norm=cfg.qk_norm,
+                                       attn=cfg.attn, ffn=cfg.ffn)
         self.norm_out = make_norm(cfg.norm)
         if cfg.action_head == "flow":
             self.flow_head = FlowMatchingActionHead(

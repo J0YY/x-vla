@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 
 from xvla.nn.attention import BilinearAttention
-from xvla.nn.baselines import SoftmaxAttention
+from xvla.nn.baselines import SoftmaxAttention, SwiGLU
 from xvla.nn.bilinear import BilinearFFN
 from xvla.nn.normalization import make_norm
 
@@ -35,6 +35,7 @@ class ChiTransformerBlock(nn.Module):
         norm: str = "per_token",
         qk_norm: str = "per_token",
         attn: str = "bilinear",
+        ffn: str = "bilinear",
         rbn_momentum: float = 0.99,
         learned_gain: bool = False,
     ):
@@ -48,7 +49,12 @@ class ChiTransformerBlock(nn.Module):
         else:
             raise ValueError(f"unknown attn {attn!r}")
         self.rbn_ffn = make_norm(norm, momentum=rbn_momentum)
-        self.ffn = BilinearFFN(dim, rank=ffn_rank)
+        if ffn == "bilinear":
+            self.ffn = BilinearFFN(dim, rank=ffn_rank)
+        elif ffn == "swiglu":
+            self.ffn = SwiGLU(dim, rank=ffn_rank)
+        else:
+            raise ValueError(f"unknown ffn {ffn!r}")
 
         gain = (2.0 * n_layers) ** -0.5
         if learned_gain:
@@ -80,6 +86,7 @@ class ChiTransformer(nn.Module):
         norm: str = "per_token",
         qk_norm: str = "per_token",
         attn: str = "bilinear",
+        ffn: str = "bilinear",
         rbn_momentum: float = 0.99,
         learned_gain: bool = False,
     ):
@@ -89,7 +96,7 @@ class ChiTransformer(nn.Module):
         self.blocks = nn.ModuleList([
             ChiTransformerBlock(
                 dim, n_heads, ffn_rank=ffn_rank, n_layers=n_layers,
-                causal=causal, norm=norm, qk_norm=qk_norm, attn=attn,
+                causal=causal, norm=norm, qk_norm=qk_norm, attn=attn, ffn=ffn,
                 rbn_momentum=rbn_momentum, learned_gain=learned_gain,
             )
             for _ in range(n_layers)
