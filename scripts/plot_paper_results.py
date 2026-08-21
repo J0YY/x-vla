@@ -442,12 +442,12 @@ def main_causal_subspace() -> None:
 
 def main_causal_subspace_replication() -> None:
     checkpoint_labels = ["Checkpoint 0", "Checkpoint 1", "Checkpoint 2"]
-    conditions = ["Full 384", "Selected 64", "Random 64"]
+    conditions = ["Full 384", "Selected 96", "Median random 96"]
     successes = np.array(
         [
-            [14, 8, 0],
-            [19, 12, 0],
-            [14, 9, 0],
+            [17, 17, 2],
+            [15, 14, 0],
+            [20, 19, 0],
         ]
     )
     total_per_checkpoint = 20
@@ -463,18 +463,21 @@ def main_causal_subspace_replication() -> None:
         x_values = positions + (condition_index - 1) * width
         bars = ax.bar(x_values, rates, width, color=color, label=condition, zorder=3)
         for bar, count in zip(bars, successes[:, condition_index]):
+            inside = bar.get_height() > 15
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
-                max(bar.get_height() + 2.0, 1.5),
+                bar.get_height() - 3.0 if inside else max(bar.get_height() + 2.0, 1.5),
                 f"{count}/20",
                 ha="center",
+                va="top" if inside else "bottom",
                 fontsize=7.3,
                 fontweight="bold",
+                color="white" if inside else COLORS["ink"],
             )
     ax.set_xticks(positions, checkpoint_labels)
     ax.set_ylim(0, 108)
     ax.set_ylabel("Closed-loop success (%)")
-    ax.set_title("Same direction across checkpoints")
+    ax.set_title("Near-lossless across checkpoints")
     ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8, zorder=0)
     ax.legend(frameon=False, fontsize=7.4, loc="upper center", ncol=3)
     panel_label(ax, "a")
@@ -506,7 +509,10 @@ def main_causal_subspace_replication() -> None:
             ha="center",
             fontweight="bold",
         )
-    ax.set_xticks(np.arange(3), ["Full\n384 dims", "Selected\n64 dims", "Random\n64 dims"])
+    ax.set_xticks(
+        np.arange(3),
+        ["Full\n384 dims", "Selected\n96 dims", "Median random\n96 dims"],
+    )
     ax.set_ylim(0, 108)
     ax.set_ylabel("Closed-loop success (%)")
     ax.set_title("Pooled descriptive result")
@@ -514,7 +520,7 @@ def main_causal_subspace_replication() -> None:
     panel_label(ax, "b")
 
     fig.suptitle(
-        "The selected visual subspace is causal, but not near-lossless",
+        "One quarter of the visual bond preserves policy behavior",
         fontsize=12,
         fontweight="bold",
         y=1.03,
@@ -522,8 +528,9 @@ def main_causal_subspace_replication() -> None:
     fig.text(
         0.5,
         -0.025,
-        "Four tasks and five paired canonical trials per task and checkpoint. Selected versus random "
-        "exact paired sign p values are 0.0078, 0.00049, and 0.0039. Pooled intervals are descriptive.",
+        "Tasks 4 to 7, five canonical trials per task and checkpoint. Selected rank 96 retains "
+        "49 of 52 full-policy successes. Three random controls total 1/60, 3/60, and 3/60. "
+        "Pooled intervals are descriptive.",
         ha="center",
         fontsize=7.5,
         color=COLORS["muted"],

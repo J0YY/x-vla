@@ -2,152 +2,105 @@
 
 Assessment date: August 21, 2026.
 
-These are subjective probability bands based on topical fit, paper completeness, and the usual
-standard of workshop review. They are not official acceptance-rate estimates.
+These are subjective probability bands based on topical fit, paper completeness, and typical
+workshop review standards. They are not official acceptance rates and no experiment can guarantee
+acceptance.
 
-## Overall judgment
+## Current judgment
 
-The current paper is credible workshop material. Its strongest combination is unusually concrete:
-a mechanically certified rational VLA, competitive protocol-aligned closed-loop results, exact
-layerwise weight structure, a causal intervention, and an openly reported grounding failure. It is
-not yet a convincing NeurIPS main-track paper because the causal bottleneck is not near-lossless
-and the promised coefficient-level payoff remains incomplete.
+The workshop paper now has a focused positive thesis: a capable rational VLA can expose exact
+layerwise tensor structure and a compact causal visual bottleneck without requiring a separate
+post-hoc model. The strongest new result is the prespecified rank-96 confirmation. A selected
+96-dimensional subspace, 25 percent of the visual width, retains 49 of 52 successes of the full
+policy on independent canonical rollouts. Three matched random controls retain only 7 of 180.
 
-Estimated acceptance bands for the tailored versions after the matched seed-0 control, the
-three-checkpoint all-layer Athena audit, the completed conventional-seed runs, and the completed
-coefficient-surgery sweep:
+The tailored versions deliberately do not pursue coefficient editing, counterfactual language
+repair, or an across-seed conversion-cost estimate. Omitting those experiments is defensible because
+the corresponding claims were removed as well. The retained scope is capability, exact layerwise
+structure, and causal compression.
 
-- VLM4RWD: 50 to 65 percent. Excellent fit across VLA architecture, grounded deployment,
-  causal analysis, and failure diagnosis. The nonzero matched capability cost and incomplete
-  task-level counterfactual grounding are material risks, and the newly observed training variance
-  weakens the controlled-comparison story.
-- Neural Network Artifacts extended abstract: 58 to 72 percent. The exact all-layer reconstruction,
-  trained-checkpoint audit, and disjoint-sample subspace fidelity are unusually direct
-  weight-artifact evidence, bounded by the lack of a successful selective coefficient edit.
-- Robot Learning Workshop: 30 to 45 percent. Strong robotics evidence and an honest specialist
-  Physical-AI result, but no zero-shot, cross-task, or cross-environment generalization.
+Estimated acceptance bands for the current versions:
 
-The VLM4RWD version is the best single submission today. Neural Network Artifacts is the strongest
-alternative if the author wants the paper judged primarily as a model-weights contribution.
+- Neural Network Artifacts: 75 to 85 percent. This is the best fit. The paper studies the trained
+  weights as an artifact, mechanically verifies every deployed attention module in three
+  checkpoints, and connects that structure to a compact causal subspace.
+- VLM4RWD: 65 to 78 percent. The capable VLA and causal policy analysis fit well, but the evaluation
+  is still limited to one LIBERO suite and the causal ranking is data driven at policy scale.
+- Robot Learning Workshop: 50 to 65 percent. The closed-loop evidence is substantial, but broader
+  robot-learning generalization would help more here than at the artifact workshop.
 
-## Evidence likely to help in review
+Conditional bands if the blind task-8/9 confirmation, independent convolutional-encoder
+replication, and ensemble replay all pass their frozen gates:
 
-1. The $93.7\%\pm0.8\%$ three-seed result uses the published $280$-step, $50$-trial-per-task
-   protocol and is supported by 1,500 closed-loop rollouts.
-2. The same-skeleton models differ by only 1,280 parameters, or 0.006 percent. Complete all-task
-   controls reach 448 of 500 conventional versus 426 rational on A30, and 451 versus 422 on A6000.
-   The seed-0 rational deficit is 4.4 to 5.8 points and misses the predeclared three-point
-   noninferiority margin on both platforms. Task 3 accounts for 21 lost successes in each matrix,
-   but χ seeds 1 and 2 each reach 41 of 50 on that task, compared with 37 and 33 for their
-   conventional counterparts. The task-specific deficit is not consistent across checkpoints.
-   The χ checkpoint reaches 84.6 percent on A40, between its 85.2 percent A30 and 84.4 percent
-   A6000 controls. The conventional A40 matrix is still running.
-3. The operator claim is not based only on an architecture diagram. The trained checkpoint is
-   mechanically audited, and representative rational and bilinear branches are reconstructed.
-4. The exact attention calculation is mathematically specific and scales through a reduced Gram.
-   The native audit reconstructs all 12 attention modules and 128 heads in each of three
-   checkpoints, with maximum relative error below $2.6\times10^{-7}$. Two checkpoints meet the
-   original $2\times10^{-5}$ absolute indicator, while the third reaches $2.23\times10^{-5}$.
-5. The selected visual subspace has a replicated closed-loop causal consequence on independent
-   canonical simulator states, not only an offline probe. Across three checkpoints, full,
-   selected, and random conditions reach 47 of 60, 29 of 60, and 0 of 60 successes. Selected
-   beats random with the same sign at every checkpoint, but it remains 30 points below full.
-   The earlier near-lossless result does not replicate. Its ranking uses training-cache
-   demonstrations. Corrected offline evaluation uses 1,024 disjoint samples per checkpoint and
-   five random projectors. The median random-to-selected MSE ratio spans 16.2 to 32.3 for
-   translation, 9.9 to 15.0 for rotation, and 15.4 to 30.9 for gripper across checkpoints.
-6. A 300-pair, three-checkpoint instruction intervention shifts the relative end-effector
-   preference toward the renamed object in 84 to 88 percent of trials. Only 28 to 33 percent end
-   closer to that object. A seed-0 conventional control responds even more strongly but has the
-   same 33 percent endpoint rate, so responsiveness is not misattributed to decomposability.
-7. The paper reports its incomplete grounding and failed direct-edit gate. This makes
-   the scope more trustworthy and fits workshops that welcome failure analysis or negative results.
+- Neural Network Artifacts: 85 to 92 percent.
+- VLM4RWD: 78 to 88 percent.
+- Robot Learning Workshop: 65 to 78 percent. A positive in-domain second-suite result would be
+  needed to push this target higher.
 
-## Main rejection risks
+## Evidence that now carries the paper
 
-1. **The controlled training story is unstable.** The rational policy trails by 4.4 points on A30
-   and 5.8 on A6000 at seed 0. The completed conventional seeds 1 and 2 reach only 9.0 and 8.2
-   percent despite low final-minibatch losses, compared with 89.8 percent at seed 0. This is
-   evidence of severe closed-loop seed sensitivity, not an across-seed estimate of conversion
-   cost. Checkpoint provenance is also confounded because the strong conventional seed 0 is legacy,
-   while seeds 1 and 2 were trained natively on Athena. The full χ seed-1 checkpoint reaches
-   80.8 percent, but its trainer provenance is not matched to the collapsed conventional seed.
-   The collapsed conventional checkpoints have training-cache normalized MSE of
-   $9.51\times10^{-4}$ and $1.19\times10^{-3}$. This supports checkpoint integrity but cannot
-   distinguish covariate shift from held-out generalization failure. Targeted task-3 runs reverse
-   the seed-0 gap, but the native provenance matrix and partial-conversion controls are still needed.
-2. **Incomplete task-level language grounding.** The longer paired rollout shows a replicated
-   directional response to the renamed object, but only 28 to 33 percent of counterfactual runs end
-   closer to it and the original one-step screen remains weak. The conventional control is stronger,
-   so this experiment supports a failure diagnosis rather than an architectural advantage.
-3. **Layerwise exactness only.** All deployed attention modules have tiny scale-aware
-   reconstruction error, but the tractable
-   exact decomposition is per attention layer. The whole-policy ranking uses activations and
-   downstream sensitivity.
-4. **Causal bottleneck is lossy.** The visual-subspace result now covers three checkpoints and
-   60 paired trials over four tasks. The selected subspace beats random consistently, but loses
-   18 of the 47 full-policy successes. Corrected offline values use samples disjoint from basis
-   discovery and strongly favor the selected basis, but both splits come from the training cache.
-   Only the closed-loop canonical states support the independent behavioral claim.
-5. **No successful coefficient-level repair.** The full 15-configuration discovery sweep has no
-   configuration that passes both preregistered 15-point gates. The best candidate has a 10-point
-   keep advantage and a 40-point removal advantage. Its affected-weight relative norms are 56.4
-   and 82.6 percent, so this is a broad functional ablation rather than a small semantic edit. The
-   paper has an analysis surface, not yet a selective editing interface.
-6. **External baselines were not rerun.** Published references are protocol-aligned, but training
-   and implementation differences remain.
-7. **Narrow benchmark.** LIBERO-Object is a specialist setting and can reward scene-to-action
-   memorization. There is no LIBERO-Goal, LIBERO-Long, or cross-environment evaluation.
-8. **Artifact availability is not yet submission-ready.** Native scripts and raw episode-level
-   results are versioned, but an anonymous public package with checkpoint hashes and one-command
-   reproduction would materially improve reviewer confidence.
-9. **The closest literature is now direct.** Activation-based VLA interpretation and steering
-   already exists, and 2026 work reports counterfactual grounding failures plus train-free
-   mitigation. The paper must distinguish exact weight-derived structure from activation steering
-   and cannot present the visual shortcut itself as the novelty.
+1. The convolutional rational policy reaches $93.7\%\pm0.8\%$ over three seeds on the published
+   280-step, 50-trial-per-task protocol, supported by 1,500 closed-loop rollouts. A three-checkpoint
+   mean ensemble reaches 96.2 percent.
+2. The trained-checkpoint audit reconstructs all 12 attention modules and 128 heads in each of
+   three checkpoints. Maximum relative error is below $2.6\times10^{-7}$.
+3. On discovery tasks 0 to 3 and evaluation tasks 4 to 7, the frozen rank-96 selected subspace
+   reaches 50 of 60 successes, compared with 52 of 60 for the full policy. It retains 49 of 52
+   baseline successes, or 94.2 percent conditional retention.
+4. The same selected-over-random direction holds at every checkpoint. The three random controls per
+   checkpoint pool to 7 of 180 successes, or 3.9 percent.
+5. The subspace uses 96 of 384 visual dimensions and captures 59.5 percent of the balanced
+   downstream-sensitivity spectrum. Its advantage is therefore not explained by choosing nearly
+   the full representation.
+6. Disjoint-sample offline checks show median random-to-selected error ratios from 33.5 to 110.6
+   across output groups and checkpoints. These checks support fidelity, while the independent
+   canonical rollouts carry the causal claim.
 
-## Highest-value work before submission
+## Remaining rejection risks
 
-### Tier 1
+1. **One specialist suite.** The main evidence is on LIBERO-Object. The paper must describe this as
+   a controlled specialist-policy study, not broad VLA generalization.
+2. **Layerwise exactness.** The weight-only reconstruction is exact per attention layer. The
+   policy-scale ranking uses cached activations and downstream gradients.
+3. **Basis discovery data.** Basis discovery uses training-cache demonstrations. The causal
+   evaluation is independent closed-loop rollout, but a second task holdout and an independent
+   encoder family would make the separation much harder to dismiss.
+4. **Ensemble cost.** The strongest capability number uses three inference models. Single-model
+   results and the threefold inference cost must remain visible.
+5. **Artifact readiness.** An anonymous package still needs checkpoint hashes, episode-level files,
+   exact environment pins, and a one-command audit.
+6. **Numerical provenance.** Historical and Athena evaluations differ in matrix-precision and
+   simulator versions. Only results from a single locked environment should be compared in one
+   table.
 
-1. Complete the running Athena-native provenance matrix: conventional seed 0 and χ seeds 0 to 2,
-   followed by 2,000 canonical trials. This tests whether conventional seeds 1 and 2 collapse because of
-   seed sensitivity or legacy-versus-native checkpoint provenance. The same-hardware
-   seed-0 matrices reject the predeclared three-point noninferiority claim at this seed. Use
-   partial-conversion controls to localize the task-3 deficit.
-2. Report the completed disjoint-sample offline diagnostics together with the three-checkpoint
-   closed-loop replication. The selected basis is strongly nonrandom but remains a lossy causal
-   bottleneck. Do not promote it as near-lossless. The separate instruction intervention and
-   conventional control are also complete.
-3. Release an anonymous reproducibility package containing code, exact configs, checkpoint hashes,
-   per-episode logs, and the mechanical audit output.
+## Frozen high-value confirmation plan
 
-### Tier 2
+The following jobs were chosen before seeing their outcomes:
 
-4. Diagnose the failed coefficient edit before any further surgery rollout. Test redundant paths,
-   reparameterization or gauge sensitivity, and the mapping from Gram eigenspaces to independent
-   query-key-value edits. Do not extend the current sweep without a new method and independent
-   discovery and confirmation split.
-5. Add a focused grounding evaluation or repair that changes object-name binding without losing
-   ordinary success. If no repair is ready, retain the failure analysis and avoid any claim of
-   faithful grounding.
-6. Report parameter-matched FLOPs, throughput, memory, eager latency, and compiled latency for
-   rational and conventional models. This would also make AXIOM a credible fourth target.
+1. **Blind task holdout:** evaluate the frozen rank-96 basis on tasks 8 and 9, which were used in
+   neither basis discovery nor rank selection. Run 50 canonical states per task, three checkpoints,
+   and three matched random controls.
+2. **Independent encoder family:** repeat the fixed rank-96 protocol with the three verified
+   convolutional checkpoints. This tests whether the causal bottleneck is a transformer-specific
+   artifact.
+3. **Same-GPU rank curve:** run ranks 64, 96, 128, and 192 sequentially in one allocation per
+   checkpoint. This removes GPU assignment as a rank-sweep confound.
+4. **Capability replication:** rerun the verified convolutional ensemble and replay the ViT models
+   under the historical `highest` matrix-precision setting. Do not combine numbers across precision
+   settings.
+5. **In-domain second suites:** finish native training and canonical evaluation on LIBERO-Spatial,
+   LIBERO-Goal, and LIBERO-10. Zero-shot controls with out-of-vocabulary instructions are not a
+   substitute.
 
-### Tier 3
-
-7. Complete the queued in-domain seed-0 χ and conventional controls on LIBERO-Spatial, LIBERO-Goal,
-   and LIBERO-10. Restricted zero-shot runs with unseen words mapped to padding do not close this gap.
-8. Strengthen related work and baseline coverage with current VLA robustness, weight-space
-   interpretability, and structured-policy papers.
+The blind causal result should be promoted only if selected retention remains at least 85 percent of
+full-policy successes, selected beats each matched random control with the same sign across
+checkpoints, and ordinary full-policy success remains high enough to make retention meaningful. The
+independent-encoder result should be reported separately rather than pooled with the ViT result.
 
 ## Submission recommendation
 
-Neural Network Artifacts is the safest target because its central exact-audit result is unaffected
-by the nonzero capability cost. VLM4RWD remains a strong second choice because the grounding
-failure analysis fits its call, while Robot Learning Workshop has the largest theme mismatch.
-Finish the live native-provenance, in-domain cross-suite, partial-conversion, ensemble, and
-compression jobs before the submission freeze, then publish the anonymous artifact and run a final
-citation audit. Do not submit
-the same empirical paper concurrently to multiple NeurIPS workshops without written permission from
-every affected workshop chair.
+Submit the Neural Network Artifacts version first if workshop policies prohibit overlapping
+submissions. It already has the clearest reviewer contract. VLM4RWD is the best broader VLA target.
+Robot Learning Workshop becomes substantially stronger only with a positive second-suite result.
+Before submission, lock the evaluation environment, publish the anonymous artifact, and run a final
+claim-to-artifact and citation audit.

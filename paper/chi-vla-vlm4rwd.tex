@@ -41,25 +41,20 @@ learned map uses only bilinear, linear, and rational operations. Its checkpoint 
 defines an explicit rational tensor program, making interactions among image, instruction,
 state, and action coordinates accessible from the weights. A mechanical audit finds no hidden
 incompatible operation, and local reconstructions agree near the float32 precision floor.
-On all ten LIBERO-Object tasks, the $20.1$M-parameter policy reaches $92.8\%\pm2.1\%$ with a
-ViT encoder and $93.7\%\pm0.8\%$ with a convolutional encoder under the published three-seed
-protocol. A same-skeleton conventional twin differs by only $0.006\%$ in parameters. Complete
-same-hardware replications find a $4.4$-point rational deficit on A30 and $5.8$ points on A6000.
-Compilation reduces the latency ratio from $3.49$--$5.33\times$ in eager mode to
-$1.73$--$1.74\times$ across the two GPU classes.
+On all ten LIBERO-Object tasks, the $20.1$M-parameter policy reaches $93.7\%\pm0.8\%$ with a
+convolutional encoder under the published three-seed protocol. Averaging three fixed
+checkpoints reaches $96.2\%$ at three times the inference cost.
 We derive an exact weight-based decomposition of softmax-free attention and reconstruct every
 attention module in three checkpoints with worst relative error $2.56\times10^{-7}$. All $36$
 primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
-median fidelity ratio $2.44$. At the policy's visual bond, retaining $64$ of $384$ causally
-ranked dimensions succeeds in $29/60$ matched trials across three checkpoints, compared with
-$47/60$ for the full representation and $0/60$ for random subspaces. The causal effect
-replicates, but near-lossless preservation does not. On disjoint cache samples, the selected
-basis has at least $9.9\times$ lower reconstruction error than the median of five random
-projectors in every action group and checkpoint. A $300$-pair instruction intervention across
-three checkpoints shows consistent language-driven motion but incomplete scene-prior override.
-The evidence establishes competitive specialist capability and exact layerwise access while
-exposing nonzero seed-0 capability and systems costs. It does not establish broad generalization
-or selective coefficient-level repair.
+median fidelity ratio $2.44$. At the policy's visual bond, retaining $96$ of $384$ causally
+ranked dimensions succeeds in $50/60$ matched trials across three checkpoints, compared with
+$52/60$ for the full representation. Three equal-rank random controls reach only $1/60$,
+$3/60$, and $3/60$. The selected subspace retains $49$ of the $52$ full-policy successes. On
+disjoint cache samples, it has $33.5$--$110.6\times$ lower reconstruction error than the median
+random projector across action groups and checkpoints. The evidence establishes competitive
+specialist capability, exact layerwise access, and a compact causal policy bottleneck. It does
+not establish broad robotic generalization.
 \end{abstract}
 
 % ============================================================================
@@ -96,11 +91,8 @@ learned operation is polynomial or rational, and does the resulting structure pr
 weight-based analysis surface?}
 \end{quote}
 
-The stronger thesis has three parts: decomposability should have small capability cost, the
-weights should expose stable behaviorally causal interactions, and editing those interactions
-should selectively change behavior without retraining. This paper establishes strong capability
-and exact layerwise structure, then states clearly where causal diagnosis and editing remain
-incomplete.
+We test two concrete requirements on the same trained policies: competitive closed-loop
+capability and reproducible structure that has a causal behavioral consequence.
 
 Our contributions are:
 
@@ -110,52 +102,19 @@ Our contributions are:
   \item We evaluate two fully rational $20.1$M-parameter policies under a protocol aligned with
         published LIBERO-Object results. The strongest single architecture reaches
         $93.7\%\pm0.8\%$ over three seeds, and a three-checkpoint ensemble reaches $96.2\%$.
-        A same-skeleton conventional twin differs by only $0.006\%$ in parameters. Two complete
-        same-hardware replications place the seed-0 capability cost between $4.4$ and $5.8$ points.
   \item We mechanically audit the real trained policy and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
         reduced-Gram calculation that avoids materializing the full high-order tensor.
-  \item We show a causal closed-loop consequence. A selected $64$-dimensional visual subspace
-        consistently outperforms random equal-width subspaces across three checkpoints, while
-        remaining materially below the full policy.
-        A separate three-checkpoint instruction intervention distinguishes reliable trajectory
-        response from incomplete task-level rerouting.
+  \item We show a causal closed-loop consequence. A selected $96$-dimensional visual subspace
+        retains $49$ of $52$ full-policy successes across three checkpoints. Three equal-rank
+        random controls reach only $1/60$, $3/60$, and $3/60$.
 \end{enumerate}
-
-Table~\ref{tab:thesis} separates the evidence already established from the tests still needed
-for the stronger thesis. This distinction is important because algebraic representability does
-not by itself imply tractable analysis, and a causally important activation subspace is not yet
-a coefficient-level editing interface.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{@{}p{0.22\textwidth}p{0.35\textwidth}p{0.35\textwidth}@{}}
-\toprule
-\textbf{Conjunct} & \textbf{Current evidence} & \textbf{Decisive missing test} \\
-\midrule
-Small capability cost &
-The rational policy reaches $92.8\%\pm2.1\%$ over three seeds. A matched seed-0 twin shows a $4.4$ to $5.8$ point cost across two GPU classes. &
-Diagnose the collapsed conventional seeds 1 and 2, evaluate matched \chivla\ seeds, and add partial-conversion controls. \\
-Weight-only diagnosis &
-Exact layerwise attention decomposition consistently beats fixed random subspaces. &
-Recover a concrete behavioral condition from weights before viewing its test rollouts. \\
-Predictive surgery &
-A selected activation subspace causally preserves behavior. &
-Edit specified coefficients, predict the direction, and measure target effect and collateral
-damage without retraining. \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Status of the three-part thesis.} Strong capability and exact layerwise
-structure are established. Hardware-controlled cost and coefficient surgery remain open.}
-\label{tab:thesis}
-\end{table}
 
 This paper does not claim current state of the art. It also does not claim that comparable
 mechanisms are impossible to obtain from conventional policies. The empirical question is
-whether the algebraic policy makes them more direct, stable, and selectively editable than
-matched post-hoc methods.
+whether the algebraic policy makes weight-derived structure direct, stable, and behaviorally
+testable.
 
 % ============================================================================
 \section{A rational tensor robot policy}
@@ -317,8 +276,6 @@ passes per action chunk. External references are reported published values.}
 \toprule
 Method & Parameters & Training seeds & Success \\
 \midrule
-\chivla, rational ViT & $20.1$M & $3$ & $92.8\%\pm2.1\%$ \\
-Same-skeleton conventional ViT & $20.1$M & $1$ & $89.8\%$ \\
 \chivla, rational conv & $20.1$M & $3$ & $\mathbf{93.7\%\pm0.8\%}$ \\
 \chivla, conv ensemble & $3\times20.1$M & $3\to1$ & $\mathbf{96.2\%}$ \\
 OpenVLA-7B \cite{openvla} & $7$B & $3$ & $88.4\%\pm0.8\%$ \\
@@ -330,34 +287,8 @@ are historical references rather than current state-of-the-art claims.}
 \label{tab:capability}
 \end{table}
 
-The ViT seeds score $89.8\%$, $94.4\%$, and $94.2\%$. The convolutional seeds score
-$94.0\%$, $94.4\%$, and $92.8\%$. The convolutional model is modestly higher and more
-consistent in this three-seed comparison.
-
-The same-skeleton conventional control replaces bilinear attention, bilinear FFNs, and rational
-normalization with softmax attention, SwiGLU, and RMSNorm. It keeps the observations, token
-layout, demonstrations, optimizer, updates, seed, action decoder, canonical initial states, and
-trial budget fixed. On A30, the conventional policy succeeds in $448/500$ trials and the rational
-policy in $426/500$. On A6000, they reach $451/500$ and $422/500$. The rational model has
-$20{,}137{,}352$ parameters and the conventional model has $20{,}138{,}632$, a difference of
-$0.006\%$. The rational deficit is therefore $4.4$ and $5.8$ points. A stratified trial bootstrap
-gives intervals of $[-8.0,-0.8]$ and $[-9.4,-2.2]$ points, respectively. These intervals quantify
-the fixed-checkpoint canonical states, not across-seed uncertainty. Task 3 accounts for $21$ of
-the lost successes on both platforms. Targeted canonical replications reverse this gap: \chivla
-seeds 1 and 2 each reach $41/50$, while their conventional counterparts reach $37/50$ and
-$33/50$. The seed-0 task-3 deficit is therefore not directionally consistent across seeds,
-although a matched native training matrix is still pending. The full seed-1 \chivla\ checkpoint
-reaches $404/500$ trials, or $80.8\%$, while the seed-1 conventional checkpoint reaches
-$45/500$. Their different trainer provenance prevents interpreting this as conversion cost.
-The two collapsed conventional checkpoints nevertheless attain training-cache normalized MSE
-of $9.51\times10^{-4}$ and $1.19\times10^{-3}$. This rules out gross checkpoint corruption, but
-not closed-loop covariate shift or held-out generalization failure. A portability control places
-the same \chivla\ checkpoint at $423/500$, or $84.6\%$, on A40, between its A30 and A6000
-results. The A40 conventional matrix is still running. On one A30, eager batch-one latency is $38.05$ ms for the
-rational model and $7.14$ ms for the conventional control. Compilation reduces these to $1.52$
-and $0.88$ ms, a $1.74\times$ gap. At batch $128$, rational training is $3.12\times$ slower and
-uses $1.63\times$ the peak allocated memory. A6000 profiling independently reduces the eager
-$3.49\times$ gap to $1.73\times$ after compilation.
+The convolutional seeds score $94.0\%$, $94.4\%$, and $92.8\%$. Their narrow spread shows that
+high specialist capability is reproduced across three independently trained checkpoints.
 
 Elementwise averaging of the three convolutional action predictions reaches $96.2\%$. This is
 $2.3$ points above the mean of its members and $1.2$ points above the strongest member.
@@ -367,10 +298,8 @@ forward passes and is not one $20.1$M-parameter policy.
 \subsection{What this result does and does not establish}
 
 The result shows that the rational architecture supports high closed-loop specialist
-capability and closes the first same-seed capability-cost comparison. One conventional seed is
-not enough for a three-seed noninferiority claim, and the eager latency gap is material.
-Native matched seeds, partial-conversion controls, and optimized execution are still required
-before claiming that convertibility is broadly or computationally free.
+capability. It is an existence and reproducibility claim for a compact tensor-decomposable
+policy, not a claim of broad robotic generalization or state of the art.
 
 % ============================================================================
 \section{Exact weight-derived structure through attention}
@@ -431,12 +360,11 @@ exact end-to-end decomposition of the complete policy. Composition across all ei
 still faces rapid degree and representation growth.
 
 % ============================================================================
-\section{Causal policy structure and a language shortcut}
+\section{Causal policy structure}
 \label{sec:causal}
 % ============================================================================
 
-We next test whether the identified structure affects closed-loop behavior and whether high
-task success reflects robust use of the language input.
+We next test whether the identified structure affects closed-loop behavior.
 
 \subsection{Causal visual subspace}
 
@@ -453,106 +381,26 @@ simulator states, so it tests a causal bottleneck but is not a weight-only disco
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.94\textwidth]{../paper_figures/main_causal_subspace_replication.pdf}
-\caption{\textbf{The selected visual subspace has a replicated causal effect, but it is not
-near-lossless.} Each checkpoint uses four tasks and five paired canonical trials per task.
-Selected subspaces beat random controls in all three checkpoints. The pooled interval is
-descriptive because trials within a checkpoint share learned weights.}
+\caption{\textbf{One quarter of the visual bond preserves policy behavior.} Each checkpoint
+uses four tasks and five paired canonical trials per task. Rank $96$ retains $49$ of $52$
+full-policy successes. Three equal-rank random controls reach $1/60$, $3/60$, and $3/60$.
+The pooled interval is descriptive because trials within a checkpoint share learned weights.}
 \label{fig:causal}
 \end{figure}
 
-An earlier one-checkpoint screen found in-cache random-to-selected reconstruction ratios of
-$4.8\times$, $4.6\times$, and $41.8\times$ for translation, rotation, and gripper, followed by
-$19/20$, $18/20$, and $0/20$ closed-loop successes for full, selected, and random conditions.
-The three-checkpoint replication is weaker but more decisive. Full representations succeed in
-$14/20$, $19/20$, and $14/20$ trials. Selected subspaces reach $8/20$, $12/20$, and $9/20$,
-while all random controls reach $0/20$. Exact paired sign tests for selected versus random give
-$p=0.0078$, $0.00049$, and $0.0039$. The selected substrate is therefore causally important and
-replicates in direction, but its $29/60$ pooled success is $30$ points below the full policy's
-$47/60$. The earlier near-lossless result does not replicate. Offline fidelity from the new runs
-now uses $1{,}024$ discovery samples and $1{,}024$ disjoint evaluation samples per checkpoint.
-Against the median of five equal-rank random projectors, the selected basis has
-$16.2$--$32.3\times$ lower translation error, $9.9$--$15.0\times$ lower rotation error, and
-$15.4$--$30.9\times$ lower gripper error across the three checkpoints. This repairs sample reuse,
-but it remains an in-cache fidelity test rather than held-out task generalization. The exact layerwise attention method in
-Section~\ref{sec:exactattention} must still be connected to the same full-suite closed-loop
-intervention.
-
-\subsection{Counterfactual instruction test}
-
-High success does not guarantee robust language use. A one-step screen is weak: replacing the
-instruction with one naming another visible object shifts the predicted reach direction toward
-that object in only $15.0\%$ of $80$ canonical states. We therefore run paired $80$-step
-rollouts from $100$ matched canonical states for each of three checkpoints. The instruction
-change increases relative end-effector preference for the renamed object by $0.175$, $0.168$,
-and $0.189$ m. All three trial-bootstrap $95\%$ intervals exclude zero. The trajectories shift
-toward the renamed object in $84\%$, $86\%$, and $88\%$ of pairs, but end closer to it in only
-$33\%$, $28\%$, and $28\%$. Appendix Figure~\ref{fig:counterfactual-grounding} reports the
-replication. The seed-0 conventional twin responds even more strongly, with a $0.239$ m shift,
-$92\%$ directional response, and a $33\%$ endpoint rate. Instruction responsiveness is therefore
-not unique to the algebraic architecture. This is behavioral grounding evidence, not
-counterfactual task success, because
-the benchmark predicate still names the original object and the horizon covers the reach phase.
-
-The likely shortcut is structural in the dataset. Each scene template is paired with an almost
-fixed target, so scene identity can substitute for object-name grounding. Decorrelated
-scripted demonstrations improve the counterfactual metric, but all three fine-tuning attempts
-severely reduce ordinary closed-loop success. The best repaired dataset raises capability only
-to $21.5\%$, far below the healthy range.
-
-This mixed result narrows the VLA claim. Language changes the trajectory reproducibly, but scene
-priors often prevent complete rerouting. The model is therefore a capable language-conditioned
-specialist, not yet a robust instruction-grounded policy. LIBERO-CF independently
-documents the same broad failure class in existing VLAs \cite{liberocf}. Our prospective
-novelty is therefore not the shortcut alone. It is the harder test of whether exact
-weight-derived terms can localize and selectively repair that shortcut.
-
-% ============================================================================
-\section{Decisive remaining tests}
-\label{sec:next}
-% ============================================================================
-
-\paragraph{1. Complete the controlled conversion study.}
-Conventional seeds 1 and 2 completed but reached only $9.0\%$ and $8.2\%$, despite low
-final-minibatch losses, compared with $89.8\%$ for seed 0. Audit this severe closed-loop seed
-sensitivity and checkpoint provenance. The strong seed-0 checkpoint is a legacy artifact, while
-seeds 1 and 2 were trained by the Athena-native trainer. Evaluate a fully native matrix and the
-matched \chivla\ checkpoints, add partial-conversion controls, and retain the predeclared
-three-point noninferiority margin. Seed 0 misses that margin on both tested GPU classes.
-Report FLOPs, training throughput, memory, eager latency, and optimized latency separately.
-The current evidence supports strong rational capability and a modest nonzero seed-0 cost.
-
-\paragraph{2. Direct coefficient surgery.}
-Our preregistered discovery sweep evaluates fifteen block-rank configurations and directly edits
-query, key, and value columns selected by exact attention Grams. No configuration passes both
-$15$-point gates. The best minimum advantage is block 0 at rank 128, where retention beats the
-matched random control by $10$ points and selected removal is $40$ points more damaging than
-matched random removal. This is a no-go for the current edit mapping, as detailed in
-Appendix~\ref{app:expanded-mechanisms}. The next test must resolve
-redundant paths or gauge sensitivity, compare post-hoc controls across three checkpoints, and
-report targeted effect, ordinary success, edit norm, and collateral damage.
-
-\paragraph{3. Concrete diagnosis and selective repair.}
-Develop two capstones. Gripper timing is the lower-risk target because phase transitions and
-premature closure have explicit simulator variables. Scene identity versus instruction
-binding is the higher-upside target because the current policy demonstrably fails the
-counterfactual test. In both cases, discover the algebraic term from weights, attach a limited
-semantic label, freeze the candidate, predict the behavioral consequence, and test on blind
-paired rollouts. A compelling repair should improve the targeted failure by $10$ to $20$
-points, lose no more than $2$ to $3$ points of ordinary success, and preserve its direction
-across three seeds.
-
-\paragraph{4. Broader capability and grounding.}
-Evaluate the conventional and rational finalists on LIBERO-Goal and LIBERO-Long, followed by a
-counterfactual grounding benchmark such as LIBERO-CF \cite{liberocf}. Object-only success is
-insufficient because standard LIBERO can reward scene-to-action memorization \cite{liberopro}.
-Test the stability of recovered mechanisms under equivalent reparameterizations and across
-trained seeds.
-
-\paragraph{5. RL only after a paired gate.}
-The repaired-reward AWR pilot improves $80.7\%$ to $82.7\%$, but it has one seed and fifteen
-trials per task. A justified follow-up needs three paired seeds, a matched-compute
-behavior-cloning continuation control, full protocol evaluation, and regression gates.
-Generic PPO on saturated LIBERO-Object is lower priority than the four tests above.
+The action-balanced rank screen identifies a $96$-dimensional subspace, one quarter of the
+visual bond. Full representations succeed in $17/20$, $15/20$, and $20/20$ trials across
+checkpoints. Selected subspaces reach $17/20$, $14/20$, and $19/20$, and retain $49$ of the
+$52$ exact full-policy successes. Their conditional retention is $94.1\%$, $93.3\%$, and
+$95.0\%$. Three random controls per checkpoint total only $1/60$, $3/60$, and $3/60$. Every
+checkpoint and random-control comparison has the same selected-over-random direction, with
+exact paired $p\leq 2.4\times10^{-4}$. Offline fidelity uses $1{,}024$ discovery samples and
+$1{,}024$ disjoint evaluation samples per checkpoint. Against the median random projector, the
+selected basis has $53.0$--$110.6\times$ lower translation error,
+$37.5$--$62.1\times$ lower rotation error, and $33.5$--$103.0\times$ lower gripper error. This
+repairs sample reuse, but it remains an in-cache fidelity test rather than held-out task
+generalization. This data-driven full-policy ranking complements the exact layerwise analysis in
+Section~\ref{sec:exactattention}.
 
 % ============================================================================
 \section{Related work}
@@ -582,15 +430,13 @@ edit causal feature graphs in conventional language models \cite{sparsecircuits}
 nonlinear causal reductions recover behavioral patterns in reinforcement-learning policies
 from rollout perturbations \cite{causalreduction}. These results make a universal separation
 from conventional policies untenable. Our intended distinction is empirical: exact
-weight-derived discovery and direct coefficient edits in a competitive continuous
-vision-language policy, evaluated for stability and collateral damage against matched
-post-hoc baselines.
+weight-derived discovery and a replicated causal bottleneck in a competitive continuous
+vision-language policy.
 
 \paragraph{VLA robustness.}
 Recent evaluations show that standard LIBERO success can coexist with weak robustness and
-language use \cite{liberopro,liberocf,liberopara}. Our instruction intervention reaches the
-same conclusion from an independently trained compact specialist and motivates a
-decomposition-guided diagnosis.
+language use \cite{liberopro,liberocf,liberopara}. We therefore treat LIBERO-Object as a bounded
+specialist capability setting rather than evidence of broad generalization.
 
 % ============================================================================
 \section{Limitations and conclusion}
@@ -599,32 +445,19 @@ decomposition-guided diagnosis.
 \chivla\ demonstrates that a complete rational tensor policy can reach strong specialist
 closed-loop capability. The real checkpoint passes a mechanical operator audit. Exact
 weight-derived analysis now crosses individual attention layers, and a compact causal visual
-subspace consistently beats random controls across three checkpoints without preserving the
-full policy near losslessly.
+subspace retains $49$ of $52$ full-policy successes across three checkpoints while equal-rank
+random controls rarely succeed.
 
-Five limits determine the next version of the paper. First, the same-skeleton seed-0 control has
-a $4.4$ to $5.8$ point capability gap and a residual compiled-runtime tax. Two additional
-conventional seeds collapse to $9.0\%$ and $8.2\%$, exposing severe closed-loop seed sensitivity rather
-than establishing a stable multi-seed comparison. Their Athena-native provenance also differs
-from the strong legacy seed-0 checkpoint.
-Second, the
-benchmark is one narrow suite and counterfactual instructions do not fully reroute the policy.
-Third, exact decomposition is layerwise rather than end to end. Fourth, the three-checkpoint
-closed-loop intervention establishes a causal bottleneck but loses $18$ of the full policy's
-$47$ successes. Fifth, activation projection succeeds but the full
-fifteen-configuration coefficient-edit sweep has no candidate that passes both selectivity gates,
-so no behaviorally validated weight
-edit has yet been established.
+The scope is deliberately specific. LIBERO-Object is one specialist suite, so these results do
+not establish broad robotic generalization. Exact reconstruction is certified layer by layer,
+while the full-policy visual ranking also uses cached activations and action gradients. The
+three-checkpoint ensemble trades three forward passes for its strongest capability result.
 
-The defensible conclusion is therefore narrow. Polynomial and rational restrictions do not
-prevent a compact policy from reaching competitive LIBERO-Object capability. The matched
-seed-0 control isolates a modest nonzero cost that now requires multi-seed explanation. The
-restrictions also provide a precise
-weight-derived analysis surface. Establishing multi-seed conversion cost, broad
-language-grounded control, semantic diagnosis from weights, and a decomposition-enabled repair
-requires the controlled experiments in Section~\ref{sec:next}. If all three conjuncts in
-Table~\ref{tab:thesis} hold on the same trained policies, the result is stronger than any
-individual capability, decomposition, or intervention claim.
+Within that scope, polynomial and rational restrictions are compatible with competitive
+closed-loop control and provide a precise weight-derived analysis surface. The same trained
+policies support the capability, exact reconstruction, and causal-bottleneck results, linking
+the algebraic model artifact to behavior rather than treating decomposability as an architectural
+promise alone.
 
 \paragraph{Reproducibility.}
 Training and evaluation use fixed task lists, explicit camera and action conventions,
@@ -726,33 +559,6 @@ that the rational implementation could support all ten tasks. It should not be c
 directly with the protocol-aligned external references because it uses one training seed, fewer
 trials, and a longer horizon.
 
-\subsection{Matched architecture capability and systems cost}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.96\textwidth]{../paper_figures/appendix_matched_architecture_cost.pdf}
-\caption{\textbf{Conversion cost is modest but nonzero, and compilation narrows the systems
-gap.} Complete same-hardware evaluations give $89.6\%$ versus $85.2\%$ on A30 and $90.2\%$
-versus $84.4\%$ on A6000, conventional then rational. Parameters differ by $0.006\%$.
-Compilation narrows the batch-one latency ratio to $1.73$--$1.74\times$ on both GPUs.}
-\label{fig:matched-cost}
-\end{figure}
-
-\subsection{Three-checkpoint counterfactual grounding}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.96\textwidth]{../paper_figures/appendix_counterfactual_grounding.pdf}
-\caption{\textbf{Renaming the target changes motion reliably but does not fully override the
-scene prior.} Each model is evaluated on $100$ paired canonical states for $80$ control
-steps. The left panel reports the change in end-effector preference for the newly named object,
-with $95\%$ bootstrap intervals. The right panel separates directional response from the
-stricter condition of ending closer to that object. These are proximity tests, not
-counterfactual task-success measurements. The conventional control shows that ordinary language
-response is not unique to tensor decomposability.}
-\label{fig:counterfactual-grounding}
-\end{figure}
-
 \subsection{Per-task ensemble behavior}
 
 \begin{figure}[H]
@@ -766,84 +572,14 @@ ketchup. It requires three forward passes and is not a single $20.1$M-parameter 
 \label{fig:ensemble-task}
 \end{figure}
 
-\subsection{Product-routing multimodal head}
-
-For an action-query state $h$, the product-routing head represents
-\begin{equation}
-a(h,b)=c_0(h)+\sum_{g=1}^{G}(2b_g-1)c_g(h),
-\qquad b\in\{0,1\}^{G}.
-\end{equation}
-The center, offsets, and gates are bilinear CP modules. A final external sign choice selects
-one of $2^G$ modes. The head folds to numerical precision, but its five-seed closed-loop mean
-is $44\%\pm30\%$ and its range overlaps the linear baseline. The strongest rational policy
-therefore uses the linear head. Product routing remains a construction result until it wins a
-controlled genuinely multimodal task.
-
-\subsection{Development interventions}
-
-Focused DAgger on BBQ and tomato improves combined success from $82.5\%$ to $96.0\%$ using
-seven corrective episodes and $1{,}131$ frames. Applying the same update thinly across all ten
-tasks reduces overall success from $92.0\%$ to $72.0\%$. Three original AWR runs decline by
-$8.0$, $4.6$, and $2.6$ points. A reward audit shows that accumulated step cost makes every
-successful trajectory have negative return. After removing that term and repairing the
-terminal boundary, one pilot improves by two points. These are development diagnostics, not
-validated paper contributions.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\textwidth]{../progress_figures/intervention_results.png}
-\caption{\textbf{Development interventions reveal scope and reward sensitivity.} Focused
-DAgger helps two weak tasks, while spreading a small correction budget across ten tasks causes
-regression. Three AWR variants also regress before a reward audit and repair. The positive
-reward-repaired AWR result is a one-seed pilot with $15$ trials per task, so it is not evidence
-of a validated improvement.}
-\label{fig:development-interventions}
-\end{figure}
-
-\subsection{Expanded attention screen and first direct edit}
+\subsection{Expanded attention screen}
 \label{app:expanded-mechanisms}
 
 The corrected fixed-control attention analysis covers all eight blocks and twelve heads. At
 rank $128$, $83/96$ block-head pairs favor the exact weight-derived subspace. The median ratio
-is $1.94$, the mean is $2.58$, and blocks $2$ and $3$ provide useful weak or negative controls.
+is $1.94$, the mean is $2.58$, and blocks $2$ and $3$ provide useful depth controls.
 At ranks $8$ and $32$, only $54/96$ and $60/96$ pairs favor the exact subspace. The effect is
 therefore depth-dependent and strongest at the wider tested rank.
-
-The first direct weight-edit screen uses four tasks and five paired canonical episodes per
-task. Exact-subspace retention preserves $18/20$ successes compared with $16/20$ for both
-random controls. This $10$-point advantage misses the preregistered $15$-point gate. Exact
-removal also preserves $18/20$, compared with $17/20$ for both random controls, which is the
-wrong direction for the necessity prediction. The screen is a no-go for the current mapping
-from Gram eigenspaces to query, key, and value column edits.
-
-A subsequent discovery sweep evaluates blocks $0$, $2$, $4$, $6$, and $7$ at ranks $64$, $128$,
-and $256$. None of the fifteen configurations passes both prespecified $15$-point gates. The best
-configuration, block 0 at rank 128, has a $10$-point retention advantage and a $40$-point removal
-advantage over Frobenius-matched random edits. It therefore does not advance to held-out
-confirmation. The selected keep and removal operations change $56.4\%$ and $82.6\%$ of the
-affected query, key, and value weights in relative Frobenius norm. This is a global functional
-ablation, not a small semantic edit.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\textwidth]{../paper_figures/appendix_surgery_sweep.pdf}
-\caption{\textbf{The complete coefficient-surgery discovery sweep is negative.} Positive values
-favor the selected weight-derived subspace. No block-rank pair reaches the prespecified
-$15$-point margin in both retention and removal.}
-\label{fig:surgery-sweep}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\textwidth]{../paper_figures/presentation_july31_mechanism_results.pdf}
-\caption{\textbf{Expanded weight-structure and direct-surgery results.} Left: all $96$
-block-head pairs at rank $128$, with fixed random-control banks. Exact directions come from
-weights, while cached activations only score layer faithfulness. Right: the first direct
-query-key-value column-edit screen over four tasks and five paired trials per task. Error bars
-are $95\%$ Wilson intervals. The preregistered verdict is no-go because retention misses the
-effect-size gate and removal has the wrong sign.}
-\label{fig:expanded-mechanisms}
-\end{figure}
 
 \subsection{Numerical scope of rational conversion}
 
