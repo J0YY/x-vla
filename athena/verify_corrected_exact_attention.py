@@ -118,6 +118,7 @@ SOURCE_SNAPSHOTS = {
     ),
 }
 RELATIVE_L2_GATE = 1e-6
+DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def parse_args() -> argparse.Namespace:
@@ -125,13 +126,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--results-dir",
         type=Path,
-        default=Path("athena/results"),
+        default=DEFAULT_REPO_ROOT / "athena/results",
         help="Directory containing the three frozen result JSON files.",
     )
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[1],
+        default=DEFAULT_REPO_ROOT,
         help="Repository root used to rehash the frozen source closure.",
     )
     parser.add_argument(
