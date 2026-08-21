@@ -88,6 +88,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-steps-wait", type=int, default=10)
     parser.add_argument("--exec-h", type=int, default=8)
     parser.add_argument("--profile-iters", type=int, default=200)
+    parser.add_argument(
+        "--matmul-precision",
+        choices=("highest", "high", "medium"),
+        default="high",
+        help=(
+            "PyTorch float32 matmul precision. Historical Modal evaluations used the "
+            "PyTorch default, highest, while the initial Athena replication used high."
+        ),
+    )
     parser.add_argument("--causal-steps", type=int, default=80)
     parser.add_argument("--block-index", type=int, default=6)
     parser.add_argument("--rank", type=int, default=128)
@@ -1597,7 +1606,7 @@ def main() -> None:
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
-    torch.set_float32_matmul_precision("high")
+    torch.set_float32_matmul_precision(args.matmul_precision)
     if not torch.cuda.is_available():
         raise RuntimeError("This Athena runner requires a CUDA compute node")
 
@@ -1657,6 +1666,7 @@ def main() -> None:
         "cp_pruning": cp_pruning,
         "cache": str(args.cache),
         "seed": args.seed,
+        "matmul_precision": torch.get_float32_matmul_precision(),
         "vocab_size": len(vocab),
         "cache_stats": stats,
         "profile": profile,
