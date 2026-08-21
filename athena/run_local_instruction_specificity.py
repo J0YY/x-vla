@@ -37,19 +37,29 @@ from athena.run_xvla_experiment import (
 from xvla.models.vla import ChiVLA
 
 
-SCHEMA = "xvla-local-instruction-specificity-v1"
+SCHEMA = "xvla-local-instruction-specificity-v2"
 PROTOCOL = {
     "suite": "libero_object",
     "task_start": 0,
     "task_end": 10,
-    "full_eps_per_task": 50,
+    "primary_episode_start": 10,
+    "primary_eps_per_task": 40,
+    "smoke_episode_start": 0,
+    "smoke_eps_per_task": 1,
     "settle_steps": 10,
     "action_horizon": 8,
     "resolution": 64,
     "matmul_precision": "highest",
     "language_conditions": "ten official Object prompts plus empty/BOS-only",
-    "primary_metric": "0.5 * (delta_A-delta_B) dot (unit_A-unit_B)",
-    "control_metric": "all 56 ordered contrasts among eight absent-object prompts",
+    "scene_objects": "one official target plus five co-present distractors",
+    "primary_metric": (
+        "mean over five distractors of "
+        "0.5 * (delta_A-delta_B) dot (unit_A-unit_B)"
+    ),
+    "control_metric": (
+        "for each of five target-distractor axes, rank its semantic score against "
+        "12 ordered contrasts among four truly absent-object prompts, then average ranks"
+    ),
 }
 
 
@@ -66,6 +76,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", choices=("strict_smoke", "full"), required=True)
     parser.add_argument("--task-start", type=int, required=True)
     parser.add_argument("--task-end", type=int, required=True)
+    parser.add_argument("--episode-start", type=int, required=True)
     parser.add_argument("--eps-per-task", type=int, required=True)
     parser.add_argument("--expected-trials", type=int, required=True)
     parser.add_argument("--res", type=int, default=64)
@@ -171,19 +182,38 @@ def transformed_model_input(
     return image, state
 
 
+def simulator_state_array(environment: Any) -> np.ndarray:
+    state = environment.sim.get_state()
+    if hasattr(state, "flatten") and callable(state.flatten):
+        state = state.flatten()
+    array = np.asarray(state)
+    if array.dtype == object:
+        raise RuntimeError("Simulator state cannot be represented as a numeric array")
+    array = np.ascontiguousarray(array)
+    if not np.issubdtype(array.dtype, np.number) or not np.isfinite(array).all():
+        raise RuntimeError("Simulator state is nonnumeric or nonfinite")
+    if array.size == 0:
+        raise RuntimeError("Simulator state is empty")
+    return array
+
+
 def physical_input_hash(
+    environment: Any,
     observation: dict[str, Any],
     stats: dict[str, Any],
     resolution: int,
     body_names: list[str],
 ) -> tuple[str, dict[str, str], np.ndarray, np.ndarray]:
     image, state = transformed_model_input(observation, stats, resolution)
+    simulator_state = simulator_state_array(environment)
     fields = [
+        ("simulator_state", simulator_state),
         ("model_image", image),
         ("robot_state", state),
         ("eef", np.asarray(observation["robot0_eef_pos"], dtype=np.float64)),
     ]
     component_hashes = {
+        "simulator_state": hash_array(simulator_state),
         "model_image": hash_array(image),
         "robot_state": hash_array(state),
         "eef": hash_array(np.asarray(observation["robot0_eef_pos"], dtype=np.float64)),
@@ -306,13 +336,10 @@ def unit_direction(start: np.ndarray, target: np.ndarray) -> np.ndarray:
 def specificity_metrics(
     conditions: dict[str, dict[str, Any]],
     target_prompt_id: int,
-    distractor_prompt_id: int,
+    distractor_prompt_ids: list[int],
     absent_prompt_ids: list[int],
-    unit_target: np.ndarray,
-    unit_distractor: np.ndarray,
+    unit_directions: dict[int, np.ndarray],
 ) -> dict[str, Any]:
-    direction_contrast = unit_target - unit_distractor
-
     def displacement(prompt_id: int | str) -> np.ndarray:
         return np.asarray(
             conditions[str(prompt_id)]["execution"]["displacement"],
@@ -326,57 +353,107 @@ def specificity_metrics(
         )
 
     target_displacement = displacement(target_prompt_id)
-    distractor_displacement = displacement(distractor_prompt_id)
-    semantic_score = 0.5 * float(
-        np.dot(target_displacement - distractor_displacement, direction_contrast)
-    )
-    command_score = 0.5 * float(
-        np.dot(command(target_prompt_id) - command(distractor_prompt_id), direction_contrast)
-    )
-    controls = []
-    for left_id in absent_prompt_ids:
-        for right_id in absent_prompt_ids:
-            if left_id == right_id:
-                continue
-            score = 0.5 * float(
-                np.dot(
-                    displacement(left_id) - displacement(right_id),
-                    direction_contrast,
-                )
-            )
-            controls.append(
-                {
-                    "left_prompt_id": left_id,
-                    "right_prompt_id": right_id,
-                    "score_m": score,
-                }
-            )
-    if len(controls) != 56:
-        raise RuntimeError(f"Expected 56 ordered controls, got {len(controls)}")
-    control_scores = np.asarray([row["score_m"] for row in controls], dtype=np.float64)
-    specificity_rank = float(
-        (
-            np.count_nonzero(control_scores < semantic_score)
-            + 0.5 * np.count_nonzero(control_scores == semantic_score)
+    if len(distractor_prompt_ids) != 5 or len(set(distractor_prompt_ids)) != 5:
+        raise RuntimeError("Expected five distinct co-present distractor prompts")
+    if len(absent_prompt_ids) != 4 or len(set(absent_prompt_ids)) != 4:
+        raise RuntimeError("Expected four distinct absent-object prompts")
+    if set(unit_directions) != {target_prompt_id, *distractor_prompt_ids}:
+        raise RuntimeError("Unit-direction catalog does not match present objects")
+
+    distractor_comparisons = []
+    for distractor_prompt_id in distractor_prompt_ids:
+        direction_contrast = (
+            unit_directions[target_prompt_id] - unit_directions[distractor_prompt_id]
         )
-        / len(control_scores)
+        distractor_displacement = displacement(distractor_prompt_id)
+        semantic_score = 0.5 * float(
+            np.dot(
+                target_displacement - distractor_displacement,
+                direction_contrast,
+            )
+        )
+        command_score = 0.5 * float(
+            np.dot(
+                command(target_prompt_id) - command(distractor_prompt_id),
+                direction_contrast,
+            )
+        )
+        controls = []
+        for left_id in absent_prompt_ids:
+            for right_id in absent_prompt_ids:
+                if left_id == right_id:
+                    continue
+                score = 0.5 * float(
+                    np.dot(
+                        displacement(left_id) - displacement(right_id),
+                        direction_contrast,
+                    )
+                )
+                controls.append(
+                    {
+                        "left_prompt_id": left_id,
+                        "right_prompt_id": right_id,
+                        "score_m": score,
+                    }
+                )
+        if len(controls) != 12:
+            raise RuntimeError(f"Expected 12 ordered controls, got {len(controls)}")
+        control_scores = np.asarray(
+            [row["score_m"] for row in controls], dtype=np.float64
+        )
+        specificity_rank = float(
+            (
+                np.count_nonzero(control_scores < semantic_score)
+                + 0.5 * np.count_nonzero(control_scores == semantic_score)
+            )
+            / len(control_scores)
+        )
+        distractor_comparisons.append(
+            {
+                "distractor_prompt_id": distractor_prompt_id,
+                "semantic_score_m": semantic_score,
+                "specificity_rank": specificity_rank,
+                "ordered_absent_controls": controls,
+                "secondary_predicted_command_score": command_score,
+                "direction_contrast": direction_contrast.tolist(),
+            }
+        )
+    semantic_score = float(
+        np.mean([row["semantic_score_m"] for row in distractor_comparisons])
+    )
+    command_score = float(
+        np.mean(
+            [
+                row["secondary_predicted_command_score"]
+                for row in distractor_comparisons
+            ]
+        )
+    )
+    specificity_rank = float(
+        np.mean([row["specificity_rank"] for row in distractor_comparisons])
     )
     empty_displacement = displacement("empty")
     return {
         "semantic_score_m": semantic_score,
         "semantic_score_positive": bool(semantic_score > 0),
         "specificity_rank": specificity_rank,
-        "ordered_absent_controls": controls,
         "secondary_predicted_command_score": command_score,
-        "direction_contrast": direction_contrast.tolist(),
+        "distractor_comparisons": distractor_comparisons,
         "no_language_diagnostic": {
             "empty_displacement": empty_displacement.tolist(),
             "empty_displacement_norm_m": float(np.linalg.norm(empty_displacement)),
             "target_vs_empty_displacement_difference_m": float(
                 np.linalg.norm(target_displacement - empty_displacement)
             ),
-            "distractor_vs_empty_displacement_difference_m": float(
-                np.linalg.norm(distractor_displacement - empty_displacement)
+            "mean_distractor_vs_empty_displacement_difference_m": float(
+                np.mean(
+                    [
+                        np.linalg.norm(
+                            displacement(distractor_prompt_id) - empty_displacement
+                        )
+                        for distractor_prompt_id in distractor_prompt_ids
+                    ]
+                )
             ),
         },
     }
@@ -385,6 +462,18 @@ def specificity_metrics(
 def main() -> None:
     args = parse_args()
     started = time.perf_counter()
+    repository_root = Path(__file__).resolve().parents[1]
+    runner_source_sha256 = file_sha256(Path(__file__).resolve())
+    imported_source_sha256 = {
+        relative: file_sha256(repository_root / relative)
+        for relative in (
+            "athena/run_xvla_experiment.py",
+            "xvla/models/vla.py",
+            "xvla/models/vit.py",
+            "xvla/nn/attention.py",
+            "xvla/nn/normalization.py",
+        )
+    }
     if args.output.exists():
         raise FileExistsError(f"Refusing to overwrite {args.output}")
     if not args.checkpoint.is_file() or not args.cache.is_file():
@@ -398,10 +487,24 @@ def main() -> None:
     if args.matmul_precision != PROTOCOL["matmul_precision"]:
         raise ValueError("Matmul precision is frozen at highest")
     if args.mode == "full":
-        if (args.task_start, args.task_end, args.eps_per_task) != (0, 10, 50):
-            raise ValueError("Full protocol is frozen at ten tasks and 50 states per task")
-    elif (args.task_start, args.task_end, args.eps_per_task) != (0, 1, 2):
-        raise ValueError("Strict smoke is frozen at task 0 and two states")
+        if (
+            args.task_start,
+            args.task_end,
+            args.episode_start,
+            args.eps_per_task,
+        ) != (0, 10, 10, 40):
+            raise ValueError(
+                "Full protocol is frozen at ten tasks and canonical episodes 10 to 49"
+            )
+    elif (
+        args.task_start,
+        args.task_end,
+        args.episode_start,
+        args.eps_per_task,
+    ) != (0, 10, 0, 1):
+        raise ValueError(
+            "Strict smoke is frozen at all ten tasks and canonical episode zero"
+        )
     if args.expected_trials != (args.task_end - args.task_start) * args.eps_per_task:
         raise ValueError("Expected trial count does not match task and episode bounds")
 
@@ -470,14 +573,25 @@ def main() -> None:
     model.load_state_dict(state_dict, strict=True)
     model.eval()
 
+    for preflight_task_index in range(args.task_start, args.task_end):
+        preflight_states = official_init_states(suite, preflight_task_index)
+        if len(preflight_states) < args.episode_start + args.eps_per_task:
+            raise RuntimeError(
+                f"Task {preflight_task_index} exposes {len(preflight_states)} canonical "
+                f"states, fewer than required {args.episode_start + args.eps_per_task}"
+            )
+
     rows = []
     for task_index in range(args.task_start, args.task_end):
         task = suite.get_task(task_index)
         init_states = official_init_states(suite, task_index)
         environment = make_environment(task, args.res)
         try:
-            for episode in range(args.eps_per_task):
-                init_state_index = episode % len(init_states)
+            for episode in range(
+                args.episode_start,
+                args.episode_start + args.eps_per_task,
+            ):
+                init_state_index = episode
                 init_state = init_states[init_state_index]
                 reset_seed = task_index * 100 + episode
                 probe_observation = reset_to_input(
@@ -487,10 +601,10 @@ def main() -> None:
                     args.num_steps_wait,
                 )
                 bodies = scene_object_bodies(probe_observation)
-                if len(bodies) != 2:
+                if len(bodies) != 6:
                     raise RuntimeError(
                         f"Task {task_index} state {episode} has {len(bodies)} eligible "
-                        f"objects, expected exactly two: {bodies}"
+                        f"objects, expected exactly six: {bodies}"
                     )
                 original_body = next(
                     (
@@ -502,29 +616,55 @@ def main() -> None:
                 )
                 if original_body is None:
                     raise RuntimeError("Official target body cannot be identified")
-                distractor_body = next(body for body in bodies if body != original_body)
                 original_name = readable_object_name(original_body)
-                distractor_name = readable_object_name(distractor_body)
-                if original_name not in target_to_prompt or distractor_name not in target_to_prompt:
+                body_to_prompt_id = {
+                    body: target_to_prompt.get(readable_object_name(body))
+                    for body in bodies
+                }
+                if original_name not in target_to_prompt or any(
+                    prompt_id is None for prompt_id in body_to_prompt_id.values()
+                ):
                     raise RuntimeError(
-                        f"Scene objects do not map to official prompts: "
-                        f"{original_name}, {distractor_name}"
+                        f"Scene objects do not map one-to-one to official prompts: "
+                        f"{body_to_prompt_id}"
                     )
                 target_prompt_id = target_to_prompt[original_name]
-                distractor_prompt_id = target_to_prompt[distractor_name]
                 if target_prompt_id != task_index:
                     raise RuntimeError(
                         f"Task {task_index} target mapped to prompt {target_prompt_id}"
                     )
+                present_prompt_ids = sorted(
+                    int(prompt_id) for prompt_id in body_to_prompt_id.values()
+                )
+                if len(set(present_prompt_ids)) != 6 or target_prompt_id not in present_prompt_ids:
+                    raise RuntimeError(
+                        f"Present prompt identities are invalid: {present_prompt_ids}"
+                    )
+                distractor_prompt_ids = [
+                    prompt_id
+                    for prompt_id in present_prompt_ids
+                    if prompt_id != target_prompt_id
+                ]
+                distractor_bodies = [
+                    next(
+                        body
+                        for body, prompt_id in body_to_prompt_id.items()
+                        if int(prompt_id) == distractor_prompt_id
+                    )
+                    for distractor_prompt_id in distractor_prompt_ids
+                ]
                 absent_prompt_ids = [
                     prompt_id
                     for prompt_id in range(10)
-                    if prompt_id not in (target_prompt_id, distractor_prompt_id)
+                    if prompt_id not in present_prompt_ids
                 ]
-                if len(absent_prompt_ids) != 8:
-                    raise RuntimeError("Expected exactly eight absent-object prompts")
+                if len(distractor_prompt_ids) != 5 or len(absent_prompt_ids) != 4:
+                    raise RuntimeError(
+                        "Expected five present distractors and four absent prompts"
+                    )
 
                 input_hash, component_hashes, image, raw_state = physical_input_hash(
+                    environment,
                     probe_observation,
                     stats,
                     args.res,
@@ -543,11 +683,16 @@ def main() -> None:
                 original_position = np.asarray(
                     probe_observation[f"{original_body}_pos"], dtype=np.float64
                 )
-                distractor_position = np.asarray(
-                    probe_observation[f"{distractor_body}_pos"], dtype=np.float64
-                )
-                unit_target = unit_direction(start_eef, original_position)
-                unit_distractor = unit_direction(start_eef, distractor_position)
+                prompt_positions = {
+                    int(prompt_id): np.asarray(
+                        probe_observation[f"{body}_pos"], dtype=np.float64
+                    )
+                    for body, prompt_id in body_to_prompt_id.items()
+                }
+                unit_directions = {
+                    prompt_id: unit_direction(start_eef, position)
+                    for prompt_id, position in prompt_positions.items()
+                }
 
                 conditions: dict[str, dict[str, Any]] = {}
                 for condition_index, catalog_row in enumerate(prompt_catalog):
@@ -558,6 +703,7 @@ def main() -> None:
                         args.num_steps_wait,
                     )
                     clone_hash, clone_components, _, _ = physical_input_hash(
+                        environment,
                         condition_observation,
                         stats,
                         args.res,
@@ -591,10 +737,9 @@ def main() -> None:
                 metrics = specificity_metrics(
                     conditions,
                     target_prompt_id,
-                    distractor_prompt_id,
+                    distractor_prompt_ids,
                     absent_prompt_ids,
-                    unit_target,
-                    unit_distractor,
+                    unit_directions,
                 )
                 row = {
                     "episode_identity": {
@@ -609,15 +754,22 @@ def main() -> None:
                     "scene": {
                         "eligible_bodies": bodies,
                         "target_body": original_body,
-                        "distractor_body": distractor_body,
+                        "distractor_bodies": distractor_bodies,
+                        "body_to_prompt_id": body_to_prompt_id,
                         "target_prompt_id": target_prompt_id,
-                        "distractor_prompt_id": distractor_prompt_id,
+                        "present_prompt_ids": present_prompt_ids,
+                        "distractor_prompt_ids": distractor_prompt_ids,
                         "absent_prompt_ids": absent_prompt_ids,
                         "start_eef": start_eef.tolist(),
                         "target_position": original_position.tolist(),
-                        "distractor_position": distractor_position.tolist(),
-                        "unit_target": unit_target.tolist(),
-                        "unit_distractor": unit_distractor.tolist(),
+                        "prompt_positions": {
+                            str(prompt_id): position.tolist()
+                            for prompt_id, position in prompt_positions.items()
+                        },
+                        "unit_directions": {
+                            str(prompt_id): direction.tolist()
+                            for prompt_id, direction in unit_directions.items()
+                        },
                     },
                     "model_input": {
                         "combined_sha256": input_hash,
@@ -672,11 +824,13 @@ def main() -> None:
             "dataset_revision": provenance["source"]["revision"],
             "metadata_revision": provenance["metadata"]["revision"],
             "metadata_sha256": provenance["metadata"]["sha256"],
-            "runner_source_sha256": file_sha256(Path(__file__).resolve()),
+            "runner_source_sha256": runner_source_sha256,
+            "imported_source_sha256": imported_source_sha256,
         },
         "evaluation": {
             "task_start": args.task_start,
             "task_end": args.task_end,
+            "episode_start": args.episode_start,
             "eps_per_task": args.eps_per_task,
             "expected_trials": args.expected_trials,
             "completed_trials": len(rows),
@@ -698,9 +852,10 @@ def main() -> None:
         "rows": rows,
         "outcome_scope": (
             "This is an eight-action, fixed-observation local-control intervention. It does "
-            "not measure BDDL success, counterfactual task completion, robust grounding, "
-            "zero-shot language understanding, broad-suite generalization, or a benefit "
-            "unique to tensor decomposability."
+            "not measure absolute motion toward either named object, bidirectional noun "
+            "selection, BDDL success, counterfactual task completion, robust grounding, "
+            "zero-shot language understanding, broad-suite generalization, a practically "
+            "meaningful effect size, or a benefit unique to tensor decomposability."
         ),
         "elapsed_s": time.perf_counter() - started,
     }

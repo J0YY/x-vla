@@ -22,6 +22,7 @@ from athena.run_xvla_experiment import (
     build_encoder,
     build_vocab,
     load_suite,
+    official_init_states,
     readable_object_name,
     task_languages,
 )
@@ -44,12 +45,14 @@ EXPECTED_CHECKPOINTS = {
     },
 }
 FROZEN_GATES = {
-    "completed_trials_per_checkpoint": 500,
+    "completed_trials_per_checkpoint": 400,
+    "primary_canonical_episode_start": 10,
+    "primary_canonical_episode_end_exclusive": 50,
     "minimum_positive_task_means": 8,
-    "semantic_mean_bootstrap_lower_strictly_above_m": 0.0,
+    "semantic_mean_hierarchical_resampling_lower_strictly_above_m": 0.0,
     "minimum_mean_specificity_rank": 0.75,
-    "specificity_rank_bootstrap_lower_strictly_above": 0.50,
-    "bootstrap_draws": 20000,
+    "specificity_rank_hierarchical_resampling_lower_strictly_above": 0.50,
+    "hierarchical_resampling_draws": 20000,
     "all_three_checkpoints_must_pass": True,
 }
 
@@ -84,8 +87,8 @@ def assert_close(label: str, actual: Any, expected: Any, atol: float = 1e-12) ->
         raise RuntimeError(f"{label} does not reproduce")
 
 
-def expected_prompt_catalog() -> list[dict[str, Any]]:
-    tasks = task_languages(load_suite("libero_object"))
+def expected_prompt_catalog(suite: Any) -> list[dict[str, Any]]:
+    tasks = task_languages(suite)
     vocab, _ = build_vocab(tasks)
     encode = build_encoder(vocab)
     catalog = [
@@ -111,38 +114,62 @@ def expected_prompt_catalog() -> list[dict[str, Any]]:
 def validate_row(
     row: dict[str, Any],
     catalog: list[dict[str, Any]],
-) -> tuple[int, int, float, float, float]:
+    expected_init_state_sha256: str,
+) -> tuple[int, int, float, float, float, str, dict[str, str]]:
     identity = row["episode_identity"]
     task_index = int(identity["task_index"])
     episode = int(identity["episode"])
+    if task_index not in range(10) or episode not in range(10, 50):
+        raise RuntimeError("Row task or episode is outside the frozen primary set")
     if identity["suite"] != "libero_object":
         raise RuntimeError("Row suite identity is invalid")
+    if identity["task_language"] != catalog[task_index]["text"]:
+        raise RuntimeError("Row task language differs from the official catalog")
     if int(identity["init_state_index"]) != episode:
         raise RuntimeError("Canonical init-state index is not the frozen episode index")
     if int(identity["reset_seed"]) != task_index * 100 + episode:
         raise RuntimeError("Reset seed is not the frozen task/episode seed")
-    if len(str(identity["init_state_sha256"])) != 64:
-        raise RuntimeError("Initial-state hash is malformed")
+    if identity["init_state_sha256"] != expected_init_state_sha256:
+        raise RuntimeError("Initial-state hash differs from the official canonical state")
 
     scene = row["scene"]
     target_id = int(scene["target_prompt_id"])
-    distractor_id = int(scene["distractor_prompt_id"])
-    if target_id != task_index or distractor_id == target_id:
-        raise RuntimeError("Target/distractor prompt identity is invalid")
+    if target_id != task_index:
+        raise RuntimeError("Target prompt identity is invalid")
+    present_ids = [int(value) for value in scene["present_prompt_ids"]]
+    distractor_ids = [int(value) for value in scene["distractor_prompt_ids"]]
     absent_ids = [int(value) for value in scene["absent_prompt_ids"]]
-    if absent_ids != [
-        prompt_id for prompt_id in range(10) if prompt_id not in (target_id, distractor_id)
-    ]:
+    if present_ids != sorted(present_ids) or len(set(present_ids)) != 6:
+        raise RuntimeError("Present-prompt identities are invalid")
+    if target_id not in present_ids:
+        raise RuntimeError("Target prompt is absent from the scene")
+    if distractor_ids != [value for value in present_ids if value != target_id]:
+        raise RuntimeError("Distractor-prompt identities are not the frozen complement")
+    if absent_ids != [value for value in range(10) if value not in present_ids]:
         raise RuntimeError("Absent-prompt identities are not the frozen complement")
-    if len(scene["eligible_bodies"]) != 2:
-        raise RuntimeError("Scene does not contain exactly two eligible objects")
+    if len(distractor_ids) != 5 or len(absent_ids) != 4:
+        raise RuntimeError("Scene must contain five distractors and four absent prompts")
+    eligible_bodies = list(scene["eligible_bodies"])
+    if len(eligible_bodies) != 6 or len(set(eligible_bodies)) != 6:
+        raise RuntimeError("Scene does not contain exactly six eligible objects")
+    body_to_prompt = {
+        str(body): int(prompt_id)
+        for body, prompt_id in scene["body_to_prompt_id"].items()
+    }
+    if set(body_to_prompt) != set(eligible_bodies) or sorted(body_to_prompt.values()) != present_ids:
+        raise RuntimeError("Body-to-prompt mapping is invalid")
+    if body_to_prompt.get(str(scene["target_body"])) != target_id:
+        raise RuntimeError("Target body-to-prompt mapping is invalid")
     if readable_object_name(scene["target_body"]) != catalog[target_id]["target_phrase"]:
         raise RuntimeError("Target body does not match its official prompt")
-    if (
-        readable_object_name(scene["distractor_body"])
-        != catalog[distractor_id]["target_phrase"]
-    ):
-        raise RuntimeError("Distractor body does not match its official prompt")
+    distractor_bodies = list(scene["distractor_bodies"])
+    if len(distractor_bodies) != 5:
+        raise RuntimeError("Distractor-body catalog is incomplete")
+    for body, prompt_id in zip(distractor_bodies, distractor_ids):
+        if body_to_prompt.get(body) != prompt_id:
+            raise RuntimeError("Distractor body order differs from prompt order")
+        if readable_object_name(body) != catalog[prompt_id]["target_phrase"]:
+            raise RuntimeError("Distractor body does not match its official prompt")
 
     model_input = row["model_input"]
     if model_input.get("all_clone_hashes_match") is not True:
@@ -154,12 +181,11 @@ def validate_row(
         raise RuntimeError("Combined input hash is malformed")
     component_hashes = model_input.get("component_sha256", {})
     expected_component_keys = {
+        "simulator_state",
         "model_image",
         "robot_state",
         "eef",
-        f"body:{scene['target_body']}",
-        f"body:{scene['distractor_body']}",
-    }
+    } | {f"body:{body}" for body in eligible_bodies}
     if set(component_hashes) != expected_component_keys or any(
         len(str(value)) != 64 for value in component_hashes.values()
     ):
@@ -202,28 +228,37 @@ def validate_row(
         assert_close("eef displacement", displacement, end - start)
         assert_close("paired start eef", start, scene["start_eef"])
 
-    unit_target = np.asarray(scene["unit_target"], dtype=np.float64)
-    unit_distractor = np.asarray(scene["unit_distractor"], dtype=np.float64)
     start_eef = np.asarray(scene["start_eef"], dtype=np.float64)
-    target_position = np.asarray(scene["target_position"], dtype=np.float64)
-    distractor_position = np.asarray(scene["distractor_position"], dtype=np.float64)
-    reproduced_target_unit = (target_position - start_eef) / np.linalg.norm(
-        target_position - start_eef
-    )
-    reproduced_distractor_unit = (
-        distractor_position - start_eef
-    ) / np.linalg.norm(distractor_position - start_eef)
-    assert_close("target unit norm", np.linalg.norm(unit_target), 1.0)
-    assert_close("distractor unit norm", np.linalg.norm(unit_distractor), 1.0)
-    assert_close("target unit direction", unit_target, reproduced_target_unit)
-    assert_close("distractor unit direction", unit_distractor, reproduced_distractor_unit)
+    prompt_positions = {
+        int(prompt_id): np.asarray(position, dtype=np.float64)
+        for prompt_id, position in scene["prompt_positions"].items()
+    }
+    unit_directions = {
+        int(prompt_id): np.asarray(direction, dtype=np.float64)
+        for prompt_id, direction in scene["unit_directions"].items()
+    }
+    if set(prompt_positions) != set(present_ids) or set(unit_directions) != set(present_ids):
+        raise RuntimeError("Present-object geometry is incomplete")
+    assert_close("target position", scene["target_position"], prompt_positions[target_id])
+    for prompt_id in present_ids:
+        position = prompt_positions[prompt_id]
+        reproduced_unit = (position - start_eef) / np.linalg.norm(position - start_eef)
+        assert_close(
+            f"unit norm {prompt_id}",
+            np.linalg.norm(unit_directions[prompt_id]),
+            1.0,
+        )
+        assert_close(
+            f"unit direction {prompt_id}",
+            unit_directions[prompt_id],
+            reproduced_unit,
+        )
     reproduced = specificity_metrics(
         conditions,
         target_id,
-        distractor_id,
+        distractor_ids,
         absent_ids,
-        unit_target,
-        unit_distractor,
+        unit_directions,
     )
     metrics = row["metrics"]
     assert_close("semantic score", metrics["semantic_score_m"], reproduced["semantic_score_m"])
@@ -233,27 +268,60 @@ def validate_row(
         raise RuntimeError("Semantic score sign does not reproduce")
     assert_close("specificity rank", metrics["specificity_rank"], reproduced["specificity_rank"])
     assert_close(
-        "direction contrast",
-        metrics["direction_contrast"],
-        reproduced["direction_contrast"],
-    )
-    assert_close(
         "secondary command score",
         metrics["secondary_predicted_command_score"],
         reproduced["secondary_predicted_command_score"],
         atol=1e-7,
     )
-    observed_controls = metrics["ordered_absent_controls"]
-    expected_controls = reproduced["ordered_absent_controls"]
-    if len(observed_controls) != 56 or len(expected_controls) != 56:
-        raise RuntimeError("Ordered control count is not 56")
-    for observed, expected in zip(observed_controls, expected_controls):
-        if (
-            int(observed["left_prompt_id"]) != int(expected["left_prompt_id"])
-            or int(observed["right_prompt_id"]) != int(expected["right_prompt_id"])
+    observed_comparisons = metrics["distractor_comparisons"]
+    expected_comparisons = reproduced["distractor_comparisons"]
+    if len(observed_comparisons) != 5 or len(expected_comparisons) != 5:
+        raise RuntimeError("Distractor comparison count is not five")
+    for observed, expected in zip(observed_comparisons, expected_comparisons):
+        if int(observed["distractor_prompt_id"]) != int(
+            expected["distractor_prompt_id"]
         ):
-            raise RuntimeError("Ordered control identity does not reproduce")
-        assert_close("ordered control score", observed["score_m"], expected["score_m"])
+            raise RuntimeError("Distractor comparison identity does not reproduce")
+        assert_close(
+            "distractor semantic score",
+            observed["semantic_score_m"],
+            expected["semantic_score_m"],
+        )
+        assert_close(
+            "distractor specificity rank",
+            observed["specificity_rank"],
+            expected["specificity_rank"],
+        )
+        observed_controls = observed["ordered_absent_controls"]
+        expected_controls = expected["ordered_absent_controls"]
+        if len(observed_controls) != 12 or len(expected_controls) != 12:
+            raise RuntimeError("Per-distractor ordered control count is not 12")
+        for observed_control, expected_control in zip(
+            observed_controls, expected_controls
+        ):
+            if (
+                int(observed_control["left_prompt_id"])
+                != int(expected_control["left_prompt_id"])
+                or int(observed_control["right_prompt_id"])
+                != int(expected_control["right_prompt_id"])
+            ):
+                raise RuntimeError("Ordered control identity does not reproduce")
+            assert_close(
+                "ordered control score",
+                observed_control["score_m"],
+                expected_control["score_m"],
+            )
+        assert_close(
+            "distractor command score",
+            observed["secondary_predicted_command_score"],
+            expected["secondary_predicted_command_score"],
+            atol=1e-7,
+        )
+        assert_close(
+            "distractor direction contrast",
+            observed["direction_contrast"],
+            expected["direction_contrast"],
+        )
 
     observed_no_language = metrics["no_language_diagnostic"]
     reproduced_no_language = reproduced["no_language_diagnostic"]
@@ -275,6 +343,8 @@ def validate_row(
         float(metrics["semantic_score_m"]),
         float(metrics["specificity_rank"]),
         empty_norm,
+        input_hash,
+        dict(component_hashes),
     )
 
 
@@ -283,8 +353,8 @@ def hierarchical_bootstrap_ci(
     seed: int,
     draws: int,
 ) -> list[float]:
-    if set(by_task) != set(range(10)) or any(len(values) != 50 for values in by_task.values()):
-        raise RuntimeError("Bootstrap input must contain ten tasks by 50 states")
+    if set(by_task) != set(range(10)) or any(len(values) != 40 for values in by_task.values()):
+        raise RuntimeError("Resampling input must contain ten tasks by 40 states")
     matrix = np.asarray([by_task[task] for task in range(10)], dtype=np.float64)
     rng = np.random.default_rng(seed)
     means = np.empty(draws, dtype=np.float64)
@@ -292,7 +362,7 @@ def hierarchical_bootstrap_ci(
         sampled_tasks = rng.integers(0, 10, size=10)
         total = 0.0
         for task in sampled_tasks:
-            sampled_episodes = rng.integers(0, 50, size=50)
+            sampled_episodes = rng.integers(0, 40, size=40)
             total += float(matrix[task, sampled_episodes].mean())
         means[draw] = total / 10.0
     return [float(np.quantile(means, 0.025)), float(np.quantile(means, 0.975))]
@@ -303,21 +373,25 @@ def checkpoint_stratified_bootstrap_ci(
     seed: int,
     draws: int,
 ) -> list[float]:
-    if set(values) != {0, 1, 2} or any(array.shape != (500,) for array in values.values()):
-        raise RuntimeError("Pooled bootstrap requires three 500-state checkpoints")
+    if set(values) != {0, 1, 2} or any(array.shape != (400,) for array in values.values()):
+        raise RuntimeError("Pooled resampling requires three 400-state checkpoints")
     matrices = {
-        checkpoint: array.reshape(10, 50)
+        checkpoint: array.reshape(10, 40)
         for checkpoint, array in values.items()
     }
     rng = np.random.default_rng(seed)
     means = np.empty(draws, dtype=np.float64)
     for draw in range(draws):
+        sampled_tasks = rng.integers(0, 10, size=10)
+        sampled_episodes_by_position = [
+            rng.integers(0, 40, size=40) for _ in sampled_tasks
+        ]
         checkpoint_means = []
         for checkpoint in range(3):
-            sampled_tasks = rng.integers(0, 10, size=10)
             task_means = []
-            for task in sampled_tasks:
-                sampled_episodes = rng.integers(0, 50, size=50)
+            for task, sampled_episodes in zip(
+                sampled_tasks, sampled_episodes_by_position
+            ):
                 task_means.append(
                     float(matrices[checkpoint][task, sampled_episodes].mean())
                 )
@@ -335,14 +409,36 @@ def write_json(path: Path, value: dict[str, Any]) -> None:
 
 def main() -> None:
     args = parse_args()
+    summary_source_sha256 = file_sha256(Path(__file__).resolve())
     if args.output.exists():
         raise FileExistsError(f"Refusing to overwrite {args.output}")
     if len(args.result) != 3 or len(set(args.result)) != 3:
         raise ValueError("Exactly three distinct full-result paths are required")
-    catalog = expected_prompt_catalog()
+    suite = load_suite("libero_object")
+    catalog = expected_prompt_catalog(suite)
+    canonical_states = {
+        task: official_init_states(suite, task) for task in range(10)
+    }
+    expected_init_state_sha256 = {
+        (task, episode): hash_array(np.asarray(canonical_states[task][episode]))
+        for task in range(10)
+        for episode in range(10, 50)
+    }
     validated: dict[int, dict[str, Any]] = {}
+    paired_state_identities: dict[tuple[int, int], tuple[str, dict[str, str]]] = {}
     provenance_hash = None
     runner_hash = file_sha256(Path(__file__).with_name("run_local_instruction_specificity.py"))
+    repository_root = Path(__file__).resolve().parents[1]
+    expected_imported_source_sha256 = {
+        relative: file_sha256(repository_root / relative)
+        for relative in (
+            "athena/run_xvla_experiment.py",
+            "xvla/models/vla.py",
+            "xvla/models/vit.py",
+            "xvla/nn/attention.py",
+            "xvla/nn/normalization.py",
+        )
+    }
 
     for path in args.result:
         result = load_json(path)
@@ -369,6 +465,8 @@ def main() -> None:
             raise RuntimeError(f"Seed {seed} provenance job identity is invalid")
         if identity["runner_source_sha256"] != runner_hash:
             raise RuntimeError(f"Seed {seed} runner source SHA is stale")
+        if identity.get("imported_source_sha256") != expected_imported_source_sha256:
+            raise RuntimeError(f"Seed {seed} imported source identities are stale")
         if provenance_hash is None:
             provenance_hash = identity["provenance_result_sha256"]
         elif identity["provenance_result_sha256"] != provenance_hash:
@@ -377,31 +475,61 @@ def main() -> None:
         if (
             int(evaluation["task_start"]),
             int(evaluation["task_end"]),
+            int(evaluation["episode_start"]),
             int(evaluation["eps_per_task"]),
             int(evaluation["expected_trials"]),
             int(evaluation["completed_trials"]),
             evaluation["matmul_precision"],
-        ) != (0, 10, 50, 500, 500, "highest"):
+        ) != (0, 10, 10, 40, 400, 400, "highest"):
             raise RuntimeError(f"Seed {seed} evaluation identity is invalid")
 
-        by_task_scores = {task: [] for task in range(10)}
-        by_task_ranks = {task: [] for task in range(10)}
+        score_by_key: dict[tuple[int, int], float] = {}
+        rank_by_key: dict[tuple[int, int], float] = {}
         empty_norms = []
         episode_keys = set()
         for row in result["rows"]:
-            task, episode, score, rank, empty_norm = validate_row(row, catalog)
+            task, episode, score, rank, empty_norm, input_hash, component_hashes = (
+                validate_row(
+                    row,
+                    catalog,
+                    expected_init_state_sha256[(
+                        int(row["episode_identity"]["task_index"]),
+                        int(row["episode_identity"]["episode"]),
+                    )],
+                )
+            )
             key = (task, episode)
             if key in episode_keys:
                 raise RuntimeError(f"Seed {seed} has duplicate episode {key}")
             episode_keys.add(key)
-            by_task_scores[task].append(score)
-            by_task_ranks[task].append(rank)
+            score_by_key[key] = score
+            rank_by_key[key] = rank
             empty_norms.append(empty_norm)
-        expected_keys = {(task, episode) for task in range(10) for episode in range(50)}
+            paired_identity = (input_hash, component_hashes)
+            if key not in paired_state_identities:
+                paired_state_identities[key] = paired_identity
+            elif paired_state_identities[key] != paired_identity:
+                raise RuntimeError(
+                    f"Settled physical input differs across checkpoints for {key}"
+                )
+        expected_keys = {
+            (task, episode)
+            for task in range(10)
+            for episode in range(10, 50)
+        }
         if episode_keys != expected_keys:
             raise RuntimeError(f"Seed {seed} episode identities are incomplete")
 
-        draws = int(FROZEN_GATES["bootstrap_draws"])
+        by_task_scores = {
+            task: [score_by_key[(task, episode)] for episode in range(10, 50)]
+            for task in range(10)
+        }
+        by_task_ranks = {
+            task: [rank_by_key[(task, episode)] for episode in range(10, 50)]
+            for task in range(10)
+        }
+
+        draws = int(FROZEN_GATES["hierarchical_resampling_draws"])
         score_ci = hierarchical_bootstrap_ci(by_task_scores, 2026082100 + seed, draws)
         rank_ci = hierarchical_bootstrap_ci(by_task_ranks, 2026082200 + seed, draws)
         task_mean_scores = {
@@ -422,10 +550,22 @@ def main() -> None:
         )
         positive_task_means = sum(value > 0 for value in task_mean_scores.values())
         checks = {
-            "semantic_score_bootstrap_lower_above_zero": score_ci[0] > 0.0,
-            "at_least_eight_positive_task_means": positive_task_means >= 8,
-            "mean_specificity_rank_at_least_0p75": float(ranks.mean()) >= 0.75,
-            "specificity_rank_bootstrap_lower_above_0p50": rank_ci[0] > 0.50,
+            "semantic_score_resampling_lower_above_zero": score_ci[0]
+            > float(
+                FROZEN_GATES[
+                    "semantic_mean_hierarchical_resampling_lower_strictly_above_m"
+                ]
+            ),
+            "at_least_eight_positive_task_means": positive_task_means
+            >= int(FROZEN_GATES["minimum_positive_task_means"]),
+            "mean_specificity_rank_at_least_0p75": float(ranks.mean())
+            >= float(FROZEN_GATES["minimum_mean_specificity_rank"]),
+            "specificity_rank_resampling_lower_above_0p50": rank_ci[0]
+            > float(
+                FROZEN_GATES[
+                    "specificity_rank_hierarchical_resampling_lower_strictly_above"
+                ]
+            ),
         }
         validated[seed] = {
             "result": str(path),
@@ -434,12 +574,12 @@ def main() -> None:
             "checkpoint_sha256": identity["checkpoint_sha256"],
             "trials": len(scores),
             "mean_semantic_score_m": float(scores.mean()),
-            "semantic_score_95pct_hierarchical_bootstrap_ci_m": score_ci,
+            "semantic_score_95pct_hierarchical_resampling_interval_m": score_ci,
             "fraction_semantic_score_positive": float((scores > 0).mean()),
             "positive_task_means": positive_task_means,
             "task_mean_semantic_score_m": task_mean_scores,
             "mean_specificity_rank": float(ranks.mean()),
-            "specificity_rank_95pct_hierarchical_bootstrap_ci": rank_ci,
+            "specificity_rank_95pct_hierarchical_resampling_interval": rank_ci,
             "task_mean_specificity_rank": task_mean_ranks,
             "mean_empty_prompt_displacement_norm_m": float(np.mean(empty_norms)),
             "gate_checks": checks,
@@ -452,7 +592,7 @@ def main() -> None:
         raise RuntimeError("The three frozen checkpoint seeds are not all represented")
     pooled_scores = np.concatenate([validated[seed]["_scores"] for seed in range(3)])
     pooled_ranks = np.concatenate([validated[seed]["_ranks"] for seed in range(3)])
-    draws = int(FROZEN_GATES["bootstrap_draws"])
+    draws = int(FROZEN_GATES["hierarchical_resampling_draws"])
     pooled_score_ci = checkpoint_stratified_bootstrap_ci(
         {seed: validated[seed]["_scores"] for seed in range(3)},
         2026082300,
@@ -472,7 +612,7 @@ def main() -> None:
         }
     overall_pass = all(row["passes_frozen_gate"] for row in checkpoint_rows.values())
     output = {
-        "schema": "xvla-local-instruction-specificity-summary-v1",
+        "schema": "xvla-local-instruction-specificity-summary-v2",
         "protocol": PROTOCOL,
         "frozen_gates": FROZEN_GATES,
         "identity_validated": True,
@@ -481,25 +621,33 @@ def main() -> None:
         "cache_sha256": EXPECTED_CACHE_SHA256,
         "provenance_job_id": EXPECTED_PROVENANCE_JOB_ID,
         "provenance_result_sha256": provenance_hash,
-        "summary_source_sha256": file_sha256(Path(__file__).resolve()),
+        "summary_source_sha256": summary_source_sha256,
         "checkpoint_results": checkpoint_rows,
         "pooled_descriptive_only": {
             "trials": int(len(pooled_scores)),
             "mean_semantic_score_m": float(pooled_scores.mean()),
-            "semantic_score_95pct_checkpoint_stratified_bootstrap_ci_m": pooled_score_ci,
+            "semantic_score_95pct_paired_checkpoint_resampling_interval_m": pooled_score_ci,
             "fraction_semantic_score_positive": float((pooled_scores > 0).mean()),
             "mean_specificity_rank": float(pooled_ranks.mean()),
-            "specificity_rank_95pct_checkpoint_stratified_bootstrap_ci": pooled_rank_ci,
+            "specificity_rank_95pct_paired_checkpoint_resampling_interval": pooled_rank_ci,
         },
+        "interval_scope": (
+            "Intervals are empirical hierarchical stability intervals over the finite "
+            "canonical task-state set, not population confidence intervals."
+        ),
         "claim_if_passed": (
-            "At fixed canonical LIBERO-Object observations, changing the object noun causes "
-            "a replicated, target-aligned eight-action local motor response beyond matched "
-            "absent-object language prompts."
+            "Across three specified legacy chi-ViT checkpoints and canonical LIBERO-Object "
+            "states held out from intervention development, replacing the task target phrase "
+            "with five prespecified co-present object phrases produces, on average, a "
+            "differential eight-action end-effector displacement along the corresponding "
+            "target-versus-distractor directions. The state-level effect is larger than "
+            "typical contrasts among four truly absent object phrases."
         ),
         "claim_boundaries": (
-            "This does not establish BDDL or counterfactual task success, robust instruction "
-            "grounding, compositional or zero-shot language understanding, broad-suite "
-            "generalization, or a benefit unique to tensor decomposability."
+            "This does not establish absolute motion toward either named object, bidirectional "
+            "noun selection, BDDL or counterfactual task success, robust instruction grounding, "
+            "compositional or zero-shot language understanding, broad-suite generalization, "
+            "a practically meaningful effect size, or a benefit unique to decomposability."
         ),
     }
     write_json(args.output, output)

@@ -3,7 +3,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=12:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --output=/work/joy/x-vla-workshop/logs/%x_%j.out
 #SBATCH --error=/work/joy/x-vla-workshop/logs/%x_%j.err
 
