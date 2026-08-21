@@ -69,6 +69,7 @@ def parse_args() -> argparse.Namespace:
         choices=("chi", "conventional", "chi_rms", "conventional_rational"),
         default="chi",
     )
+    parser.add_argument("--vision-encoder", choices=("vit", "conv"), default="vit")
     parser.add_argument(
         "--suite",
         choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
@@ -187,6 +188,7 @@ def load_cache_statistics(cache_path: Path, horizon: int) -> dict[str, Any]:
 
 def make_config(
     architecture: str,
+    vision_encoder: str,
     vocab_size: int,
     state_dim: int,
     action_dim: int,
@@ -209,7 +211,7 @@ def make_config(
         "action_horizon": horizon,
         "action_dim": action_dim,
         "action_head": "linear",
-        "vision_encoder": "vit",
+        "vision_encoder": vision_encoder,
     }
     if architecture in ("conventional", "conventional_rational"):
         kwargs.update(
@@ -235,6 +237,7 @@ def load_model(
 ) -> ChiVLA:
     config = make_config(
         args.architecture,
+        args.vision_encoder,
         vocab_size,
         stats["state_dim"],
         stats["action_dim"],
@@ -1634,6 +1637,7 @@ def main() -> None:
     result: dict[str, Any] = {
         "mode": args.mode,
         "architecture": args.architecture,
+        "vision_encoder": args.vision_encoder,
         "suite": args.suite,
         "training_suite": args.training_suite,
         "checkpoint": str(args.checkpoint),
