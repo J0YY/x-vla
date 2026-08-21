@@ -26,6 +26,7 @@ EXPECTED_SUITES = (
     "libero_goal",
     "libero_10",
 )
+RECIPE_VERSION = "multisuite_balanced_v1"
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,6 +46,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ema-decay", type=float, default=0.999)
     parser.add_argument("--recovery-output", type=Path)
     parser.add_argument("--recovery-interval", type=int, default=10000)
+    parser.add_argument(
+        "--resume-recovery",
+        action="store_true",
+        help="Explicitly resume from --recovery-output after full recipe validation.",
+    )
     return parser.parse_args()
 
 
@@ -193,6 +199,7 @@ def main() -> None:
     rng = np.random.default_rng(args.seed)
 
     manifest_hash = file_sha256(args.manifest)
+    trainer_hash = file_sha256(Path(__file__))
     manifest = load_manifest(args.manifest)
     vocab = {str(token): int(index) for token, index in manifest["vocab"].items()}
     encode = build_encoder(vocab)
@@ -231,7 +238,17 @@ def main() -> None:
 
     start_step = 0
     recovered_elapsed = 0.0
-    if args.recovery_output is not None and args.recovery_output.exists():
+    recovery_exists = (
+        args.recovery_output is not None and args.recovery_output.exists()
+    )
+    if recovery_exists and not args.resume_recovery:
+        raise RuntimeError(
+            f"Recovery file already exists at {args.recovery_output}. "
+            "Pass --resume-recovery only for an intentional continuation."
+        )
+    if args.resume_recovery and not recovery_exists:
+        raise RuntimeError("--resume-recovery requested but recovery file is absent")
+    if recovery_exists:
         recovery = torch.load(
             args.recovery_output, map_location="cpu", weights_only=False
         )
@@ -240,14 +257,28 @@ def main() -> None:
             recovery.get("vision_encoder"),
             recovery.get("seed"),
             recovery.get("steps"),
+            recovery.get("batch_size"),
+            recovery.get("lr"),
+            recovery.get("ema_decay"),
+            recovery.get("res"),
+            recovery.get("horizon"),
             recovery.get("manifest_sha256"),
+            recovery.get("recipe_version"),
+            recovery.get("trainer_sha256"),
         )
         expected_identity = (
             args.architecture,
             args.vision_encoder,
             args.seed,
             args.steps,
+            args.batch_size,
+            args.lr,
+            args.ema_decay,
+            int(manifest["res"]),
+            int(manifest["horizon"]),
             manifest_hash,
+            RECIPE_VERSION,
+            trainer_hash,
         )
         if recovery_identity != expected_identity:
             raise RuntimeError(
@@ -315,7 +346,14 @@ def main() -> None:
                     "vision_encoder": args.vision_encoder,
                     "seed": args.seed,
                     "steps": args.steps,
+                    "batch_size": args.batch_size,
+                    "lr": args.lr,
+                    "ema_decay": args.ema_decay,
+                    "res": int(manifest["res"]),
+                    "horizon": int(manifest["horizon"]),
                     "manifest_sha256": manifest_hash,
+                    "recipe_version": RECIPE_VERSION,
+                    "trainer_sha256": trainer_hash,
                     "completed_steps": completed_steps,
                     "elapsed_s": recovered_elapsed + time.perf_counter() - started,
                     "model": model.state_dict(),
@@ -355,6 +393,8 @@ def main() -> None:
             "checkpoint": str(args.checkpoint_output),
             "checkpoint_sha256": checkpoint_hash,
             "manifest_sha256": manifest_hash,
+            "recipe_version": RECIPE_VERSION,
+            "trainer_sha256": trainer_hash,
         }
     )
     atomic_json(args.metadata_output, metadata)
@@ -368,6 +408,10 @@ def main() -> None:
         "steps": args.steps,
         "batch_size": args.batch_size,
         "suite_batch_size": per_suite,
+        "lr": args.lr,
+        "res": int(manifest["res"]),
+        "horizon": int(manifest["horizon"]),
+        "resumed_from_step": start_step,
         "sample_counts": sample_counts,
         "parameters": model.num_params(),
         "elapsed_s": elapsed,
@@ -381,6 +425,9 @@ def main() -> None:
         "checkpoint_sha256": checkpoint_hash,
         "metadata": str(args.metadata_output),
         "manifest": str(args.manifest),
+        "manifest_sha256": manifest_hash,
+        "recipe_version": RECIPE_VERSION,
+        "trainer_sha256": trainer_hash,
         "ema_decay": args.ema_decay,
     }
     atomic_json(args.result_output, result)

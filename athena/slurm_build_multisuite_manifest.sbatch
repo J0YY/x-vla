@@ -10,6 +10,7 @@ set -euo pipefail
 
 source /athenahomes/joy/miniconda3/etc/profile.d/conda.sh
 conda activate safesae-openvla
+export HF_HOME=/work/joy/hf_cache
 export PYTHONPATH="/work/joy/x-vla-workshop:/athenahomes/joy/LIBERO:${PYTHONPATH:-}"
 
 cd /work/joy/x-vla-workshop

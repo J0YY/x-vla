@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pickle
 import time
@@ -13,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from athena.libero_dataset_metadata import file_sha256, load_dataset_task_languages
 from athena.run_xvla_experiment import build_vocab, load_suite, make_config, task_languages
 from xvla.models.vla import ChiVLA
 from xvla.train.train_lm import TrainConfig, _lr_at
@@ -30,6 +32,11 @@ def parse_args() -> argparse.Namespace:
         choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
         default="libero_object",
     )
+    parser.add_argument(
+        "--vision-encoder",
+        choices=("vit", "conv"),
+        default="vit",
+    )
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--checkpoint-output", type=Path, required=True)
     parser.add_argument("--result-output", type=Path, required=True)
@@ -40,6 +47,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ema-decay", type=float, default=0.999)
     parser.add_argument("--res", type=int, default=64)
     parser.add_argument("--horizon", type=int, default=8)
+    parser.add_argument("--init-checkpoint", type=Path)
+    parser.add_argument(
+        "--init-suite",
+        choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
+        default="libero_object",
+        help="Suite whose vocabulary was used by --init-checkpoint.",
+    )
     return parser.parse_args()
 
 
@@ -94,6 +108,58 @@ def load_training_data(args, tasks, encode):
         "sample_count": len(samples),
         "state_dim": int(states_array.shape[-1]),
         "action_dim": int(actions_array.shape[-1]),
+        "normalization": {
+            "action_mean": action_mean.tolist(),
+            "action_std": action_std.tolist(),
+            "state_mean": state_mean.tolist(),
+            "state_std": state_std.tolist(),
+        },
+    }
+
+
+def initialize_from_checkpoint(
+    model: ChiVLA,
+    checkpoint: Path,
+    source_suite: str,
+    target_vocab: dict[str, int],
+) -> dict[str, object]:
+    """Load a same-architecture checkpoint and remap shared vocabulary rows."""
+    state_dict = torch.load(checkpoint, map_location="cuda", weights_only=True)
+    source_embedding = state_dict.pop("tok_emb.weight")
+    incompatibility = model.load_state_dict(state_dict, strict=False)
+    if incompatibility.missing_keys != ["tok_emb.weight"]:
+        raise RuntimeError(
+            f"Unexpected missing warm-start keys: {incompatibility.missing_keys}"
+        )
+    if incompatibility.unexpected_keys:
+        raise RuntimeError(
+            f"Unexpected warm-start keys: {incompatibility.unexpected_keys}"
+        )
+    source_official = task_languages(load_suite(source_suite))
+    source_tasks, source_task_metadata = load_dataset_task_languages(
+        source_suite, source_official
+    )
+    source_vocab, _ = build_vocab(source_tasks)
+    if source_embedding.shape[0] != len(source_vocab):
+        raise RuntimeError(
+            f"Source embedding has {source_embedding.shape[0]} rows, "
+            f"but pinned source vocabulary has {len(source_vocab)} tokens"
+        )
+    shared_tokens = sorted(set(source_vocab) & set(target_vocab))
+    with torch.no_grad():
+        for token in shared_tokens:
+            model.tok_emb.weight[target_vocab[token]].copy_(
+                source_embedding[source_vocab[token]]
+            )
+    return {
+        "source_suite": source_suite,
+        "source_checkpoint_sha256": file_sha256(checkpoint),
+        "source_vocab_size": len(source_vocab),
+        "target_vocab_size": len(target_vocab),
+        "shared_vocab_tokens": len(shared_tokens),
+        "shared_vocab_fraction": len(shared_tokens) / max(len(target_vocab), 1),
+        "shared_tokens": shared_tokens,
+        "source_task_metadata": source_task_metadata,
     }
 
 
@@ -107,9 +173,13 @@ def main() -> None:
     torch.set_float32_matmul_precision("high")
 
     suite = load_suite(args.suite)
-    tasks = task_languages(suite)
+    official_tasks = task_languages(suite)
+    tasks, task_metadata = load_dataset_task_languages(args.suite, official_tasks)
     vocab, encode = build_vocab(tasks)
     data = load_training_data(args, tasks, encode)
+    cache_hash = file_sha256(args.cache)
+    vocab_serialized = json.dumps(vocab, sort_keys=True, separators=(",", ":"))
+    vocab_hash = hashlib.sha256(vocab_serialized.encode()).hexdigest()
     config = make_config(
         args.architecture,
         len(vocab),
@@ -117,8 +187,17 @@ def main() -> None:
         data["action_dim"],
         args.res,
         args.horizon,
+        vision_encoder=args.vision_encoder,
     )
     model = ChiVLA(config).cuda()
+    initialization = None
+    if args.init_checkpoint is not None:
+        initialization = initialize_from_checkpoint(
+            model,
+            args.init_checkpoint,
+            args.init_suite,
+            vocab,
+        )
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05
     )
@@ -173,10 +252,14 @@ def main() -> None:
     temporary_checkpoint.replace(args.checkpoint_output)
     result = {
         "architecture": args.architecture,
+        "vision_encoder": args.vision_encoder,
         "suite": args.suite,
         "seed": args.seed,
         "steps": args.steps,
         "batch_size": args.batch_size,
+        "lr": args.lr,
+        "res": args.res,
+        "horizon": args.horizon,
         "samples": data["sample_count"],
         "parameters": model.num_params(),
         "elapsed_s": elapsed,
@@ -187,7 +270,17 @@ def main() -> None:
         "last_loss": last_loss,
         "gpu": torch.cuda.get_device_name(0),
         "checkpoint": str(args.checkpoint_output),
+        "cache": str(args.cache),
+        "cache_sha256": cache_hash,
+        "vocab": vocab,
+        "vocab_sha256": vocab_hash,
+        "normalization": data["normalization"],
         "ema_decay": args.ema_decay,
+        "init_checkpoint": (
+            str(args.init_checkpoint) if args.init_checkpoint is not None else None
+        ),
+        "initialization": initialization,
+        "task_metadata": task_metadata,
     }
     args.result_output.parent.mkdir(parents=True, exist_ok=True)
     args.result_output.write_text(json.dumps(result, indent=2) + "\n")

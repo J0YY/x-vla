@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from athena.libero_dataset_metadata import load_dataset_task_languages
 from athena.run_xvla_experiment import build_vocab, load_suite, task_languages
 
 
@@ -162,7 +163,10 @@ def main() -> None:
     for suite_name, cache_path in suite_caches:
         print(f"Reading {suite_name} from {cache_path}", flush=True)
         moments = cache_moments(cache_path, args.horizon)
-        languages = task_languages(load_suite(suite_name))
+        official_languages = task_languages(load_suite(suite_name))
+        languages, task_metadata = load_dataset_task_languages(
+            suite_name, official_languages
+        )
         if len(languages) != 10 or set(languages) != set(range(10)):
             raise RuntimeError(f"{suite_name} does not expose exactly tasks 0 through 9")
         if moments["local_tasks"] != list(range(10)):
@@ -194,6 +198,7 @@ def main() -> None:
             "image_shape": moments["image_shape"],
             "state_dim": moments["state_dim"],
             "action_dim": moments["action_dim"],
+            "task_metadata": task_metadata,
         }
         if action_sum is None:
             action_sum = moments["action_sum"].copy()

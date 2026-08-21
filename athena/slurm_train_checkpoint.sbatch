@@ -15,6 +15,7 @@ conda activate safesae-openvla
 export MUJOCO_GL=egl
 export PYOPENGL_PLATFORM=egl
 export PYTHONUNBUFFERED=1
+export HF_HOME=/work/joy/hf_cache
 export PYTHONPATH="/work/joy/x-vla-workshop:/athenahomes/joy/LIBERO:${PYTHONPATH:-}"
 
 cd /work/joy/x-vla-workshop

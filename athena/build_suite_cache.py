@@ -14,13 +14,7 @@ import numpy as np
 from datasets import load_dataset
 from PIL import Image
 
-
-DATASETS = {
-    "libero_object": "lerobot/libero_object_image",
-    "libero_spatial": "lerobot/libero_spatial_image",
-    "libero_goal": "lerobot/libero_goal_image",
-    "libero_10": "lerobot/libero_10_image",
-}
+from athena.libero_dataset_metadata import DATASETS
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,8 +30,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     started = time.perf_counter()
-    dataset_name = DATASETS[args.suite]
-    stream = load_dataset(dataset_name, split="train", streaming=True)
+    dataset_name, dataset_revision = DATASETS[args.suite]
+    stream = load_dataset(
+        dataset_name,
+        revision=dataset_revision,
+        split="train",
+        streaming=True,
+    )
     frames = []
     task_counts: Counter[int] = Counter()
     episode_counts: Counter[int] = Counter()
@@ -75,6 +74,7 @@ def main() -> None:
     result = {
         "suite": args.suite,
         "dataset": dataset_name,
+        "dataset_revision": dataset_revision,
         "frames": len(frames),
         "resolution": args.res,
         "episodes": len(episode_counts),
