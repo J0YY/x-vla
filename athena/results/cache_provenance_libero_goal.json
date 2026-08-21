@@ -1,0 +1,76 @@
+{
+  "cache": {
+    "canonical_content_sha256": "8ae09b3b59c72d17b53b074f16b9a06a105671ffb2ae28ec64da055d2403245a",
+    "frames": 52042,
+    "path": "artifacts/libero_goal_frames_100000_64.pkl",
+    "resolution": 64,
+    "sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550"
+  },
+  "comparison": {
+    "cached_frames_compared": 52042,
+    "max_abs_difference": {
+      "action": 0.0,
+      "resized_image": 0.0,
+      "state": 0.0
+    },
+    "mismatch_counts": {
+      "action": 0,
+      "episode_index": 0,
+      "frame_index": 0,
+      "language_join": 0,
+      "resized_image": 0,
+      "source_missing_frame": 0,
+      "state": 0,
+      "task_id": 0
+    },
+    "mismatch_examples": []
+  },
+  "elapsed_s": 1549.0373339396901,
+  "implementation": {
+    "array_comparison": "exact dtype, shape, and contiguous bytes after cache casts",
+    "canonical_record_schema": "libero-cache-v1",
+    "datasets_version": "3.6.0",
+    "numpy_version": "1.26.4",
+    "pillow_version": "12.1.1",
+    "resize": "PIL.Image.resize((64, 64)) with library default resampling",
+    "source_feature_schema": "{'observation.images.image': Image(mode=None, decode=True, id=None), 'observation.state': Sequence(feature=Value(dtype='float32', id=None), length=8, id=None), 'action': Sequence(feature=Value(dtype='float32', id=None), length=7, id=None), 'episode_index': Value(dtype='int64', id=None), 'frame_index': Value(dtype='int64', id=None), 'task_index': Value(dtype='int64', id=None)}",
+    "verifier_source_sha256": "9dc1c6d643d318afa2069c5244079d198beb3b7a20eb049e28f9e7103f887894"
+  },
+  "limits": {
+    "expected_cache_frames": 52042,
+    "max_cache_frames": 100000,
+    "mismatch_example_limit": 20,
+    "source_extra_probe_records": 1,
+    "source_records_read_max": 52043
+  },
+  "metadata": {
+    "dataset_to_official_task": {
+      "0": 8,
+      "1": 9,
+      "2": 3,
+      "3": 6,
+      "4": 2,
+      "5": 5,
+      "6": 7,
+      "7": 1,
+      "8": 4,
+      "9": 0
+    },
+    "file": "meta/tasks.parquet",
+    "language_set_matches_official": true,
+    "repository": "lerobot/libero_goal_image",
+    "revision": "91a97115558b5b611200a432d9c82e4f30991b60",
+    "sha256": "80f750568ef991a406e9e1ffcdfe638eaa2dcf452c5e69c1b911c7dae0de8986"
+  },
+  "schema": "xvla-cache-provenance-v1",
+  "source": {
+    "canonical_content_sha256": "8ae09b3b59c72d17b53b074f16b9a06a105671ffb2ae28ec64da055d2403245a",
+    "content_hashes_match": true,
+    "has_additional_frame_after_cache": false,
+    "repository": "lerobot/libero_goal_image",
+    "revision": "91a97115558b5b611200a432d9c82e4f30991b60",
+    "split": "train"
+  },
+  "suite": "libero_goal",
+  "verified": true
+}
