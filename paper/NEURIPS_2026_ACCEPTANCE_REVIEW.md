@@ -24,27 +24,38 @@ update into exhaustive vision, instruction, robot-state, and action-query source
 task-balanced inputs per checkpoint. The partition magnitudes are descriptive and do not establish
 causal importance or grounding.
 
-Estimated acceptance bands after integrating the corrected fixed-rank result, the complete
-convolutional reconstruction ladder, and the exact ViT modality audit:
+A separate prospectively frozen closed-loop test now shows bounded instruction necessity. Across
+100 unique canonical Object states and three frozen ViT checkpoints, the correct familiar
+instruction succeeds on 247 of 300 checkpoint-state pairs. An observation-verified co-present
+control instruction succeeds on 72 of 300, and an empty instruction succeeds on 78 of 300. The
+paired gaps are 58.3 and 56.3 points. They are positive for every checkpoint aggregate and every
+task aggregate. One-sided exact McNemar tests over the 300 checkpoint-state pairs give
+$p=2.02\times10^{-45}$ and $p=1.52\times10^{-44}$. These pooled tests are not cluster-robust
+inference. A frozen task-stratified state-cluster bootstrap over 100 unique states gives 95 percent
+intervals of 51.0 to 65.7 and 50.0 to 62.3 points. This is a behavioral evidence package, not an
+additional structural certificate.
 
-- Neural Network Artifacts: 87 to 93 percent. This is the strongest present fit because the paper
-  treats trained weights as an inspectable artifact, releases a five-certificate verifier, and now
-  distinguishes operator, block, and action-interface evidence in an eight-page full-paper draft.
-- VLM4RWD: 71 to 83 percent. Exact four-group attention reconstruction provides a concrete
-  vision-language-state-action diagnostic, but the reported energy shares and prompt permutations
-  are descriptive and do not establish robust instruction grounding.
-- Robot Learning Workshop: 54 to 68 percent. Full-block fidelity strengthens the architecture
-  claim, but it adds little evidence for zero-shot behavior, cross-suite generalization, or
-  physical deployment, which are more central to this venue.
+Estimated acceptance bands after integrating the instruction-necessity result:
+
+- Neural Network Artifacts: 88 to 94 percent. The instruction study adds one prospectively specified
+  behavioral audit, but it does not strengthen the algebraic certificate itself. The increase is
+  intentionally modest to avoid counting the structural and behavioral packages as duplicate
+  support for the same claim.
+- VLM4RWD: 78 to 88 percent. The new paired result directly answers whether the familiar-task policy
+  needs its instruction for high closed-loop success. It does not establish that the policy follows
+  a counterfactual goal, handles unseen language, or resolves conflicting visual and linguistic cues.
+- Robot Learning Workshop: 58 to 71 percent. Familiar-task instruction necessity improves the
+  behavioral story, but the single-suite specialist setting still limits fit for a venue centered on
+  broader robot-learning behavior and deployment.
 
 The largest remaining reviewer objection differs by venue:
 
 - Neural Network Artifacts: the strongest complete-block certificate is input-conditioned,
   per-block, and evaluated on the convolutional checkpoint family, while capability is anchored by
   the ViT family. There is still no sequential end-to-end contraction of a capable ViT policy.
-- VLM4RWD: the exact modality ledger measures where attention-update energy is concentrated, not
-  whether language is causally necessary. Fixed familiar prompts and a 5.1 percent instruction
-  energy share leave grounding as the dominant unresolved question.
+- VLM4RWD: the paired controls establish familiar-task instruction necessity for the original goal,
+  not counterfactual goal selection. All tested task instructions appeared during policy training,
+  and co-presence in simulator fields does not guarantee unoccluded camera visibility.
 - Robot Learning Workshop: all validated closed-loop capability remains on one specialist
   LIBERO-Object suite. The paper does not yet demonstrate the zero-shot, generalist, cross-suite,
   or physical-robot behavior emphasized by the workshop.
@@ -56,56 +67,57 @@ paired resampling interval from $-6.6$ to $+1.4$ points. The supported result is
 structured low-dimensional visual bottleneck relative to random projectors, not a uniquely
 action-Jacobian-specific mechanism.
 
-If the prospectively frozen full-horizon instruction-necessity test passes its checkpoint, task,
-paired-effect, and clustered-sensitivity gates, the estimated bands become:
-
-- Neural Network Artifacts: 89 to 95 percent.
-- VLM4RWD: 78 to 88 percent.
-- Robot Learning Workshop: 60 to 72 percent.
-
-Only after that prerequisite passes, a fresh gated two-direction goal-by-prompt intervention may
-run. A clean factorial pass could move VLM4RWD into roughly the 85 to 92 percent range. A strong
-four-suite generalist that passes both the capability and 85 percent specialist-retention gates
-could move Robot Learning Workshop into roughly the 85 to 91 percent range. With all
-venue-specific gates passing, Neural Network Artifacts is estimated at 90 to 95 percent. These
-outcomes would materially strengthen the papers, but they still cannot guarantee a review
-decision.
+The instruction prerequisite has passed. A fresh gated counterfactual goal-following study is now
+running on independent canonical episodes 20 to 29. It was designed before the instruction
+necessity outcomes and does not revive the failed local-specificity target-swap graph. A clean
+factorial pass could move VLM4RWD into roughly the 84 to 91 percent range. A strong four-suite
+generalist that also passes the 85 percent specialist-retention gate could move Robot Learning
+Workshop into roughly the 84 to 90 percent range. A sequential full-forward certificate on the
+capable ViT family would be the most venue-aligned remaining gain for Neural Network Artifacts.
+No combination of these outcomes can guarantee a review decision.
 
 ## Evidence that currently carries the paper
 
 1. Three independently trained 20.1M ViT policies reach 426/500, 404/500, and 450/500 on
    LIBERO-Object, for $85.3\%\pm4.6\%$. A fixed elementwise prediction-mean ensemble reaches
    467/500, or 93.4 percent, with three forward passes. All $2{,}000$ episode rows are immutable.
-2. On three separate convolutional checkpoints and the same sixteen deterministic inputs per
+2. The prospectively frozen instruction study contains 100 unique canonical states, 300
+   checkpoint-state pairs, and 900 full 280-step rollouts. Correct, co-present control, and empty
+   instructions succeed on 247/300, 72/300, and 78/300 pairs. Both paired gaps exceed 56 points,
+   pass the exact paired and state-cluster bootstrap gates, and remain positive for every checkpoint
+   aggregate and task aggregate. Fifteen immutable raw shards, the manifest, smoke, strict summary,
+   and verifier are released.
+3. On three separate convolutional checkpoints and the same sixteen deterministic inputs per
    checkpoint, independent certificates reconstruct all 4,608 joint-attention head-input cases,
    all 384 joint-FFN module-input cases, and all 384 complete joint-block input cases. Worst
    relative errors are $6.36\times10^{-16}$, $1.3871\times10^{-15}$, and
    $1.5024\times10^{-7}$ against frozen $10^{-6}$, $10^{-10}$, and $10^{-4}$ gates.
-3. The corrected-input ViT exact-attention records name the same checkpoint artifacts and
+4. The corrected-input ViT exact-attention records name the same checkpoint artifacts and
    numerically replay all 12 modules on one fixed cached input per checkpoint, covering 36
    module-input cases and 384 architectural heads. Maximum relative error is
    $2.016119\times10^{-7}$. A standard-library verifier binds all raw result, cache, provenance,
    runtime, and source identities and recomputes the certificate.
-4. On 128 deterministic, official-task-balanced inputs for each of the three ViT capability
+5. On 128 deterministic, official-task-balanced inputs for each of the three ViT capability
    checkpoints, exhaustive vision, instruction, robot-state, and action-query groups reconstruct
    all 36,864 action-query head-input updates and 3,072 projected module-input cases. Maximum
    relative error is $5.0741\times10^{-7}$ against a frozen $10^{-6}$ gate. Mean coherent-energy
    shares are 67.7 percent vision, 19.2 percent robot state, 7.9 percent action query, and 5.1
    percent instruction. These shares are descriptive rather than causal.
-5. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
+6. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
    equal-rank random controls. The median fidelity ratio is 2.44.
-6. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
+7. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
    $267/272$ baseline successes. Three equal-rank random projectors retain $37/272$, $9/272$, and
    $22/272$. A standard-library verifier recomputes all 12 raw files and paired intervals.
-7. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
+8. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
    positive, and action NRMSE from recomputing only the RationalNorm scales in float64 is at most
    $2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
-8. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
+9. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
    linear, or rational, rather than hidden incompatible nonlinear blocks.
-9. Standard-library artifact verifiers check the immutable capability and structural files,
+10. Standard-library artifact verifiers check the immutable capability and structural files,
    recompute all success totals, and independently recompute all five structural certificate
    decisions. The structural package binds fifteen raw JSONs, five summaries, and two exact source
-   snapshots through an immutable SHA-256 manifest.
+   snapshots through an immutable SHA-256 manifest. The separate instruction package binds fifteen
+   rollout shards, its canonical-state manifest, smoke, and strict passing summary.
 
 ## Integrity correction
 
@@ -136,12 +148,15 @@ outcome. Corrected replacement experiments are already queued under new result n
 4. **No unique ranking mechanism.** The corrected intervention supports a structured low-dimensional
    visual bottleneck relative to random projectors. It does not show that action-Jacobian ranking is
    superior to a matched activation-energy basis.
-5. **Instruction grounding.** Fixed LIBERO instructions do not establish robust language use.
+5. **Bounded instruction evidence.** The paired study establishes necessity for familiar Object-suite
+   instructions and the original task goal. It does not establish counterfactual goal following,
+   paraphrase robustness, unseen-object composition, or zero-shot language use.
 6. **Ensemble cost.** The strongest recorded capability number uses three forward passes.
 7. **Artifact readiness.** The anonymous package now verifies the structural certificates,
    capability protocol, $2{,}000$ capability episode rows, corrected visual-bottleneck episode
-   matrix, totals, paired intervals, and immutable hashes. The remaining artifact work is the
-   venue-specific evidence as those frozen runs finish.
+   matrix, and all $900$ instruction-control rollouts. It recomputes the instruction totals, exact
+   paired tests, clustered sensitivity intervals, structural decisions, and immutable hashes. The
+   remaining artifact work is the venue-specific evidence as frozen runs finish.
 
 ## Frozen acceptance-critical experiments
 
@@ -158,30 +173,42 @@ The following protocols were fixed before their corrected outcomes were observed
    bound above zero while the energy basis preserves raw activations at least as well.
 3. **Independent encoder family.** Repeat the corrected fixed rank-96 protocol with three verified
    convolutional checkpoints. Report it separately from the ViT result.
-4. **Local instruction specificity.** On held-out canonical Object states, compare eight-action
+4. **Local instruction specificity, not passed.** On canonical Object states, compare eight-action
    displacement under the target prompt, five co-present-object prompts, and four absent-object
-   prompts across three fixed ViT checkpoints. A pass is required before the target-swap graph can
-   start.
-5. **Gated counterfactual target swap.** If local specificity passes, execute all 50 prespecified
-   target-only BDDL rewrites on episodes 40 to 49 across the same three checkpoints. This is a new
-   closed-loop intervention but not an independent-state replication of the prerequisite.
-6. **Corrected four-suite generalist.** Train chi and conventional policies jointly on Object,
+   prompts across three fixed ViT checkpoints. Mean specificity ranks are 0.570, 0.586, and 0.592,
+   below the frozen 0.75 requirement in every checkpoint. The pooled descriptive rank is 0.583.
+   The positive semantic displacement does not override this failed comparator gate.
+5. **Gated counterfactual target swap, not run.** The prerequisite in item 4 did not pass, so the
+   frozen target-swap graph failed closed before any rollout. It supplies no evidence and is not
+   revived by the later instruction-necessity study.
+6. **Full-horizon instruction necessity, passed.** This distinct endpoint was designed after the
+   local displacement-rank gate became impossible and before its own outcomes. On episodes 40 to
+   49, all three checkpoints receive correct, deterministic co-present control, and empty
+   instructions from identical physical starts. Correct success is 247/300, compared with 72/300
+   and 78/300. All nine frozen gates pass. The endpoint shares canonical states with the failed
+   local study but uses a new full-horizon original-goal outcome, so it is not a rescue reanalysis.
+7. **Conditional counterfactual goal following, running.** This protocol was designed after the
+   local rank failure and before the instruction-necessity outcomes. It uses independent episodes
+   20 to 29, all prespecified co-present target swaps, three frozen ViT checkpoints, paired original
+   and counterfactual goals, and full closed-loop success. It runs only because item 6 passed. It
+   does not revive item 5.
+8. **Corrected four-suite generalist.** Train chi and conventional policies jointly on Object,
    Spatial, Goal, and LIBERO-10 for 160,000 updates across three seeds. The primary chi gate is at
    least 70 percent suite-macro success, every suite at least 50 percent, at least 32 of 40 tasks at
    50 percent or better, and every chi seed at least 60 percent.
-7. **Specialist-retention control.** Train corrected seed-0 chi specialists for all four suites and
+9. **Specialist-retention control.** Train corrected seed-0 chi specialists for all four suites and
    require generalist seed 0 to retain at least 85 percent of their four-suite task-macro success.
-8. **Pinned-cache provenance.** Compare cached task IDs, language joins, states, actions, and resized
+10. **Pinned-cache provenance.** Compare cached task IDs, language joins, states, actions, and resized
    images against the pinned LeRobot revisions and record both cache and metadata hashes. This
    audit is complete: all 271,996 frames across the four suites match exactly with zero field
    mismatches.
-9. **Joint-FFN certificate, passed.** All $384$ module-input cases are finite. The worst relative L2
+11. **Joint-FFN certificate, passed.** All $384$ module-input cases are finite. The worst relative L2
    error is $1.3871\times10^{-15}$ against the frozen $10^{-10}$ gate.
-10. **Complete joint-block certificate, passed.** Independent RationalNorm, attention, residual,
+12. **Complete joint-block certificate, passed.** Independent RationalNorm, attention, residual,
     and bilinear-FFN equations reconstruct all $384$ block-input cases with worst relative L2 error
     $1.5024\times10^{-7}$ against the frozen $10^{-4}$ gate. This tests input-conditioned,
     per-block composition, not a sequential end-to-end policy contraction.
-11. **Exact modality-contribution audit, passed.** Exhaustive source groups reconstruct all
+13. **Exact modality-contribution audit, passed.** Exhaustive source groups reconstruct all
     $36{,}864$ action-query head-input cases and $3{,}072$ projected module-input cases with maximum
     relative L2 error $5.0741\times10^{-7}$ against the frozen $10^{-6}$ gate. Group magnitudes and
     familiar-prompt permutations remain descriptive and do not establish grounding or causal
@@ -199,8 +226,9 @@ not a clean rank-selection holdout. They also appeared during policy training.
 ## Submission recommendation
 
 Submit Neural Network Artifacts first if workshop policies prohibit overlapping submissions. It
-has the clearest reviewer contract and is already in the requested high-probability band. VLM4RWD
-needs a clean instruction-specificity result to reach the same band. Robot Learning Workshop needs the
-four-suite generalist and specialist-retention result to approach the requested 85 to 90 percent
+has the clearest reviewer contract and is already in the highest current band. VLM4RWD now has a
+strong familiar-task instruction-necessity result, while a counterfactual goal-following pass would
+address its largest remaining behavioral objection. Robot Learning Workshop still needs the
+four-suite generalist and specialist-retention results to approach the requested 85 to 90 percent
 band. Before any submission, lock one evaluation environment, publish the anonymous artifact, and
 run a final claim-to-artifact and citation audit.
