@@ -1,0 +1,37 @@
+{
+  "schema": "anonymous-instruction-embedding-ablation-artifact-v1",
+  "artifact_version": 1,
+  "files": {
+    "athena/results/instruction_embedding_ablation_v1_manifest.json": "a91ce8bfc4b296e4a84503db63ad2b34f1c6509a9fb5f3fad74cbfd2bafb748d",
+    "athena/results/instruction_embedding_ablation_v1_s0_t0_2.json": "c91216fddd538f371bf6c76f9967e3d6f599d1dbb975585932cf9d071badc9e0",
+    "athena/results/instruction_embedding_ablation_v1_s0_t2_4.json": "06f063ce960308b9acb6a7408145206d76dc3e91bdcdc0f50b2b9f550dc25a4c",
+    "athena/results/instruction_embedding_ablation_v1_s0_t4_6.json": "7a396eb71757b8cea4a82c477c7e5cf39b3d01a1f31c4fb27e639c4857b33dc6",
+    "athena/results/instruction_embedding_ablation_v1_s0_t6_8.json": "89fb1ede8f487929c2f3f0323d57da5ec0b1ae7c236f64cbf95df7eac00aa825",
+    "athena/results/instruction_embedding_ablation_v1_s0_t8_10.json": "596dd32868d1b1bf11775d2bb0ebe8aa9e3c278a8452d36f41eade29c17c151d",
+    "athena/results/instruction_embedding_ablation_v1_s1_t0_2.json": "1b4aad87f190ac5938fe714d5bc3684b80940190c6c803b887e312e7e3f3f3ff",
+    "athena/results/instruction_embedding_ablation_v1_s1_t2_4.json": "5c7b0f8598d904ac44daa0ca5d40d26814cf6c100e6c2d4dc180d552a4850910",
+    "athena/results/instruction_embedding_ablation_v1_s1_t4_6.json": "acfd728c8be4b9a5eb345ca62d0763159f378065aa2b38788fda500338aaa444",
+    "athena/results/instruction_embedding_ablation_v1_s1_t6_8.json": "041687208e4ffb5f828b3f573545cff11224c7085e1b75d20234138a6ded9e64",
+    "athena/results/instruction_embedding_ablation_v1_s1_t8_10.json": "fd59df0c56cddb7bb663c8076d8a724217eebb940ede45e4786aefd01500e1e9",
+    "athena/results/instruction_embedding_ablation_v1_s2_t0_2.json": "3ffe10d97289b747f4d639ee5dbe25542ea410d019d053b04ba8de5cae9bb222",
+    "athena/results/instruction_embedding_ablation_v1_s2_t2_4.json": "02256cf872e9900bfe89a63a19b39fb7b5bc22bdc94b4468ba884f14bb63c228",
+    "athena/results/instruction_embedding_ablation_v1_s2_t4_6.json": "0b4909816260f56758a3c6ae250e6f3155ca40fc5d8aba63f7c0560e09262215",
+    "athena/results/instruction_embedding_ablation_v1_s2_t6_8.json": "41fc6d3b65a2e2c6cf147d89c92aa9881beb4c243afde3136c16b459d229ef6f",
+    "athena/results/instruction_embedding_ablation_v1_s2_t8_10.json": "9b9f91a96162852f3790e4fca40af147586f7061f2c191fa228ad7dc16535919",
+    "athena/results/instruction_embedding_ablation_v1_smoke.json": "43fa75a6cb232f47b749f4ee7b1a258251443b8b5825af5718c848aafbda2675",
+    "athena/results/instruction_embedding_ablation_v1_summary.json": "84976425791829d114a04ea467b34f3446c81298862cf803934f40d69260d140"
+  },
+  "expected": {
+    "checkpoint_full_successes": [84, 87, 92],
+    "checkpoint_zeroed_successes": [6, 30, 27],
+    "full_successes": 263,
+    "zeroed_successes": 63,
+    "full_only": 203,
+    "zeroed_only": 3,
+    "paired_gap": 0.6666666666666666,
+    "one_sided_exact_p": 1.416846395002053e-56,
+    "task_gaps": [0.3333333333333333, 0.8666666666666667, 0.7333333333333333, 0.6333333333333333, 0.7333333333333333, 0.6666666666666666, 0.8, 0.6333333333333333, 0.4, 0.8666666666666667],
+    "bootstrap_interval": [0.6166666666666667, 0.7133333333333334],
+    "bootstrap_support_lower_bound": 0.2
+  }
+}

@@ -54,8 +54,9 @@ checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ ca
 per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. Across the three
 checkpoints, a prospectively frozen paired test on $100$ unique familiar-task states finds
 $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a co-present control
-instruction and $78/300=26.0\%$ with an empty instruction. The paired gaps are positive for every
-checkpoint aggregate and every task aggregate. Separate Conv
+instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes, zeroing only the
+learned post-lookup token vectors drops success from $263/300=87.7\%$ to $63/300=21.0\%$, with
+positive gaps for all ten task aggregates. Separate Conv
 audits reconstruct $4{,}608$ attention-head cases, $384$ joint-FFN module-input cases, and $384$
 complete joint-block input cases, with worst relative errors $6.36\times10^{-16}$,
 $1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Learned rank-$96$ visual projectors retain
@@ -555,6 +556,8 @@ G.~Chrysos et al.
 \raggedbottom
 \section{Supporting results and decisions}
 % ============================================================================
+
+\input{instruction_embedding_ablation_appendix}
 
 \subsection{Expanded attention screen}
 \label{app:expanded-mechanisms}

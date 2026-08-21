@@ -47,8 +47,9 @@ $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered ele
 prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
 Across the three checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
 states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
-co-present control instruction and $78/300=26.0\%$ with an empty instruction. The paired gaps are
-positive for every checkpoint aggregate and every task aggregate.
+co-present control instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes,
+zeroing only the learned post-lookup token vectors drops success from $263/300=87.7\%$ to
+$63/300=21.0\%$, with positive gaps for all ten task aggregates.
 On a separate three-checkpoint convolutional instantiation, independent reconstruction covers all
 $4{,}608$ joint-attention head-input cases, all $384$ joint-FFN module-input cases, and all $384$
 complete joint-block input cases. The respective worst relative errors are
@@ -561,6 +562,8 @@ G.~Chrysos et al.
 \raggedbottom
 \section{Supporting results and decisions}
 % ============================================================================
+
+\input{instruction_embedding_ablation_appendix}
 
 \subsection{Reproducibility details}
 \label{app:reproducibility}

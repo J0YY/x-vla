@@ -45,8 +45,9 @@ LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials per checkp
 elementwise prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
 Across the three checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
 states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
-co-present control instruction and $78/300=26.0\%$ with an empty instruction. The paired gaps are
-positive for every checkpoint aggregate and every task aggregate.
+co-present control instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes,
+zeroing only the learned post-lookup token vectors drops success from $263/300=87.7\%$ to
+$63/300=21.0\%$, with positive gaps for all ten task aggregates.
 A separate convolutional instantiation passes independent $4{,}608$-case joint-attention,
 $384$-case joint-FFN, and $384$-case complete joint-block certificates. Their respective worst
 relative errors are $6.36\times10^{-16}$, $1.39\times10^{-15}$, and
@@ -483,6 +484,8 @@ G.~Chrysos et al.
 % ============================================================================
 
 \input{instruction_necessity_section}
+
+\input{instruction_embedding_ablation_appendix}
 
 For WRL, the specialist uses familiar task language, but every tested task and instruction appeared
 during training. The result is therefore not zero-shot language generalization.

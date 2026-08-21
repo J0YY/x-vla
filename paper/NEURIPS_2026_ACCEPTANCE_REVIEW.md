@@ -35,24 +35,34 @@ inference. A frozen task-stratified state-cluster bootstrap over 100 unique stat
 intervals of 51.0 to 65.7 and 50.0 to 62.3 points. This is a behavioral evidence package, not an
 additional structural certificate.
 
-Estimated acceptance bands after integrating the instruction-necessity result:
+A second prospectively frozen study isolates the learned lexical-embedding path on disjoint
+episodes 30 to 39. Both arms receive the identical correct 32-token ID tensor. The ablated arm
+zeros only the post-lookup token vectors while preserving sequence length, positions, vision,
+robot state, embodiment, the separate learned common BOS, action queries, and all weights. The
+intact path succeeds on 263 of 300 checkpoint-state pairs, compared with 63 of 300 after zeroing,
+for a 66.7-point gap. Full-path success is 84, 87, and 92 percent by checkpoint. All ten task
+aggregates are positive, the one-sided paired exact p-value is $1.42\times10^{-56}$, and the frozen
+state-cluster bootstrap interval is 61.7 to 71.3 points. This strengthens the evidence that these
+specialists use learned instruction vectors. It does not establish semantic grounding or
+generalization.
 
-- Neural Network Artifacts: 88 to 94 percent. The instruction study adds one prospectively specified
-  behavioral audit, but it does not strengthen the algebraic certificate itself. The increase is
-  intentionally modest to avoid counting the structural and behavioral packages as duplicate
-  support for the same claim.
-- VLM4RWD: 78 to 88 percent. The new paired result directly answers whether the familiar-task policy
-  needs its instruction for high closed-loop success. It does not establish that the policy follows
-  a counterfactual goal, handles unseen language, or resolves conflicting visual and linguistic cues.
-- Robot Learning Workshop: 58 to 71 percent. Familiar-task instruction necessity improves the
+Estimated acceptance bands after integrating the lexical-path ablation and learned-forward
+certificate:
+
+- Neural Network Artifacts: 89 to 95 percent. The sequential learned-forward replay now covers the
+  capable ViT family on 48 fixed inputs, while the lexical study adds an independently specified
+  behavioral audit. Neither turns the fixed-input replay into one compact symbolic contraction.
+- VLM4RWD: 82 to 90 percent. Two disjoint paired studies now show both prompt-level instruction
+  necessity and necessity of the learned post-lookup lexical path. The evidence still does not show
+  counterfactual goal completion, unseen language, or conflicting-cue resolution.
+- Robot Learning Workshop: 60 to 73 percent. Familiar-task lexical-path necessity improves the
   behavioral story, but the single-suite specialist setting still limits fit for a venue centered on
   broader robot-learning behavior and deployment.
 
 The largest remaining reviewer objection differs by venue:
 
-- Neural Network Artifacts: the strongest complete-block certificate is input-conditioned,
-  per-block, and evaluated on the convolutional checkpoint family, while capability is anchored by
-  the ViT family. There is still no sequential end-to-end contraction of a capable ViT policy.
+- Neural Network Artifacts: the sequential capable-ViT replay remains input-conditioned. It is not
+  one compact symbolic contraction and does not provide an input-general numerical certificate.
 - VLM4RWD: the paired controls establish familiar-task instruction necessity for the original goal,
   not counterfactual goal selection. All tested task instructions appeared during policy training,
   and co-presence in simulator fields does not guarantee unoccluded camera visibility.
@@ -67,14 +77,13 @@ paired resampling interval from $-6.6$ to $+1.4$ points. The supported result is
 structured low-dimensional visual bottleneck relative to random projectors, not a uniquely
 action-Jacobian-specific mechanism.
 
-The instruction prerequisite has passed. A fresh gated counterfactual goal-following study is now
-running on independent canonical episodes 20 to 29. It was designed before the instruction
-necessity outcomes and does not revive the failed local-specificity target-swap graph. A clean
-factorial pass could move VLM4RWD into roughly the 84 to 91 percent range. A strong four-suite
-generalist that also passes the 85 percent specialist-retention gate could move Robot Learning
-Workshop into roughly the 84 to 90 percent range. A sequential full-forward certificate on the
-capable ViT family would be the most venue-aligned remaining gain for Neural Network Artifacts.
-No combination of these outcomes can guarantee a review decision.
+The counterfactual goal-following study did not pass its frozen gate. Checkpoint 0 reached only
+49/500 counterfactual-goal matching successes, or 9.8 percent, below the fixed 20 percent minimum,
+so the remaining checkpoints were stopped and the result is not presented as positive evidence.
+The separate lexical-path ablation passes and can be reported within its narrower claim. A strong
+four-suite generalist that also passes the 85 percent specialist-retention gate could move Robot
+Learning Workshop substantially, while grounding or paraphrase evidence would be the most direct
+remaining gain for VLM4RWD. No combination of outcomes can guarantee a review decision.
 
 ## Evidence that currently carries the paper
 
@@ -87,6 +96,9 @@ No combination of these outcomes can guarantee a review decision.
    pass the exact paired and state-cluster bootstrap gates, and remain positive for every checkpoint
    aggregate and task aggregate. Fifteen immutable raw shards, the manifest, smoke, strict summary,
    and verifier are released.
+   A disjoint lexical-path ablation adds another 300 paired checkpoint-state evaluations. Exact
+   post-lookup zeroing changes success from 263/300 to 63/300, a 66.7-point gap with all ten task
+   aggregates positive and a 61.7 to 71.3-point state-cluster bootstrap interval.
 3. On three separate convolutional checkpoints and the same sixteen deterministic inputs per
    checkpoint, independent certificates reconstruct all 4,608 joint-attention head-input cases,
    all 384 joint-FFN module-input cases, and all 384 complete joint-block input cases. Worst
@@ -97,6 +109,10 @@ No combination of these outcomes can guarantee a review decision.
    module-input cases and 384 architectural heads. Maximum relative error is
    $2.016119\times10^{-7}$. A standard-library verifier binds all raw result, cache, provenance,
    runtime, and source identities and recomputes the certificate.
+   A separate sequential replay rebuilds four vision and eight joint learned blocks through the
+   linear action output on 48 fixed inputs. The worst final-action relative error is
+   $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate, and the manual deployed traversal equals
+   the unmodified model call bitwise.
 5. On 128 deterministic, official-task-balanced inputs for each of the three ViT capability
    checkpoints, exhaustive vision, instruction, robot-state, and action-query groups reconstruct
    all 36,864 action-query head-input updates and 3,072 projected module-input cases. Maximum
