@@ -1,0 +1,512 @@
+{
+  "mode": "capability",
+  "architecture": "chi",
+  "suite": "libero_object",
+  "checkpoint": "artifacts/ckpt_linear_rat_vit_s2.pt",
+  "cache": "artifacts/libero_frames_100000_64.pkl",
+  "seed": 2,
+  "vocab_size": 26,
+  "cache_stats": {
+    "frame_count": 66984,
+    "sample_count": 63352,
+    "action_mean": [
+      0.0689610093832016,
+      0.14728403091430664,
+      -0.05295417085289955,
+      0.0016317926347255707,
+      0.006103633902966976,
+      -0.014664511196315289,
+      0.1320992261171341
+    ],
+    "action_std": [
+      0.2726696729660034,
+      0.4459349811077118,
+      0.4579801559448242,
+      0.024709034711122513,
+      0.04944734275341034,
+      0.0426940843462944,
+      0.9903656244277954
+    ],
+    "state_mean": [
+      -0.03134441003203392,
+      -0.023217646405100822,
+      0.20341111719608307,
+      3.1097357273101807,
+      -0.20446741580963135,
+      -0.10824166983366013,
+      0.029097234830260277,
+      -0.030324405059218407
+    ],
+    "state_std": [
+      0.06831111013889313,
+      0.16870158910751343,
+      0.07987862080335617,
+      0.08342526108026505,
+      0.3292630910873413,
+      0.20355737209320068,
+      0.009620374999940395,
+      0.009267615154385567
+    ],
+    "state_dim": 8,
+    "action_dim": 7
+  },
+  "profile": {
+    "parameters": 20137352,
+    "parameters_millions": 20.137352,
+    "latency_ms_batch1": 39.53970726579428,
+    "peak_allocated_gb": 0.093832704,
+    "peak_reserved_gb": 0.18874368,
+    "profile_iterations": 200,
+    "gpu": "NVIDIA A30"
+  },
+  "prediction_shape": [
+    1,
+    8,
+    7
+  ],
+  "prediction_finite": true,
+  "prediction_sample": [
+    [
+      -0.7357167601585388,
+      -0.33543840050697327,
+      -0.0067818909883499146,
+      -0.7096169590950012,
+      -0.488222599029541,
+      -0.41771790385246277,
+      -1.159421443939209
+    ],
+    [
+      -0.6609236001968384,
+      -0.3163045644760132,
+      -0.0187258031219244,
+      -0.6983261704444885,
+      -0.309061199426651,
+      -0.4763711988925934,
+      -1.1627496480941772
+    ],
+    [
+      -0.521938681602478,
+      -0.30236953496932983,
+      -0.03266520798206329,
+      -0.9628585577011108,
+      -0.36685100197792053,
+      -0.2715710997581482,
+      -1.156580924987793
+    ],
+    [
+      -0.40039998292922974,
+      -0.3538898229598999,
+      0.02137983962893486,
+      -0.9762309193611145,
+      -0.13598418235778809,
+      -0.32705098390579224,
+      -1.1558771133422852
+    ],
+    [
+      -0.2545086741447449,
+      -0.37845903635025024,
+      -0.0066312626004219055,
+      -1.8046528100967407,
+      -0.393665075302124,
+      -0.3447982370853424,
+      -1.1305773258209229
+    ],
+    [
+      0.20858529210090637,
+      -0.6619304418563843,
+      0.08425664901733398,
+      -1.9608312845230103,
+      -0.1810569018125534,
+      -0.32398897409439087,
+      -1.1136493682861328
+    ],
+    [
+      0.6537842750549316,
+      -1.0694029331207275,
+      0.0733700543642044,
+      -1.540766954421997,
+      -0.12125398963689804,
+      -0.5061342716217041,
+      -1.1361088752746582
+    ],
+    [
+      1.1053547859191895,
+      -1.3016248941421509,
+      0.12455015629529953,
+      -1.0150790214538574,
+      -0.027594376355409622,
+      -0.6909676790237427,
+      -1.146384835243225
+    ]
+  ],
+  "evaluation_scope": "In-domain LIBERO-Object evaluation",
+  "capability": {
+    "overall": 0.82,
+    "per_task": {
+      "pick up the bbq sauce and place it in the basket": 0.82
+    },
+    "episodes": [
+      {
+        "task_index": 3,
+        "episode": 0,
+        "success": true,
+        "steps": 165,
+        "elapsed_s": 5.147054168395698
+      },
+      {
+        "task_index": 3,
+        "episode": 1,
+        "success": true,
+        "steps": 125,
+        "elapsed_s": 3.858017961960286
+      },
+      {
+        "task_index": 3,
+        "episode": 2,
+        "success": true,
+        "steps": 129,
+        "elapsed_s": 4.08954749815166
+      },
+      {
+        "task_index": 3,
+        "episode": 3,
+        "success": true,
+        "steps": 126,
+        "elapsed_s": 3.9033095221966505
+      },
+      {
+        "task_index": 3,
+        "episode": 4,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.19647396914661
+      },
+      {
+        "task_index": 3,
+        "episode": 5,
+        "success": true,
+        "steps": 126,
+        "elapsed_s": 3.919907344970852
+      },
+      {
+        "task_index": 3,
+        "episode": 6,
+        "success": true,
+        "steps": 129,
+        "elapsed_s": 4.070561526808888
+      },
+      {
+        "task_index": 3,
+        "episode": 7,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.23417765693739
+      },
+      {
+        "task_index": 3,
+        "episode": 8,
+        "success": true,
+        "steps": 122,
+        "elapsed_s": 3.870524130295962
+      },
+      {
+        "task_index": 3,
+        "episode": 9,
+        "success": true,
+        "steps": 137,
+        "elapsed_s": 4.3877557730302215
+      },
+      {
+        "task_index": 3,
+        "episode": 10,
+        "success": true,
+        "steps": 126,
+        "elapsed_s": 4.004168780054897
+      },
+      {
+        "task_index": 3,
+        "episode": 11,
+        "success": true,
+        "steps": 124,
+        "elapsed_s": 3.928697867784649
+      },
+      {
+        "task_index": 3,
+        "episode": 12,
+        "success": true,
+        "steps": 127,
+        "elapsed_s": 3.9743016897700727
+      },
+      {
+        "task_index": 3,
+        "episode": 13,
+        "success": true,
+        "steps": 121,
+        "elapsed_s": 3.790581200737506
+      },
+      {
+        "task_index": 3,
+        "episode": 14,
+        "success": true,
+        "steps": 126,
+        "elapsed_s": 3.9499448011629283
+      },
+      {
+        "task_index": 3,
+        "episode": 15,
+        "success": true,
+        "steps": 128,
+        "elapsed_s": 3.9499254156835377
+      },
+      {
+        "task_index": 3,
+        "episode": 16,
+        "success": true,
+        "steps": 126,
+        "elapsed_s": 4.008351209107786
+      },
+      {
+        "task_index": 3,
+        "episode": 17,
+        "success": true,
+        "steps": 129,
+        "elapsed_s": 4.144981508143246
+      },
+      {
+        "task_index": 3,
+        "episode": 18,
+        "success": true,
+        "steps": 128,
+        "elapsed_s": 3.991512523032725
+      },
+      {
+        "task_index": 3,
+        "episode": 19,
+        "success": true,
+        "steps": 178,
+        "elapsed_s": 5.42033336404711
+      },
+      {
+        "task_index": 3,
+        "episode": 20,
+        "success": true,
+        "steps": 120,
+        "elapsed_s": 3.728792689740658
+      },
+      {
+        "task_index": 3,
+        "episode": 21,
+        "success": true,
+        "steps": 121,
+        "elapsed_s": 3.7804983970709145
+      },
+      {
+        "task_index": 3,
+        "episode": 22,
+        "success": true,
+        "steps": 120,
+        "elapsed_s": 3.7916295118629932
+      },
+      {
+        "task_index": 3,
+        "episode": 23,
+        "success": true,
+        "steps": 122,
+        "elapsed_s": 3.802387095987797
+      },
+      {
+        "task_index": 3,
+        "episode": 24,
+        "success": true,
+        "steps": 203,
+        "elapsed_s": 6.3074442548677325
+      },
+      {
+        "task_index": 3,
+        "episode": 25,
+        "success": true,
+        "steps": 169,
+        "elapsed_s": 5.219647862017155
+      },
+      {
+        "task_index": 3,
+        "episode": 26,
+        "success": true,
+        "steps": 122,
+        "elapsed_s": 3.7992864651605487
+      },
+      {
+        "task_index": 3,
+        "episode": 27,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.345627762842923
+      },
+      {
+        "task_index": 3,
+        "episode": 28,
+        "success": true,
+        "steps": 117,
+        "elapsed_s": 3.695751056075096
+      },
+      {
+        "task_index": 3,
+        "episode": 29,
+        "success": true,
+        "steps": 122,
+        "elapsed_s": 3.807896999642253
+      },
+      {
+        "task_index": 3,
+        "episode": 30,
+        "success": true,
+        "steps": 158,
+        "elapsed_s": 4.869511322118342
+      },
+      {
+        "task_index": 3,
+        "episode": 31,
+        "success": true,
+        "steps": 121,
+        "elapsed_s": 3.7832561917603016
+      },
+      {
+        "task_index": 3,
+        "episode": 32,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.327963051851839
+      },
+      {
+        "task_index": 3,
+        "episode": 33,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.19499910902232
+      },
+      {
+        "task_index": 3,
+        "episode": 34,
+        "success": true,
+        "steps": 175,
+        "elapsed_s": 5.34209733363241
+      },
+      {
+        "task_index": 3,
+        "episode": 35,
+        "success": true,
+        "steps": 122,
+        "elapsed_s": 3.8370327898301184
+      },
+      {
+        "task_index": 3,
+        "episode": 36,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.376461829990149
+      },
+      {
+        "task_index": 3,
+        "episode": 37,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.250976436771452
+      },
+      {
+        "task_index": 3,
+        "episode": 38,
+        "success": true,
+        "steps": 174,
+        "elapsed_s": 5.384168692864478
+      },
+      {
+        "task_index": 3,
+        "episode": 39,
+        "success": true,
+        "steps": 123,
+        "elapsed_s": 3.818657150026411
+      },
+      {
+        "task_index": 3,
+        "episode": 40,
+        "success": true,
+        "steps": 126,
+        "elapsed_s": 3.966055470984429
+      },
+      {
+        "task_index": 3,
+        "episode": 41,
+        "success": true,
+        "steps": 121,
+        "elapsed_s": 3.797425711993128
+      },
+      {
+        "task_index": 3,
+        "episode": 42,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.250958384014666
+      },
+      {
+        "task_index": 3,
+        "episode": 43,
+        "success": true,
+        "steps": 176,
+        "elapsed_s": 5.371813407633454
+      },
+      {
+        "task_index": 3,
+        "episode": 44,
+        "success": true,
+        "steps": 129,
+        "elapsed_s": 4.094572787173092
+      },
+      {
+        "task_index": 3,
+        "episode": 45,
+        "success": true,
+        "steps": 127,
+        "elapsed_s": 3.920333242043853
+      },
+      {
+        "task_index": 3,
+        "episode": 46,
+        "success": true,
+        "steps": 117,
+        "elapsed_s": 3.6223364090546966
+      },
+      {
+        "task_index": 3,
+        "episode": 47,
+        "success": true,
+        "steps": 132,
+        "elapsed_s": 4.086839477065951
+      },
+      {
+        "task_index": 3,
+        "episode": 48,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 8.26572233112529
+      },
+      {
+        "task_index": 3,
+        "episode": 49,
+        "success": true,
+        "steps": 169,
+        "elapsed_s": 5.239409205969423
+      }
+    ],
+    "successes": 41,
+    "trials": 50,
+    "task_indices": [
+      3
+    ],
+    "eps_per_task": 50,
+    "max_steps": 280,
+    "num_steps_wait": 10,
+    "exec_h": 8,
+    "canonical_init_states": true,
+    "elapsed_s": 329.4622737253085
+  }
+}

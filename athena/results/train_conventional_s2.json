@@ -1,0 +1,17 @@
+{
+  "architecture": "conventional",
+  "seed": 2,
+  "steps": 40000,
+  "batch_size": 256,
+  "samples": 63352,
+  "parameters": 20138632,
+  "elapsed_s": 4793.479722494725,
+  "steps_per_s": 8.344668657361577,
+  "examples_per_s": 2136.2351762845637,
+  "peak_allocated_gb": 8.817844736,
+  "peak_reserved_gb": 9.110028288,
+  "last_loss": 0.0015819439431652427,
+  "gpu": "NVIDIA RTX A6000",
+  "checkpoint": "artifacts/ckpt_linear_conventional_vit_s2.pt",
+  "ema_decay": 0.999
+}

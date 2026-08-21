@@ -186,8 +186,192 @@
         "NVIDIA RTX A6000"
       ]
     },
-    "1": null,
-    "2": null
+    "1": {
+      "architecture": "conventional",
+      "shards": [
+        "athena/results/conventional_s1_t0_3.json",
+        "athena/results/conventional_s1_t3_6.json",
+        "athena/results/conventional_s1_t6_8.json",
+        "athena/results/conventional_s1_t8_10.json"
+      ],
+      "successes": 45,
+      "trials": 500,
+      "success_rate": 0.09,
+      "success_rate_wilson_95pct_ci": [
+        0.0679425478891394,
+        0.11830941128933344
+      ],
+      "tasks_covered": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "complete_ten_task_suite": true,
+      "per_task": {
+        "0": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "1": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "2": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "3": {
+          "successes": 37,
+          "trials": 50,
+          "success_rate": 0.74
+        },
+        "4": {
+          "successes": 8,
+          "trials": 50,
+          "success_rate": 0.16
+        },
+        "5": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "6": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "7": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "8": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "9": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        }
+      },
+      "parameters": 20138632,
+      "latency_ms_batch1_median_across_shards": 7.318948130123317,
+      "latency_ms_batch1_by_shard": [
+        7.295058150775731,
+        5.94401502981782,
+        7.617314080707729,
+        7.342838109470904
+      ],
+      "gpus": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ]
+    },
+    "2": {
+      "architecture": "conventional",
+      "shards": [
+        "athena/results/conventional_s2_t0_3.json",
+        "athena/results/conventional_s2_t3_6.json",
+        "athena/results/conventional_s2_t6_8.json",
+        "athena/results/conventional_s2_t8_10.json"
+      ],
+      "successes": 41,
+      "trials": 500,
+      "success_rate": 0.082,
+      "success_rate_wilson_95pct_ci": [
+        0.06101908946846894,
+        0.10935485915738875
+      ],
+      "tasks_covered": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "complete_ten_task_suite": true,
+      "per_task": {
+        "0": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "1": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "2": {
+          "successes": 3,
+          "trials": 50,
+          "success_rate": 0.06
+        },
+        "3": {
+          "successes": 33,
+          "trials": 50,
+          "success_rate": 0.66
+        },
+        "4": {
+          "successes": 4,
+          "trials": 50,
+          "success_rate": 0.08
+        },
+        "5": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "6": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "7": {
+          "successes": 1,
+          "trials": 50,
+          "success_rate": 0.02
+        },
+        "8": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        },
+        "9": {
+          "successes": 0,
+          "trials": 50,
+          "success_rate": 0
+        }
+      },
+      "parameters": 20138632,
+      "latency_ms_batch1_median_across_shards": 7.268545294646174,
+      "latency_ms_batch1_by_shard": [
+        7.278871932066977,
+        7.4691002909094095,
+        5.880834781564772,
+        7.25821865722537
+      ],
+      "gpus": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ]
+    }
   },
   "chi_s0_capability": {
     "architecture": "chi",
@@ -866,11 +1050,53 @@
     "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
   },
   "conventional_multiseed": {
-    "complete_seeds": 1,
+    "complete_seeds": 3,
     "success_rates": [
-      0.898
+      0.898,
+      0.09,
+      0.082
     ],
-    "mean_success_rate": 0.898,
-    "population_std_success_rate": 0.0
+    "mean_success_rate": 0.3566666666666667,
+    "population_std_success_rate": 0.3827944037672907
+  },
+  "conventional_training_runs": {
+    "runs": [
+      {
+        "architecture": "conventional",
+        "seed": 1,
+        "steps": 40000,
+        "batch_size": 256,
+        "samples": 63352,
+        "parameters": 20138632,
+        "elapsed_s": 4738.667769656051,
+        "steps_per_s": 8.441191057144598,
+        "examples_per_s": 2160.944910629017,
+        "peak_allocated_gb": 8.817713664,
+        "peak_reserved_gb": 9.10163968,
+        "last_loss": 0.003598521463572979,
+        "gpu": "NVIDIA A30",
+        "checkpoint": "artifacts/ckpt_linear_conventional_vit_s1.pt",
+        "ema_decay": 0.999
+      },
+      {
+        "architecture": "conventional",
+        "seed": 2,
+        "steps": 40000,
+        "batch_size": 256,
+        "samples": 63352,
+        "parameters": 20138632,
+        "elapsed_s": 4793.479722494725,
+        "steps_per_s": 8.344668657361577,
+        "examples_per_s": 2136.2351762845637,
+        "peak_allocated_gb": 8.817844736,
+        "peak_reserved_gb": 9.110028288,
+        "last_loss": 0.0015819439431652427,
+        "gpu": "NVIDIA RTX A6000",
+        "checkpoint": "artifacts/ckpt_linear_conventional_vit_s2.pt",
+        "ema_decay": 0.999
+      }
+    ],
+    "mean_steps_per_s": 8.392929857253087,
+    "mean_peak_allocated_gb": 8.8177792
   }
 }

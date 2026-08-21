@@ -20,7 +20,11 @@ from xvla.train.train_lm import TrainConfig, _lr_at
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--architecture", choices=("chi", "conventional"), required=True)
+    parser.add_argument(
+        "--architecture",
+        choices=("chi", "conventional", "chi_rms", "conventional_rational"),
+        required=True,
+    )
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--checkpoint-output", type=Path, required=True)
     parser.add_argument("--result-output", type=Path, required=True)

@@ -33,6 +33,8 @@ Additional modes cover the main review risks:
 
 - `causal` runs paired true-instruction and counterfactual-instruction trajectories from matched
   canonical states and reports a trajectory-level proximity shift.
+- `visual_subspace` rebuilds a checkpoint-specific, gripper-sensitive visual-bond Gram from cached
+  activations, then compares full, top-rank, and matched random projections in closed loop.
 - `exact_attention` reconstructs every bilinear-attention module in both transformer stacks from
   its learned coefficients.
 - `surgery` edits the learned Q, K, and V coefficient columns using exact weight-derived subspaces.
@@ -43,6 +45,11 @@ and physical GPU. `train_checkpoint.py` reproduces the full 40k-step EMA trainin
 matched seeds. `summarize_xvla_results.py` aggregates sharded canonical evaluations with per-task
 counts and Wilson intervals. `summarize_surgery.py` applies the prespecified discovery gate without
 hiding failed configurations.
+
+The `--suite` flag also supports `libero_spatial`, `libero_goal`, and `libero_10`. Checkpoints in
+this workspace were trained only on LIBERO-Object, so those modes are explicitly zero-shot controls.
+They keep the Object vocabulary and action normalization fixed, and map unseen instruction words to
+the padding identifier. They should not be described as in-domain multi-suite training results.
 
 ## First completed matched result
 

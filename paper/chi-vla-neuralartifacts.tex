@@ -49,8 +49,9 @@ subspace preserves $18/20$ closed-loop successes, while a random subspace preser
 artifact is behaviorally nontrivial, reaching $93.7\%\pm0.8\%$ on LIBERO-Object. The first
 matched conventional twin differs by only $0.006\%$ in parameters. Complete same-hardware
 replications find a $4.4$-point rational deficit on A30 and $5.8$ points on A6000. Compilation
-reduces the latency ratio from $3.49$--$5.33\times$ eager to $1.73$--$1.74\times$ compiled. The
-first direct coefficient edit fails its selectivity gate. We therefore establish a capable model
+reduces the latency ratio from $3.49$--$5.33\times$ eager to $1.73$--$1.74\times$ compiled. A
+fifteen-configuration direct coefficient-edit sweep yields no candidate that passes both
+selectivity gates. We therefore establish a capable model
 artifact with exact layerwise structure, not yet a semantic, compute-matched, or selectively
 editable interface.
 \end{abstract}
@@ -239,7 +240,10 @@ SwiGLU, and RMSNorm while holding the data, updates, seed, decoder, and $500$ ca
 fixed. On A30, the conventional twin succeeds in $448/500$ trials and the rational checkpoint in
 $426/500$. On A6000, they reach $451/500$ and $422/500$. Their parameter counts differ by only
 $0.006\%$. The rational deficit is $4.4$ and $5.8$ points, and task 3 accounts for $21$ lost
-successes on each platform. On one A30, eager latency is $38.05$ versus $7.14$ ms. Compilation
+successes on each platform. Targeted replications reverse the task-3 gap: \chivla\ seeds 1 and 2
+each reach $41/50$, compared with $37/50$ and $33/50$ for their conventional counterparts. The
+seed-0 task gap is therefore checkpoint-specific. On one A30, eager latency is $38.05$ versus
+$7.14$ ms. Compilation
 reduces it to $1.52$ versus $0.88$ ms, a $1.74\times$ gap. Rational training is $3.12\times$
 slower at batch $128$ and uses $1.63\times$ the peak allocated memory. A6000 profiling confirms
 a $1.73\times$ compiled ratio.
@@ -253,8 +257,9 @@ forward passes and is not one $20.1$M-parameter policy.
 
 The result shows that the rational architecture supports high closed-loop specialist
 capability. Seed 0 misses the predeclared three-point noninferiority margin on both GPU classes.
-A multi-seed claim still requires conventional seeds 1 and 2 and partial-conversion controls.
-The result isolates a modest capability cost and a remaining systems cost.
+Conventional seeds 1 and 2 completed at only $9.0\%$ and $8.2\%$, despite low offline losses.
+This exposes severe optimization variance rather than a stable across-seed conversion cost.
+Matched \chivla\ evaluations and partial-conversion controls remain necessary.
 
 % ============================================================================
 \section{Exact weight-derived structure through attention}
@@ -381,12 +386,13 @@ that standard LIBERO success can coexist with weak language use
 \cite{liberopro,liberocf,liberopara}.
 
 \paragraph{Limitations and conclusion.}
-The same-skeleton control has one completed seed, a $4.4$ to $5.8$ point capability gap, and a
-residual compiled-runtime tax. The benchmark is one specialist suite, counterfactual
+The same-skeleton seed-0 control has a $4.4$ to $5.8$ point capability gap and a residual
+compiled-runtime tax. Two additional conventional seeds collapse below $10\%$, so training
+stability remains unresolved. The benchmark is one specialist suite, counterfactual
 instructions do not fully reroute the policy, and exact decomposition is layerwise rather than
 end to end. The closed-loop
-subspace test uses one checkpoint and twenty trials, while
-the first direct coefficient edit fails its selectivity gate. The defensible result is therefore
+subspace test uses one checkpoint and twenty trials, while a fifteen-configuration discovery
+sweep yields no coefficient edit that passes both selectivity gates. The defensible result is therefore
 narrow: rational restrictions do not prevent competitive LIBERO-Object control, and they provide
 a precise weight-derived analysis surface. Broader grounding, multi-seed controls, optimized
 execution, and validated coefficient edits remain necessary.
@@ -587,6 +593,12 @@ random controls. This $10$-point advantage misses the preregistered $15$-point g
 removal also preserves $18/20$, compared with $17/20$ for both random controls, which is the
 wrong direction for the necessity prediction. The screen is a no-go for the current mapping
 from Gram eigenspaces to query, key, and value column edits.
+
+A subsequent discovery sweep evaluates blocks $0$, $2$, $4$, $6$, and $7$ at ranks $64$, $128$,
+and $256$. None of the fifteen configurations passes both prespecified $15$-point gates. The best
+configuration, block 0 at rank 128, has a $10$-point retention advantage and a $40$-point removal
+advantage over Frobenius-matched random edits. It therefore does not advance to held-out
+confirmation.
 
 \begin{figure}[H]
 \centering

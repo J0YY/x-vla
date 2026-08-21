@@ -1,6 +1,6 @@
 # NeurIPS 2026 workshop acceptance review
 
-Assessment date: August 20, 2026.
+Assessment date: August 21, 2026.
 
 These are subjective probability bands based on topical fit, paper completeness, and the usual
 standard of workshop review. They are not official acceptance-rate estimates.
@@ -13,16 +13,18 @@ layerwise weight structure, a causal intervention, and an openly reported ground
 not yet a convincing NeurIPS main-track paper because the central causal comparison and the promised
 coefficient-level payoff remain incomplete.
 
-Estimated acceptance bands for the tailored versions after the matched seed-0 control and the
-three-checkpoint all-layer Athena audit:
+Estimated acceptance bands for the tailored versions after the matched seed-0 control, the
+three-checkpoint all-layer Athena audit, the completed conventional-seed runs, and the completed
+coefficient-surgery sweep:
 
-- VLM4RWD: 50 to 65 percent. Excellent fit across VLA architecture, grounded deployment,
+- VLM4RWD: 45 to 60 percent. Excellent fit across VLA architecture, grounded deployment,
   causal analysis, and failure diagnosis. The nonzero matched capability cost and incomplete
-  task-level counterfactual grounding are material risks.
-- Neural Network Artifacts extended abstract: 55 to 70 percent. The exact all-layer reconstruction
+  task-level counterfactual grounding are material risks, and the newly observed training variance
+  weakens the controlled-comparison story.
+- Neural Network Artifacts extended abstract: 50 to 65 percent. The exact all-layer reconstruction
   and trained-checkpoint audit are unusually direct weight-artifact evidence, bounded by the lack
   of a successful selective coefficient edit.
-- Robot Learning Workshop: 30 to 45 percent. Strong robotics evidence and an honest specialist
+- Robot Learning Workshop: 25 to 40 percent. Strong robotics evidence and an honest specialist
   Physical-AI result, but no zero-shot, cross-task, or cross-environment generalization.
 
 The VLM4RWD version is the best single submission today. Neural Network Artifacts is the strongest
@@ -35,7 +37,9 @@ alternative if the author wants the paper judged primarily as a model-weights co
 2. The same-skeleton models differ by only 1,280 parameters, or 0.006 percent. Complete all-task
    controls reach 448 of 500 conventional versus 426 rational on A30, and 451 versus 422 on A6000.
    The seed-0 rational deficit is 4.4 to 5.8 points and misses the predeclared three-point
-   noninferiority margin on both platforms. Task 3 accounts for 21 lost successes in each matrix.
+   noninferiority margin on both platforms. Task 3 accounts for 21 lost successes in each matrix,
+   but χ seeds 1 and 2 each reach 41 of 50 on that task, compared with 37 and 33 for their
+   conventional counterparts. The task-specific deficit is not consistent across checkpoints.
 3. The operator claim is not based only on an architecture diagram. The trained checkpoint is
    mechanically audited, and representative rational and bilinear branches are reconstructed.
 4. The exact attention calculation is mathematically specific and scales through a reduced Gram.
@@ -52,9 +56,12 @@ alternative if the author wants the paper judged primarily as a model-weights co
 
 ## Main rejection risks
 
-1. **The matched capability cost is nonzero at seed 0.** The rational policy trails by 4.4 points
-   on A30 and 5.8 on A6000. Conventional seeds 1 and 2 are running and are required before treating
-   this as an across-training-seed estimate. Partial-conversion controls must localize the task-3 gap.
+1. **The controlled training story is unstable.** The rational policy trails by 4.4 points on A30
+   and 5.8 on A6000 at seed 0. The completed conventional seeds 1 and 2 reach only 9.0 and 8.2
+   percent despite low offline losses, compared with 89.8 percent at seed 0. This is evidence of
+   severe optimization variance, not an across-seed estimate of conversion cost. Targeted task-3
+   runs reverse the seed-0 gap, but full matched χ capability runs and partial-conversion controls
+   are still needed.
 2. **Incomplete task-level language grounding.** The longer paired rollout shows a replicated
    directional response to the renamed object, but only 28 to 33 percent of counterfactual runs end
    closer to it and the original one-step screen remains weak. The conventional control is stronger,
@@ -65,8 +72,10 @@ alternative if the author wants the paper judged primarily as a model-weights co
    downstream sensitivity.
 4. **Limited causal sample.** The decisive visual-subspace intervention uses one checkpoint and
    20 rollouts over four tasks.
-5. **No successful coefficient-level repair.** The first direct query-key-value edit screen is a
-   preregistered no-go. The paper has an analysis surface, not yet a selective editing interface.
+5. **No successful coefficient-level repair.** The full 15-configuration discovery sweep has no
+   configuration that passes both preregistered 15-point gates. The best candidate has a 10-point
+   keep advantage and a 40-point removal advantage. The paper has an analysis surface, not yet a
+   selective editing interface.
 6. **External baselines were not rerun.** Published references are protocol-aligned, but training
    and implementation differences remain.
 7. **Narrow benchmark.** LIBERO-Object is a specialist setting and can reward scene-to-action
@@ -83,9 +92,10 @@ alternative if the author wants the paper judged primarily as a model-weights co
 
 ### Tier 1
 
-1. Finish conventional seeds 1 and 2 and their 1,000 canonical rollouts. The same-hardware
-   seed-0 matrices are complete and reject the predeclared three-point noninferiority claim at
-   this seed. Use partial-conversion controls to localize the task-3 deficit.
+1. Audit why conventional seeds 1 and 2 collapse in closed loop despite low offline losses, then
+   evaluate the corresponding χ checkpoints on the same canonical protocol. The same-hardware
+   seed-0 matrices reject the predeclared three-point noninferiority claim at this seed. Use
+   partial-conversion controls to localize the task-3 deficit.
 2. Repeat the causal visual-subspace intervention across checkpoints with paired canonical trials
    and confidence intervals. The separate three-checkpoint instruction intervention and
    conventional control are complete.
@@ -114,7 +124,7 @@ alternative if the author wants the paper judged primarily as a model-weights co
 Neural Network Artifacts is the safest target because its central exact-audit result is unaffected
 by the nonzero capability cost. VLM4RWD remains a strong second choice because the grounding
 failure analysis fits its call, while Robot Learning Workshop has the largest theme mismatch.
-Finish the live multi-seed and surgery jobs before the submission freeze if time permits, then
-publish the anonymous artifact and run a final citation audit. Do not submit
+Finish the live task-3, causal-subspace, cross-suite, and A40 jobs before the submission freeze,
+then publish the anonymous artifact and run a final citation audit. Do not submit
 the same empirical paper concurrently to multiple NeurIPS workshops without written permission from
 every affected workshop chair.

@@ -37,7 +37,9 @@ def parse_args() -> argparse.Namespace:
             "smoke",
             "profile",
             "capability",
+            "offline_diagnostic",
             "causal",
+            "visual_subspace",
             "exact_attention",
             "surgery",
         ),
@@ -46,7 +48,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--architecture", choices=("chi", "conventional"), default="chi")
+    parser.add_argument(
+        "--architecture",
+        choices=("chi", "conventional", "chi_rms", "conventional_rational"),
+        default="chi",
+    )
+    parser.add_argument(
+        "--suite",
+        choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
+        default="libero_object",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--task-start", type=int, default=0)
     parser.add_argument("--task-end", type=int, default=10)
@@ -58,6 +69,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--causal-steps", type=int, default=80)
     parser.add_argument("--block-index", type=int, default=6)
     parser.add_argument("--rank", type=int, default=128)
+    parser.add_argument("--gram-samples", type=int, default=1024)
+    parser.add_argument("--offline-samples", type=int, default=4096)
     parser.add_argument(
         "--surgery-conditions",
         default=(
@@ -70,10 +83,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_suite():
+def load_suite(name: str = "libero_object"):
     from libero.libero import benchmark
 
-    return benchmark.get_benchmark_dict()["libero_object"]()
+    return benchmark.get_benchmark_dict()[name]()
 
 
 def task_languages(suite) -> dict[int, str]:
@@ -166,15 +179,17 @@ def make_config(
         "action_head": "linear",
         "vision_encoder": "vit",
     }
-    if architecture == "conventional":
+    if architecture in ("conventional", "conventional_rational"):
         kwargs.update(
             attn="softmax",
             ffn="swiglu",
-            norm="per_token",
+            norm=("rational" if architecture == "conventional_rational" else "per_token"),
             qk_norm="none",
             ffn_rank=1408,
             vit_ffn_rank=704,
         )
+    elif architecture == "chi_rms":
+        kwargs.update(attn="bilinear", ffn="bilinear", norm="per_token", qk_norm="per_token")
     else:
         kwargs.update(attn="bilinear", ffn="bilinear", norm="rational", qk_norm="rational")
     return VLAConfig(**kwargs)
@@ -283,6 +298,36 @@ def build_robot_state(obs: dict[str, Any], state_dim: int) -> np.ndarray:
     return state[:state_dim]
 
 
+def forward_from_visual_tokens(
+    model: ChiVLA,
+    visual_tokens: torch.Tensor,
+    instruction: torch.Tensor,
+    state: torch.Tensor,
+    embodiment: torch.Tensor,
+) -> torch.Tensor:
+    """Run the deployed linear policy from an intervened visual-token bond."""
+    from xvla.nn.attention import causal_mask
+
+    if model.cfg.action_head != "linear":
+        raise ValueError("Visual-bond intervention currently requires the linear action head")
+    batch_size = visual_tokens.shape[0]
+    hidden = torch.cat(
+        [
+            visual_tokens,
+            model.bos.expand(batch_size, -1, -1),
+            model.tok_emb(instruction),
+            model.state_proj(state)[:, None],
+            model.embodiment_emb(embodiment)[:, None],
+            model.action_queries.expand(batch_size, -1, -1),
+        ],
+        dim=1,
+    )
+    hidden = hidden + model.pos_emb[:, : hidden.shape[1]]
+    mask = causal_mask(hidden.shape[1], device=hidden.device, dtype=hidden.dtype)
+    hidden = model.norm_out(model.backbone(hidden, mask=mask))
+    return model.action_head(hidden[:, -model.cfg.action_horizon :])
+
+
 @torch.inference_mode()
 def predict_chunk(
     model: ChiVLA,
@@ -290,6 +335,7 @@ def predict_chunk(
     instruction: torch.Tensor,
     stats: dict[str, Any],
     res: int,
+    visual_projector: torch.Tensor | None = None,
 ) -> np.ndarray:
     raw_state = build_robot_state(obs, stats["state_dim"])
     rotated = np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])
@@ -300,7 +346,14 @@ def predict_chunk(
         dtype=torch.float32,
         device="cuda",
     ).unsqueeze(0)
-    prediction, _ = model(image, instruction, state, torch.zeros(1, dtype=torch.long, device="cuda"))
+    embodiment = torch.zeros(1, dtype=torch.long, device="cuda")
+    if visual_projector is None:
+        prediction, _ = model(image, instruction, state, embodiment)
+    else:
+        visual_tokens = model._visual_tokens(image) @ visual_projector.T
+        prediction = forward_from_visual_tokens(
+            model, visual_tokens, instruction, state, embodiment
+        )
     action_mean = torch.tensor(stats["action_mean"], dtype=torch.float32, device="cuda")
     action_std = torch.tensor(stats["action_std"], dtype=torch.float32, device="cuda")
     return (prediction[0] * action_std + action_mean).float().cpu().numpy()
@@ -313,6 +366,7 @@ def run_capability(
     tasks: dict[int, str],
     encode,
     stats: dict[str, Any],
+    visual_projector: torch.Tensor | None = None,
 ) -> dict[str, Any]:
     from libero.libero import get_libero_path
     from libero.libero.envs import OffScreenRenderEnv
@@ -349,7 +403,14 @@ def run_capability(
             steps = 0
             episode_started = time.perf_counter()
             while steps < args.max_steps and not success:
-                chunk = predict_chunk(model, obs, instruction, stats, args.res)
+                chunk = predict_chunk(
+                    model,
+                    obs,
+                    instruction,
+                    stats,
+                    args.res,
+                    visual_projector=visual_projector,
+                )
                 for offset in range(min(args.exec_h, args.horizon)):
                     action = chunk[offset].copy()
                     action[-1] = 1.0 if action[-1] > 0 else -1.0
@@ -758,6 +819,322 @@ def run_exact_attention_audit(
     }
 
 
+def run_visual_subspace_intervention(
+    args: argparse.Namespace,
+    model: ChiVLA,
+    suite,
+    tasks: dict[int, str],
+    encode,
+    stats: dict[str, Any],
+) -> dict[str, Any]:
+    """Replicate the visual-bond causal intervention for one trained checkpoint."""
+    with args.cache.open("rb") as handle:
+        frames = pickle.load(handle)
+    episodes: dict[int, list[Any]] = defaultdict(list)
+    for frame in frames:
+        episodes[int(frame[0])].append(frame)
+    samples = []
+    for episode_frames in episodes.values():
+        episode_frames.sort(key=lambda item: int(item[1]))
+        for index in range(len(episode_frames) - args.horizon):
+            frame = episode_frames[index]
+            samples.append(
+                (
+                    np.asarray(frame[2], dtype=np.uint8),
+                    int(frame[5]),
+                    np.asarray(frame[3], dtype=np.float32),
+                )
+            )
+    if not samples:
+        raise RuntimeError("No visual-bond samples could be built from the cache")
+    if not 0 < args.rank < model.cfg.dim:
+        raise ValueError(f"rank must be between 1 and {model.cfg.dim - 1}")
+
+    rng = np.random.default_rng(args.seed)
+    sample_indices = rng.choice(
+        len(samples), size=min(args.gram_samples, len(samples)), replace=False
+    )
+    images = (
+        torch.from_numpy(np.stack([samples[index][0] for index in sample_indices]))
+        .permute(0, 3, 1, 2)
+        .float()
+        .div(255)
+        .cuda()
+    )
+    instructions = torch.tensor(
+        [encode(tasks[samples[index][1]]) for index in sample_indices],
+        dtype=torch.long,
+        device="cuda",
+    )
+    states_array = np.stack([samples[index][2] for index in sample_indices])
+    states = torch.tensor(
+        (states_array - stats["state_mean"]) / stats["state_std"],
+        dtype=torch.float32,
+        device="cuda",
+    )
+    embodiments = torch.zeros(len(sample_indices), dtype=torch.long, device="cuda")
+
+    gram = torch.zeros(model.cfg.dim, model.cfg.dim, dtype=torch.float64, device="cuda")
+    gradient_rows = 0
+    gram_batch_size = 128
+    for start in range(0, len(sample_indices), gram_batch_size):
+        stop = min(start + gram_batch_size, len(sample_indices))
+        with torch.no_grad():
+            visual = model._visual_tokens(images[start:stop])
+        visual = visual.detach().requires_grad_(True)
+        with torch.enable_grad():
+            prediction = forward_from_visual_tokens(
+                model,
+                visual,
+                instructions[start:stop],
+                states[start:stop],
+                embodiments[start:stop],
+            )
+            selected = prediction[:, :, -1].sum()
+            gradient = torch.autograd.grad(selected, visual)[0]
+        flat_gradient = gradient.reshape(-1, model.cfg.dim).double()
+        gram += flat_gradient.T @ flat_gradient
+        gradient_rows += flat_gradient.shape[0]
+    gram /= max(gradient_rows, 1)
+
+    eigenvalues, eigenvectors = torch.linalg.eigh(gram)
+    eigenvalues = eigenvalues.flip(0)
+    top_basis = eigenvectors.flip(1)[:, : args.rank]
+    top_projector = (top_basis @ top_basis.T).float()
+    torch_rng = torch.Generator(device="cuda").manual_seed(args.seed + 4109)
+    random_matrix = torch.randn(
+        model.cfg.dim,
+        args.rank,
+        generator=torch_rng,
+        dtype=torch.float64,
+        device="cuda",
+    )
+    random_basis, _ = torch.linalg.qr(random_matrix)
+    random_projector = (random_basis @ random_basis.T).float()
+
+    offline_predictions: dict[str, list[torch.Tensor]] = {
+        "full": [],
+        "causal_topk": [],
+        "random_topk": [],
+    }
+    with torch.inference_mode():
+        for start in range(0, len(sample_indices), gram_batch_size):
+            stop = min(start + gram_batch_size, len(sample_indices))
+            visual = model._visual_tokens(images[start:stop])
+            for condition, projector in (
+                ("full", None),
+                ("causal_topk", top_projector),
+                ("random_topk", random_projector),
+            ):
+                intervened = visual if projector is None else visual @ projector.T
+                offline_predictions[condition].append(
+                    forward_from_visual_tokens(
+                        model,
+                        intervened,
+                        instructions[start:stop],
+                        states[start:stop],
+                        embodiments[start:stop],
+                    ).float()
+                )
+    concatenated = {
+        condition: torch.cat(chunks) for condition, chunks in offline_predictions.items()
+    }
+    action_groups = {
+        "translation": slice(0, 3),
+        "rotation": slice(3, 6),
+        "gripper": slice(6, 7),
+    }
+    offline_mse: dict[str, dict[str, float]] = {}
+    for condition in ("causal_topk", "random_topk"):
+        offline_mse[condition] = {}
+        for group, action_slice in action_groups.items():
+            offline_mse[condition][group] = float(
+                torch.mean(
+                    (
+                        concatenated[condition][:, :, action_slice]
+                        - concatenated["full"][:, :, action_slice]
+                    )
+                    ** 2
+                )
+            )
+
+    by_condition = {}
+    for condition, projector in (
+        ("full", None),
+        ("causal_topk", top_projector),
+        ("random_topk", random_projector),
+    ):
+        print(f"VISUAL_SUBSPACE condition={condition}", flush=True)
+        by_condition[condition] = run_capability(
+            args,
+            model,
+            suite,
+            tasks,
+            encode,
+            stats,
+            visual_projector=projector,
+        )
+
+    return {
+        "rank": args.rank,
+        "ambient_dimension": model.cfg.dim,
+        "gram_samples": len(sample_indices),
+        "gradient_rows": gradient_rows,
+        "gram_action_group": "gripper",
+        "top_eigenvalues": eigenvalues[:16].detach().cpu().tolist(),
+        "top_rank_spectral_mass": float(
+            eigenvalues[: args.rank].clamp_min(0).sum()
+            / eigenvalues.clamp_min(0).sum().clamp_min(1e-30)
+        ),
+        "offline_mse_to_full": offline_mse,
+        "offline_random_to_causal_mse_ratio": {
+            group: offline_mse["random_topk"][group]
+            / max(offline_mse["causal_topk"][group], 1e-30)
+            for group in action_groups
+        },
+        "overall_by_condition": {
+            condition: float(result["overall"])
+            for condition, result in by_condition.items()
+        },
+        "by_condition": by_condition,
+        "discovery_scope": (
+            "The gripper-sensitive visual-bond subspace is estimated from cached held-out "
+            "activations for this checkpoint. It is a data-driven causal bottleneck, not a "
+            "weight-only whole-policy decomposition."
+        ),
+    }
+
+
+def run_offline_checkpoint_diagnostic(
+    args: argparse.Namespace,
+    model: ChiVLA,
+    tasks: dict[int, str],
+    encode,
+    stats: dict[str, Any],
+) -> dict[str, Any]:
+    """Measure checkpoint fit on one fixed cache sample, including per-task failures."""
+    with args.cache.open("rb") as handle:
+        frames = pickle.load(handle)
+    episodes: dict[int, list[Any]] = defaultdict(list)
+    for frame in frames:
+        episodes[int(frame[0])].append(frame)
+    samples = []
+    for episode_frames in episodes.values():
+        episode_frames.sort(key=lambda item: int(item[1]))
+        for index in range(len(episode_frames) - args.horizon):
+            frame = episode_frames[index]
+            samples.append(
+                (
+                    np.asarray(frame[2], dtype=np.uint8),
+                    int(frame[5]),
+                    np.asarray(frame[3], dtype=np.float32),
+                    np.stack(
+                        [episode_frames[index + offset][4] for offset in range(args.horizon)]
+                    ).astype(np.float32),
+                )
+            )
+    if not samples:
+        raise RuntimeError("No offline diagnostic samples could be built from the cache")
+    fixed_rng = np.random.default_rng(20260821)
+    sample_indices = fixed_rng.choice(
+        len(samples), size=min(args.offline_samples, len(samples)), replace=False
+    )
+    action_mean = torch.tensor(stats["action_mean"], dtype=torch.float32, device="cuda")
+    action_std = torch.tensor(stats["action_std"], dtype=torch.float32, device="cuda")
+    rows = []
+    batch_size = 128
+    with torch.inference_mode():
+        for start in range(0, len(sample_indices), batch_size):
+            selected_indices = sample_indices[start : start + batch_size]
+            batch_samples = [samples[index] for index in selected_indices]
+            images = (
+                torch.from_numpy(np.stack([sample[0] for sample in batch_samples]))
+                .permute(0, 3, 1, 2)
+                .float()
+                .div(255)
+                .cuda()
+            )
+            instructions = torch.tensor(
+                [encode(tasks[sample[1]]) for sample in batch_samples],
+                dtype=torch.long,
+                device="cuda",
+            )
+            states_array = np.stack([sample[2] for sample in batch_samples])
+            states = torch.tensor(
+                (states_array - stats["state_mean"]) / stats["state_std"],
+                dtype=torch.float32,
+                device="cuda",
+            )
+            target_raw = torch.tensor(
+                np.stack([sample[3] for sample in batch_samples]),
+                dtype=torch.float32,
+                device="cuda",
+            )
+            target_normalized = (target_raw - action_mean) / action_std
+            prediction_normalized, _ = model(
+                images,
+                instructions,
+                states,
+                torch.zeros(len(batch_samples), dtype=torch.long, device="cuda"),
+            )
+            prediction_raw = prediction_normalized * action_std + action_mean
+            for offset, sample in enumerate(batch_samples):
+                rows.append(
+                    {
+                        "task": sample[1],
+                        "normalized_mse": float(
+                            torch.mean(
+                                (prediction_normalized[offset] - target_normalized[offset]) ** 2
+                            )
+                        ),
+                        "arm_mae": float(
+                            torch.mean(torch.abs(prediction_raw[offset, :, :6] - target_raw[offset, :, :6]))
+                        ),
+                        "gripper_mae": float(
+                            torch.mean(torch.abs(prediction_raw[offset, :, 6] - target_raw[offset, :, 6]))
+                        ),
+                        "gripper_sign_accuracy": float(
+                            torch.mean(
+                                (torch.sign(prediction_raw[offset, :, 6]) == torch.sign(target_raw[offset, :, 6])).float()
+                            )
+                        ),
+                        "prediction_arm_std": float(prediction_raw[offset, :, :6].std()),
+                    }
+                )
+
+    def summarize(selected_rows: list[dict[str, Any]]) -> dict[str, Any]:
+        return {
+            key: float(np.mean([row[key] for row in selected_rows]))
+            for key in (
+                "normalized_mse",
+                "arm_mae",
+                "gripper_mae",
+                "gripper_sign_accuracy",
+                "prediction_arm_std",
+            )
+        }
+
+    return {
+        "sample_count": len(rows),
+        "sample_seed": 20260821,
+        "overall": summarize(rows),
+        "per_task": {
+            str(task_index): {
+                "language": tasks[task_index],
+                "samples": sum(row["task"] == task_index for row in rows),
+                **summarize([row for row in rows if row["task"] == task_index]),
+            }
+            for task_index in sorted(tasks)
+            if any(row["task"] == task_index for row in rows)
+        },
+        "scope": (
+            "This diagnostic samples the training cache and is not a held-out generalization "
+            "estimate. It tests checkpoint integrity and whether closed-loop collapse coexists "
+            "with low behavior-cloning error."
+        ),
+    }
+
+
 def run_weight_surgery(
     args: argparse.Namespace,
     model: ChiVLA,
@@ -978,12 +1355,13 @@ def main() -> None:
 
     print(f"Loading cache statistics from {args.cache}", flush=True)
     stats = load_cache_statistics(args.cache, args.horizon)
-    suite = load_suite()
+    suite = load_suite(args.suite)
     tasks = task_languages(suite)
-    vocab, encode = build_vocab(tasks)
+    training_tasks = task_languages(load_suite("libero_object"))
+    vocab, encode = build_vocab(training_tasks)
     print(f"Tasks={len(tasks)} vocab={len(vocab)} samples={stats['sample_count']}", flush=True)
     model = load_model(args, len(vocab), stats)
-    sample_tensors = tensorize_sample(stats["first_sample"], encode, tasks, stats)
+    sample_tensors = tensorize_sample(stats["first_sample"], encode, training_tasks, stats)
     with torch.inference_mode():
         prediction, _ = model(*sample_tensors)
     if not torch.isfinite(prediction).all():
@@ -993,6 +1371,7 @@ def main() -> None:
     result: dict[str, Any] = {
         "mode": args.mode,
         "architecture": args.architecture,
+        "suite": args.suite,
         "checkpoint": str(args.checkpoint),
         "cache": str(args.cache),
         "seed": args.seed,
@@ -1002,6 +1381,15 @@ def main() -> None:
         "prediction_shape": list(prediction.shape),
         "prediction_finite": True,
         "prediction_sample": prediction[0].detach().float().cpu().tolist(),
+        "evaluation_scope": (
+            "In-domain LIBERO-Object evaluation"
+            if args.suite == "libero_object"
+            else (
+                "Zero-shot cross-suite evaluation of a LIBERO-Object-trained checkpoint. "
+                "Vocabulary and normalization remain fixed to LIBERO-Object, with unseen "
+                "instruction words mapped to the padding identifier."
+            )
+        ),
     }
 
     if args.mode == "smoke":
@@ -1014,8 +1402,22 @@ def main() -> None:
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "capability":
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
+    elif args.mode == "offline_diagnostic":
+        if args.suite != "libero_object":
+            raise ValueError("offline_diagnostic currently requires suite=libero_object")
+        result["offline_diagnostic"] = run_offline_checkpoint_diagnostic(
+            args, model, tasks, encode, stats
+        )
     elif args.mode == "causal":
         result["causal"] = run_causal_intervention(args, model, suite, tasks, encode, stats)
+    elif args.mode == "visual_subspace":
+        if args.architecture != "chi":
+            raise ValueError("visual_subspace requires architecture=chi")
+        if args.suite != "libero_object":
+            raise ValueError("visual_subspace currently requires suite=libero_object")
+        result["visual_subspace"] = run_visual_subspace_intervention(
+            args, model, suite, tasks, encode, stats
+        )
     elif args.mode == "exact_attention":
         if args.architecture != "chi":
             raise ValueError("exact_attention requires architecture=chi")

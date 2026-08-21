@@ -133,7 +133,7 @@ a coefficient-level editing interface.
 \midrule
 Small capability cost &
 The rational policy reaches $92.8\%\pm2.1\%$ over three seeds. A matched seed-0 twin shows a $4.4$ to $5.8$ point cost across two GPU classes. &
-Complete conventional seeds 1 and 2 and partial-conversion controls, then localize the task-specific gap. \\
+Diagnose the collapsed conventional seeds 1 and 2, evaluate matched \chivla\ seeds, and add partial-conversion controls. \\
 Weight-only diagnosis &
 Exact layerwise attention decomposition consistently beats fixed random subspaces. &
 Recover a concrete behavioral condition from weights before viewing its test rollouts. \\
@@ -339,7 +339,10 @@ $20{,}137{,}352$ parameters and the conventional model has $20{,}138{,}632$, a d
 $0.006\%$. The rational deficit is therefore $4.4$ and $5.8$ points. A stratified trial bootstrap
 gives intervals of $[-8.0,-0.8]$ and $[-9.4,-2.2]$ points, respectively. These intervals quantify
 the fixed-checkpoint canonical states, not across-seed uncertainty. Task 3 accounts for $21$ of
-the lost successes on both platforms. On one A30, eager batch-one latency is $38.05$ ms for the
+the lost successes on both platforms. Targeted canonical replications reverse this gap: \chivla
+seeds 1 and 2 each reach $41/50$, while their conventional counterparts reach $37/50$ and
+$33/50$. The task-3 deficit is therefore checkpoint-specific, although full-suite matched
+seed estimates are still pending. On one A30, eager batch-one latency is $38.05$ ms for the
 rational model and $7.14$ ms for the conventional control. Compilation reduces these to $1.52$
 and $0.88$ ms, a $1.74\times$ gap. At batch $128$, rational training is $3.12\times$ slower and
 uses $1.63\times$ the peak allocated memory. A6000 profiling independently reduces the eager
@@ -489,16 +492,20 @@ weight-derived terms can localize and selectively repair that shortcut.
 % ============================================================================
 
 \paragraph{1. Complete the controlled conversion study.}
-Complete seeds 1 and 2, add partial-conversion controls, and retain the predeclared three-point
-noninferiority margin. Seed 0 misses that margin on both tested GPU classes.
+Conventional seeds 1 and 2 completed but reached only $9.0\%$ and $8.2\%$, despite low offline
+losses, compared with $89.8\%$ for seed 0. Audit this severe optimization variance, evaluate the
+matched \chivla\ checkpoints, add partial-conversion controls, and retain the predeclared
+three-point noninferiority margin. Seed 0 misses that margin on both tested GPU classes.
 Report FLOPs, training throughput, memory, eager latency, and optimized latency separately.
 The current evidence supports strong rational capability and a modest nonzero seed-0 cost.
 
 \paragraph{2. Direct coefficient surgery.}
-Our first preregistered four-task screen directly edits query, key, and value columns selected
-by exact attention Grams. Retention gives a favorable $10$-point gap over random controls but
-misses the $15$-point gate, while removal has the wrong sign. This is a no-go for the current
-edit mapping, as detailed in Appendix~\ref{app:expanded-mechanisms}. The next test must resolve
+Our preregistered discovery sweep evaluates fifteen block-rank configurations and directly edits
+query, key, and value columns selected by exact attention Grams. No configuration passes both
+$15$-point gates. The best minimum advantage is block 0 at rank 128, where retention beats the
+matched random control by $10$ points and selected removal is $40$ points more damaging than
+matched random removal. This is a no-go for the current edit mapping, as detailed in
+Appendix~\ref{app:expanded-mechanisms}. The next test must resolve
 redundant paths or gauge sensitivity, compare post-hoc controls across three checkpoints, and
 report targeted effect, ordinary success, edit norm, and collateral damage.
 
@@ -572,14 +579,17 @@ closed-loop capability. The real checkpoint passes a mechanical operator audit. 
 weight-derived analysis now crosses individual attention layers, and a compact causal visual
 subspace preserves almost all tested behavior.
 
-Five limits determine the next version of the paper. First, the same-skeleton control has one
-completed seed, a $4.4$ to $5.8$ point capability gap, and a residual compiled-runtime tax.
+Five limits determine the next version of the paper. First, the same-skeleton seed-0 control has
+a $4.4$ to $5.8$ point capability gap and a residual compiled-runtime tax. Two additional
+conventional seeds collapse to $9.0\%$ and $8.2\%$, exposing severe optimization variance rather
+than establishing a stable multi-seed comparison.
 Second, the
 benchmark is one narrow suite and counterfactual instructions do not fully reroute the policy.
 Third, exact
 decomposition is layerwise rather than end to end. Fourth, the closed-loop causal intervention
-uses one checkpoint and twenty trials. Fifth, activation projection succeeds but the first
-direct coefficient-edit screen fails its selectivity gate, so no behaviorally validated weight
+uses one checkpoint and twenty trials. Fifth, activation projection succeeds but the full
+fifteen-configuration coefficient-edit sweep has no candidate that passes both selectivity gates,
+so no behaviorally validated weight
 edit has yet been established.
 
 The defensible conclusion is therefore narrow. Polynomial and rational restrictions do not
@@ -781,6 +791,12 @@ random controls. This $10$-point advantage misses the preregistered $15$-point g
 removal also preserves $18/20$, compared with $17/20$ for both random controls, which is the
 wrong direction for the necessity prediction. The screen is a no-go for the current mapping
 from Gram eigenspaces to query, key, and value column edits.
+
+A subsequent discovery sweep evaluates blocks $0$, $2$, $4$, $6$, and $7$ at ranks $64$, $128$,
+and $256$. None of the fifteen configurations passes both prespecified $15$-point gates. The best
+configuration, block 0 at rank 128, has a $10$-point retention advantage and a $40$-point removal
+advantage over Frobenius-matched random edits. It therefore does not advance to held-out
+confirmation.
 
 \begin{figure}[H]
 \centering
