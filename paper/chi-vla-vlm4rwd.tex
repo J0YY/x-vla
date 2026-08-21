@@ -23,9 +23,9 @@
 \newcommand{\chivla}{$\chi$-VLA}
 \newcommand{\R}{\mathbb{R}}
 
-\title{\textbf{A Capable, Fully Tensor-Decomposable}\\[0.15em]
-\textbf{Vision-Language-Action Policy}\\[0.35em]
-\large Exact rational conversion, protocol-aligned control, and weight-derived analysis}
+\title{\textbf{Toward Auditable Vision-Language Control}\\[0.15em]
+\textbf{A Fully Tensor-Decomposable VLA}\\[0.35em]
+\large Specialist capability and exact weight-level diagnostics}
 \author{}
 \date{}
 
@@ -47,48 +47,48 @@ reaches $96.2\%$ at three times the inference cost. In a separate three-checkpoi
 instantiation, we derive an exact weight-based decomposition of softmax-free attention and
 reconstruct every attention module with worst relative error $2.56\times10^{-7}$. All $36$
 primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
-median fidelity ratio $2.44$. The evidence establishes strong specialist capability and exact
-layerwise access to trained attention coefficients. It does not establish broad robotic
-generalization, robust instruction grounding, or an exact end-to-end decomposition of the full
-policy.
+median fidelity ratio $2.44$. The evidence establishes strong specialist capability together
+with exact, checkpoint-native access to learned attention structure. Such access is relevant when
+deployment failures may involve visual shortcuts or weak language use. The present results do not
+establish broad robotic generalization, robust instruction grounding, selective behavioral
+editing, or an exact end-to-end decomposition of the full policy.
 \end{abstract}
 
 % ============================================================================
 \section{Introduction}
 % ============================================================================
 
-Modern robot policies can work well while remaining difficult to inspect. A checkpoint contains
-millions of learned numbers, but it does not directly reveal which combinations of image regions,
-instruction tokens, and robot state produce an action. Analysts therefore usually collect
-activations on a dataset and fit a separate probe. That can identify correlations, but it leaves
-open whether the same structure is present in the weights and whether it causes behavior.
+Deployable vision-language robot policies need more than aggregate success. When a policy fails,
+developers need to distinguish possible visual shortcuts, weak instruction use, state-estimation
+errors, and unstable action generation. Conventional checkpoints expose little of this structure
+directly. Post-hoc probes can identify correlated activations, but their conclusions depend on a
+chosen dataset and need not reveal how the deployed weights construct an action.
 
-Tensor decomposition offers a different analysis surface. A tensor is a multidimensional table,
-and a decomposition rewrites that table as a sum of simpler low-rank factors, much as a matrix
-factorization finds dominant directions in a matrix. If a network is built from additions,
-multiplications, and ratios of polynomials, its weights define an explicit table of input
-interactions. Decomposing that table can rank the combinations the model is constructed to use.
-By \emph{fully tensor-decomposable}, we mean that every learned block preserves this algebraic
-form. The aim is not merely compression. It is a direct path from parameters to candidate
-mechanisms that can be tested by intervention \cite{pearce,chinets}.
+Tensor decomposition offers a complementary, checkpoint-native analysis surface. A tensor is a
+multidimensional table, and a decomposition rewrites that table as a sum of simpler low-rank
+factors, much as a matrix factorization finds dominant directions in a matrix. If a network is
+built from additions, multiplications, and ratios of polynomials, its weights define an explicit
+table of input interactions. By \emph{fully tensor-decomposable}, we mean that every learned block
+preserves this algebraic form. This structure does not certify semantic grounding by itself. It
+provides a direct weight-level surface for subsequent grounding and failure analyses.
 
 Robot control makes this goal useful and difficult. Visual shortcuts can produce high benchmark
-success while ignoring the instruction, and small action errors compound in closed loop.
-Standard softmax, nonlinear activations, and square-root normalization break the explicit
-polynomial form. Continuous actions also cannot rely on the external categorical sampling used
-by a language model. A practical design must recover these functions without losing precise
-control.
+success while ignoring the instruction, and small action errors compound in closed loop. Standard
+softmax, nonlinear activations, and square-root normalization break the explicit polynomial form.
+Continuous actions also cannot rely on the external categorical sampling used by a language
+model. Exact structural access is useful only if the restricted policy still controls reliably.
 
-We study the narrower but testable question:
+We therefore study a prerequisite for deployment-oriented diagnostics:
 
 \begin{quote}
 \emph{Can a specialist VLA retain strong closed-loop capability when every deployed learned
-operation is polynomial or rational, while supporting exact weight analysis?}
+operation is polynomial or rational, while exposing exact layerwise structure from its weights?}
 \end{quote}
 
-We test capability and structural analysis in two fully rational encoder instantiations. The
-convolutional checkpoints establish closed-loop capability. Separate ViT checkpoints support
-the exact attention audit.
+We test capability and structural access in two fully rational encoder instantiations. The
+convolutional checkpoints establish closed-loop capability. Separate ViT checkpoints support the
+exact attention audit. These experiments test whether a useful diagnostic surface can coexist
+with control, not whether that surface already certifies grounding or supports a validated edit.
 
 Our contributions are:
 
@@ -105,8 +105,9 @@ Our contributions are:
 \end{enumerate}
 
 This paper does not claim current state of the art. It also does not claim that comparable
-mechanisms are impossible to obtain from conventional policies. The empirical question is
-whether the algebraic policy makes exact weight structure directly accessible.
+mechanisms are impossible to obtain from conventional policies. Our narrower result is that an
+algebraic VLA can make exact layerwise weight structure directly accessible without giving up
+strong specialist control.
 
 % ============================================================================
 \section{A rational tensor robot policy}
@@ -386,27 +387,31 @@ auditing in a strong continuous vision-language policy.
 
 \paragraph{VLA robustness.}
 Recent evaluations show that standard LIBERO success can coexist with weak robustness and
-language use \cite{liberopro,liberocf,liberopara}. We therefore treat LIBERO-Object as a bounded
-specialist capability setting rather than evidence of broad generalization.
+language use \cite{liberopro,liberocf,liberopara}. This motivates model-internal diagnostics, but
+our exact weight analysis does not itself certify grounding. We therefore treat LIBERO-Object as
+a bounded specialist capability setting rather than evidence of broad deployment readiness.
 
 % ============================================================================
 \section{Limitations and conclusion}
 % ============================================================================
 
-\chivla\ demonstrates that a complete rational tensor policy can reach strong specialist
-closed-loop capability. The real checkpoint passes a mechanical operator audit. Exact
-weight-derived analysis now crosses individual attention layers.
+\chivla\ demonstrates that strong specialist closed-loop control can coexist with a mechanically
+auditable rational graph and exact layerwise attention analysis. This combination is relevant to
+deployment diagnostics because it exposes trained coefficient structure without fitting a
+separate probe.
 
 The scope is deliberately specific. LIBERO-Object is one specialist suite with fixed task
-instructions, so these results do not establish broad robotic generalization or robust
-instruction grounding. Exact reconstruction is certified layer by layer and does not yet yield
-one compact symbolic contraction of the full policy. The three-checkpoint ensemble trades three
-forward passes for its strongest capability result.
+instructions. The experiments do not show that the policy follows language when visual cues
+conflict, generalizes across task distributions, or transfers to physical robots. Exact
+reconstruction is certified layer by layer and does not yet yield one compact symbolic
+contraction of the full policy. The three-checkpoint ensemble trades three forward passes for its
+strongest capability result.
 
-Within that scope, polynomial and rational restrictions are compatible with strong closed-loop
-control and provide a precise weight-derived analysis surface. Convolutional checkpoints support
-the capability result, while separate ViT checkpoints support the exact reconstruction. We do
-not claim a direct coefficient-edit interface.
+We therefore present \chivla\ as diagnostic infrastructure, not as a deployment-ready or robustly
+grounded robot policy. Convolutional checkpoints support the capability result, while separate
+ViT checkpoints support the exact reconstruction. Broader suites, counterfactual instruction
+tests, and physical-robot evaluation remain necessary for deployment claims. We do not claim a
+direct coefficient-edit interface.
 
 \paragraph{Reproducibility.}
 Training and evaluation use fixed task lists, explicit camera and action conventions,
