@@ -11,6 +11,8 @@ verifier also rehashes those large payloads directly.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import math
@@ -104,6 +106,17 @@ SOURCE_SHA256 = {
     "xvla/train/data.py": "2b2dd182c654979aff8905097ba577d97c82a386d6d36220dd9e2a49b142c992",
     "xvla/train/exact_odt_attention_proto.py": "048e094f384ef6064cbd02c6d5668024a49ed8a218d4c318f7846e66d47e3238",
 }
+SOURCE_SNAPSHOTS = {
+    "xvla/models/vla.py": (
+        "athena/results/exact_attention_frozen_sources/xvla_models_vla.py.b64"
+    ),
+    "xvla/models/vit.py": (
+        "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64"
+    ),
+    "xvla/nn/product_routing.py": (
+        "athena/results/exact_attention_frozen_sources/xvla_nn_product_routing.py.b64"
+    ),
+}
 RELATIVE_L2_GATE = 1e-6
 
 
@@ -141,6 +154,10 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def bytes_sha256(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
 def require_equal(actual: Any, expected: Any, label: str) -> None:
     if actual != expected:
         fail(f"{label}: expected {expected!r}, got {actual!r}")
@@ -158,9 +175,24 @@ def finite_nonnegative(value: Any, label: str) -> float:
 def verify_sources(repo_root: Path) -> None:
     for relative, expected in SOURCE_SHA256.items():
         path = repo_root / relative
-        if not path.is_file():
-            fail(f"missing frozen source: {path}")
-        require_equal(sha256(path), expected, f"source SHA-256 for {relative}")
+        if path.is_file() and sha256(path) == expected:
+            continue
+        snapshot_relative = SOURCE_SNAPSHOTS.get(relative)
+        if snapshot_relative is None:
+            fail(f"missing or stale frozen source: {path}")
+        snapshot = repo_root / snapshot_relative
+        if not snapshot.is_file():
+            fail(f"missing frozen source snapshot: {snapshot}")
+        try:
+            encoded = "".join(snapshot.read_text(encoding="ascii").split())
+            payload = base64.b64decode(encoded, validate=True)
+        except (OSError, UnicodeError, binascii.Error) as exc:
+            fail(f"invalid frozen source snapshot {snapshot}: {exc}")
+        require_equal(
+            bytes_sha256(payload),
+            expected,
+            f"snapshot source SHA-256 for {relative}",
+        )
 
 
 def verify_payloads(payload_root: Path) -> None:
@@ -310,6 +342,7 @@ def main() -> int:
             "cache_path": CACHE_PATH,
             "cache_sha256": CACHE_SHA256,
             "source_file_count": len(SOURCE_SHA256),
+            "packaged_source_snapshot_count": len(SOURCE_SNAPSHOTS),
             "records": rows,
             "totals": {
                 "checkpoint_inputs": len(rows),
