@@ -19,7 +19,7 @@ SETUP_SCHEMA_VERSION = "xvla-mujoco-version-env-setup-v3"
 EXPECTED_BASE_PREFIX = "/work/joy/safesae-openvla"
 EXPECTED_OVERLAY_PREFIX = "/work/joy/xvla-mujoco-3.1.6-overlay"
 EXPECTED_BASE_FREEZE_SHA256 = (
-    "40eaa7969d7e11e40a3835cb500c919fc5f470080598152614c548790b302599"
+    "c7e80877c4d26ec8c1db88d68e3d610c0b5174a802192b6f5d195ba4582952a8"
 )
 EXPECTED_WHEEL_FILENAME = (
     "mujoco-3.1.6-cp310-cp310-manylinux_2_17_x86_64."

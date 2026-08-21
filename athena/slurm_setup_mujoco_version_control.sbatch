@@ -13,7 +13,7 @@ cd /work/joy/x-vla-workshop
 base=/work/joy/safesae-openvla
 overlay=/work/joy/xvla-mujoco-3.1.6-overlay
 result_dir=/work/joy/x-vla-workshop/results/mujoco_version_overlay_control
-expected_base_freeze=40eaa7969d7e11e40a3835cb500c919fc5f470080598152614c548790b302599
+expected_base_freeze=c7e80877c4d26ec8c1db88d68e3d610c0b5174a802192b6f5d195ba4582952a8
 expected_wheel=mujoco-3.1.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 expected_wheel_sha256=f4c2bbc5025bd0a06e939397188be9dc4a6b7d98aa39176d43a302a5811c0b12
 

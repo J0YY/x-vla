@@ -5,7 +5,7 @@ set -euo pipefail
 cd /work/joy/x-vla-workshop
 
 base=/work/joy/safesae-openvla
-expected_base_freeze=40eaa7969d7e11e40a3835cb500c919fc5f470080598152614c548790b302599
+expected_base_freeze=c7e80877c4d26ec8c1db88d68e3d610c0b5174a802192b6f5d195ba4582952a8
 actual_base_freeze=$(env -u PYTHONPATH -u XVLA_MUJOCO_OVERLAY PYTHONNOUSERSITE=1 \
   "$base/bin/python" -m pip freeze --all | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
 if [[ "$actual_base_freeze" != "$expected_base_freeze" ]]; then
