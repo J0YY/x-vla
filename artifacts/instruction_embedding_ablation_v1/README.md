@@ -20,7 +20,9 @@ complete 3-checkpoint by 10-task by 10-episode matrix, and matches every pair to
 state, prompt, token IDs, and condition order. Every hook call must have the correct input-ID digest
 and the exact digest of a 32-position zero tensor. The verifier also decodes every saved trajectory,
 reproduces success from rewards, and reconstructs executed actions from the recorded action chunks.
-It then recomputes checkpoint, task, discordance, exact paired-test, and frozen-gate statistics.
+It then recomputes checkpoint, task, discordance, exact paired-test, and frozen-gate statistics. A
+minimal standard-library implementation of the frozen NumPy 1.26 PCG64 stream also reruns all
+20,000 task-stratified state-cluster bootstrap draws and the linear quantiles from raw outcomes.
 
 The expected result is 263/300 successes with the intact learned lexical path and 63/300 after
 zeroing the post-lookup embeddings, a paired gap of 66.7 percentage points. Full-path success is

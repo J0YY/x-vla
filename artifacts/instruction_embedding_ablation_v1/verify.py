@@ -25,6 +25,12 @@ RAW_RE = re.compile(r"instruction_embedding_ablation_v1_s([0-2])_t(0|2|4|6|8)_(2
 EXPECTED_PACKAGE_MANIFEST_SHA256 = "f63ac60ecb0516ae310e8215507074b103bf09a3c48765cb6ea2c107505e0162"
 EXPECTED_PREFLIGHT_SHA256 = "a91ce8bfc4b296e4a84503db63ad2b34f1c6509a9fb5f3fad74cbfd2bafb748d"
 EXPECTED_ZERO_OUTPUT_SHA256 = "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24"
+BOOTSTRAP_SEED = 2026082701
+BOOTSTRAP_DRAWS = 20000
+PCG64_INITIAL_STATE = 16709343118966810781669210904088756485
+PCG64_INCREMENT = 158727911587790572230967259974399590507
+PCG64_MULTIPLIER = 47026247687942121848144207491837523525
+PCG64_FIRST_RAW = 15274225602273792823
 EXPECTED_PROMPTS = (
     "pick up the alphabet soup and place it in the basket",
     "pick up the cream cheese and place it in the basket",
@@ -197,6 +203,80 @@ def counts(records: list[dict[str, int | bool]]) -> dict[str, float | int]:
 
 def close(actual: Any, expected: Any) -> bool:
     return math.isclose(float(actual), float(expected), rel_tol=1e-12, abs_tol=1e-15)
+
+
+class FrozenPCG64:
+    """Minimal NumPy-1.26 PCG64 stream for the prospectively frozen seed."""
+
+    def __init__(self, seed: int) -> None:
+        require(seed == BOOTSTRAP_SEED, "unsupported bootstrap seed")
+        self.state = PCG64_INITIAL_STATE
+        self.has_uint32 = False
+        self.buffered_uint32 = 0
+
+    def random_raw(self) -> int:
+        mask128 = (1 << 128) - 1
+        mask64 = (1 << 64) - 1
+        self.state = (self.state * PCG64_MULTIPLIER + PCG64_INCREMENT) & mask128
+        xorshifted = ((self.state >> 64) ^ self.state) & mask64
+        rotation = self.state >> 122
+        return ((xorshifted >> rotation) | (xorshifted << ((-rotation) & 63))) & mask64
+
+    def uint32(self) -> int:
+        if self.has_uint32:
+            self.has_uint32 = False
+            return self.buffered_uint32
+        word = self.random_raw()
+        self.buffered_uint32 = word >> 32
+        self.has_uint32 = True
+        return word & ((1 << 32) - 1)
+
+    def bounded_uint32(self, upper_exclusive: int) -> int:
+        require(type(upper_exclusive) is int and 0 < upper_exclusive <= 1 << 32, "invalid bounded integer range")
+        mask32 = (1 << 32) - 1
+        threshold = ((1 << 32) - upper_exclusive) % upper_exclusive
+        while True:
+            product_value = self.uint32() * upper_exclusive
+            if product_value & mask32 >= threshold:
+                return product_value >> 32
+
+
+def linear_quantile(values: list[float], probability: float) -> float:
+    require(values and 0.0 <= probability <= 1.0, "invalid quantile input")
+    ordered = sorted(values)
+    position = probability * (len(ordered) - 1)
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = position - lower
+    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+
+
+def task_stratified_state_cluster_bootstrap(
+    records: list[dict[str, int | bool]], draws: int, seed: int
+) -> list[float]:
+    require(draws == BOOTSTRAP_DRAWS, "bootstrap draw count differs")
+    by_state: dict[tuple[int, int], list[dict[str, int | bool]]] = defaultdict(list)
+    for row in records:
+        by_state[(int(row["task"]), int(row["episode"]))].append(row)
+    expected_states = {(task, episode) for task in range(10) for episode in range(30, 40)}
+    require(set(by_state) == expected_states, "bootstrap state matrix differs")
+    require(all(len(rows) == 3 for rows in by_state.values()), "bootstrap checkpoint clusters differ")
+    stream_check = FrozenPCG64(seed)
+    require(stream_check.random_raw() == PCG64_FIRST_RAW, "frozen PCG64 stream differs")
+    rng = FrozenPCG64(seed)
+    means: list[float] = []
+    for _ in range(draws):
+        total = 0
+        count = 0
+        for task in range(10):
+            for _ in range(10):
+                episode = 30 + rng.bounded_uint32(10)
+                for row in by_state[(task, episode)]:
+                    total += int(row["full"]) - int(row["zeroed"])
+                    count += 1
+        require(count == 300, "bootstrap draw did not retain 300 checkpoint outcomes")
+        means.append(total / count)
+    return [linear_quantile(means, 0.025), linear_quantile(means, 0.975)]
 
 
 def expected_instruction_ids(task: int) -> list[int]:
@@ -490,11 +570,23 @@ def verify(root: Path) -> dict[str, Any]:
     support_lower = sum(10 * value for value in task_support_minima) / 300
     require(close(support_lower, expected["bootstrap_support_lower_bound"]), "bootstrap support lower bound differs")
     require(support_lower > 0.0, "bootstrap support permits a nonpositive draw")
+    require(gates_spec.get("task_stratified_state_cluster_bootstrap_draws") == BOOTSTRAP_DRAWS, "frozen bootstrap draws differ")
+    require(gates_spec.get("task_stratified_state_cluster_bootstrap_seed") == BOOTSTRAP_SEED, "frozen bootstrap seed differs")
+    bootstrap_interval = task_stratified_state_cluster_bootstrap(records, BOOTSTRAP_DRAWS, BOOTSTRAP_SEED)
+    require(
+        len(expected["bootstrap_interval"]) == 2
+        and all(close(a, b) for a, b in zip(bootstrap_interval, expected["bootstrap_interval"])),
+        "recomputed bootstrap interval differs",
+    )
 
     require(summary.get("schema") == "xvla-instruction-embedding-ablation-summary-v1", "summary schema differs")
     require(summary.get("identity_validated") is True and summary.get("overall_pass") is True and summary.get("claim_eligible") is True, "strict summary did not pass")
     require(all(summary.get("gates", {}).values()) and len(summary.get("gates", {})) == 8, "summary gate set differs")
-    require(all(close(a, b) for a, b in zip(summary.get("task_stratified_state_cluster_bootstrap_interval", []), expected["bootstrap_interval"])), "bootstrap interval differs")
+    summary_interval = summary.get("task_stratified_state_cluster_bootstrap_interval", [])
+    require(
+        len(summary_interval) == 2 and all(close(a, b) for a, b in zip(summary_interval, bootstrap_interval)),
+        "summary bootstrap interval differs",
+    )
     require(close(summary["pooled"]["paired_success_gap"], pooled["gap"]), "summary pooled gap differs")
     require(summary["pooled"]["full_only"] == pooled["full_only"] and summary["pooled"]["zeroed_only"] == pooled["zeroed_only"], "summary discordances differ")
 
@@ -506,7 +598,7 @@ def verify(root: Path) -> dict[str, Any]:
         "one_sided_exact_p_at_most_0p01": float(pooled["one_sided_exact_p"]) <= 0.01,
         "at_least_eight_positive_tasks": sum(float(row["gap"]) > 0.0 for row in by_task) >= 8,
         "no_negative_task": all(float(row["gap"]) >= 0.0 for row in by_task),
-        "bootstrap_lower_above_zero": expected["bootstrap_interval"][0] > 0.0 and support_lower > 0.0,
+        "bootstrap_lower_above_zero": bootstrap_interval[0] > 0.0 and support_lower > 0.0,
     }
     require(all(gates.values()), "a recomputed frozen gate failed")
     return {
@@ -514,7 +606,7 @@ def verify(root: Path) -> dict[str, Any]:
         "pooled": pooled,
         "by_checkpoint": by_checkpoint,
         "by_task": by_task,
-        "bootstrap_interval": expected["bootstrap_interval"],
+        "bootstrap_interval": bootstrap_interval,
         "bootstrap_support_lower_bound": support_lower,
         "gates": gates,
     }
