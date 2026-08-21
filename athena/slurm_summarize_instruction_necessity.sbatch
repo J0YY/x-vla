@@ -13,8 +13,8 @@ export PYTHONUNBUFFERED=1
 export PYTHONPATH="/work/joy/x-vla-workshop:/athenahomes/joy/LIBERO:${PYTHONPATH:-}"
 
 cd /work/joy/x-vla-workshop
-readonly expected_common_sha="f90e6088889fbf30805e25ef30880d903dbda2fc8b8e335270fa683c2440c27f"
-readonly expected_summary_sha="23220f36afc3383eee604cc2de263c6c5403aa8f2ef5c43b7b77741b5214c78b"
+readonly expected_common_sha="8ab8839241adbc93ddc486c4b27a96f3bd78e1afd4a9f543603ee2206efc7551"
+readonly expected_summary_sha="7bea6aee78d1594709524d110f91d973bd96e720ad04d618fde61ad405820263"
 [[ "$(sha256sum athena/instruction_necessity_common.py | cut -d' ' -f1)" == "$expected_common_sha" ]]
 [[ "$(sha256sum athena/summarize_instruction_necessity.py | cut -d' ' -f1)" == "$expected_summary_sha" ]]
 python -u athena/summarize_instruction_necessity.py "$@"

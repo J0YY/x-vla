@@ -44,7 +44,7 @@ SUMMARY_RESULT_PATH = "results/instruction_necessity_v1_summary.json"
 LOCAL_SPECIFICITY_SUMMARY_PATH = "results/local_instruction_specificity_v2_summary.json"
 LOCAL_SPECIFICITY_SUMMARY_JOB = "831016"
 
-CONDITIONS = ("correct_prompt", "visible_distractor_prompt", "bos_only")
+CONDITIONS = ("correct_prompt", "copresent_distractor_prompt", "empty_instruction")
 TASK_SHARDS = ((0, 2), (2, 4), (4, 6), (6, 8), (8, 10))
 
 PROTOCOL = {
@@ -54,9 +54,17 @@ PROTOCOL = {
     "canonical_episode_start": 40,
     "canonical_episode_end_exclusive": 50,
     "conditions": list(CONDITIONS),
-    "visible_distractor_selector": (
+    "copresent_distractor_selector": (
         "minimum SHA-256 of instruction-necessity-v1|task|episode|prompt_id "
-        "over the five co-present non-target prompt IDs"
+        "over the five observation-verified co-present non-target prompt IDs"
+    ),
+    "copresent_semantics": (
+        "co-presence is verified from simulator observation fields and does not assert "
+        "camera visibility or unoccluded pixels"
+    ),
+    "empty_instruction_semantics": (
+        "the empty string encodes tokenizer BOS plus 31 unmasked PAD tokens; the model "
+        "also prepends its common learned BOS token"
     ),
     "condition_order": (
         "one of six permutations selected by SHA-256 of "
@@ -94,12 +102,15 @@ PROTOCOL = {
 FROZEN_GATES = {
     "minimum_correct_success_pooled": 0.70,
     "minimum_correct_success_every_checkpoint": 0.60,
-    "minimum_correct_minus_visible_distractor_pooled": 0.20,
-    "minimum_correct_minus_bos_only_pooled": 0.20,
+    "minimum_correct_minus_copresent_distractor_pooled": 0.20,
+    "minimum_correct_minus_empty_instruction_pooled": 0.20,
     "each_control_margin_strictly_positive_every_checkpoint": True,
     "one_sided_paired_exact_p_at_most": 0.01,
     "minimum_tasks_with_strictly_positive_gap_per_control": 8,
     "negative_task_gaps_allowed_per_control": 0,
+    "task_stratified_state_cluster_bootstrap_draws": 20000,
+    "task_stratified_state_cluster_bootstrap_lower_strictly_above": 0.0,
+    "state_cluster_retains_all_three_checkpoint_outcomes": True,
     "all_three_checkpoints_must_pass": True,
 }
 
@@ -108,7 +119,8 @@ DESIGN_PROVENANCE = {
     "observation_time_local": "2026-08-21T08:04:00-07:00",
     "different_endpoint": (
         "280-step paired closed-loop original-goal success under correct, one "
-        "deterministic visible-distractor, and BOS-only prompts"
+        "deterministic observation-verified co-present-distractor, and empty-string "
+        "instruction encodings"
     ),
     "failed_endpoint_not_reanalyzed": (
         "eight-action displacement specificity ranks against absent-prompt contrasts"
@@ -126,6 +138,17 @@ DESIGN_PROVENANCE = {
         "specificity score, rank, threshold, or outcome selects any condition, state, "
         "distractor, task, checkpoint, or gate in this protocol."
     ),
+    "pre_outcome_semantic_and_inference_hardening": {
+        "time_local": "2026-08-21T08:46:00-07:00",
+        "reason": "independent code review before any preflight or rollout began",
+        "canceled_unstarted_jobs": list(range(831332, 831350)),
+        "changes": (
+            "renamed controls to copresent_distractor_prompt and empty_instruction, "
+            "documented their exact semantics, and added a task-stratified state-cluster "
+            "bootstrap retaining all three checkpoint outcomes together"
+        ),
+        "outcomes_observed_before_change": False,
+    },
 }
 
 SOURCE_PATHS = (
@@ -284,7 +307,11 @@ def synthetic_known_answer() -> dict[str, Any]:
     selected, digests = select_visible_distractor(0, 40, [0, 1, 2, 3, 4, 5])
     order = condition_order(2, 9, 49)
     p_value = one_sided_paired_exact_p(10, 0)
-    if selected != 1 or order != ["bos_only", "visible_distractor_prompt", "correct_prompt"]:
+    if selected != 1 or order != [
+        "empty_instruction",
+        "copresent_distractor_prompt",
+        "correct_prompt",
+    ]:
         raise RuntimeError("Frozen selector known answer changed")
     if abs(p_value - 0.0009765625) > 1e-15:
         raise RuntimeError("Paired exact-test known answer changed")

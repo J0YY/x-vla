@@ -65,8 +65,15 @@ def expected_instruction_catalog() -> dict[str, dict[str, Any]]:
         raise RuntimeError("Live Object prompt catalog differs")
     vocab, _ = build_vocab(languages)
     encode = build_encoder(vocab)
+    empty_ids = encode("")
+    if empty_ids != [1] + [0] * 31:
+        raise RuntimeError("Empty-instruction token semantics changed")
     return {
-        "bos_only": {"prompt_id": "bos_only", "prompt_text": "", "instruction_ids": encode("")},
+        "empty_instruction": {
+            "prompt_id": "empty_instruction",
+            "prompt_text": "",
+            "instruction_ids": empty_ids,
+        },
         **{
             str(prompt_id): {
                 "prompt_id": prompt_id,
@@ -164,7 +171,7 @@ def paired_counts(records: list[dict[str, Any]], control: str) -> dict[str, floa
     control_only = sum(int(row[control] and not row["correct_prompt"]) for row in records)
     trials = len(records)
     return {
-        "trials": trials,
+        "paired_checkpoint_state_pairs": trials,
         "correct_successes": correct,
         "control_successes": control_success,
         "correct_success_rate": correct / trials,
@@ -172,8 +179,40 @@ def paired_counts(records: list[dict[str, Any]], control: str) -> dict[str, floa
         "paired_gap": (correct - control_success) / trials,
         "correct_only": correct_only,
         "control_only": control_only,
-        "one_sided_exact_p": one_sided_paired_exact_p(correct_only, control_only),
+        "pooled_pair_mcnemar_one_sided_exact_p": one_sided_paired_exact_p(
+            correct_only, control_only
+        ),
+        "mcnemar_scope": (
+            f"exact over {trials} checkpoint-state pairs; not cluster-robust inference"
+        ),
     }
+
+
+def task_stratified_state_cluster_bootstrap(
+    records: list[dict[str, Any]], control: str, draws: int, seed: int
+) -> list[float]:
+    """Resample 100 task/episode states and keep all three checkpoints together."""
+    by_state: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in records:
+        by_state[(int(row["task"]), int(row["episode"]))].append(row)
+    expected = {(task, episode) for task in range(10) for episode in range(40, 50)}
+    if set(by_state) != expected or any(len(rows) != 3 for rows in by_state.values()):
+        raise RuntimeError("State-cluster bootstrap requires 100 states by three checkpoints")
+    rng = np.random.default_rng(seed)
+    means = np.empty(draws, dtype=np.float64)
+    for draw in range(draws):
+        total = 0.0
+        count = 0
+        for task in range(10):
+            sampled_episodes = rng.integers(40, 50, size=10)
+            for episode in sampled_episodes:
+                for row in by_state[(task, int(episode))]:
+                    total += float(row["correct_prompt"]) - float(row[control])
+                    count += 1
+        if count != 300:
+            raise RuntimeError("Bootstrap draw did not retain 300 checkpoint outcomes")
+        means[draw] = total / count
+    return [float(np.quantile(means, 0.025)), float(np.quantile(means, 0.975))]
 
 
 def main() -> None:
@@ -231,8 +270,8 @@ def main() -> None:
             raise RuntimeError("Smoke condition order or set differs")
         expected_ids = {
             "correct_prompt": str(task),
-            "visible_distractor_prompt": str(mapping["selected_distractor_prompt_id"]),
-            "bos_only": "bos_only",
+            "copresent_distractor_prompt": str(mapping["selected_distractor_prompt_id"]),
+            "empty_instruction": "empty_instruction",
         }
         for condition, value in row["conditions"].items():
             expected = catalog[expected_ids[condition]]
@@ -300,8 +339,8 @@ def main() -> None:
                 raise RuntimeError("Full row identity differs from the frozen manifest")
             expected_ids = {
                 "correct_prompt": str(task),
-                "visible_distractor_prompt": str(mapping["selected_distractor_prompt_id"]),
-                "bos_only": "bos_only",
+                "copresent_distractor_prompt": str(mapping["selected_distractor_prompt_id"]),
+                "empty_instruction": "empty_instruction",
             }
             starts = []
             success_row: dict[str, Any] = {"seed": seed, "task": task, "episode": episode}
@@ -329,19 +368,19 @@ def main() -> None:
 
     pooled = {
         control: paired_counts(records, control)
-        for control in ("visible_distractor_prompt", "bos_only")
+        for control in ("copresent_distractor_prompt", "empty_instruction")
     }
     by_checkpoint = {
         str(seed): {
             control: paired_counts([row for row in records if row["seed"] == seed], control)
-            for control in ("visible_distractor_prompt", "bos_only")
+            for control in ("copresent_distractor_prompt", "empty_instruction")
         }
         for seed in range(3)
     }
     by_task = {
         str(task): {
             control: paired_counts([row for row in records if row["task"] == task], control)
-            for control in ("visible_distractor_prompt", "bos_only")
+            for control in ("copresent_distractor_prompt", "empty_instruction")
         }
         for task in range(10)
     }
@@ -351,7 +390,7 @@ def main() -> None:
         for seed in range(3)
     }
     task_consistency = {}
-    for control in ("visible_distractor_prompt", "bos_only"):
+    for control in ("copresent_distractor_prompt", "empty_instruction"):
         gaps = [by_task[str(task)][control]["paired_gap"] for task in range(10)]
         task_consistency[control] = {
             "strictly_positive_tasks": sum(float(gap) > 0 for gap in gaps),
@@ -359,29 +398,55 @@ def main() -> None:
             "gaps_by_task": {str(task): gaps[task] for task in range(10)},
         }
 
+    bootstrap_draws = int(FROZEN_GATES["task_stratified_state_cluster_bootstrap_draws"])
+    cluster_bootstrap = {
+        control: task_stratified_state_cluster_bootstrap(
+            records,
+            control,
+            bootstrap_draws,
+            2026082500 + index,
+        )
+        for index, control in enumerate(
+            ("copresent_distractor_prompt", "empty_instruction")
+        )
+    }
+
     gates = {
         "correct_success_pooled_at_least_0p70": correct_pooled >= 0.70,
         "correct_success_every_checkpoint_at_least_0p60": all(
             value >= 0.60 for value in correct_by_checkpoint.values()
         ),
-        "correct_minus_visible_distractor_at_least_0p20": pooled["visible_distractor_prompt"]["paired_gap"] >= 0.20,
-        "correct_minus_bos_only_at_least_0p20": pooled["bos_only"]["paired_gap"] >= 0.20,
+        "correct_minus_copresent_distractor_at_least_0p20": pooled[
+            "copresent_distractor_prompt"
+        ]["paired_gap"] >= 0.20,
+        "correct_minus_empty_instruction_at_least_0p20": pooled[
+            "empty_instruction"
+        ]["paired_gap"] >= 0.20,
         "both_margins_positive_every_checkpoint": all(
             by_checkpoint[str(seed)][control]["paired_gap"] > 0
             for seed in range(3)
-            for control in ("visible_distractor_prompt", "bos_only")
+            for control in ("copresent_distractor_prompt", "empty_instruction")
         ),
         "both_one_sided_paired_exact_p_at_most_0p01": all(
-            pooled[control]["one_sided_exact_p"] <= 0.01
-            for control in ("visible_distractor_prompt", "bos_only")
+            pooled[control]["pooled_pair_mcnemar_one_sided_exact_p"] <= 0.01
+            for control in ("copresent_distractor_prompt", "empty_instruction")
         ),
         "at_least_eight_strictly_positive_tasks_per_control": all(
             task_consistency[control]["strictly_positive_tasks"] >= 8
-            for control in ("visible_distractor_prompt", "bos_only")
+            for control in ("copresent_distractor_prompt", "empty_instruction")
         ),
         "no_negative_task_gap_for_either_control": all(
             task_consistency[control]["negative_tasks"] == 0
-            for control in ("visible_distractor_prompt", "bos_only")
+            for control in ("copresent_distractor_prompt", "empty_instruction")
+        ),
+        "both_task_stratified_state_cluster_bootstrap_lowers_above_zero": all(
+            cluster_bootstrap[control][0]
+            > float(
+                FROZEN_GATES[
+                    "task_stratified_state_cluster_bootstrap_lower_strictly_above"
+                ]
+            )
+            for control in ("copresent_distractor_prompt", "empty_instruction")
         ),
     }
     overall_pass = all(gates.values())
@@ -406,12 +471,18 @@ def main() -> None:
         "by_checkpoint": by_checkpoint,
         "by_task": by_task,
         "task_consistency": task_consistency,
+        "task_stratified_state_cluster_bootstrap_intervals": cluster_bootstrap,
+        "bootstrap_scope": (
+            "Each draw resamples ten episode states within every task, for 100 state "
+            "clusters total, and retains all three checkpoint outcomes for each sampled state."
+        ),
         "gates": gates,
         "claim_if_passed": (
             "Across three fixed chi-ViT checkpoints and 300 paired canonical "
             "LIBERO-Object states, correct familiar instructions improve original-goal "
             "closed-loop success by at least 20 percentage points relative to both one "
-            "outcome-independent visible-distractor instruction and BOS-only input."
+            "outcome-independent observation-verified co-present distractor instruction "
+            "and the empty-string instruction encoding."
         ),
         "claim_boundaries": (
             "This establishes instruction necessity only for familiar Object-suite prompts, "
@@ -420,7 +491,11 @@ def main() -> None:
             "physical transfer, or a benefit unique to tensor decomposability. Episodes 40 "
             "through 49 overlap the failed local endpoint's states, while the 280-step "
             "original-goal success outcome is new. This endpoint was frozen after the local "
-            "displacement-rank endpoint became impossible and is not a rescue reanalysis."
+            "displacement-rank endpoint became impossible and is not a rescue reanalysis. "
+            "Co-presence is verified from simulator observation fields and does not guarantee "
+            "visual visibility. Empty instruction encodes tokenizer BOS plus 31 unmasked PAD "
+            "tokens, together with the model's common learned BOS token. The pooled exact "
+            "McNemar tests use 300 checkpoint-state pairs and are not cluster-robust inference."
         ),
     }
     for path, identity in result_identities.items():
@@ -435,8 +510,8 @@ def main() -> None:
             {
                 "overall_pass": overall_pass,
                 "correct_success_pooled": correct_pooled,
-                "visible_distractor_gap": pooled["visible_distractor_prompt"]["paired_gap"],
-                "bos_only_gap": pooled["bos_only"]["paired_gap"],
+                "copresent_distractor_gap": pooled["copresent_distractor_prompt"]["paired_gap"],
+                "empty_instruction_gap": pooled["empty_instruction"]["paired_gap"],
             },
             sort_keys=True,
         ),

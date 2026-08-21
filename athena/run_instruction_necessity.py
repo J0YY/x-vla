@@ -223,9 +223,11 @@ def main() -> None:
     vocab, _ = build_vocab(languages)
     encode = build_encoder(vocab)
     encoded_prompts: dict[str, list[int]] = {
-        "bos_only": encode(""),
+        "empty_instruction": encode(""),
         **{str(prompt_id): encode(text) for prompt_id, text in languages.items()},
     }
+    if encoded_prompts["empty_instruction"] != [1] + [0] * 31:
+        raise RuntimeError("Empty-instruction token semantics changed")
     stats = load_cache_statistics(args.cache, args.horizon)
     if (int(stats["frame_count"]), int(stats["sample_count"])) != (
         CACHE["frames"],
@@ -299,15 +301,15 @@ def main() -> None:
                         "prompt_text": languages[task_index],
                         "instruction_ids": encoded_prompts[str(task_index)],
                     },
-                    "visible_distractor_prompt": {
+                    "copresent_distractor_prompt": {
                         "prompt_id": distractor_id,
                         "prompt_text": languages[distractor_id],
                         "instruction_ids": encoded_prompts[str(distractor_id)],
                     },
-                    "bos_only": {
-                        "prompt_id": "bos_only",
+                    "empty_instruction": {
+                        "prompt_id": "empty_instruction",
                         "prompt_text": "",
-                        "instruction_ids": encoded_prompts["bos_only"],
+                        "instruction_ids": encoded_prompts["empty_instruction"],
                     },
                 }
                 order = condition_order(args.checkpoint_seed, task_index, episode)
@@ -452,7 +454,10 @@ def main() -> None:
             "new task compositions, cross-suite or physical transfer, or a benefit unique to "
             "tensor decomposability. Episodes 40 through 49 overlap the failed local endpoint's "
             "state set, but the 280-step original-goal success outcome is new. This study was "
-            "designed after that different local endpoint failed and is not its reanalysis."
+            "designed after that different local endpoint failed and is not its reanalysis. "
+            "The co-present object is verified from simulator observation fields, not guaranteed "
+            "visually unoccluded. Empty instruction means the empty-string tokenizer output, "
+            "BOS plus 31 unmasked PAD tokens, together with the model's common learned BOS token."
         ),
     }
     write_json(args.output, output)

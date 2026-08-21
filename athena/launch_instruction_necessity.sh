@@ -18,13 +18,13 @@ declare -Ar checkpoints=(
   [2]=artifacts/ckpt_linear_rat_vit_s2.pt
 )
 declare -Ar expected_shas=(
-  [athena/instruction_necessity_common.py]=f90e6088889fbf30805e25ef30880d903dbda2fc8b8e335270fa683c2440c27f
+  [athena/instruction_necessity_common.py]=8ab8839241adbc93ddc486c4b27a96f3bd78e1afd4a9f543603ee2206efc7551
   [athena/preflight_instruction_necessity.py]=ed689e9ec2678ea28ca594a4778ddf6ee69244b3a4bd03c2067e37f3232d2c32
-  [athena/run_instruction_necessity.py]=9e5a1d3892ce88caab6b6a934a8f70639dd09ea1b05c2ad345f31e0f0b9157ea
-  [athena/summarize_instruction_necessity.py]=23220f36afc3383eee604cc2de263c6c5403aa8f2ef5c43b7b77741b5214c78b
-  [athena/slurm_preflight_instruction_necessity.sbatch]=62b6c2f095ab8c356a96051c0bdb2d5a6c2a2d8376e092a4279b9dbab81c00fb
-  [athena/slurm_instruction_necessity.sbatch]=129152853109cced1d903d490da60194257903a07b7fe18202e09033e4df601d
-  [athena/slurm_summarize_instruction_necessity.sbatch]=6be0b3b9ec119d11c0af1b352f60e5fd681a003a52474c941bca50a2c0a949a8
+  [athena/run_instruction_necessity.py]=90e06ec5d29d2c2f0b466dc259984190240270ce3110f787352de78689496a7e
+  [athena/summarize_instruction_necessity.py]=7bea6aee78d1594709524d110f91d973bd96e720ad04d618fde61ad405820263
+  [athena/slurm_preflight_instruction_necessity.sbatch]=eb62bc78e88d7a1331742334a5a369c6d22274ce8c0cfad2fdb9de226ee279df
+  [athena/slurm_instruction_necessity.sbatch]=168b40dd7047317cb459372335332ac42e55f6dfe6e2f7426b5082f89ec5b516
+  [athena/slurm_summarize_instruction_necessity.sbatch]=9998587f4f799dc6078bb93b5151a1558f8d31f70e929ed8b5c0c4b92d2edce3
 )
 
 for path in "${!expected_shas[@]}"; do
