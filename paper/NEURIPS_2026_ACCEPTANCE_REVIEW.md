@@ -17,17 +17,37 @@ Across three ViT checkpoints, the structured projector retains $259/272$ full-po
 tasks 8 and 9, which are absent from corrected projector construction. Three fixed equal-rank random projectors retain only $37/272$,
 $9/272$, and $22/272$. These tasks were used during policy training, so the result is not unseen-task
 generalization. Separate convolutional checkpoints test whether structural certificates transfer
-across visual encoder families.
+across visual encoder families. On the same sixteen deterministic inputs per convolutional
+checkpoint, independent certificates now cover every joint-attention head, every joint FFN, and
+every complete joint block. A separate ViT audit exactly partitions each action-query attention
+update into exhaustive vision, instruction, robot-state, and action-query source groups on 128
+task-balanced inputs per checkpoint. The partition magnitudes are descriptive and do not establish
+causal importance or grounding.
 
-Estimated acceptance bands after integrating the corrected fixed-rank result:
+Estimated acceptance bands after integrating the corrected fixed-rank result, the complete
+convolutional reconstruction ladder, and the exact ViT modality audit:
 
-- Neural Network Artifacts: 84 to 91 percent. This is the strongest present fit because the paper
-  treats trained weights as an inspectable artifact, unifies capability and exact attention on the
-  same checkpoint family, and now includes a policy-level closed-loop intervention.
-- VLM4RWD: 66 to 79 percent. Capability, exact access, and a compact visual bottleneck are relevant,
-  but the current evidence does not establish robust instruction grounding.
-- Robot Learning Workshop: 52 to 67 percent. The bottleneck result adds intervention evidence, but
-  this venue still needs broader control evidence more than the artifact venue does.
+- Neural Network Artifacts: 87 to 93 percent. This is the strongest present fit because the paper
+  treats trained weights as an inspectable artifact, releases a five-certificate verifier, and now
+  distinguishes operator, block, and action-interface evidence in an eight-page full-paper draft.
+- VLM4RWD: 71 to 83 percent. Exact four-group attention reconstruction provides a concrete
+  vision-language-state-action diagnostic, but the reported energy shares and prompt permutations
+  are descriptive and do not establish robust instruction grounding.
+- Robot Learning Workshop: 54 to 68 percent. Full-block fidelity strengthens the architecture
+  claim, but it adds little evidence for zero-shot behavior, cross-suite generalization, or
+  physical deployment, which are more central to this venue.
+
+The largest remaining reviewer objection differs by venue:
+
+- Neural Network Artifacts: the strongest complete-block certificate is input-conditioned,
+  per-block, and evaluated on the convolutional checkpoint family, while capability is anchored by
+  the ViT family. There is still no sequential end-to-end contraction of a capable ViT policy.
+- VLM4RWD: the exact modality ledger measures where attention-update energy is concentrated, not
+  whether language is causally necessary. Fixed familiar prompts and a 5.1 percent instruction
+  energy share leave grounding as the dominant unresolved question.
+- Robot Learning Workshop: all validated closed-loop capability remains on one specialist
+  LIBERO-Object suite. The paper does not yet demonstrate the zero-shot, generalist, cross-suite,
+  or physical-robot behavior emphasized by the workshop.
 
 The stronger action-specificity gate did not pass. Pooled across all three checkpoints, the
 activation-energy basis retains $267/272$ baseline successes and the action-Jacobian basis retains
@@ -36,45 +56,56 @@ paired resampling interval from $-6.6$ to $+1.4$ points. The supported result is
 structured low-dimensional visual bottleneck relative to random projectors, not a uniquely
 action-Jacobian-specific mechanism.
 
-If the convolutional-encoder replication and local instruction-specificity test pass their frozen
-gates, the estimated bands become:
+If the prospectively frozen full-horizon instruction-necessity test passes its checkpoint, task,
+paired-effect, and clustered-sensitivity gates, the estimated bands become:
 
-- Neural Network Artifacts: 87 to 93 percent.
-- VLM4RWD: 75 to 85 percent.
-- Robot Learning Workshop: 61 to 74 percent.
+- Neural Network Artifacts: 89 to 95 percent.
+- VLM4RWD: 78 to 88 percent.
+- Robot Learning Workshop: 60 to 72 percent.
 
-A passing gated counterfactual target-swap test could move VLM4RWD into roughly the 83 to 90
-percent range. A strong four-suite generalist that passes both the capability and 85 percent
-specialist-retention gates could move Robot Learning Workshop into roughly the 82 to 89 percent
-range. With all venue-specific gates passing, Neural Network Artifacts is estimated at 88 to 94
-percent. These outcomes would materially strengthen the papers, but they still cannot guarantee a
-review decision.
+Only after that prerequisite passes, a fresh gated two-direction goal-by-prompt intervention may
+run. A clean factorial pass could move VLM4RWD into roughly the 85 to 92 percent range. A strong
+four-suite generalist that passes both the capability and 85 percent specialist-retention gates
+could move Robot Learning Workshop into roughly the 85 to 91 percent range. With all
+venue-specific gates passing, Neural Network Artifacts is estimated at 90 to 95 percent. These
+outcomes would materially strengthen the papers, but they still cannot guarantee a review
+decision.
 
 ## Evidence that currently carries the paper
 
 1. Three independently trained 20.1M ViT policies reach 426/500, 404/500, and 450/500 on
    LIBERO-Object, for $85.3\%\pm4.6\%$. A fixed elementwise prediction-mean ensemble reaches
    467/500, or 93.4 percent, with three forward passes. All $2{,}000$ episode rows are immutable.
-2. On three separate convolutional checkpoints, an independent certificate reconstructs all
-   4,608 joint-attention head-input cases
-   with worst relative error $6.36\times10^{-16}$ against a frozen $10^{-6}$ gate.
+2. On three separate convolutional checkpoints and the same sixteen deterministic inputs per
+   checkpoint, independent certificates reconstruct all 4,608 joint-attention head-input cases,
+   all 384 joint-FFN module-input cases, and all 384 complete joint-block input cases. Worst
+   relative errors are $6.36\times10^{-16}$, $1.3871\times10^{-15}$, and
+   $1.5024\times10^{-7}$ against frozen $10^{-6}$, $10^{-10}$, and $10^{-4}$ gates.
 3. The corrected-input ViT exact-attention records name the same checkpoint artifacts and
    numerically replay all 12 modules on one fixed cached input per checkpoint, covering 36
    module-input cases and 384 architectural heads. Maximum relative error is
    $2.016119\times10^{-7}$. A standard-library verifier binds all raw result, cache, provenance,
    runtime, and source identities and recomputes the certificate.
-4. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
+4. On 128 deterministic, official-task-balanced inputs for each of the three ViT capability
+   checkpoints, exhaustive vision, instruction, robot-state, and action-query groups reconstruct
+   all 36,864 action-query head-input updates and 3,072 projected module-input cases. Maximum
+   relative error is $5.0741\times10^{-7}$ against a frozen $10^{-6}$ gate. Mean coherent-energy
+   shares are 67.7 percent vision, 19.2 percent robot state, 7.9 percent action query, and 5.1
+   percent instruction. These shares are descriptive rather than causal.
+5. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
    equal-rank random controls. The median fidelity ratio is 2.44.
-5. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
+6. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
    $267/272$ baseline successes. Three equal-rank random projectors retain $37/272$, $9/272$, and
    $22/272$. A standard-library verifier recomputes all 12 raw files and paired intervals.
-6. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
+7. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
    positive, and action NRMSE from recomputing only the RationalNorm scales in float64 is at most
    $2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
-7. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
+8. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
    linear, or rational, rather than hidden incompatible nonlinear blocks.
-8. Standard-library artifact verifiers check the immutable capability and structural files,
-   recompute all success totals, and independently recompute both structural certificate decisions.
+9. Standard-library artifact verifiers check the immutable capability and structural files,
+   recompute all success totals, and independently recompute all five structural certificate
+   decisions. The structural package binds fifteen raw JSONs, five summaries, and two exact source
+   snapshots through an immutable SHA-256 manifest.
 
 ## Integrity correction
 
@@ -97,8 +128,9 @@ outcome. Corrected replacement experiments are already queued under new result n
 
 1. **One validated specialist suite.** The current main capability evidence is LIBERO-Object. The
    papers must not claim broad robot generalization until corrected non-Object results finish.
-2. **Layerwise exactness.** The exact weight reconstruction is per attention layer. It is not yet
-   one compact symbolic contraction of the entire eight-block policy.
+2. **Per-block rather than end-to-end exactness.** Attention, FFN, and complete-block identities
+   now pass independently. The complete-block audit is input-conditioned and per-block on the
+   convolutional family. It is not yet one sequential contraction of the capable ViT policy.
 3. **Single-suite capability.** The capability artifact is now complete and immutable, but all
    current closed-loop results still come from LIBERO-Object.
 4. **No unique ranking mechanism.** The corrected intervention supports a structured low-dimensional
@@ -143,17 +175,17 @@ The following protocols were fixed before their corrected outcomes were observed
    images against the pinned LeRobot revisions and record both cache and metadata hashes. This
    audit is complete: all 271,996 frames across the four suites match exactly with zero field
    mismatches.
-9. **Joint-FFN certificate.** Replay all eight bilinear FFNs on the same deterministic inputs used
-   by the convolutional attention certificate. The frozen gate requires every output to be finite
-   and the worst module relative L2 error to be at most $10^{-10}$ across three checkpoints.
-10. **Complete joint-block certificate.** Independently rebuild both RationalNorms, attention,
-    residual gains and ordering, bilinear FFN, and both residual paths for all eight joint blocks.
-    The frozen gate is finite output and maximum relative L2 error at most $10^{-4}$ across $384$
-    block-input cases. This tests composition, not an end-to-end policy contraction.
-11. **Exact modality-contribution audit.** Decompose each ViT joint-attention head output into
-    exhaustive vision, instruction, state, and action-query source groups on $128$ balanced inputs
-    per checkpoint. Exact reconstruction is gated at relative L2 error at most $10^{-6}$. Group
-    magnitudes are descriptive and do not establish grounding or causal necessity.
+9. **Joint-FFN certificate, passed.** All $384$ module-input cases are finite. The worst relative L2
+   error is $1.3871\times10^{-15}$ against the frozen $10^{-10}$ gate.
+10. **Complete joint-block certificate, passed.** Independent RationalNorm, attention, residual,
+    and bilinear-FFN equations reconstruct all $384$ block-input cases with worst relative L2 error
+    $1.5024\times10^{-7}$ against the frozen $10^{-4}$ gate. This tests input-conditioned,
+    per-block composition, not a sequential end-to-end policy contraction.
+11. **Exact modality-contribution audit, passed.** Exhaustive source groups reconstruct all
+    $36{,}864$ action-query head-input cases and $3{,}072$ projected module-input cases with maximum
+    relative L2 error $5.0741\times10^{-7}$ against the frozen $10^{-6}$ gate. Group magnitudes and
+    familiar-prompt permutations remain descriptive and do not establish grounding or causal
+    necessity.
 
 The fixed-rank bottleneck is positive only if selected conditional retention is at least 85 percent,
 selected beats every matched random control with the same sign in every checkpoint, and the full
