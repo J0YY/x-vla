@@ -25,7 +25,7 @@
 
 \title{\textbf{A Capable, Fully Tensor-Decomposable}\\[0.15em]
 \textbf{Vision-Language-Action Policy}\\[0.35em]
-\large Exact rational conversion, protocol-aligned control, and complementary causal analysis}
+\large Exact rational conversion, protocol-aligned control, and weight-derived analysis}
 \author{}
 \date{}
 
@@ -47,16 +47,10 @@ reaches $96.2\%$ at three times the inference cost. In a separate three-checkpoi
 instantiation, we derive an exact weight-based decomposition of softmax-free attention and
 reconstruct every attention module with worst relative error $2.56\times10^{-7}$. All $36$
 primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
-median fidelity ratio $2.44$. In an exploratory rank screen at the ViT visual bond, retaining $96$ of $384$ causally
-ranked dimensions succeeds in $50/60$ matched trials across three checkpoints, compared with
-$52/60$ for the full representation. Three equal-rank random controls reach only $1/60$,
-$3/60$, and $3/60$. The selected subspace retains $49$ of the $52$ full-policy successes. On
-disjoint cache samples, it has $33.5$--$110.6\times$ lower reconstruction error than the median
-across three random projectors, computed separately by action group. These are complementary
-analyses of one rational model family. They do not yet map the exact attention factors directly
-to the causal visual basis. The evidence establishes strong specialist capability, exact
-layerwise access, and a compact exploratory policy bottleneck. It does not establish broad
-robotic generalization or robust instruction grounding.
+median fidelity ratio $2.44$. The evidence establishes strong specialist capability and exact
+layerwise access to trained attention coefficients. It does not establish broad robotic
+generalization, robust instruction grounding, or an exact end-to-end decomposition of the full
+policy.
 \end{abstract}
 
 % ============================================================================
@@ -89,13 +83,12 @@ We study the narrower but testable question:
 
 \begin{quote}
 \emph{Can a specialist VLA retain strong closed-loop capability when every deployed learned
-operation is polynomial or rational, while supporting exact weight analysis and causal
-representation tests?}
+operation is polynomial or rational, while supporting exact weight analysis?}
 \end{quote}
 
 We test capability and structural analysis in two fully rational encoder instantiations. The
 convolutional checkpoints establish closed-loop capability. Separate ViT checkpoints support
-the exact attention audit and causal representation screen.
+the exact attention audit.
 
 Our contributions are:
 
@@ -109,15 +102,11 @@ Our contributions are:
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
         reduced-Gram calculation that avoids materializing the full high-order tensor.
-  \item In a separate exploratory rank screen, a selected $96$-dimensional visual subspace
-        retains $49$ of $52$ full-policy successes across three checkpoints. Three equal-rank
-        random controls reach only $1/60$, $3/60$, and $3/60$.
 \end{enumerate}
 
 This paper does not claim current state of the art. It also does not claim that comparable
 mechanisms are impossible to obtain from conventional policies. The empirical question is
-whether the algebraic policy makes exact weight structure directly accessible and supports
-separate causal tests of its internal representations.
+whether the algebraic policy makes exact weight structure directly accessible.
 
 % ============================================================================
 \section{A rational tensor robot policy}
@@ -363,55 +352,6 @@ exact end-to-end decomposition of the complete policy. Composition across all ei
 still faces rapid degree and representation growth.
 
 % ============================================================================
-\section{Causal policy structure}
-\label{sec:causal}
-% ============================================================================
-
-We next test the policy's representation with a separate causal analysis.
-
-\subsection{Causal visual subspace}
-
-At the visual bond before the joint backbone, we build one shared action-balanced ranking. We
-form one Jacobian Gram per action coordinate, trace-normalize the seven Grams, and average them.
-A subspace is a smaller coordinate system inside the model's
-$384$-dimensional visual representation. Retaining a subspace means zeroing every direction
-outside it, then running the actual policy. We compare the selected directions with random
-equal-width controls in offline reconstruction and closed-loop intervention. This ranking uses
-cached training demonstrations and downstream action gradients. Offline reconstruction uses a
-disjoint set of cache samples that did not estimate the ranking. Both splits still come from the
-training cache, so this is a disjoint-sample in-cache diagnostic. The closed-loop intervention uses independent canonical
-simulator states, so it tests a causal bottleneck but is not a weight-only discovery result.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.94\textwidth]{../paper_figures/main_causal_subspace_replication.pdf}
-\caption{\textbf{One quarter of the visual bond preserves policy behavior in the exploratory
-rank screen.} Each checkpoint uses four tasks and five paired canonical trials per task. Rank
-$96$ retains $49$ of $52$
-full-policy successes. Three equal-rank random controls reach $1/60$, $3/60$, and $3/60$.
-The pooled interval is descriptive because trials within a checkpoint share learned weights.}
-\label{fig:causal}
-\end{figure}
-
-The exploratory action-balanced screen tests ranks $64$, $96$, $128$, and $192$ on tasks 4 to
-7. Appendix Figure~\ref{fig:causal-rank-curve} reports the full curve. Rank $96$ is the smallest
-tested width with more than $90\%$ conditional retention while random success remains below
-$5\%$. Tasks 8 and 9 are reserved for a frozen confirmation and are not used here. At rank $96$,
-full representations succeed in $17/20$, $15/20$, and $20/20$ trials across
-checkpoints. Selected subspaces reach $17/20$, $14/20$, and $19/20$, and retain $49$ of the
-$52$ exact full-policy successes. Their conditional retention is $94.1\%$, $93.3\%$, and
-$95.0\%$. Three random controls per checkpoint total only $1/60$, $3/60$, and $3/60$. Every
-checkpoint and random-control comparison has the same selected-over-random direction. Within
-each fixed checkpoint, the descriptive exact paired tests have $p<2.5\times10^{-4}$. Offline
-fidelity uses $1{,}024$ discovery samples and $1{,}024$ disjoint evaluation samples per
-checkpoint. Against the median across three random projectors, computed separately by action group, the
-selected basis has $53.0$--$110.6\times$ lower translation error,
-$37.5$--$62.1\times$ lower rotation error, and $33.5$--$103.0\times$ lower gripper error. This
-repairs sample reuse, but it remains an in-cache fidelity test rather than held-out task
-generalization. This data-driven full-policy ranking complements the exact layerwise analysis in
-Section~\ref{sec:exactattention}.
-
-% ============================================================================
 \section{Related work}
 % ============================================================================
 
@@ -438,9 +378,8 @@ through causally identified activation directions \cite{haonsteering}. Sparse fe
 edit causal feature graphs in conventional language models \cite{sparsecircuits}, while
 nonlinear causal reductions recover behavioral patterns in reinforcement-learning policies
 from rollout perturbations \cite{causalreduction}. These results make a universal separation
-from conventional policies untenable. Our intended distinction is empirical: exact
-exact weight auditing and an exploratory causal bottleneck as complementary analyses in a
-strong continuous vision-language policy.
+from conventional policies untenable. Our intended distinction is empirical: exact weight
+auditing in a strong continuous vision-language policy.
 
 \paragraph{VLA robustness.}
 Recent evaluations show that standard LIBERO success can coexist with weak robustness and
@@ -453,25 +392,24 @@ specialist capability setting rather than evidence of broad generalization.
 
 \chivla\ demonstrates that a complete rational tensor policy can reach strong specialist
 closed-loop capability. The real checkpoint passes a mechanical operator audit. Exact
-weight-derived analysis now crosses individual attention layers, and a compact causal visual
-subspace retains $49$ of $52$ full-policy successes across three checkpoints while equal-rank
-random controls rarely succeed.
+weight-derived analysis now crosses individual attention layers.
 
 The scope is deliberately specific. LIBERO-Object is one specialist suite with fixed task
 instructions, so these results do not establish broad robotic generalization or robust
-instruction grounding. Exact reconstruction is certified layer by layer, while the full-policy
-visual ranking also uses cached activations and action gradients. The exact attention factors
-and causal visual basis are complementary analyses, not a demonstrated direct mapping. The
-three-checkpoint ensemble trades three forward passes for its strongest capability result.
+instruction grounding. Exact reconstruction is certified layer by layer and does not yet yield
+one compact symbolic contraction of the full policy. The three-checkpoint ensemble trades three
+forward passes for its strongest capability result.
 
 Within that scope, polynomial and rational restrictions are compatible with strong closed-loop
 control and provide a precise weight-derived analysis surface. Convolutional checkpoints support
-the capability result, while separate ViT checkpoints support the exact reconstruction and
-causal-bottleneck analyses. We do not claim a direct coefficient-edit interface.
+the capability result, while separate ViT checkpoints support the exact reconstruction. We do
+not claim a direct coefficient-edit interface.
 
 \paragraph{Reproducibility.}
 Training and evaluation use fixed task lists, explicit camera and action conventions,
 canonical-state manifests, checkpointed moving-average weights, and per-run result files.
+Cache-backed operations join pinned LeRobot task metadata before using official LIBERO task
+splits, and the preflight verifies that the two language sets agree exactly.
 The final artifact will release code, checkpoint hashes, exact attention certificates, and
 per-episode evaluation logs. Preflight checks fail if canonical initial states cannot be
 loaded.
@@ -561,26 +499,6 @@ G.~Chrysos et al.
 \raggedbottom
 \section{Supporting results and decisions}
 % ============================================================================
-
-\subsection{Rank screen and selectivity}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.96\textwidth]{../paper_figures/appendix_causal_rank_curve.pdf}
-\caption{\textbf{Rank $96$ is the empirical selectivity knee.} Selected subspaces use $60$
-closed-loop trials per rank across three checkpoints. Random results pool three equal-rank
-controls per checkpoint, for $180$ trials per rank. Each rank has its own paired full-policy
-condition. Rank $96$ is the smallest width above $90\%$ conditional retention, while random
-success remains below $5\%$.}
-\label{fig:causal-rank-curve}
-\end{figure}
-
-The selected subspace rises from $30/60$ successes at rank $64$ to $50/60$ at rank $96$.
-Wider ranks add little selected success, reaching $50/60$ and $51/60$ at ranks $128$ and
-$192$. In contrast, random success rises from $7/180$ at rank $96$ to $50/180$ and $99/180$.
-Conditional retention is $54.9\%$, $94.2\%$, $96.0\%$, and $96.2\%$ across the four ranks.
-Thus rank $96$ preserves nearly all baseline successes before equal-width random subspaces
-become broadly capable.
 
 \subsection{Per-task ensemble behavior}
 
