@@ -477,7 +477,7 @@ def main_causal_subspace_replication() -> None:
     ax.set_xticks(positions, checkpoint_labels)
     ax.set_ylim(0, 108)
     ax.set_ylabel("Closed-loop success (%)")
-    ax.set_title("Near-lossless across checkpoints")
+    ax.set_title("Exploratory screen across checkpoints")
     ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8, zorder=0)
     ax.legend(frameon=False, fontsize=7.4, loc="upper center", ncol=3)
     panel_label(ax, "a")
@@ -528,7 +528,7 @@ def main_causal_subspace_replication() -> None:
     fig.text(
         0.5,
         -0.025,
-        "Tasks 4 to 7, five canonical trials per task and checkpoint. Selected rank 96 retains "
+        "Exploratory tasks 4 to 7, five canonical trials per task and checkpoint. Rank 96 retains "
         "49 of 52 full-policy successes. Three random controls total 1/60, 3/60, and 3/60. "
         "Pooled intervals are descriptive.",
         ha="center",
@@ -537,6 +537,95 @@ def main_causal_subspace_replication() -> None:
     )
     fig.tight_layout()
     save_both(fig, "main_causal_subspace_replication")
+
+
+def appendix_causal_rank_curve() -> None:
+    ranks = np.array([64, 96, 128, 192])
+    selected_success = np.array([30, 50, 50, 51])
+    selected_trials = 60
+    random_success = np.array([0, 7, 50, 99])
+    random_trials = 180
+    retained_success = np.array([28, 49, 48, 50])
+    full_success = np.array([51, 52, 50, 52])
+
+    selected_rate = 100 * selected_success / selected_trials
+    random_rate = 100 * random_success / random_trials
+    conditional_retention = 100 * retained_success / full_success
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.45))
+
+    ax = axes[0]
+    ax.plot(
+        ranks,
+        selected_rate,
+        marker="o",
+        linewidth=2.2,
+        color=COLORS["green"],
+        label="Selected subspace",
+    )
+    ax.plot(
+        ranks,
+        random_rate,
+        marker="o",
+        linewidth=2.2,
+        color=COLORS["red"],
+        label="Three random controls",
+    )
+    ax.axvline(96, color=COLORS["gold"], linewidth=1.4, linestyle="--")
+    ax.set_xticks(ranks)
+    ax.set_ylim(-3, 103)
+    ax.set_xlabel("Retained visual dimensions")
+    ax.set_ylabel("Closed-loop success (%)")
+    ax.set_title("Selectivity across ranks")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    ax.legend(frameon=False, fontsize=8, loc="upper left")
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    bars = ax.bar(
+        ranks,
+        conditional_retention,
+        width=20,
+        color=[COLORS["muted"], COLORS["gold"], COLORS["muted"], COLORS["muted"]],
+        zorder=3,
+    )
+    ax.axhline(90, color=COLORS["ink"], linewidth=1, linestyle=":")
+    for bar, retained, full in zip(bars, retained_success, full_success):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() - 4,
+            f"{retained}/{full}",
+            ha="center",
+            va="top",
+            fontsize=8,
+            fontweight="bold",
+            color="white",
+        )
+    ax.set_xticks(ranks)
+    ax.set_ylim(0, 105)
+    ax.set_xlabel("Retained visual dimensions")
+    ax.set_ylabel("Full-success retention (%)")
+    ax.set_title("Rank 96 is the smallest near-lossless width")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8, zorder=0)
+    panel_label(ax, "b")
+
+    fig.suptitle(
+        "Rank 96 is the empirical selectivity knee",
+        fontsize=12,
+        fontweight="bold",
+        y=1.03,
+    )
+    fig.text(
+        0.5,
+        -0.025,
+        "Three checkpoints, tasks 4 to 7. Selected conditions use 60 trials per rank. "
+        "Random conditions pool 180 equal-rank trials. Retention is conditional on full-policy success.",
+        ha="center",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "appendix_causal_rank_curve")
 
 
 BLOCK_IDS = [0, 6, 7]
@@ -831,6 +920,7 @@ if __name__ == "__main__":
     appendix_counterfactual_grounding()
     main_causal_subspace()
     main_causal_subspace_replication()
+    appendix_causal_rank_curve()
     main_exact_attention_odt()
     appendix_decomposability_audit()
     appendix_ensemble_per_task()

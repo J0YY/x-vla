@@ -10,7 +10,8 @@ acceptance.
 
 The workshop paper now has a focused positive thesis: a capable rational VLA can expose exact
 layerwise tensor structure and a compact causal visual bottleneck without requiring a separate
-post-hoc model. The strongest new result is the prespecified rank-96 confirmation. A selected
+post-hoc model. The strongest new result is the exploratory rank screen. Rank 96 is the smallest
+tested width that passes the retention and selectivity criteria. A selected
 96-dimensional subspace, 25 percent of the visual width, retains 49 of 52 successes of the full
 policy on independent canonical rollouts. Three matched random controls retain only 7 of 180.
 
@@ -21,9 +22,9 @@ structure, and causal compression.
 
 Estimated acceptance bands for the current versions:
 
-- Neural Network Artifacts: 75 to 85 percent. This is the best fit. The paper studies the trained
-  weights as an artifact, mechanically verifies every deployed attention module in three
-  checkpoints, and connects that structure to a compact causal subspace.
+- Neural Network Artifacts: 75 to 85 percent. This is the best fit. The paper studies trained
+  weights as artifacts and mechanically verifies every deployed attention module in three
+  checkpoints. A separate causal analysis identifies a compact visual subspace.
 - VLM4RWD: 65 to 78 percent. The capable VLA and causal policy analysis fit well, but the evaluation
   is still limited to one LIBERO suite and the causal ranking is data driven at policy scale.
 - Robot Learning Workshop: 50 to 65 percent. The closed-loop evidence is substantial, but broader
@@ -44,7 +45,7 @@ replication, and ensemble replay all pass their frozen gates:
    mean ensemble reaches 96.2 percent.
 2. The trained-checkpoint audit reconstructs all 12 attention modules and 128 heads in each of
    three checkpoints. Maximum relative error is below $2.6\times10^{-7}$.
-3. On discovery tasks 0 to 3 and evaluation tasks 4 to 7, the frozen rank-96 selected subspace
+3. On discovery tasks 0 to 3 and exploratory rank-screen tasks 4 to 7, the rank-96 selected subspace
    reaches 50 of 60 successes, compared with 52 of 60 for the full policy. It retains 49 of 52
    baseline successes, or 94.2 percent conditional retention.
 4. The same selected-over-random direction holds at every checkpoint. The three random controls per
