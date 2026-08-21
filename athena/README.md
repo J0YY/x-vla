@@ -66,7 +66,7 @@ rank 64, 96, 128, and 192 curve on confirmation tasks 4 to 7. Smoke jobs gate ev
 
 `launch_cp_pruning.sh` tests a direct benefit of tensor decomposability. It removes complete
 rank-one terms from every bilinear FFN using a weight-only, CP-gauge-invariant norm product. The
-pilot evaluates 25, 50, and 75 percent term removal on the strongest fixed χ checkpoint and
+pilot evaluates 25, 50, 60, 67, and 75 percent term removal on the strongest fixed χ checkpoint and
 compares each point with three matched random component masks. The checkpoint is functionally
 pruned for evaluation. Parameter counts describe the equivalent physically compacted model.
 

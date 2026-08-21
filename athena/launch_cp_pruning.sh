@@ -26,7 +26,7 @@ smoke=$(sbatch --parsable \
   --max-steps 8 \
   --profile-iters 20)
 
-for fraction in 0.25 0.50 0.75; do
+for fraction in 0.25 0.50 0.60 0.67 0.75; do
   label=${fraction/./p}
   sbatch --parsable \
     --partition=low-prio-gpu \
@@ -76,4 +76,3 @@ for fraction in 0.25 0.50 0.75; do
 done
 
 echo "CP-pruning smoke job: ${smoke}"
-
