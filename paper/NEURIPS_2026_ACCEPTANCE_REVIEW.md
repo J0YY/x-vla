@@ -58,9 +58,11 @@ review decision.
 2. On three separate convolutional checkpoints, an independent certificate reconstructs all
    4,608 joint-attention head-input cases
    with worst relative error $6.36\times10^{-16}$ against a frozen $10^{-6}$ gate.
-3. The ViT exact-attention records name the same checkpoint artifacts and numerically replay all
-   12 modules on one fixed cached input per checkpoint. Maximum relative error is below
-   $2.6\times10^{-7}$.
+3. The corrected-input ViT exact-attention records name the same checkpoint artifacts and
+   numerically replay all 12 modules on one fixed cached input per checkpoint, covering 36
+   module-input cases and 384 architectural heads. Maximum relative error is
+   $2.016119\times10^{-7}$. A standard-library verifier binds all raw result, cache, provenance,
+   runtime, and source identities and recomputes the certificate.
 4. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
    equal-rank random controls. The median fidelity ratio is 2.44.
 5. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
