@@ -1667,6 +1667,12 @@ def main() -> None:
         "cache": str(args.cache),
         "seed": args.seed,
         "matmul_precision": torch.get_float32_matmul_precision(),
+        "numerical_environment": {
+            "torch_version": torch.__version__,
+            "cuda_version": torch.version.cuda,
+            "cuda_matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+            "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+        },
         "vocab_size": len(vocab),
         "cache_stats": stats,
         "profile": profile,
