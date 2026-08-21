@@ -75,6 +75,11 @@ strongest convolutional χ checkpoint. It includes an unpruned 50-trial control 
 runner. A ViT discovery point is eligible for promotion only after a 500-trial confirmation on
 other checkpoints. The convolutional sweep is an architecture-replication check.
 
+`launch_conv_ensemble.sh` independently replicates the fixed three-checkpoint convolutional
+ensemble on Athena. Arithmetic mean is the primary replication of the existing 96.2 percent
+Modal result. Coordinate median is reported as a prespecified secondary reduction. Each uses all
+500 canonical trials and three complete forward passes per action chunk.
+
 ## First completed matched result
 
 The first mixed-GPU Athena pass gives 449/500 (89.8%) for the seed-0 conventional control and
