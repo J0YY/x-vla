@@ -35,12 +35,15 @@
 \begin{abstract}
 Tensor decomposition turns a large table of learned interactions into simpler low-rank factors
 that can be ranked and inspected. Conventional robot policies contain operations that block this
-direct weight-level view. We introduce \chivla, a $20.1$M-parameter vision-language-action policy
-built only from bilinear, linear, and rational learned operations. Its weights can therefore be
+direct weight-level view. We introduce \chivla, a rational vision-language-action model family
+with a $19.2$M convolutional policy and a $20.1$M ViT policy, both built only from bilinear,
+linear, and rational learned operations. Their weights can therefore be
 reorganized into explicit interaction tensors rather than treated only as an opaque checkpoint.
 A mechanical audit and numerical reconstructions verify that the deployed policy preserves this
 form. Trained from scratch on LIBERO-Object, convolutional \chivla\ reaches
-$93.7\%\pm0.8\%$ over three seeds under the published protocol. In a separate ViT
+$93.7\%\pm0.8\%$ over three seeds under the published protocol. The three released convolutional
+checkpoint files associated with those historical aggregates also pass an independent $4{,}608$-case joint-attention certificate with worst
+relative error $6.36\times10^{-16}$. In a separate ViT
 instantiation, we reconstruct every attention module in three checkpoints with worst relative
 error $2.56\times10^{-7}$, and exact weight-derived
 subspaces beat equal-rank random controls in all $36$ primary block-head tests. The result is a
@@ -86,7 +89,7 @@ Our contributions are:
 \begin{enumerate}
   \item We construct a complete VLA from tensor-compatible primitives. A rational normalization
         supplies input-specific scaling without leaving the rational function class.
-  \item We evaluate two fully rational $20.1$M-parameter policies under a protocol aligned with
+  \item We evaluate fully rational $19.2$M convolutional and $20.1$M ViT policies under a protocol aligned with
         published LIBERO-Object results. The strongest single architecture reaches
         $93.7\%\pm0.8\%$ over three seeds, and a three-checkpoint ensemble reaches $96.2\%$.
   \item We mechanically audit the real trained policy and explicitly reconstruct deployed
@@ -137,10 +140,13 @@ query, key, value, and output maps are linear. Equation~\ref{eq:attention} is th
 polynomial in its input activations, with interaction coefficients determined by the weights.
 
 \paragraph{Rational per-instance normalization.}
-RMS normalization contains an input-dependent square root. We instead deploy a fixed rational
-approximation $r(z)=P(z)/Q(z)$ to $1/\sqrt{z+\epsilon}$:
+RMS normalization contains an input-dependent square root. Let
+$m(x)=d^{-1}\sum_{j=1}^{d}x_j^2+\epsilon$, and let $s_0>0$ be the frozen running mean-square
+scale. We deploy a fixed rational approximation $r(v)=P(v)/Q(v)$ to $v^{-1/2}$ over
+$v\in[0.1,10]$:
 \begin{equation}
-\mathrm{RNorm}(x)=x\,r\!\left(\frac{1}{d}\sum_{j=1}^{d}x_j^2\right).
+v=\frac{m(x)}{s_0}, \qquad
+\mathrm{RNorm}(x)=\frac{x}{\sqrt{s_0}}\,r(v).
 \label{eq:rnorm}
 \end{equation}
 Here rational means a ratio of polynomials. Projective coordinates carry each activation as a
@@ -161,9 +167,9 @@ cosine decay, bfloat16 arithmetic, and an exponential moving average. Closed-loo
 uses a $180^\circ$ camera rotation to match the demonstration convention, canonical LIBERO
 initial states, and fail-loud checks that verify every requested state was loaded.
 
-\subsection{Mechanical certificate on the trained checkpoint}
+\subsection{Mechanical certificate on the 20.1M ViT checkpoint}
 
-Architecture definitions can differ from deployed code. We therefore audit the real
+Architecture definitions can differ from deployed code. We therefore audit the real 20.1M ViT
 $189/200$ checkpoint at runtime and reconstruct representative operations from saved weights.
 
 The normalization reconstruction has maximum absolute error $1.64\times10^{-6}$. A bilinear
@@ -209,8 +215,8 @@ passes per action chunk. External references are reported published values.}
 \toprule
 Method & Parameters & Training seeds & Success \\
 \midrule
-\chivla, rational conv & $20.1$M & $3$ & $\mathbf{93.7\%\pm0.8\%}$ \\
-\chivla, conv ensemble & $3\times20.1$M & $3\to1$ & $\mathbf{96.2\%}$ \\
+\chivla, rational conv & $19.2$M & $3$ & $\mathbf{93.7\%\pm0.8\%}$ \\
+\chivla, conv ensemble & $3\times19.2$M & $3\to1$ & $\mathbf{96.2\%}$ \\
 OpenVLA-7B \cite{openvla} & $7$B & $3$ & $88.4\%\pm0.8\%$ \\
 Diffusion Policy \cite{openvla} & not matched & $3$ & $92.5\%\pm0.7\%$ \\
 \bottomrule
@@ -220,21 +226,19 @@ are historical references rather than current state-of-the-art claims.}
 \label{tab:capability}
 \end{table}
 
-The convolutional seeds score $94.0\%$, $94.4\%$, and $92.8\%$. Their narrow spread shows that
-high specialist capability is reproduced across three independently trained checkpoints.
-These are historical Modal aggregate records. A locked replay is producing immutable
-episode-level outcomes.
+The three historical convolutional aggregate records report $94.0\%$, $94.4\%$, and $92.8\%$.
+Their narrow spread is descriptive bounded evidence across independently trained checkpoints.
 
 Separately, the paired ensemble evaluation re-evaluates the three members at $93.6\%$, $95.0\%$,
 and $93.2\%$, for a $93.9\%$ mean. Elementwise prediction averaging reaches $96.2\%$. This is
 $2.3$ points above that paired mean and $1.2$ points above its strongest member. The gain is
 largest on tomato sauce, butter, and ketchup. The ensemble requires three complete forward passes
-and is not one $20.1$M-parameter policy.
+and is not one $19.2$M-parameter policy.
 
 \subsection{What this result does and does not establish}
 
 The result shows that the rational architecture supports high closed-loop specialist capability.
-It is an existence and reproducibility claim for a compact tensor-decomposable policy, not a
+It is an existence claim for a compact tensor-decomposable policy, not a
 claim of broad robotic generalization or state of the art.
 
 % ============================================================================
@@ -260,6 +264,15 @@ eight joint attention modules in each of three trained checkpoints, covering $38
 total. The worst relative $\ell_2$ error is $2.56\times10^{-7}$ and the worst absolute difference
 is $2.23\times10^{-5}$. This residual comes from the deployed implementation's intentional
 float32 statistic, while the reconstruction itself uses the learned coefficients.
+
+We separately certify the three released convolutional checkpoint files associated with the
+historical capability aggregates. Their vision stacks contain no attention, so we independently rebuild all eight joint
+modules and all twelve heads per module from the saved weights. Sixteen deterministically selected
+cache inputs per checkpoint yield $384$ module cases and $4{,}608$ head-input cases. Every output
+is finite and the worst relative $\ell_2$ error is $6.36\times10^{-16}$, far below the frozen
+$10^{-6}$ gate. This same-checkpoint certificate covers the joint-attention equation at each
+normalized layer input. It does not rebuild the convolutional stem, feed-forward blocks, residual
+composition, final normalization, or action head as one end-to-end contraction.
 
 Naively materializing the real width-$384$ coefficient tensor would require approximately
 $3.2\times10^{15}$ values. We instead form an $O(d^2)$ reduced Gram. Like a covariance
@@ -301,9 +314,10 @@ that standard LIBERO success can coexist with weak language use
 \paragraph{Limitations and conclusion.}
 The benchmark is one specialist suite, so it does not establish broad robotic generalization.
 Exact reconstruction is certified layer by layer and does not yet produce one compact symbolic
-contraction of the full policy. The capability result uses convolutional checkpoints, while the
-exact analysis uses separate ViT checkpoints. Evaluation uses fixed task instructions and does
-not establish robust instruction grounding. Within that scope, rational restrictions support
+contraction of the full policy. The released convolutional files support the joint-attention
+equation certificate and are associated with the historical capability aggregates. The reduced-Gram subspace screen uses separate ViT
+checkpoints. Evaluation uses fixed task instructions and does not establish robust instruction
+grounding. Within that scope, rational restrictions support
 strong LIBERO-Object control and exact trained-weight certificates. We do not claim a direct
 coefficient-edit interface.
 
@@ -412,7 +426,7 @@ G.~Chrysos et al.
 Gray points are the three convolutional checkpoints, evaluated with $50$ canonical trials per
 task. Curves compare their taskwise mean with elementwise action-prediction averaging. The ensemble raises overall success
 from a $93.9\%$ member mean to $96.2\%$, with its largest gains on tomato sauce, butter, and
-ketchup. It requires three forward passes and is not a single $20.1$M-parameter policy.}
+ketchup. It requires three forward passes and is not a single $19.2$M-parameter policy.}
 \label{fig:ensemble-task}
 \end{figure}
 
@@ -427,16 +441,42 @@ therefore depth-dependent and strongest at the wider tested rank.
 
 \subsection{Numerical scope of rational conversion}
 
-The deployed Pad\'e computation is exactly rational even though it approximates RMS
-normalization. Final certification must report its polynomial degrees, coefficients,
-denominator margin, observed activation range, tail error, action drift, and runtime overhead.
-Operator membership alone does not establish practical numerical safety under distribution
-shift.
+The deployed degree-$[2/2]$ least-squares rational fit is exact as a rational computation even
+though it approximates RMS normalization. Its numerator has coefficients
+$(5.32997,7.53552,0.327274)$ and the denominator has coefficients
+$(1,9.64827,2.60664)$. Every denominator coefficient is positive, which certifies $Q(v)>0$ for
+all $v\geq0$. We instrument all $53$ RationalNorm module instances, each invoked once per forward
+pass, on $4{,}096$ deterministic inputs for each of three convolutional checkpoints.
+Across $544{,}542{,}720$ activation rows, the minimum observed denominator is $1.0016$ and no row
+is nonfinite. Comparing deployed float32 normalization with an otherwise identical pass that
+recomputes only RationalNorm scales in float64, the largest checkpoint-level primary metric,
+defined as the maximum of normalized- and physical-action NRMSE, is
+$2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
+
+The certificate also bounds what the operator approximates. Observed normalized mean-square ratios $v$ span
+$1.66\times10^{-4}$ to $17.17$, outside the nominal fit interval $[0.1,10]$. Across site-checkpoint
+pairs, the minimum coverages are $60.018\%$ in that interval and $60.022\%$ with
+rational-versus-exact-RMS scale error at most $3.4\%$. The frozen $99\%$ secondary coverage gates
+therefore do not pass. The positive claim is therefore global absence of nonnegative denominator
+poles and cache-conditioned floating-point fidelity to the deployed rational operator,
+not uniform agreement with exact RMS scaling. Matched alternative-normalizer runtime overhead
+remains unmeasured.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/appendix_structural_certificates.pdf}
+\caption{\textbf{Frozen structural certificates on the released convolutional files associated with the historical capability aggregates.}
+Panels (a) and (b) pass their primary gates with large margins. Panel (a) reconstructs all
+$4{,}608$ audited joint-attention head-input cases. Panel (b) compares deployed float32
+normalization with an otherwise identical pass that recomputes only RationalNorm scales in float64. Panel (c) reports the
+separately frozen exact-RMS approximation coverage, which does not pass its $99\%$ secondary gate.}
+\label{fig:structural-certificates}
+\end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.88\textwidth]{../paper_figures/appendix_decomposability_audit.pdf}
-\caption{\textbf{Mechanical audit of the trained rational checkpoint.} The runtime path invokes
+\caption{\textbf{Mechanical audit of the 20.1M ViT rational checkpoint.} The runtime path invokes
 $112$ linear maps, $74$ rational normalizers, two embeddings, and one linear patch projection.
 No softmax, standard activation, or ordinary normalization is present. Reconstruction errors
 are measured over $54{,}784$ real activation rows.}
