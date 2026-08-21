@@ -10,6 +10,7 @@ readonly provenance=results/cache_provenance_libero_object.json
 readonly manifest=artifacts/instruction_necessity_v1_manifest.json
 readonly smoke_result=results/instruction_necessity_v1_smoke.json
 readonly summary_result=results/instruction_necessity_v1_summary.json
+readonly python_executable=/athenahomes/joy/miniconda3/envs/safesae-openvla/bin/python
 
 declare -Ar checkpoints=(
   [0]=artifacts/ckpt_linear_rat_vit_s0_v2.pt
@@ -41,7 +42,8 @@ state=$(sacct -j "$failed_local_job" --starttime 2026-08-20 --noheader --parsabl
   exit 4
 }
 [[ -s "$failed_local_summary" ]] || { echo "Failed local summary is absent" >&2; exit 4; }
-python - "$failed_local_summary" <<'PY'
+[[ -x "$python_executable" ]] || { echo "Frozen Python executable is absent" >&2; exit 3; }
+"$python_executable" - "$failed_local_summary" <<'PY'
 import json, sys
 result = json.load(open(sys.argv[1]))
 assert result["schema"] == "xvla-local-instruction-specificity-summary-v2"
