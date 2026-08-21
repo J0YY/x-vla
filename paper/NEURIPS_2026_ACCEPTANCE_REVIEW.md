@@ -9,21 +9,21 @@ acceptance.
 ## Current judgment
 
 The submission-safe drafts now make one focused claim: a capable rational VLA exposes exact
-layerwise tensor structure directly from its trained coefficients. The historical Modal capability
-record and exact weight reconstruction are unaffected by the Athena task-index issue described
-below. The old Athena rank-96 causal result is excluded from all four manuscripts while its
-corrected replacement runs. Two new frozen certificates now bind exact joint-attention
-reconstruction and rational-normalizer floating-point fidelity to the three released
-convolutional checkpoint files associated with the historical capability aggregates.
+layerwise tensor structure directly from its trained coefficients. The capability anchor is now
+three ViT checkpoint artifacts also named by the exact-attention records. All $2{,}000$ member and
+ensemble episode rows, protocol fields, and SHA-256 identities are preserved and independently
+verified. The old Athena rank-96 causal result is excluded from all four manuscripts while its
+corrected replacement runs. Separate convolutional checkpoints test whether joint-attention and
+rational-normalizer certificates transfer across visual encoder families.
 
 Estimated acceptance bands for the current drafts, before the corrected confirmations finish:
 
-- Neural Network Artifacts: 81 to 89 percent. This is the strongest present fit because the paper
-  treats trained weights as an inspectable artifact, verifies every joint-attention head on the
-  capability checkpoint family, and provides large-scale denominator and floating-point checks.
-- VLM4RWD: 58 to 73 percent. Capability and exact access are relevant, but the current evidence is
+- Neural Network Artifacts: 84 to 91 percent. This is the strongest present fit because the paper
+  treats trained weights as an inspectable artifact, unifies capability and exact attention on
+  the same checkpoint family, and provides large-scale denominator and floating-point checks.
+- VLM4RWD: 64 to 78 percent. Capability and exact access are relevant, but the current evidence is
   a single-suite specialist study without a clean policy-level instruction intervention result.
-- Robot Learning Workshop: 45 to 61 percent. Exact structure is interesting, but this venue needs
+- Robot Learning Workshop: 50 to 65 percent. Exact structure is interesting, but this venue needs
   broader control evidence more than the artifact venue does.
 
 If the corrected blind visual-bottleneck test, action-specificity control, convolutional-encoder
@@ -43,14 +43,15 @@ review decision.
 
 ## Evidence that currently carries the paper
 
-1. The historical convolutional rational policy record is $93.7\%\pm0.8\%$ over three seeds on
-   LIBERO-Object, with a recorded three-checkpoint ensemble result of 96.2 percent. The papers label
-   these as bounded historical aggregate records rather than new portability results.
-2. On the three released convolutional checkpoint files associated with the historical capability
-   aggregates, an independent certificate reconstructs all 4,608 joint-attention head-input cases
+1. Three independently trained 20.1M ViT policies reach 426/500, 404/500, and 450/500 on
+   LIBERO-Object, for $85.3\%\pm4.6\%$. A fixed elementwise prediction-mean ensemble reaches
+   467/500, or 93.4 percent, with three forward passes. All $2{,}000$ episode rows are immutable.
+2. On three separate convolutional checkpoints, an independent certificate reconstructs all
+   4,608 joint-attention head-input cases
    with worst relative error $6.36\times10^{-16}$ against a frozen $10^{-6}$ gate.
-3. The separate ViT trained-checkpoint audit reconstructs all 12 attention modules and 128 heads in
-   each of three checkpoints. Maximum relative error is below $2.6\times10^{-7}$.
+3. The ViT exact-attention records name the same checkpoint artifacts and numerically replay all
+   12 modules on one fixed cached input per checkpoint. Maximum relative error is below
+   $2.6\times10^{-7}$.
 4. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
    equal-rank random controls. The median fidelity ratio is 2.44.
 5. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
@@ -58,15 +59,14 @@ review decision.
    $2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
 6. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
    linear, or rational, rather than hidden incompatible nonlinear blocks.
-7. A standard-library one-command artifact checks eight immutable raw and summary files and
-   independently recomputes both structural certificate decisions.
+7. Standard-library artifact verifiers check the immutable capability and structural files,
+   recompute all success totals, and independently recompute both structural certificate decisions.
 
 ## Integrity correction
 
 LeRobot stores suite-specific dataset task identifiers in an order that differs from the official
 LIBERO benchmark order. Historical Modal training read the dataset metadata and is unaffected.
-Athena closed-loop evaluations of frozen historical checkpoints that use only official simulator
-tasks are also unaffected.
+The preserved ViT capability evaluations use official simulator tasks and are also unaffected.
 
 Pre-correction Athena-native training and cache-backed visual-basis analysis used raw dataset task
 identifiers as official identifiers. Those runs paired most cached images with the wrong
@@ -85,15 +85,15 @@ outcome. Corrected replacement experiments are already queued under new result n
    papers must not claim broad robot generalization until corrected non-Object results finish.
 2. **Layerwise exactness.** The exact weight reconstruction is per attention layer. It is not yet
    one compact symbolic contraction of the entire eight-block policy.
-3. **Capability provenance.** The historical aggregate records survive, but the original 500-trial
-   JSON files were overwritten. The papers therefore qualify them as bounded historical evidence.
+3. **Single-suite capability.** The capability artifact is now complete and immutable, but all
+   current closed-loop results still come from LIBERO-Object.
 4. **No current policy-level intervention claim.** The old visual-basis result has been removed.
    Only the corrected, frozen protocol can restore it.
 5. **Instruction grounding.** Fixed LIBERO instructions do not establish robust language use.
 6. **Ensemble cost.** The strongest recorded capability number uses three forward passes.
-7. **Artifact readiness.** The anonymous package now verifies the structural certificates and
-   immutable hashes in one command. Full figure regeneration and unavailable historical
-   episode-level capability logs remain outside that package.
+7. **Artifact readiness.** The anonymous package now verifies the structural certificates,
+   capability protocol, $2{,}000$ episode rows, totals, and immutable hashes. The remaining artifact
+   work is the corrected causal and venue-specific evidence as those frozen runs finish.
 
 ## Frozen acceptance-critical experiments
 
@@ -126,6 +126,9 @@ The following protocols were fixed before their corrected outcomes were observed
    images against the pinned LeRobot revisions and record both cache and metadata hashes. This
    audit is complete: all 271,996 frames across the four suites match exactly with zero field
    mismatches.
+9. **Joint-FFN certificate.** Replay all eight bilinear FFNs on the same deterministic inputs used
+   by the convolutional attention certificate. The frozen gate requires every output to be finite
+   and the worst module relative L2 error to be at most $10^{-10}$ across three checkpoints.
 
 The blind bottleneck is positive only if selected conditional retention is at least 85 percent,
 selected beats every matched random control with the same sign in every checkpoint, and the full

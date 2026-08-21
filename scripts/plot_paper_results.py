@@ -86,69 +86,10 @@ def wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float,
 
 
 def main_capability() -> None:
-    labels = [
-        "OpenVLA-7B\npublished",
-        "Diffusion Policy\npublished",
-        "χ-VLA ViT\nrational",
-        "χ-VLA conv\nrational",
-        "χ-VLA conv\n3-model ensemble",
-    ]
-    means = np.array([88.4, 92.5, 92.8, 93.7, 96.2])
-    reported_sd = np.array([0.8, 0.7, 2.1, 0.8])
-    vit_seeds = np.array([89.8, 94.4, 94.2])
-    conv_seeds = np.array([94.0, 94.4, 92.8])
-    colors = [COLORS["gray"], COLORS["cyan"], COLORS["blue"], COLORS["green"], COLORS["gold"]]
-
-    fig, ax = plt.subplots(figsize=(7.5, 3.6))
-    y = np.arange(len(labels))[::-1]
-    error_colors = [COLORS["muted"], COLORS["muted"], COLORS["blue"], COLORS["green"]]
-    for value, yi, error, color in zip(means[:4], y[:4], reported_sd, error_colors):
-        ax.errorbar(
-            value,
-            yi,
-            xerr=error,
-            fmt="none",
-            ecolor=color,
-            elinewidth=1.5,
-            capsize=3,
-            zorder=2,
-        )
-    for value, yi, color in zip(means, y, colors):
-        marker = "*" if yi == y[-1] else "o"
-        size = 180 if marker == "*" else 62
-        ax.scatter(value, yi, s=size, marker=marker, color=color, edgecolor="white", linewidth=0.8, zorder=4)
-
-    jitter = np.array([-0.12, 0.0, 0.12])
-    ax.scatter(vit_seeds, np.full(3, y[2]) + jitter, s=18, color=COLORS["blue"], alpha=0.45, zorder=3)
-    ax.scatter(conv_seeds, np.full(3, y[3]) + jitter, s=18, color=COLORS["green"], alpha=0.45, zorder=3)
-
-    for value, yi in zip(means, y):
-        ax.text(value + 0.35, yi, f"{value:.1f}%", va="center", fontweight="bold")
-
-    ax.axvline(92.5, color=COLORS["cyan"], linewidth=0.8, linestyle=":", alpha=0.7)
-    ax.set_yticks(y, labels)
-    ax.set_xlim(86.5, 98.3)
-    ax.set_xlabel("Closed-loop success (%)")
-    ax.grid(axis="x", color=COLORS["grid"], linewidth=0.8)
-    ax.set_title("Matched-protocol LIBERO-Object capability", pad=10)
-    ax.text(
-        0,
-        1.01,
-        "10 tasks, 50 trials/task, 280-step cap, canonical initial states",
-        transform=ax.transAxes,
-        color=COLORS["muted"],
-        fontsize=8.5,
+    raise RuntimeError(
+        "The legacy capability plot is retired. Run scripts/plot_verified_vit_capability.py "
+        "after artifacts/vit_capability/verify.py instead."
     )
-    fig.text(
-        0.01,
-        -0.015,
-        "Whiskers show reported across-seed variation where available. Small dots show χ-VLA seed values. "
-        "The ensemble star is one fixed aggregate evaluated over 500 trials, with 3× inference and no extra training.",
-        fontsize=7.5,
-        color=COLORS["muted"],
-    )
-    fig.tight_layout()
-    save_both(fig, "main_capability")
 
 
 def appendix_matched_architecture_cost() -> None:
@@ -793,7 +734,12 @@ def appendix_decomposability_audit() -> None:
     )
     panel_label(ax, "b")
 
-    fig.suptitle("Mechanical decomposability audit of the trained 189/200 checkpoint", fontsize=12, fontweight="bold", y=1.03)
+    fig.suptitle(
+        "Mechanical operator audit of the seed-0 20.1M ViT checkpoint",
+        fontsize=12,
+        fontweight="bold",
+        y=1.03,
+    )
     fig.tight_layout()
     save_both(fig, "appendix_decomposability_audit")
 
@@ -915,7 +861,6 @@ def appendix_surgery_sweep() -> None:
 
 
 if __name__ == "__main__":
-    main_capability()
     appendix_matched_architecture_cost()
     appendix_counterfactual_grounding()
     main_causal_subspace()

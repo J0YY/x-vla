@@ -16,7 +16,7 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
-\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue,hypertexnames=false]{hyperref}
 \usepackage{url}
 \usepackage{float}
 \usepackage{microtype}
@@ -40,15 +40,17 @@ required algebraic form. We introduce \chivla, a compact vision-language-action 
 learned map uses only bilinear, linear, and rational operations. Its checkpoint therefore
 defines an explicit rational tensor program, making interactions among image, instruction,
 state, and action coordinates accessible from the weights. A runtime operator audit of the
-$20.1$M ViT checkpoint finds no incompatible learned operation, and local reconstructions
+seed-$0$ $20.1$M ViT checkpoint finds no incompatible learned operation, and local reconstructions
 reproduce its deployed rational and bilinear branches near the float32 precision floor.
-Three historical aggregate records for the convolutional $19.2$M-parameter instantiation report
-$93.7\%\pm0.8\%$ across all ten LIBERO-Object tasks under the recorded three-seed protocol.
-On the three released convolutional checkpoint files named in those historical aggregate records,
-independent reconstruction covers all $4{,}608$ joint-attention head-input cases
-with worst relative error $6.36\times10^{-16}$. In a separate three-checkpoint ViT
-instantiation, we derive an exact weight-based decomposition of softmax-free attention and
-reconstruct every attention module with worst relative error $2.56\times10^{-7}$. In a seed-$0$
+Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Object success is
+$85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
+prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
+On a separate three-checkpoint convolutional instantiation, independent reconstruction covers all
+$4{,}608$ joint-attention head-input cases
+with worst relative error $6.36\times10^{-16}$. Exact-attention records naming the same three ViT
+checkpoint artifacts derive the softmax-free attention decomposition and numerically replay every
+attention module on one fixed cached input per checkpoint, with worst relative error
+$2.56\times10^{-7}$. In a seed-$0$
 ViT checkpoint, all $36$ primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
 median fidelity ratio $2.44$. The evidence establishes strong specialist capability and exact
 layerwise access to trained attention coefficients. It does not establish broad robotic
@@ -95,19 +97,20 @@ We study the narrower but testable question:
 operation is polynomial or rational, while supporting exact weight analysis?}
 \end{quote}
 
-We test capability and structural analysis in two fully rational encoder instantiations. The
-convolutional checkpoints establish closed-loop capability. Separate ViT checkpoints support
-the exact attention audit.
+We test capability and structural analysis in two fully rational encoder instantiations. The same
+three ViT checkpoints establish closed-loop capability and support the exact attention audit. A
+separate convolutional instantiation tests whether the structural certificates transfer across
+visual encoders.
 
 Our contributions are:
 
 \begin{enumerate}
   \item We construct a complete VLA from tensor-compatible primitives. A rational normalization
         supplies input-specific scaling without leaving the rational function class.
-  \item We report three historical aggregate records for a fully rational $19.2$M
-        convolutional policy under a protocol aligned with published LIBERO-Object results.
-        The records give $93.7\%\pm0.8\%$.
-  \item We mechanically audit the $20.1$M ViT checkpoint and explicitly reconstruct deployed
+  \item We evaluate three fully rational $20.1$M ViT policies on $1{,}500$ canonical
+        LIBERO-Object trials. They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean
+        ensemble reaches $467/500=93.4\%$.
+  \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
         reduced-Gram calculation that avoids materializing the full high-order tensor.
@@ -219,26 +222,26 @@ agent-view image, an eight-dimensional robot state, a 26-token task vocabulary, 
 action-query tokens. Both share a width-$384$, eight-block, twelve-head joint backbone and a
 linear head that maps each action-query state to seven continuous action dimensions. The
 $20.1$M ViT uses four bilinear-attention vision blocks and has $20{,}137{,}352$ learned
-parameters. The $19.2$M convolutional variant instead uses three stride-$2$ bilinear convolution
-stages that produce an $8\times8$ token grid. The historical capability records use the
-convolutional variant. The runtime operator census and reduced-Gram screen use the ViT. The
-released convolutional files additionally receive the joint-attention and rational-normalizer
-certificates reported in Appendix~\ref{app:rational-scope}.
+parameters. It supplies the closed-loop capability, runtime operator census, exact-attention,
+and reduced-Gram results. The $19.2$M convolutional variant instead uses three stride-$2$
+bilinear convolution stages that produce an $8\times8$ token grid. Three separate convolutional
+files receive the joint-attention and rational-normalizer certificates reported in
+Appendix~\ref{app:rational-scope}.
 
 Training uses $66{,}984$ demonstration frames, $40{,}000$ AdamW updates, batch size $256$,
 cosine decay, bfloat16 arithmetic, and an exponential moving average. Closed-loop evaluation
 uses a $180^\circ$ camera rotation to match the demonstration convention, canonical LIBERO
 initial states, and fail-loud checks that verify every requested state was loaded.
 
-\subsection{Mechanical certificate on the 20.1M ViT checkpoint}
+\subsection{Mechanical certificate on the seed-0 20.1M ViT checkpoint}
 
-Architecture definitions can differ from deployed code. We therefore audit the real 20.1M ViT
-$189/200$ checkpoint at runtime and reconstruct representative operations from saved weights.
+Architecture definitions can differ from deployed code. We therefore audit the deployed seed-$0$
+20.1M ViT checkpoint at runtime and reconstruct representative operations from saved weights.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.88\textwidth]{../paper_figures/appendix_decomposability_audit.pdf}
-\caption{\textbf{Mechanical audit of the 20.1M ViT rational checkpoint.} The runtime path invokes
+\caption{\textbf{Mechanical audit of the seed-0 20.1M ViT rational checkpoint.} The runtime path invokes
 $112$ linear maps, $74$ rational normalizers, two embeddings, and one linear patch projection.
 No softmax, standard activation, or ordinary normalization is present. Reconstruction errors
 are measured over $54{,}784$ real activation rows.}
@@ -258,26 +261,22 @@ transformer.
 
 \subsection{Evaluation protocol}
 
-The historical aggregate records specify the following evaluation protocol for all ten
-LIBERO-Object tasks:
+We evaluate all ten LIBERO-Object tasks with the following fixed protocol:
 
 \begin{itemize}
   \item $50$ canonical trials per task
   \item a $280$-step cap
-  \item three independently trained convolutional seeds
-  \item $500$ rollouts per seed and $1{,}500$ rollouts in total
+  \item three independently trained ViT checkpoints
+  \item $500$ rollouts per checkpoint and $1{,}500$ rollouts in total
 \end{itemize}
-
-Published OpenVLA and Diffusion Policy results are protocol-aligned references. They were not
-rerun in our codebase, so differences may still include implementation and training choices.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{../paper_figures/main_capability.pdf}
-\caption{\textbf{Protocol-aligned LIBERO-Object capability.} Small dots are historical \chivla\
-aggregate seed values. The ensemble star averages three convolutional checkpoints and uses three forward
-passes per action chunk. External references are reported published values.}
-\label{fig:capability}
+\includegraphics[width=0.98\textwidth]{../paper_figures/vit_capability_verified.pdf}
+\caption{\textbf{Verified ViT capability.} Left: three independently trained checkpoints and
+their fixed elementwise prediction-mean ensemble. Right: per-task three-checkpoint mean and
+ensemble success. The ensemble uses three forward passes.}
+\label{fig:vit-capability}
 \end{figure}
 
 \subsection{Results}
@@ -287,30 +286,26 @@ passes per action chunk. External references are reported published values.}
 \small
 \begin{tabular}{@{}lccc@{}}
 \toprule
-Method & Parameters & Training seeds & Success \\
+Method & Parameters & Inference & Success \\
 \midrule
-\chivla, rational conv & $19.2$M & $3$ & $\mathbf{93.7\%\pm0.8\%}$ \\
-\chivla, conv ensemble & $3\times19.2$M & $3\to1$ & $\mathbf{96.2\%}$ \\
-OpenVLA-7B \cite{openvla} & $7$B & $3$ & $88.4\%\pm0.8\%$ \\
-Diffusion Policy \cite{openvla} & not matched & $3$ & $92.5\%\pm0.7\%$ \\
+\chivla, rational ViT & $20.1$M & $1$ pass & $\mathbf{85.3\%\pm4.6\%}$ \\
+\chivla, prediction-mean ensemble & $3\times20.1$M & $3$ passes & $\mathbf{93.4\%}$ \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Closed-loop success under aligned evaluation settings.} The single-model
-\chivla\ row is the mean $\pm$ sample standard deviation from surviving historical aggregate
-records. Their original per-episode files are unavailable. The ensemble row comes from a separate
-paired evaluation. The two external rows are historical references rather than current
-state-of-the-art claims.}
+\caption{\textbf{Closed-loop LIBERO-Object success.} Each ViT checkpoint receives $500$
+canonical trials. The single-model row is the mean $\pm$ sample standard deviation across three
+checkpoints. The ensemble is one fixed composite evaluated on the same $500$ states.}
 \label{tab:capability}
 \end{table}
 
-The three historical convolutional aggregate records report $94.0\%$, $94.4\%$, and $92.8\%$.
-Their narrow spread is descriptive bounded evidence across independently trained checkpoints.
-
-Separately, the paired ensemble evaluation re-evaluates the three members at $93.6\%$, $95.0\%$,
-and $93.2\%$, for a $93.9\%$ mean. Elementwise prediction averaging reaches $96.2\%$. This is
-$2.3$ points above that paired mean and $1.2$ points above its strongest member. The gain is
-largest on tomato sauce, butter, and ketchup. The ensemble requires three complete forward passes
-and is not one $19.2$M-parameter policy.
+The three checkpoints reach $426/500=85.2\%$, $404/500=80.8\%$, and $450/500=90.0\%$.
+Elementwise averaging of their predicted action chunks reaches $467/500=93.4\%$. This is $8.1$
+points above the member mean and $3.4$ points above the strongest member. The ensemble requires
+three complete forward passes and is not one $20.1$M-parameter policy. Every episode-level record,
+task index, and protocol field is retained. The artifact manifest binds each immutable result file
+and recorded checkpoint basename to a checkpoint hash verified separately. Member and ensemble
+shards span different recorded GPU families and predate explicit matrix-precision fields, so the
+arithmetic gaps are descriptive rather than a matched-hardware ensemble ablation.
 
 \subsection{What this result does and does not establish}
 
@@ -337,14 +332,17 @@ The deployed attention also normalizes each query and key with Equation~\ref{eq:
 Each normalization multiplies all channels of one token by the same scalar rational factor.
 Those factors can be pulled outside the bilinear dot products. The polynomial attention core
 is unchanged, while explicit numerator and denominator factors carry the normalization.
-The rational extension agrees to $3.61\times10^{-16}$. We then reconstruct all four vision and
-eight joint attention modules in each of three trained checkpoints, covering $384$ heads in
-total. The worst relative $\ell_2$ error is $2.56\times10^{-7}$ and the worst absolute difference
+The rational extension agrees to $3.61\times10^{-16}$. On one fixed cached input per checkpoint,
+we numerically replay all four vision and eight joint attention modules in each of three records
+that name the same ViT checkpoint artifacts as the capability results. This covers $36$
+module-input cases and $384$ architectural heads. The worst relative $\ell_2$ error is
+$2.56\times10^{-7}$ and the worst absolute difference
 is $2.23\times10^{-5}$. This residual comes from the deployed implementation's intentional
-float32 statistic, while the reconstruction itself uses the learned coefficients.
+float32 statistic, while the reconstruction itself uses the learned coefficients. The algebraic
+identity is input-general. The fixed inputs provide a numerical replay audit.
 
-We separately certify the three released convolutional checkpoint files named in the historical
-capability aggregate records in Section~\ref{sec:capability}. Their vision stacks contain no attention, so we independently
+We separately certify three convolutional checkpoints from the same rational architecture family.
+Their vision stacks contain no attention, so we independently
 rebuild all eight joint modules and all twelve heads per module from the saved weights. Sixteen
 deterministically selected cache inputs per checkpoint yield $384$ module cases and $4{,}608$
 head-input cases. Every output is finite and the worst relative $\ell_2$ error is
@@ -429,8 +427,8 @@ specialist capability setting rather than evidence of broad generalization.
 % ============================================================================
 
 \chivla\ demonstrates that a complete rational tensor policy can reach strong specialist
-closed-loop capability. The real checkpoint passes a mechanical operator audit. Exact
-weight-derived analysis now crosses individual attention layers.
+closed-loop capability. The capability and exact-attention records name the same three ViT
+checkpoint artifacts. The deployed seed-$0$ operator path also passes a mechanical audit.
 
 The scope is deliberately specific. LIBERO-Object is one specialist suite with fixed task
 instructions, so these results do not establish broad robotic generalization or robust
@@ -439,10 +437,10 @@ one compact symbolic contraction of the full policy. The three-checkpoint ensemb
 forward passes for its strongest capability result.
 
 Within that scope, polynomial and rational restrictions are compatible with strong closed-loop
-control and provide a precise weight-derived analysis surface. The released convolutional files
-support the joint-attention equation certificate and are named in the historical capability
-aggregate records. Separate ViT checkpoints support
-the reduced-Gram subspace screen. We do not claim a direct coefficient-edit interface.
+control and provide a precise weight-derived analysis surface. The ViT records connect capability,
+exact attention, and the reduced-Gram screen through common checkpoint basenames. Separate convolutional files replicate
+the joint-attention equation certificate across another visual encoder. We do not claim a direct
+coefficient-edit interface.
 
 \paragraph{Reproducibility.}
 Training and evaluation use fixed task lists, explicit camera and action conventions,
@@ -452,9 +450,11 @@ pipeline pins that metadata and maps dataset identifiers to official identifiers
 task splits. A source-level audit compared all $271{,}996$ cached frames across Object, Spatial,
 Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, language joins,
 states, actions, and resized images matched exactly for every frame.
-The anonymous artifact releases raw structural-certificate JSONs, immutable SHA-256 identities,
-and a standard-library one-command verifier. Preflight checks fail if canonical initial states
-cannot be loaded.
+The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
+behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
+verifiers independently recompute the capability totals and the convolutional-attention and
+RationalNorm certificate decisions. Preflight checks
+fail if canonical initial states cannot be loaded.
 
 % ============================================================================
 \begin{thebibliography}{99}
@@ -538,22 +538,10 @@ G.~Chrysos et al.
 
 % ============================================================================
 \appendix
+\renewcommand{\theHfigure}{A.\arabic{figure}}
 \raggedbottom
 \section{Supporting results and decisions}
 % ============================================================================
-
-\subsection{Per-task ensemble behavior}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.96\textwidth]{../paper_figures/appendix_ensemble_per_task.pdf}
-\caption{\textbf{Per-task effect of prediction averaging in the paired ensemble evaluation.}
-Gray points are the three convolutional checkpoints, evaluated with $50$ canonical trials per
-task. Curves compare their taskwise mean with elementwise action-prediction averaging. The ensemble raises overall success
-from a $93.9\%$ member mean to $96.2\%$, with its largest gains on tomato sauce, butter, and
-ketchup. It requires three forward passes and is not a single $19.2$M-parameter policy.}
-\label{fig:ensemble-task}
-\end{figure}
 
 \subsection{Expanded attention screen}
 \label{app:expanded-mechanisms}
@@ -593,7 +581,7 @@ remains unmeasured.
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.98\textwidth]{../paper_figures/appendix_structural_certificates.pdf}
-\caption{\textbf{Frozen structural certificates on the released convolutional files named in the historical capability aggregate records.}
+\caption{\textbf{Frozen structural certificates on three independent convolutional checkpoints.}
 Panels (a) and (b) pass their primary gates with large margins. Panel (a) reconstructs all
 $4{,}608$ audited joint-attention head-input cases. Panel (b) compares deployed float32
 normalization with an otherwise identical pass that recomputes only RationalNorm scales in float64. Panel (c) reports the
