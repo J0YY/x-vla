@@ -9,6 +9,7 @@ reset protocol used by ``modal_app.libero_rollout_head``.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -63,6 +64,14 @@ def parse_args() -> argparse.Namespace:
         "--prune-strategy", choices=("magnitude", "random"), default="magnitude"
     )
     parser.add_argument("--cache", type=Path, required=True)
+    parser.add_argument(
+        "--model-metadata",
+        type=Path,
+        help=(
+            "Optional training metadata containing a fixed vocabulary and pooled "
+            "normalization statistics, used for multi-suite checkpoints."
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--architecture",
@@ -159,11 +168,138 @@ def build_vocab(tasks: dict[int, str]) -> tuple[dict[str, int], Any]:
     for word in sorted(words):
         vocab[word] = len(vocab)
 
+    return vocab, build_encoder(vocab)
+
+
+def build_encoder(vocab: dict[str, int]):
+    """Build the fixed whitespace-token encoder used by training and evaluation."""
+
     def encode(text: str, length: int = 32) -> list[int]:
         ids = [1] + [vocab.get(word, 0) for word in text.lower().replace(".", "").split()]
         return (ids[:length] + [0] * max(0, length - len(ids)))[:length]
 
-    return vocab, encode
+    return encode
+
+
+def load_model_metadata(path: Path) -> tuple[dict[str, int], dict[str, np.ndarray], dict[str, Any]]:
+    with path.open() as handle:
+        metadata = json.load(handle)
+    vocab = {str(token): int(index) for token, index in metadata["vocab"].items()}
+    normalization = metadata["normalization"]
+    stats = {
+        "action_mean": np.asarray(normalization["action_mean"], dtype=np.float32),
+        "action_std": np.asarray(normalization["action_std"], dtype=np.float32),
+        "state_mean": np.asarray(normalization["state_mean"], dtype=np.float32),
+        "state_std": np.asarray(normalization["state_std"], dtype=np.float32),
+    }
+    return vocab, stats, metadata
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def validate_model_metadata(
+    args: argparse.Namespace,
+    metadata: dict[str, Any],
+    vocab: dict[str, int],
+    fixed_stats: dict[str, np.ndarray],
+    evaluation_stats: dict[str, Any],
+) -> None:
+    """Reject stale or mismatched metadata before loading a generalist checkpoint."""
+    errors = []
+    expected_suites = (
+        "libero_object",
+        "libero_spatial",
+        "libero_goal",
+        "libero_10",
+    )
+    if metadata.get("format") != "xvla_multisuite_checkpoint_v1":
+        errors.append("unsupported metadata format")
+    if tuple(metadata.get("training_suites", ())) != expected_suites:
+        errors.append("training suite order is not the frozen four-suite order")
+    if args.suite not in metadata.get("source_caches", {}):
+        errors.append(f"evaluation suite {args.suite} is absent from source metadata")
+    if metadata.get("architecture") != args.architecture:
+        errors.append("architecture does not match --architecture")
+    if metadata.get("vision_encoder") != args.vision_encoder:
+        errors.append("vision encoder does not match --vision-encoder")
+    if int(metadata.get("seed", -1)) != args.seed:
+        errors.append("training seed does not match --seed")
+    if Path(str(metadata.get("checkpoint", ""))).name != args.checkpoint.name:
+        errors.append("checkpoint filename does not match metadata")
+    expected_checkpoint_hash = metadata.get("checkpoint_sha256")
+    if not expected_checkpoint_hash:
+        errors.append("checkpoint SHA-256 is missing")
+    elif file_sha256(args.checkpoint) != expected_checkpoint_hash:
+        errors.append("checkpoint SHA-256 does not match metadata")
+    if int(metadata.get("res", -1)) != args.res:
+        errors.append("image resolution does not match --res")
+    if int(metadata.get("horizon", -1)) != args.horizon:
+        errors.append("action horizon does not match --horizon")
+    if int(metadata.get("state_dim", -1)) != evaluation_stats["state_dim"]:
+        errors.append("state dimension does not match the evaluation cache")
+    if int(metadata.get("action_dim", -1)) != evaluation_stats["action_dim"]:
+        errors.append("action dimension does not match the evaluation cache")
+    if int(metadata.get("task_count", -1)) != 40:
+        errors.append("metadata does not contain exactly 40 tasks")
+    if vocab.get("<pad>") != 0 or vocab.get("<bos>") != 1:
+        errors.append("reserved vocabulary identifiers are invalid")
+    if sorted(vocab.values()) != list(range(len(vocab))):
+        errors.append("vocabulary identifiers are not contiguous")
+    if set(metadata.get("suite_task_offsets", {})) != set(expected_suites):
+        errors.append("suite task offsets are incomplete")
+    if len(metadata.get("task_languages", {})) != 40:
+        errors.append("task-language table does not contain 40 entries")
+    if fixed_stats["state_mean"].shape != (evaluation_stats["state_dim"],):
+        errors.append("state normalization has the wrong shape")
+    if fixed_stats["state_std"].shape != (evaluation_stats["state_dim"],):
+        errors.append("state scale has the wrong shape")
+    if fixed_stats["action_mean"].shape != (evaluation_stats["action_dim"],):
+        errors.append("action normalization has the wrong shape")
+    if fixed_stats["action_std"].shape != (evaluation_stats["action_dim"],):
+        errors.append("action scale has the wrong shape")
+    if not all(np.isfinite(value).all() for value in fixed_stats.values()):
+        errors.append("normalization contains non-finite values")
+    if not all((fixed_stats[key] > 0).all() for key in ("state_std", "action_std")):
+        errors.append("normalization scales must be positive")
+    if errors:
+        raise ValueError("Invalid model metadata: " + "; ".join(errors))
+
+
+def load_cache_profile_sample(cache_path: Path, horizon: int) -> dict[str, Any]:
+    """Load one valid sample without materializing all overlapping cache windows."""
+    with cache_path.open("rb") as handle:
+        frames = pickle.load(handle)
+    episodes: dict[int, list[Any]] = defaultdict(list)
+    for frame in frames:
+        episodes[int(frame[0])].append(frame)
+    for episode_frames in episodes.values():
+        episode_frames.sort(key=lambda item: int(item[1]))
+        if len(episode_frames) <= horizon:
+            continue
+        frame = episode_frames[0]
+        action_chunk = np.stack(
+            [episode_frames[offset][4] for offset in range(horizon)]
+        ).astype(np.float32)
+        state = np.asarray(frame[3], dtype=np.float32)
+        return {
+            "frame_count": len(frames),
+            "sample_count": None,
+            "state_dim": int(state.shape[-1]),
+            "action_dim": int(action_chunk.shape[-1]),
+            "first_sample": {
+                "image": np.asarray(frame[2], dtype=np.uint8),
+                "task": int(frame[5]),
+                "state": state,
+                "actions": action_chunk,
+            },
+        }
+    raise RuntimeError(f"No {horizon}-step sample could be built from {cache_path}")
 
 
 def load_cache_statistics(cache_path: Path, horizon: int) -> dict[str, Any]:
@@ -1700,12 +1836,24 @@ def main() -> None:
     if not torch.cuda.is_available():
         raise RuntimeError("This Athena runner requires a CUDA compute node")
 
-    print(f"Loading cache statistics from {args.cache}", flush=True)
-    stats = load_cache_statistics(args.cache, args.horizon)
     suite = load_suite(args.suite)
     tasks = task_languages(suite)
-    training_tasks = task_languages(load_suite(args.training_suite))
-    vocab, encode = build_vocab(training_tasks)
+    model_metadata = None
+    if args.model_metadata is not None:
+        print(f"Loading one profile sample from {args.cache}", flush=True)
+        stats = load_cache_profile_sample(args.cache, args.horizon)
+        vocab, fixed_stats, model_metadata = load_model_metadata(args.model_metadata)
+        validate_model_metadata(args, model_metadata, vocab, fixed_stats, stats)
+        stats.update(fixed_stats)
+        stats["sample_count"] = int(
+            model_metadata["source_caches"][args.suite]["sample_count"]
+        )
+        encode = build_encoder(vocab)
+    else:
+        print(f"Loading cache statistics from {args.cache}", flush=True)
+        stats = load_cache_statistics(args.cache, args.horizon)
+        training_tasks = task_languages(load_suite(args.training_suite))
+        vocab, encode = build_vocab(training_tasks)
     print(f"Tasks={len(tasks)} vocab={len(vocab)} samples={stats['sample_count']}", flush=True)
     ensemble_checkpoints = [args.checkpoint, *args.ensemble_checkpoint]
     if args.mode == "ensemble_capability":
@@ -1731,7 +1879,7 @@ def main() -> None:
         cp_pruning = apply_cp_term_pruning(
             model, args.prune_fraction, args.prune_strategy, args.seed
         )
-    sample_tensors = tensorize_sample(stats["first_sample"], encode, training_tasks, stats)
+    sample_tensors = tensorize_sample(stats["first_sample"], encode, tasks, stats)
     with torch.inference_mode():
         prediction, _ = model(*sample_tensors)
     if not torch.isfinite(prediction).all():
@@ -1755,6 +1903,7 @@ def main() -> None:
         ),
         "cp_pruning": cp_pruning,
         "cache": str(args.cache),
+        "model_metadata": str(args.model_metadata) if args.model_metadata else None,
         "seed": args.seed,
         "matmul_precision": torch.get_float32_matmul_precision(),
         "numerical_environment": {
@@ -1770,14 +1919,19 @@ def main() -> None:
         "prediction_finite": True,
         "prediction_sample": prediction[0].detach().float().cpu().tolist(),
         "evaluation_scope": (
-            "In-domain LIBERO-Object evaluation"
-            if args.suite == args.training_suite
+            "In-domain evaluation of a jointly trained multi-suite checkpoint"
+            if args.model_metadata is not None
             else (
-                f"Zero-shot cross-suite evaluation of a {args.training_suite}-trained checkpoint. "
-                "Vocabulary and normalization remain fixed to the training suite, with unseen "
-                "instruction words mapped to the padding identifier."
+                "In-domain suite evaluation"
+                if args.suite == args.training_suite
+                else (
+                    f"Zero-shot cross-suite evaluation of a {args.training_suite}-trained checkpoint. "
+                    "Vocabulary and normalization remain fixed to the training suite, with unseen "
+                    "instruction words mapped to the padding identifier."
+                )
             )
         ),
+        "training_metadata": model_metadata,
     }
 
     if args.mode == "smoke":
