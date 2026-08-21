@@ -38,6 +38,7 @@ def parse_args() -> argparse.Namespace:
             "profile",
             "capability",
             "ensemble_capability",
+            "cp_pruning",
             "offline_diagnostic",
             "causal",
             "visual_subspace",
@@ -56,6 +57,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--ensemble-reduction", choices=("mean", "median"), default="mean"
+    )
+    parser.add_argument("--prune-fraction", type=float, default=0.5)
+    parser.add_argument(
+        "--prune-strategy", choices=("magnitude", "random"), default="magnitude"
     )
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -268,6 +273,97 @@ class EnsemblePolicy(torch.nn.Module):
 
     def num_params(self) -> int:
         return sum(model.num_params() for model in self.models)
+
+
+@torch.no_grad()
+def apply_cp_term_pruning(
+    model: ChiVLA,
+    fraction: float,
+    strategy: str,
+    seed: int,
+) -> dict[str, Any]:
+    """Remove complete rank-one terms from every bilinear FFN.
+
+    The score is the product of the homogeneous left/right row norms and the
+    down-projection column norm. It is invariant to the usual CP component
+    rescaling gauge. Zeroing a down column removes that CP term exactly.
+    """
+    from xvla.nn.bilinear import BilinearFFN
+
+    if not 0.0 < fraction < 1.0:
+        raise ValueError("--prune-fraction must be strictly between 0 and 1")
+    generator = np.random.default_rng(seed)
+    modules: list[dict[str, Any]] = []
+    total_terms = 0
+    removed_terms = 0
+    total_component_parameters = 0
+    removed_component_parameters = 0
+
+    for name, module in model.named_modules():
+        if not isinstance(module, BilinearFFN):
+            continue
+        left = torch.cat([module.left.weight, module.left.bias[:, None]], dim=1)
+        right = torch.cat([module.right.weight, module.right.bias[:, None]], dim=1)
+        scores = (
+            torch.linalg.vector_norm(left, dim=1)
+            * torch.linalg.vector_norm(right, dim=1)
+            * torch.linalg.vector_norm(module.down.weight, dim=0)
+        )
+        count = max(1, min(module.rank - 1, int(round(fraction * module.rank))))
+        if strategy == "magnitude":
+            indices = torch.argsort(scores)[:count]
+        elif strategy == "random":
+            selected = generator.choice(module.rank, size=count, replace=False)
+            indices = torch.as_tensor(selected, dtype=torch.long, device=scores.device)
+        else:
+            raise ValueError(f"Unsupported pruning strategy: {strategy}")
+
+        selected_scores = scores[indices]
+        module.down.weight[:, indices] = 0
+        component_parameters = module.dim + 1 + module.dim + 1 + module.out_dim
+        total_terms += module.rank
+        removed_terms += count
+        total_component_parameters += module.rank * component_parameters
+        removed_component_parameters += count * component_parameters
+        modules.append(
+            {
+                "name": name,
+                "rank": module.rank,
+                "removed_terms": count,
+                "component_parameters_per_term": component_parameters,
+                "score_min": float(scores.min().item()),
+                "score_median": float(scores.median().item()),
+                "score_max": float(scores.max().item()),
+                "selected_score_mean": float(selected_scores.mean().item()),
+                "selected_score_max": float(selected_scores.max().item()),
+            }
+        )
+
+    if not modules:
+        raise RuntimeError("No BilinearFFN modules were found for CP-term pruning")
+    return {
+        "strategy": strategy,
+        "requested_fraction": fraction,
+        "modules_pruned": len(modules),
+        "total_cp_terms": total_terms,
+        "removed_cp_terms": removed_terms,
+        "removed_cp_term_fraction": removed_terms / total_terms,
+        "total_component_parameters": total_component_parameters,
+        "removed_component_parameters": removed_component_parameters,
+        "removed_component_parameter_fraction": (
+            removed_component_parameters / total_component_parameters
+        ),
+        "whole_model_parameter_equivalent_fraction": (
+            removed_component_parameters / model.num_params()
+        ),
+        "mask_seed": seed if strategy == "random" else None,
+        "modules": modules,
+        "scope": (
+            "Complete rank-one terms are removed from every BilinearFFN in the vision and "
+            "joint towers. Parameter counts are compact-model equivalents. The serialized "
+            "checkpoint is not physically compacted for this evaluation."
+        ),
+    }
 
 
 def official_init_states(suite, task_index: int):
@@ -1521,6 +1617,13 @@ def main() -> None:
                 "--ensemble-checkpoint is only valid for ensemble_capability"
             )
         model = load_model(args, len(vocab), stats)
+    cp_pruning = None
+    if args.mode == "cp_pruning":
+        if args.architecture != "chi":
+            raise ValueError("cp_pruning requires architecture=chi")
+        cp_pruning = apply_cp_term_pruning(
+            model, args.prune_fraction, args.prune_strategy, args.seed
+        )
     sample_tensors = tensorize_sample(stats["first_sample"], encode, training_tasks, stats)
     with torch.inference_mode():
         prediction, _ = model(*sample_tensors)
@@ -1542,6 +1645,7 @@ def main() -> None:
         "ensemble_reduction": (
             args.ensemble_reduction if args.mode == "ensemble_capability" else None
         ),
+        "cp_pruning": cp_pruning,
         "cache": str(args.cache),
         "seed": args.seed,
         "vocab_size": len(vocab),
@@ -1572,6 +1676,10 @@ def main() -> None:
     elif args.mode == "capability":
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "ensemble_capability":
+        result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
+    elif args.mode == "cp_pruning":
+        if args.suite != "libero_object" or args.training_suite != "libero_object":
+            raise ValueError("cp_pruning pilot currently requires Object training and evaluation")
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "offline_diagnostic":
         if args.suite != args.training_suite:
