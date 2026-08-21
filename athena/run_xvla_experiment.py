@@ -362,9 +362,14 @@ def apply_cp_term_pruning(
         "mask_seed": seed if strategy == "random" else None,
         "modules": modules,
         "scope": (
-            "Complete rank-one terms are removed from every BilinearFFN in the vision and "
-            "joint towers. Parameter counts are compact-model equivalents. The serialized "
-            "checkpoint is not physically compacted for this evaluation."
+            "Complete rank-one terms are removed from every BilinearFFN present in the model. "
+            + (
+                "For the ViT policy this covers the vision and joint towers. "
+                if model.cfg.vision_encoder == "vit"
+                else "For the convolutional policy this covers the joint tower only. "
+            )
+            + "Parameter counts are compact-model equivalents. The serialized checkpoint is "
+            "not physically compacted for this evaluation."
         ),
     }
 
