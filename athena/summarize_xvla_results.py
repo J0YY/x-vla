@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from pathlib import Path
 from statistics import mean, median, pstdev
 from typing import Any
@@ -21,6 +22,18 @@ def wilson_interval(successes: int, trials: int, z: float = 1.959963984540054) -
         probability * (1 - probability) / trials + z * z / (4 * trials * trials)
     ) / denominator
     return [center - radius, center + radius]
+
+
+def exact_paired_sign_pvalue(first_only: int, second_only: int) -> float:
+    """Two-sided exact sign test over discordant paired binary outcomes."""
+    discordant = first_only + second_only
+    if discordant == 0:
+        return 1.0
+    tail = sum(
+        math.comb(discordant, value)
+        for value in range(0, min(first_only, second_only) + 1)
+    ) / (2**discordant)
+    return min(1.0, 2.0 * tail)
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -73,6 +86,16 @@ def aggregate_capability(paths: list[Path]) -> dict[str, Any] | None:
         ],
         "gpus": sorted({str(profile["gpu"]) for profile in profiles}),
     }
+
+
+def canonical_shards(results_dir: Path, architecture: str, seed: int) -> list[Path]:
+    """Return only canonical range shards, excluding targeted task diagnostics."""
+    pattern = re.compile(rf"^{re.escape(architecture)}_s{seed}_t\d+_\d+\.json$")
+    return [
+        path
+        for path in sorted(results_dir.glob(f"{architecture}_s{seed}_t*.json"))
+        if pattern.match(path.name)
+    ]
 
 
 def same_hardware_capability_paths(
@@ -187,6 +210,137 @@ def aggregate_exact(paths: list[Path]) -> dict[str, Any] | None:
     }
 
 
+def aggregate_visual_subspace(paths: list[Path]) -> dict[str, Any] | None:
+    if not paths:
+        return None
+    by_checkpoint = {}
+    pooled: dict[str, dict[str, int]] = {}
+    for path in paths:
+        result = load_json(path)
+        subspace = result["visual_subspace"]
+        checkpoint = Path(result["checkpoint"]).stem
+        by_checkpoint[checkpoint] = {
+            "file": str(path),
+            "rank": subspace["rank"],
+            "ambient_dimension": subspace["ambient_dimension"],
+            "gram_samples": subspace["gram_samples"],
+            "offline_eval_samples": subspace.get("offline_eval_samples"),
+            "offline_eval_disjoint_from_gram": subspace.get(
+                "offline_eval_disjoint_from_gram", False
+            ),
+            "top_rank_spectral_mass": subspace["top_rank_spectral_mass"],
+            "offline_random_to_causal_mse_ratio": subspace[
+                "offline_random_to_causal_mse_ratio"
+            ],
+            "overall_by_condition": subspace["overall_by_condition"],
+        }
+        episodes_by_condition = {
+            condition: {
+                (int(row["task_index"]), int(row["episode"])): bool(row["success"])
+                for row in capability["episodes"]
+            }
+            for condition, capability in subspace["by_condition"].items()
+        }
+        causal = episodes_by_condition.get("causal_topk", {})
+        random_control = episodes_by_condition.get("random_topk", {})
+        paired_keys = sorted(set(causal) & set(random_control))
+        causal_only = sum(causal[key] and not random_control[key] for key in paired_keys)
+        random_only = sum(random_control[key] and not causal[key] for key in paired_keys)
+        by_checkpoint[checkpoint]["paired_causal_vs_random"] = {
+            "paired_trials": len(paired_keys),
+            "causal_only_successes": causal_only,
+            "random_only_successes": random_only,
+            "success_rate_difference": (
+                subspace["overall_by_condition"]["causal_topk"]
+                - subspace["overall_by_condition"]["random_topk"]
+            ),
+            "exact_two_sided_sign_pvalue": exact_paired_sign_pvalue(
+                causal_only, random_only
+            ),
+        }
+        for condition, capability in subspace["by_condition"].items():
+            totals = pooled.setdefault(condition, {"successes": 0, "trials": 0})
+            totals["successes"] += int(capability["successes"])
+            totals["trials"] += int(capability["trials"])
+    return {
+        "checkpoints": len(by_checkpoint),
+        "by_checkpoint": by_checkpoint,
+        "pooled_by_condition": {
+            condition: {
+                **totals,
+                "success_rate": totals["successes"] / totals["trials"],
+                "success_rate_wilson_95pct_ci": wilson_interval(
+                    totals["successes"], totals["trials"]
+                ),
+            }
+            for condition, totals in pooled.items()
+        },
+        "pooling_note": (
+            "Pooled condition rates are descriptive because trials within one checkpoint share "
+            "learned weights. Checkpoint-level replication is the primary evidence."
+        ),
+    }
+
+
+def aggregate_offline_diagnostics(paths: list[Path]) -> dict[str, Any] | None:
+    if not paths:
+        return None
+    runs = []
+    for path in paths:
+        result = load_json(path)
+        diagnostic = result["offline_diagnostic"]
+        runs.append(
+            {
+                "file": str(path),
+                "architecture": result["architecture"],
+                "checkpoint": Path(result["checkpoint"]).stem,
+                "seed": result["seed"],
+                "sample_count": diagnostic["sample_count"],
+                "overall": diagnostic["overall"],
+                "per_task": diagnostic["per_task"],
+            }
+        )
+    return {"runs": runs, "scope": load_json(paths[0])["offline_diagnostic"]["scope"]}
+
+
+def aggregate_cross_suite(results_dir: Path) -> dict[str, Any] | None:
+    suites = ("libero_spatial", "libero_goal", "libero_10")
+    result = {}
+    for suite in suites:
+        by_architecture = {}
+        for architecture, filename_architecture in (
+            ("chi", "chi"),
+            ("conventional", "conventional"),
+        ):
+            path = results_dir / f"{suite}_{filename_architecture}_s0.json"
+            if path.exists():
+                by_architecture[architecture] = aggregate_capability([path])
+        if by_architecture:
+            result[suite] = by_architecture
+    return result or None
+
+
+def aggregate_indomain_multisuite(results_dir: Path) -> dict[str, Any] | None:
+    result = {}
+    for suite in ("libero_spatial", "libero_goal", "libero_10"):
+        by_architecture = {
+            architecture: aggregate_capability(
+                canonical_shards(
+                    results_dir, f"indomain_{suite}_{architecture}", seed=0
+                )
+            )
+            for architecture in ("chi", "conventional")
+        }
+        if any(item is not None for item in by_architecture.values()):
+            result[suite] = {
+                **by_architecture,
+                "comparison": compare_capability(
+                    by_architecture["chi"], by_architecture["conventional"]
+                ),
+            }
+    return result or None
+
+
 def compare_capability(
     chi: dict[str, Any] | None, conventional: dict[str, Any] | None
 ) -> dict[str, Any] | None:
@@ -233,21 +387,41 @@ def main() -> None:
     args = parser.parse_args()
     conventional_by_seed = {
         str(seed): aggregate_capability(
-            sorted(args.results_dir.glob(f"conventional_s{seed}_t*.json"))
+            canonical_shards(args.results_dir, "conventional", seed)
         )
+        for seed in (0, 1, 2)
+    }
+    chi_by_seed = {
+        str(seed): aggregate_capability(canonical_shards(args.results_dir, "chi", seed))
         for seed in (0, 1, 2)
     }
     result = {
         "conventional_capability": conventional_by_seed["0"],
         "conventional_capability_by_seed": conventional_by_seed,
-        "chi_s0_capability": aggregate_capability(
-            sorted(args.results_dir.glob("chi_s0_t*.json"))
-        ),
+        "chi_s0_capability": chi_by_seed["0"],
+        "chi_capability_by_seed": chi_by_seed,
         "causal_intervention": aggregate_causal(
             sorted(args.results_dir.glob("causal_s*.json"))
         ),
         "exact_attention": aggregate_exact(
             sorted(args.results_dir.glob("exact_attention_s*.json"))
+        ),
+        "visual_subspace": aggregate_visual_subspace(
+            [
+                path
+                for path in sorted(args.results_dir.glob("visual_subspace_s*.json"))
+                if re.match(r"^visual_subspace_s\d+\.json$", path.name)
+            ]
+        ),
+        "offline_checkpoint_diagnostics": aggregate_offline_diagnostics(
+            sorted(args.results_dir.glob("offline_*.json"))
+        ),
+        "zero_shot_cross_suite": aggregate_cross_suite(args.results_dir),
+        "indomain_multisuite": aggregate_indomain_multisuite(args.results_dir),
+        "coefficient_surgery_discovery": (
+            load_json(args.results_dir / "surgery_discovery_summary.json")
+            if (args.results_dir / "surgery_discovery_summary.json").exists()
+            else None
         ),
         "matched_training_profile": (
             load_json(args.results_dir / "training_profile_pair.json")
@@ -297,6 +471,98 @@ def main() -> None:
             "mean_success_rate": mean(rates),
             "population_std_success_rate": pstdev(rates),
         }
+    complete_chi = [
+        item for item in chi_by_seed.values() if item is not None and item["trials"] == 500
+    ]
+    if complete_chi:
+        rates = [float(item["success_rate"]) for item in complete_chi]
+        result["chi_multiseed"] = {
+            "complete_seeds": len(rates),
+            "success_rates": rates,
+            "mean_success_rate": mean(rates),
+            "population_std_success_rate": pstdev(rates),
+        }
+    result["matched_architecture_comparison_by_seed"] = {
+        str(seed): compare_capability(chi_by_seed[str(seed)], conventional_by_seed[str(seed)])
+        for seed in (0, 1, 2)
+    }
+    native_chi_by_seed = {
+        str(seed): aggregate_capability(
+            canonical_shards(args.results_dir, "native_chi", seed)
+        )
+        for seed in (0, 1, 2)
+    }
+    native_conventional_s0 = aggregate_capability(
+        canonical_shards(args.results_dir, "native_conventional", 0)
+    )
+    if native_conventional_s0 is not None or any(
+        item is not None for item in native_chi_by_seed.values()
+    ):
+        result["athena_native_provenance"] = {
+            "conventional_s0": native_conventional_s0,
+            "chi_by_seed": native_chi_by_seed,
+            "seed0_comparison": compare_capability(
+                native_chi_by_seed["0"], native_conventional_s0
+            ),
+            "scope": (
+                "All checkpoints in this matrix are trained by the same Athena-native trainer. "
+                "This separates training provenance from seed sensitivity in the legacy matrix."
+            ),
+        }
+    task3_by_seed = {}
+    for seed in (0, 1, 2):
+        chi_targeted_path = args.results_dir / f"chi_s{seed}_task3.json"
+        chi_targeted = (
+            aggregate_capability([chi_targeted_path])
+            if chi_targeted_path.exists()
+            else None
+        )
+        chi_source = chi_targeted or chi_by_seed[str(seed)]
+        conventional_source = conventional_by_seed[str(seed)]
+        if chi_source is None and conventional_source is None:
+            continue
+
+        def task3_row(capability: dict[str, Any] | None) -> dict[str, Any] | None:
+            if capability is None or "3" not in capability["per_task"]:
+                return None
+            row = capability["per_task"]["3"]
+            return {
+                **row,
+                "success_rate_wilson_95pct_ci": wilson_interval(
+                    int(row["successes"]), int(row["trials"])
+                ),
+            }
+
+        chi_row = task3_row(chi_source)
+        conventional_row = task3_row(conventional_source)
+        task3_by_seed[str(seed)] = {
+            "chi": chi_row,
+            "conventional": conventional_row,
+            "chi_minus_conventional_success_rate": (
+                chi_row["success_rate"] - conventional_row["success_rate"]
+                if chi_row is not None and conventional_row is not None
+                else None
+            ),
+            "chi_source": (
+                str(chi_targeted_path)
+                if chi_targeted is not None
+                else "full canonical shards"
+            ),
+        }
+    result["targeted_task3_by_seed"] = task3_by_seed
+    partial_paths = {
+        "chi_rms": args.results_dir / "chi_rms_s0_task3.json",
+        "conventional_rational": (
+            args.results_dir / "conventional_rational_s0_task3.json"
+        ),
+    }
+    partial_results = {
+        architecture: aggregate_capability([path])
+        for architecture, path in partial_paths.items()
+        if path.exists()
+    }
+    if partial_results:
+        result["normalization_partial_conversion_task3"] = partial_results
     training_paths = sorted(args.results_dir.glob("train_conventional_s*.json"))
     if training_paths:
         training_runs = [load_json(path) for path in training_paths]

@@ -33,8 +33,9 @@ Additional modes cover the main review risks:
 
 - `causal` runs paired true-instruction and counterfactual-instruction trajectories from matched
   canonical states and reports a trajectory-level proximity shift.
-- `visual_subspace` rebuilds a checkpoint-specific, gripper-sensitive visual-bond Gram from cached
-  activations, then compares full, top-rank, and matched random projections in closed loop.
+- `visual_subspace` rebuilds a checkpoint-specific, gripper-sensitive visual-bond Gram from one
+  training-cache sample, measures offline reconstruction on a disjoint cache sample, then compares
+  full, top-rank, and matched random projections on independent canonical simulator states.
 - `exact_attention` reconstructs every bilinear-attention module in both transformer stacks from
   its learned coefficients.
 - `surgery` edits the learned Q, K, and V coefficient columns using exact weight-derived subspaces.
@@ -46,10 +47,16 @@ matched seeds. `summarize_xvla_results.py` aggregates sharded canonical evaluati
 counts and Wilson intervals. `summarize_surgery.py` applies the prespecified discovery gate without
 hiding failed configurations.
 
-The `--suite` flag also supports `libero_spatial`, `libero_goal`, and `libero_10`. Checkpoints in
-this workspace were trained only on LIBERO-Object, so those modes are explicitly zero-shot controls.
-They keep the Object vocabulary and action normalization fixed, and map unseen instruction words to
-the padding identifier. They should not be described as in-domain multi-suite training results.
+The `--suite` flag also supports `libero_spatial`, `libero_goal`, and `libero_10`.
+`--training-suite` records the vocabulary and normalization provenance of the checkpoint. When the
+two suite flags differ, the result is explicitly zero-shot and unseen instruction words map to the
+padding identifier. When they match, `build_suite_cache.py` and the generalized trainer support an
+in-domain control. `launch_indomain_multisuite.sh` builds three caches in parallel, trains matched
+χ and conventional seed-0 policies, and dependency-queues their canonical evaluations.
+
+`launch_native_provenance.sh` trains conventional seed 0 and χ seeds 0 to 2 concurrently with the
+same Athena-native trainer, then queues four canonical shards per checkpoint. This matrix separates
+training provenance from the severe closed-loop seed sensitivity observed in the legacy comparison.
 
 ## First completed matched result
 

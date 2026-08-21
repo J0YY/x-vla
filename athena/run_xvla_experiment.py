@@ -58,6 +58,11 @@ def parse_args() -> argparse.Namespace:
         choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
         default="libero_object",
     )
+    parser.add_argument(
+        "--training-suite",
+        choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
+        default="libero_object",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--task-start", type=int, default=0)
     parser.add_argument("--task-end", type=int, default=10)
@@ -70,6 +75,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--block-index", type=int, default=6)
     parser.add_argument("--rank", type=int, default=128)
     parser.add_argument("--gram-samples", type=int, default=1024)
+    parser.add_argument("--offline-eval-samples", type=int, default=1024)
     parser.add_argument("--offline-samples", type=int, default=4096)
     parser.add_argument(
         "--surgery-conditions",
@@ -851,44 +857,56 @@ def run_visual_subspace_intervention(
         raise ValueError(f"rank must be between 1 and {model.cfg.dim - 1}")
 
     rng = np.random.default_rng(args.seed)
-    sample_indices = rng.choice(
-        len(samples), size=min(args.gram_samples, len(samples)), replace=False
+    permutation = rng.permutation(len(samples))
+    gram_count = min(args.gram_samples, len(samples) - 1)
+    offline_eval_count = min(args.offline_eval_samples, len(samples) - gram_count)
+    if gram_count <= 0 or offline_eval_count <= 0:
+        raise RuntimeError("Visual-subspace analysis requires disjoint discovery and evaluation samples")
+    gram_indices = permutation[:gram_count]
+    offline_eval_indices = permutation[gram_count : gram_count + offline_eval_count]
+
+    def tensorize(indices: np.ndarray):
+        images = (
+            torch.from_numpy(np.stack([samples[index][0] for index in indices]))
+            .permute(0, 3, 1, 2)
+            .float()
+            .div(255)
+            .cuda()
+        )
+        instructions = torch.tensor(
+            [encode(tasks[samples[index][1]]) for index in indices],
+            dtype=torch.long,
+            device="cuda",
+        )
+        states_array = np.stack([samples[index][2] for index in indices])
+        states = torch.tensor(
+            (states_array - stats["state_mean"]) / stats["state_std"],
+            dtype=torch.float32,
+            device="cuda",
+        )
+        embodiments = torch.zeros(len(indices), dtype=torch.long, device="cuda")
+        return images, instructions, states, embodiments
+
+    gram_images, gram_instructions, gram_states, gram_embodiments = tensorize(gram_indices)
+    eval_images, eval_instructions, eval_states, eval_embodiments = tensorize(
+        offline_eval_indices
     )
-    images = (
-        torch.from_numpy(np.stack([samples[index][0] for index in sample_indices]))
-        .permute(0, 3, 1, 2)
-        .float()
-        .div(255)
-        .cuda()
-    )
-    instructions = torch.tensor(
-        [encode(tasks[samples[index][1]]) for index in sample_indices],
-        dtype=torch.long,
-        device="cuda",
-    )
-    states_array = np.stack([samples[index][2] for index in sample_indices])
-    states = torch.tensor(
-        (states_array - stats["state_mean"]) / stats["state_std"],
-        dtype=torch.float32,
-        device="cuda",
-    )
-    embodiments = torch.zeros(len(sample_indices), dtype=torch.long, device="cuda")
 
     gram = torch.zeros(model.cfg.dim, model.cfg.dim, dtype=torch.float64, device="cuda")
     gradient_rows = 0
     gram_batch_size = 128
-    for start in range(0, len(sample_indices), gram_batch_size):
-        stop = min(start + gram_batch_size, len(sample_indices))
+    for start in range(0, len(gram_indices), gram_batch_size):
+        stop = min(start + gram_batch_size, len(gram_indices))
         with torch.no_grad():
-            visual = model._visual_tokens(images[start:stop])
+            visual = model._visual_tokens(gram_images[start:stop])
         visual = visual.detach().requires_grad_(True)
         with torch.enable_grad():
             prediction = forward_from_visual_tokens(
                 model,
                 visual,
-                instructions[start:stop],
-                states[start:stop],
-                embodiments[start:stop],
+                gram_instructions[start:stop],
+                gram_states[start:stop],
+                gram_embodiments[start:stop],
             )
             selected = prediction[:, :, -1].sum()
             gradient = torch.autograd.grad(selected, visual)[0]
@@ -918,9 +936,9 @@ def run_visual_subspace_intervention(
         "random_topk": [],
     }
     with torch.inference_mode():
-        for start in range(0, len(sample_indices), gram_batch_size):
-            stop = min(start + gram_batch_size, len(sample_indices))
-            visual = model._visual_tokens(images[start:stop])
+        for start in range(0, len(offline_eval_indices), gram_batch_size):
+            stop = min(start + gram_batch_size, len(offline_eval_indices))
+            visual = model._visual_tokens(eval_images[start:stop])
             for condition, projector in (
                 ("full", None),
                 ("causal_topk", top_projector),
@@ -931,9 +949,9 @@ def run_visual_subspace_intervention(
                     forward_from_visual_tokens(
                         model,
                         intervened,
-                        instructions[start:stop],
-                        states[start:stop],
-                        embodiments[start:stop],
+                        eval_instructions[start:stop],
+                        eval_states[start:stop],
+                        eval_embodiments[start:stop],
                     ).float()
                 )
     concatenated = {
@@ -978,7 +996,9 @@ def run_visual_subspace_intervention(
     return {
         "rank": args.rank,
         "ambient_dimension": model.cfg.dim,
-        "gram_samples": len(sample_indices),
+        "gram_samples": len(gram_indices),
+        "offline_eval_samples": len(offline_eval_indices),
+        "offline_eval_disjoint_from_gram": True,
         "gradient_rows": gradient_rows,
         "gram_action_group": "gripper",
         "top_eigenvalues": eigenvalues[:16].detach().cpu().tolist(),
@@ -998,9 +1018,10 @@ def run_visual_subspace_intervention(
         },
         "by_condition": by_condition,
         "discovery_scope": (
-            "The gripper-sensitive visual-bond subspace is estimated from cached held-out "
-            "activations for this checkpoint. It is a data-driven causal bottleneck, not a "
-            "weight-only whole-policy decomposition."
+            "The gripper-sensitive visual-bond subspace is estimated from the training cache. "
+            "Offline reconstruction uses a disjoint cache sample, while closed-loop evaluation "
+            "uses independent canonical simulator states. This is a data-driven causal "
+            "bottleneck, not a weight-only whole-policy decomposition."
         ),
     }
 
@@ -1357,7 +1378,7 @@ def main() -> None:
     stats = load_cache_statistics(args.cache, args.horizon)
     suite = load_suite(args.suite)
     tasks = task_languages(suite)
-    training_tasks = task_languages(load_suite("libero_object"))
+    training_tasks = task_languages(load_suite(args.training_suite))
     vocab, encode = build_vocab(training_tasks)
     print(f"Tasks={len(tasks)} vocab={len(vocab)} samples={stats['sample_count']}", flush=True)
     model = load_model(args, len(vocab), stats)
@@ -1372,6 +1393,7 @@ def main() -> None:
         "mode": args.mode,
         "architecture": args.architecture,
         "suite": args.suite,
+        "training_suite": args.training_suite,
         "checkpoint": str(args.checkpoint),
         "cache": str(args.cache),
         "seed": args.seed,
@@ -1383,10 +1405,10 @@ def main() -> None:
         "prediction_sample": prediction[0].detach().float().cpu().tolist(),
         "evaluation_scope": (
             "In-domain LIBERO-Object evaluation"
-            if args.suite == "libero_object"
+            if args.suite == args.training_suite
             else (
-                "Zero-shot cross-suite evaluation of a LIBERO-Object-trained checkpoint. "
-                "Vocabulary and normalization remain fixed to LIBERO-Object, with unseen "
+                f"Zero-shot cross-suite evaluation of a {args.training_suite}-trained checkpoint. "
+                "Vocabulary and normalization remain fixed to the training suite, with unseen "
                 "instruction words mapped to the padding identifier."
             )
         ),
@@ -1403,8 +1425,8 @@ def main() -> None:
     elif args.mode == "capability":
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "offline_diagnostic":
-        if args.suite != "libero_object":
-            raise ValueError("offline_diagnostic currently requires suite=libero_object")
+        if args.suite != args.training_suite:
+            raise ValueError("offline_diagnostic requires suite=training_suite")
         result["offline_diagnostic"] = run_offline_checkpoint_diagnostic(
             args, model, tasks, encode, stats
         )
@@ -1413,8 +1435,8 @@ def main() -> None:
     elif args.mode == "visual_subspace":
         if args.architecture != "chi":
             raise ValueError("visual_subspace requires architecture=chi")
-        if args.suite != "libero_object":
-            raise ValueError("visual_subspace currently requires suite=libero_object")
+        if args.suite != "libero_object" or args.training_suite != "libero_object":
+            raise ValueError("visual_subspace currently requires Object training and evaluation")
         result["visual_subspace"] = run_visual_subspace_intervention(
             args, model, suite, tasks, encode, stats
         )

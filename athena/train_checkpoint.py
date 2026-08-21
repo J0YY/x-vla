@@ -25,6 +25,11 @@ def parse_args() -> argparse.Namespace:
         choices=("chi", "conventional", "chi_rms", "conventional_rational"),
         required=True,
     )
+    parser.add_argument(
+        "--suite",
+        choices=("libero_object", "libero_spatial", "libero_goal", "libero_10"),
+        default="libero_object",
+    )
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--checkpoint-output", type=Path, required=True)
     parser.add_argument("--result-output", type=Path, required=True)
@@ -101,7 +106,7 @@ def main() -> None:
     np.random.seed(args.seed)
     torch.set_float32_matmul_precision("high")
 
-    suite = load_suite()
+    suite = load_suite(args.suite)
     tasks = task_languages(suite)
     vocab, encode = build_vocab(tasks)
     data = load_training_data(args, tasks, encode)
@@ -168,6 +173,7 @@ def main() -> None:
     temporary_checkpoint.replace(args.checkpoint_output)
     result = {
         "architecture": args.architecture,
+        "suite": args.suite,
         "seed": args.seed,
         "steps": args.steps,
         "batch_size": args.batch_size,

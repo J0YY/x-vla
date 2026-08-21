@@ -466,6 +466,257 @@
       "NVIDIA RTX A6000"
     ]
   },
+  "chi_capability_by_seed": {
+    "0": {
+      "architecture": "chi",
+      "shards": [
+        "athena/results/chi_s0_t0_3.json",
+        "athena/results/chi_s0_t3_6.json",
+        "athena/results/chi_s0_t6_8.json",
+        "athena/results/chi_s0_t8_10.json"
+      ],
+      "successes": 426,
+      "trials": 500,
+      "success_rate": 0.852,
+      "success_rate_wilson_95pct_ci": [
+        0.8181938697042727,
+        0.8804385946107945
+      ],
+      "tasks_covered": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "complete_ten_task_suite": true,
+      "per_task": {
+        "0": {
+          "successes": 37,
+          "trials": 50,
+          "success_rate": 0.74
+        },
+        "1": {
+          "successes": 45,
+          "trials": 50,
+          "success_rate": 0.9
+        },
+        "2": {
+          "successes": 49,
+          "trials": 50,
+          "success_rate": 0.98
+        },
+        "3": {
+          "successes": 23,
+          "trials": 50,
+          "success_rate": 0.46
+        },
+        "4": {
+          "successes": 48,
+          "trials": 50,
+          "success_rate": 0.96
+        },
+        "5": {
+          "successes": 41,
+          "trials": 50,
+          "success_rate": 0.82
+        },
+        "6": {
+          "successes": 49,
+          "trials": 50,
+          "success_rate": 0.98
+        },
+        "7": {
+          "successes": 38,
+          "trials": 50,
+          "success_rate": 0.76
+        },
+        "8": {
+          "successes": 49,
+          "trials": 50,
+          "success_rate": 0.98
+        },
+        "9": {
+          "successes": 47,
+          "trials": 50,
+          "success_rate": 0.94
+        }
+      },
+      "parameters": 20137352,
+      "latency_ms_batch1_median_across_shards": 37.77435627998784,
+      "latency_ms_batch1_by_shard": [
+        36.27028827089816,
+        38.945221840403974,
+        40.15351625159383,
+        36.60349071957171
+      ],
+      "gpus": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ]
+    },
+    "1": {
+      "architecture": "chi",
+      "shards": [
+        "athena/results/chi_s1_t0_3.json",
+        "athena/results/chi_s1_t3_6.json",
+        "athena/results/chi_s1_t6_8.json",
+        "athena/results/chi_s1_t8_10.json"
+      ],
+      "successes": 404,
+      "trials": 500,
+      "success_rate": 0.808,
+      "success_rate_wilson_95pct_ci": [
+        0.771179624871567,
+        0.8401237814041169
+      ],
+      "tasks_covered": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "complete_ten_task_suite": true,
+      "per_task": {
+        "0": {
+          "successes": 43,
+          "trials": 50,
+          "success_rate": 0.86
+        },
+        "1": {
+          "successes": 38,
+          "trials": 50,
+          "success_rate": 0.76
+        },
+        "2": {
+          "successes": 49,
+          "trials": 50,
+          "success_rate": 0.98
+        },
+        "3": {
+          "successes": 41,
+          "trials": 50,
+          "success_rate": 0.82
+        },
+        "4": {
+          "successes": 46,
+          "trials": 50,
+          "success_rate": 0.92
+        },
+        "5": {
+          "successes": 19,
+          "trials": 50,
+          "success_rate": 0.38
+        },
+        "6": {
+          "successes": 50,
+          "trials": 50,
+          "success_rate": 1
+        },
+        "7": {
+          "successes": 35,
+          "trials": 50,
+          "success_rate": 0.7
+        },
+        "8": {
+          "successes": 34,
+          "trials": 50,
+          "success_rate": 0.68
+        },
+        "9": {
+          "successes": 49,
+          "trials": 50,
+          "success_rate": 0.98
+        }
+      },
+      "parameters": 20137352,
+      "latency_ms_batch1_median_across_shards": 39.611041258322075,
+      "latency_ms_batch1_by_shard": [
+        39.47490195510909,
+        39.74718056153506,
+        39.86222253879532,
+        39.39317567972466
+      ],
+      "gpus": [
+        "NVIDIA A30"
+      ]
+    },
+    "2": {
+      "architecture": "chi",
+      "shards": [
+        "athena/results/chi_s2_t0_3.json",
+        "athena/results/chi_s2_t3_6.json"
+      ],
+      "successes": 260,
+      "trials": 300,
+      "success_rate": 0.8666666666666667,
+      "success_rate_wilson_95pct_ci": [
+        0.8235282379361116,
+        0.9005335831658879
+      ],
+      "tasks_covered": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "complete_ten_task_suite": false,
+      "per_task": {
+        "0": {
+          "successes": 32,
+          "trials": 50,
+          "success_rate": 0.64
+        },
+        "1": {
+          "successes": 43,
+          "trials": 50,
+          "success_rate": 0.86
+        },
+        "2": {
+          "successes": 49,
+          "trials": 50,
+          "success_rate": 0.98
+        },
+        "3": {
+          "successes": 41,
+          "trials": 50,
+          "success_rate": 0.82
+        },
+        "4": {
+          "successes": 50,
+          "trials": 50,
+          "success_rate": 1
+        },
+        "5": {
+          "successes": 45,
+          "trials": 50,
+          "success_rate": 0.9
+        }
+      },
+      "parameters": 20137352,
+      "latency_ms_batch1_median_across_shards": 39.82647856231779,
+      "latency_ms_batch1_by_shard": [
+        39.55213295528665,
+        40.100824169348925
+      ],
+      "gpus": [
+        "NVIDIA A30"
+      ]
+    }
+  },
   "causal_intervention": {
     "files": [
       "athena/results/causal_s0.json",
@@ -549,6 +800,1027 @@
     "worst_max_relative_l2_error": 2.5523455725900214e-07,
     "heads_audited_total": 384,
     "threshold_note": "The absolute 2e-5 indicator is retained per run. Relative error is the primary scale-aware reconstruction diagnostic, and no failed absolute indicator is hidden."
+  },
+  "visual_subspace": {
+    "checkpoints": 3,
+    "by_checkpoint": {
+      "ckpt_linear_rat_vit_s0_v2": {
+        "file": "athena/results/visual_subspace_s0.json",
+        "rank": 64,
+        "ambient_dimension": 384,
+        "gram_samples": 1024,
+        "offline_eval_samples": null,
+        "offline_eval_disjoint_from_gram": false,
+        "top_rank_spectral_mass": 0.7448637697007738,
+        "offline_random_to_causal_mse_ratio": {
+          "translation": 15.571669729733646,
+          "rotation": 9.14299238386373,
+          "gripper": 15.66908726842002
+        },
+        "overall_by_condition": {
+          "full": 0.7,
+          "causal_topk": 0.4,
+          "random_topk": 0.0
+        },
+        "paired_causal_vs_random": {
+          "paired_trials": 20,
+          "causal_only_successes": 8,
+          "random_only_successes": 0,
+          "success_rate_difference": 0.4,
+          "exact_two_sided_sign_pvalue": 0.0078125
+        }
+      },
+      "ckpt_linear_rat_vit_s1": {
+        "file": "athena/results/visual_subspace_s1.json",
+        "rank": 64,
+        "ambient_dimension": 384,
+        "gram_samples": 1024,
+        "offline_eval_samples": null,
+        "offline_eval_disjoint_from_gram": false,
+        "top_rank_spectral_mass": 0.6985272362625697,
+        "offline_random_to_causal_mse_ratio": {
+          "translation": 3.1566211962182984,
+          "rotation": 4.25703285599147,
+          "gripper": 6.805327392837649
+        },
+        "overall_by_condition": {
+          "full": 0.95,
+          "causal_topk": 0.6,
+          "random_topk": 0.0
+        },
+        "paired_causal_vs_random": {
+          "paired_trials": 20,
+          "causal_only_successes": 12,
+          "random_only_successes": 0,
+          "success_rate_difference": 0.6,
+          "exact_two_sided_sign_pvalue": 0.00048828125
+        }
+      },
+      "ckpt_linear_rat_vit_s2": {
+        "file": "athena/results/visual_subspace_s2.json",
+        "rank": 64,
+        "ambient_dimension": 384,
+        "gram_samples": 1024,
+        "offline_eval_samples": null,
+        "offline_eval_disjoint_from_gram": false,
+        "top_rank_spectral_mass": 0.7211243425461432,
+        "offline_random_to_causal_mse_ratio": {
+          "translation": 19.538660713927563,
+          "rotation": 10.886320034977912,
+          "gripper": 35.80367605886669
+        },
+        "overall_by_condition": {
+          "full": 0.7,
+          "causal_topk": 0.45,
+          "random_topk": 0.0
+        },
+        "paired_causal_vs_random": {
+          "paired_trials": 20,
+          "causal_only_successes": 9,
+          "random_only_successes": 0,
+          "success_rate_difference": 0.45,
+          "exact_two_sided_sign_pvalue": 0.00390625
+        }
+      }
+    },
+    "pooled_by_condition": {
+      "full": {
+        "successes": 47,
+        "trials": 60,
+        "success_rate": 0.7833333333333333,
+        "success_rate_wilson_95pct_ci": [
+          0.6637997242680521,
+          0.868769559518097
+        ]
+      },
+      "causal_topk": {
+        "successes": 29,
+        "trials": 60,
+        "success_rate": 0.48333333333333334,
+        "success_rate_wilson_95pct_ci": [
+          0.36175049539732784,
+          0.6069218996740751
+        ]
+      },
+      "random_topk": {
+        "successes": 0,
+        "trials": 60,
+        "success_rate": 0.0,
+        "success_rate_wilson_95pct_ci": [
+          0.0,
+          0.06017185214208986
+        ]
+      }
+    },
+    "pooling_note": "Pooled condition rates are descriptive because trials within one checkpoint share learned weights. Checkpoint-level replication is the primary evidence."
+  },
+  "offline_checkpoint_diagnostics": {
+    "runs": [
+      {
+        "file": "athena/results/offline_chi_s0.json",
+        "architecture": "chi",
+        "checkpoint": "ckpt_linear_rat_vit_s0_v2",
+        "seed": 0,
+        "sample_count": 4096,
+        "overall": {
+          "normalized_mse": 0.10908295441078053,
+          "arm_mae": 0.03944831768606605,
+          "gripper_mae": 0.058998621272621676,
+          "gripper_sign_accuracy": 0.97918701171875,
+          "prediction_arm_std": 0.24285976488863525
+        },
+        "per_task": {
+          "0": {
+            "language": "pick up the alphabet soup and place it in the basket",
+            "samples": 347,
+            "normalized_mse": 0.07180031244401479,
+            "arm_mae": 0.0425141117701935,
+            "gripper_mae": 0.03626404835786187,
+            "gripper_sign_accuracy": 0.9902737752161384,
+            "prediction_arm_std": 0.25346924620613415
+          },
+          "1": {
+            "language": "pick up the cream cheese and place it in the basket",
+            "samples": 434,
+            "normalized_mse": 0.2099319495253205,
+            "arm_mae": 0.058123719311975935,
+            "gripper_mae": 0.13310211321793944,
+            "gripper_sign_accuracy": 0.9449884792626728,
+            "prediction_arm_std": 0.2500423748423839
+          },
+          "2": {
+            "language": "pick up the salad dressing and place it in the basket",
+            "samples": 420,
+            "normalized_mse": 0.10910092237117212,
+            "arm_mae": 0.03827350449171804,
+            "gripper_mae": 0.10781091994472912,
+            "gripper_sign_accuracy": 0.95625,
+            "prediction_arm_std": 0.22126926387704554
+          },
+          "3": {
+            "language": "pick up the bbq sauce and place it in the basket",
+            "samples": 415,
+            "normalized_mse": 0.0005968801057280366,
+            "arm_mae": 0.003690413767415806,
+            "gripper_mae": 0.007219708073570068,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.22995374360267656
+          },
+          "4": {
+            "language": "pick up the ketchup and place it in the basket",
+            "samples": 425,
+            "normalized_mse": 0.055969672244973484,
+            "arm_mae": 0.027929759732283215,
+            "gripper_mae": 0.044831044586265786,
+            "gripper_sign_accuracy": 0.9841176470588235,
+            "prediction_arm_std": 0.23926703328595442
+          },
+          "5": {
+            "language": "pick up the tomato sauce and place it in the basket",
+            "samples": 398,
+            "normalized_mse": 0.17296928252636376,
+            "arm_mae": 0.055311272157140864,
+            "gripper_mae": 0.0391949418763719,
+            "gripper_sign_accuracy": 0.9899497487437185,
+            "prediction_arm_std": 0.24637341937377824
+          },
+          "6": {
+            "language": "pick up the butter and place it in the basket",
+            "samples": 387,
+            "normalized_mse": 0.16671548004909503,
+            "arm_mae": 0.05847206457400122,
+            "gripper_mae": 0.09219397467775246,
+            "gripper_sign_accuracy": 0.9631782945736435,
+            "prediction_arm_std": 0.24389323372711508
+          },
+          "7": {
+            "language": "pick up the milk and place it in the basket",
+            "samples": 428,
+            "normalized_mse": 0.04173638763735245,
+            "arm_mae": 0.022971653388203863,
+            "gripper_mae": 0.04517903810837001,
+            "gripper_sign_accuracy": 0.9851051401869159,
+            "prediction_arm_std": 0.25996013046633976
+          },
+          "8": {
+            "language": "pick up the chocolate pudding and place it in the basket",
+            "samples": 383,
+            "normalized_mse": 0.18894028038700786,
+            "arm_mae": 0.04641234737093859,
+            "gripper_mae": 0.032756017662059544,
+            "gripper_sign_accuracy": 0.9944516971279374,
+            "prediction_arm_std": 0.23655893381286228
+          },
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "samples": 459,
+            "normalized_mse": 0.0813364638106934,
+            "arm_mae": 0.043301317621679866,
+            "gripper_mae": 0.04535427777206197,
+            "gripper_sign_accuracy": 0.9866557734204793,
+            "prediction_arm_std": 0.24819321229988972
+          }
+        }
+      },
+      {
+        "file": "athena/results/offline_chi_s1.json",
+        "architecture": "chi",
+        "checkpoint": "ckpt_linear_rat_vit_s1",
+        "seed": 1,
+        "sample_count": 4096,
+        "overall": {
+          "normalized_mse": 0.06387714940587763,
+          "arm_mae": 0.029041687440638952,
+          "gripper_mae": 0.04432515895132383,
+          "gripper_sign_accuracy": 0.98736572265625,
+          "prediction_arm_std": 0.24619297189110512
+        },
+        "per_task": {
+          "0": {
+            "language": "pick up the alphabet soup and place it in the basket",
+            "samples": 347,
+            "normalized_mse": 0.03880204991316718,
+            "arm_mae": 0.02887638347889015,
+            "gripper_mae": 0.03305501136553047,
+            "gripper_sign_accuracy": 0.9931556195965417,
+            "prediction_arm_std": 0.2533318075091076
+          },
+          "1": {
+            "language": "pick up the cream cheese and place it in the basket",
+            "samples": 434,
+            "normalized_mse": 0.09900916727100958,
+            "arm_mae": 0.04193291969571589,
+            "gripper_mae": 0.08087640959546313,
+            "gripper_sign_accuracy": 0.9691820276497696,
+            "prediction_arm_std": 0.2526684261188941
+          },
+          "2": {
+            "language": "pick up the salad dressing and place it in the basket",
+            "samples": 420,
+            "normalized_mse": 0.06937289754250309,
+            "arm_mae": 0.03263582987932577,
+            "gripper_mae": 0.09806465142894359,
+            "gripper_sign_accuracy": 0.9651785714285714,
+            "prediction_arm_std": 0.2243896902849277
+          },
+          "3": {
+            "language": "pick up the bbq sauce and place it in the basket",
+            "samples": 415,
+            "normalized_mse": 0.0005177769450371221,
+            "arm_mae": 0.0034135661466630648,
+            "gripper_mae": 0.00828412947166397,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.229543962625854
+          },
+          "4": {
+            "language": "pick up the ketchup and place it in the basket",
+            "samples": 425,
+            "normalized_mse": 0.04826131234055056,
+            "arm_mae": 0.02538989221677184,
+            "gripper_mae": 0.040847366119132325,
+            "gripper_sign_accuracy": 0.9902941176470588,
+            "prediction_arm_std": 0.24499419752289267
+          },
+          "5": {
+            "language": "pick up the tomato sauce and place it in the basket",
+            "samples": 398,
+            "normalized_mse": 0.107162569093766,
+            "arm_mae": 0.03725320865030415,
+            "gripper_mae": 0.022227915649737546,
+            "gripper_sign_accuracy": 0.9981155778894473,
+            "prediction_arm_std": 0.24790630542939932
+          },
+          "6": {
+            "language": "pick up the butter and place it in the basket",
+            "samples": 387,
+            "normalized_mse": 0.11423455114724254,
+            "arm_mae": 0.047691960267972885,
+            "gripper_mae": 0.05969775683735076,
+            "gripper_sign_accuracy": 0.9806201550387597,
+            "prediction_arm_std": 0.2512842809795871
+          },
+          "7": {
+            "language": "pick up the milk and place it in the basket",
+            "samples": 428,
+            "normalized_mse": 0.014802199667760293,
+            "arm_mae": 0.01371848461257346,
+            "gripper_mae": 0.0241929317572128,
+            "gripper_sign_accuracy": 0.9953271028037384,
+            "prediction_arm_std": 0.2630434469885637
+          },
+          "8": {
+            "language": "pick up the chocolate pudding and place it in the basket",
+            "samples": 383,
+            "normalized_mse": 0.10542148798850047,
+            "arm_mae": 0.03105902521537894,
+            "gripper_mae": 0.029966518808127073,
+            "gripper_sign_accuracy": 0.9944516971279374,
+            "prediction_arm_std": 0.2416079901450608
+          },
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "samples": 459,
+            "normalized_mse": 0.047435112757109155,
+            "arm_mae": 0.03000151004626016,
+            "gripper_mae": 0.041870824846566894,
+            "gripper_sign_accuracy": 0.9893790849673203,
+            "prediction_arm_std": 0.25312211009022456
+          }
+        }
+      },
+      {
+        "file": "athena/results/offline_chi_s2.json",
+        "architecture": "chi",
+        "checkpoint": "ckpt_linear_rat_vit_s2",
+        "seed": 2,
+        "sample_count": 4096,
+        "overall": {
+          "normalized_mse": 0.05662830631589699,
+          "arm_mae": 0.030004529097226396,
+          "gripper_mae": 0.02936886903080449,
+          "gripper_sign_accuracy": 0.992218017578125,
+          "prediction_arm_std": 0.2454290072337244
+        },
+        "per_task": {
+          "0": {
+            "language": "pick up the alphabet soup and place it in the basket",
+            "samples": 347,
+            "normalized_mse": 0.03168775615019332,
+            "arm_mae": 0.02940953312903342,
+            "gripper_mae": 0.018408182224725785,
+            "gripper_sign_accuracy": 0.9967579250720461,
+            "prediction_arm_std": 0.2548190647097417
+          },
+          "1": {
+            "language": "pick up the cream cheese and place it in the basket",
+            "samples": 434,
+            "normalized_mse": 0.07665483985516813,
+            "arm_mae": 0.04168515579028201,
+            "gripper_mae": 0.03674909795209559,
+            "gripper_sign_accuracy": 0.988479262672811,
+            "prediction_arm_std": 0.24433188797039096
+          },
+          "2": {
+            "language": "pick up the salad dressing and place it in the basket",
+            "samples": 420,
+            "normalized_mse": 0.05836907532842209,
+            "arm_mae": 0.03136105935333208,
+            "gripper_mae": 0.07107615414119903,
+            "gripper_sign_accuracy": 0.9729166666666667,
+            "prediction_arm_std": 0.22681785750956762
+          },
+          "3": {
+            "language": "pick up the bbq sauce and place it in the basket",
+            "samples": 415,
+            "normalized_mse": 0.00045821479018861764,
+            "arm_mae": 0.00327337488661105,
+            "gripper_mae": 0.007326479256153107,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2296206439519862
+          },
+          "4": {
+            "language": "pick up the ketchup and place it in the basket",
+            "samples": 425,
+            "normalized_mse": 0.019410802502842512,
+            "arm_mae": 0.01911697065238567,
+            "gripper_mae": 0.01904514936839833,
+            "gripper_sign_accuracy": 0.9973529411764706,
+            "prediction_arm_std": 0.24938631909735062
+          },
+          "5": {
+            "language": "pick up the tomato sauce and place it in the basket",
+            "samples": 398,
+            "normalized_mse": 0.093856337473227,
+            "arm_mae": 0.04006483800821568,
+            "gripper_mae": 0.015871208030075284,
+            "gripper_sign_accuracy": 0.9996859296482412,
+            "prediction_arm_std": 0.2443429883569479
+          },
+          "6": {
+            "language": "pick up the butter and place it in the basket",
+            "samples": 387,
+            "normalized_mse": 0.09211391801356268,
+            "arm_mae": 0.04662478015606487,
+            "gripper_mae": 0.04346078043221195,
+            "gripper_sign_accuracy": 0.9864341085271318,
+            "prediction_arm_std": 0.2541409956835191
+          },
+          "7": {
+            "language": "pick up the milk and place it in the basket",
+            "samples": 428,
+            "normalized_mse": 0.01850782722783075,
+            "arm_mae": 0.015994256452622466,
+            "gripper_mae": 0.025102433600576124,
+            "gripper_sign_accuracy": 0.9932827102803738,
+            "prediction_arm_std": 0.26132720949511246
+          },
+          "8": {
+            "language": "pick up the chocolate pudding and place it in the basket",
+            "samples": 383,
+            "normalized_mse": 0.14458322892325393,
+            "arm_mae": 0.043904532418238586,
+            "gripper_mae": 0.03165597678709279,
+            "gripper_sign_accuracy": 0.9931462140992167,
+            "prediction_arm_std": 0.2413792941164877
+          },
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "samples": 459,
+            "normalized_mse": 0.04015532381779845,
+            "arm_mae": 0.031147504170589587,
+            "gripper_mae": 0.02389397425069788,
+            "gripper_sign_accuracy": 0.9948257080610022,
+            "prediction_arm_std": 0.2491771585606282
+          }
+        }
+      },
+      {
+        "file": "athena/results/offline_conventional_s0.json",
+        "architecture": "conventional",
+        "checkpoint": "ckpt_linear_conventional_vit_s0",
+        "seed": 0,
+        "sample_count": 4096,
+        "overall": {
+          "normalized_mse": 0.4863981497531302,
+          "arm_mae": 0.07781002343750743,
+          "gripper_mae": 0.19359442041968578,
+          "gripper_sign_accuracy": 0.91162109375,
+          "prediction_arm_std": 0.23761944696343562
+        },
+        "per_task": {
+          "0": {
+            "language": "pick up the alphabet soup and place it in the basket",
+            "samples": 347,
+            "normalized_mse": 0.40782800015405635,
+            "arm_mae": 0.08002591911993212,
+            "gripper_mae": 0.1499803787049024,
+            "gripper_sign_accuracy": 0.9355187319884726,
+            "prediction_arm_std": 0.2518203207090368
+          },
+          "1": {
+            "language": "pick up the cream cheese and place it in the basket",
+            "samples": 434,
+            "normalized_mse": 0.5492610933574578,
+            "arm_mae": 0.09544026129342581,
+            "gripper_mae": 0.21348919542635092,
+            "gripper_sign_accuracy": 0.898905529953917,
+            "prediction_arm_std": 0.2694814400618664
+          },
+          "2": {
+            "language": "pick up the salad dressing and place it in the basket",
+            "samples": 420,
+            "normalized_mse": 0.5835417097257006,
+            "arm_mae": 0.09570180942703571,
+            "gripper_mae": 0.33975490336971625,
+            "gripper_sign_accuracy": 0.8383928571428572,
+            "prediction_arm_std": 0.20705263166732732
+          },
+          "3": {
+            "language": "pick up the bbq sauce and place it in the basket",
+            "samples": 415,
+            "normalized_mse": 0.0008520273911291229,
+            "arm_mae": 0.004065741953742971,
+            "gripper_mae": 0.00651186681296452,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2292319529386888
+          },
+          "4": {
+            "language": "pick up the ketchup and place it in the basket",
+            "samples": 425,
+            "normalized_mse": 0.5037688674558611,
+            "arm_mae": 0.07960361891371362,
+            "gripper_mae": 0.2638369629137656,
+            "gripper_sign_accuracy": 0.8788235294117647,
+            "prediction_arm_std": 0.20222484051304704
+          },
+          "5": {
+            "language": "pick up the tomato sauce and place it in the basket",
+            "samples": 398,
+            "normalized_mse": 0.4447208557408958,
+            "arm_mae": 0.0692249078130415,
+            "gripper_mae": 0.11880507902359244,
+            "gripper_sign_accuracy": 0.9522613065326633,
+            "prediction_arm_std": 0.24669500732391922
+          },
+          "6": {
+            "language": "pick up the butter and place it in the basket",
+            "samples": 387,
+            "normalized_mse": 0.6146223890482032,
+            "arm_mae": 0.10157106789815641,
+            "gripper_mae": 0.24743975560332454,
+            "gripper_sign_accuracy": 0.8837209302325582,
+            "prediction_arm_std": 0.26768109033928666
+          },
+          "7": {
+            "language": "pick up the milk and place it in the basket",
+            "samples": 428,
+            "normalized_mse": 0.5812365522599457,
+            "arm_mae": 0.08293757177062472,
+            "gripper_mae": 0.19763527204778708,
+            "gripper_sign_accuracy": 0.9106308411214953,
+            "prediction_arm_std": 0.23588339611017536
+          },
+          "8": {
+            "language": "pick up the chocolate pudding and place it in the basket",
+            "samples": 383,
+            "normalized_mse": 0.663765498607203,
+            "arm_mae": 0.08210733712361469,
+            "gripper_mae": 0.19072778229224777,
+            "gripper_sign_accuracy": 0.9157963446475196,
+            "prediction_arm_std": 0.24174055063187608
+          },
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "samples": 459,
+            "normalized_mse": 0.5119806475316485,
+            "arm_mae": 0.08715098111815182,
+            "gripper_mae": 0.19619783552968165,
+            "gripper_sign_accuracy": 0.9087690631808278,
+            "prediction_arm_std": 0.23004752984331325
+          }
+        }
+      },
+      {
+        "file": "athena/results/offline_conventional_s1.json",
+        "architecture": "conventional",
+        "checkpoint": "ckpt_linear_conventional_vit_s1",
+        "seed": 1,
+        "sample_count": 4096,
+        "overall": {
+          "normalized_mse": 0.0009512378258955678,
+          "arm_mae": 0.003626015805380689,
+          "gripper_mae": 0.007528131740400568,
+          "gripper_sign_accuracy": 0.999725341796875,
+          "prediction_arm_std": 0.2513713392295358
+        },
+        "per_task": {
+          "0": {
+            "language": "pick up the alphabet soup and place it in the basket",
+            "samples": 347,
+            "normalized_mse": 0.0008729919265759089,
+            "arm_mae": 0.0034436884320069973,
+            "gripper_mae": 0.007906044787735348,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2537798066690607
+          },
+          "1": {
+            "language": "pick up the cream cheese and place it in the basket",
+            "samples": 434,
+            "normalized_mse": 0.0006388017426519591,
+            "arm_mae": 0.003366248970094871,
+            "gripper_mae": 0.0065166384908735475,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.24380112703769438
+          },
+          "2": {
+            "language": "pick up the salad dressing and place it in the basket",
+            "samples": 420,
+            "normalized_mse": 0.002456205897838767,
+            "arm_mae": 0.0043621494152050995,
+            "gripper_mae": 0.011752231135254814,
+            "gripper_sign_accuracy": 0.9979166666666667,
+            "prediction_arm_std": 0.24295427710527465
+          },
+          "3": {
+            "language": "pick up the bbq sauce and place it in the basket",
+            "samples": 415,
+            "normalized_mse": 0.0006885312086480378,
+            "arm_mae": 0.003611069305867226,
+            "gripper_mae": 0.007429487033780799,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.22912792187767575
+          },
+          "4": {
+            "language": "pick up the ketchup and place it in the basket",
+            "samples": 425,
+            "normalized_mse": 0.0007850166324351449,
+            "arm_mae": 0.003636671442346757,
+            "gripper_mae": 0.006669659842463101,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2574387349100674
+          },
+          "5": {
+            "language": "pick up the tomato sauce and place it in the basket",
+            "samples": 398,
+            "normalized_mse": 0.000615506722791376,
+            "arm_mae": 0.0034234635760052945,
+            "gripper_mae": 0.006095309072553213,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.25427678198408543
+          },
+          "6": {
+            "language": "pick up the butter and place it in the basket",
+            "samples": 387,
+            "normalized_mse": 0.0005514819816078868,
+            "arm_mae": 0.0034085347414021536,
+            "gripper_mae": 0.006402279748473056,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2571463516747305
+          },
+          "7": {
+            "language": "pick up the milk and place it in the basket",
+            "samples": 428,
+            "normalized_mse": 0.0010840381414497055,
+            "arm_mae": 0.0035707300492708147,
+            "gripper_mae": 0.00671352818608284,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2681879491466924
+          },
+          "8": {
+            "language": "pick up the chocolate pudding and place it in the basket",
+            "samples": 383,
+            "normalized_mse": 0.0010489336106846111,
+            "arm_mae": 0.004033095312764377,
+            "gripper_mae": 0.00917045089267875,
+            "gripper_sign_accuracy": 0.9996736292428199,
+            "prediction_arm_std": 0.24110982056425073
+          },
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "samples": 459,
+            "normalized_mse": 0.000742958349854904,
+            "arm_mae": 0.00341040851098885,
+            "gripper_mae": 0.006798564933224181,
+            "gripper_sign_accuracy": 0.9997276688453159,
+            "prediction_arm_std": 0.26439668038506914
+          }
+        }
+      },
+      {
+        "file": "athena/results/offline_conventional_s2.json",
+        "architecture": "conventional",
+        "checkpoint": "ckpt_linear_conventional_vit_s2",
+        "seed": 2,
+        "sample_count": 4096,
+        "overall": {
+          "normalized_mse": 0.0011895224917766178,
+          "arm_mae": 0.004233222046394758,
+          "gripper_mae": 0.006527064770125435,
+          "gripper_sign_accuracy": 0.999786376953125,
+          "prediction_arm_std": 0.2514422863623622
+        },
+        "per_task": {
+          "0": {
+            "language": "pick up the alphabet soup and place it in the basket",
+            "samples": 347,
+            "normalized_mse": 0.0010840459456890406,
+            "arm_mae": 0.004039886446135597,
+            "gripper_mae": 0.007779395374166175,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.25400663167238235
+          },
+          "1": {
+            "language": "pick up the cream cheese and place it in the basket",
+            "samples": 434,
+            "normalized_mse": 0.000858643353189746,
+            "arm_mae": 0.00391675535512204,
+            "gripper_mae": 0.0056098450473102005,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.24386362976948237
+          },
+          "2": {
+            "language": "pick up the salad dressing and place it in the basket",
+            "samples": 420,
+            "normalized_mse": 0.0026799861256828687,
+            "arm_mae": 0.0049492802986476035,
+            "gripper_mae": 0.010034224586117836,
+            "gripper_sign_accuracy": 0.9985119047619048,
+            "prediction_arm_std": 0.24290368805329005
+          },
+          "3": {
+            "language": "pick up the bbq sauce and place it in the basket",
+            "samples": 415,
+            "normalized_mse": 0.0011039949132687782,
+            "arm_mae": 0.004256587681719607,
+            "gripper_mae": 0.007022878060857934,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.22917807402021914
+          },
+          "4": {
+            "language": "pick up the ketchup and place it in the basket",
+            "samples": 425,
+            "normalized_mse": 0.001096284673352356,
+            "arm_mae": 0.004347137501189376,
+            "gripper_mae": 0.0058646042907939235,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.25747277990860096
+          },
+          "5": {
+            "language": "pick up the tomato sauce and place it in the basket",
+            "samples": 398,
+            "normalized_mse": 0.0008109164753011499,
+            "arm_mae": 0.003930965228469565,
+            "gripper_mae": 0.005125952351033388,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2542343675603519
+          },
+          "6": {
+            "language": "pick up the butter and place it in the basket",
+            "samples": 387,
+            "normalized_mse": 0.0007922660763932269,
+            "arm_mae": 0.004011760310881148,
+            "gripper_mae": 0.005344823869161828,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.25726798062696477
+          },
+          "7": {
+            "language": "pick up the milk and place it in the basket",
+            "samples": 428,
+            "normalized_mse": 0.0010487760471767054,
+            "arm_mae": 0.004096609414620412,
+            "gripper_mae": 0.005585216716906735,
+            "gripper_sign_accuracy": 1.0,
+            "prediction_arm_std": 0.2682892082119796
+          },
+          "8": {
+            "language": "pick up the chocolate pudding and place it in the basket",
+            "samples": 383,
+            "normalized_mse": 0.0013453298088469524,
+            "arm_mae": 0.004632566353080031,
+            "gripper_mae": 0.007282897246413069,
+            "gripper_sign_accuracy": 0.9996736292428199,
+            "prediction_arm_std": 0.24120955731885085
+          },
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "samples": 459,
+            "normalized_mse": 0.0010464198827808966,
+            "arm_mae": 0.004139766635774982,
+            "gripper_mae": 0.005862768049593325,
+            "gripper_sign_accuracy": 0.9997276688453159,
+            "prediction_arm_std": 0.2645252263802459
+          }
+        }
+      }
+    ],
+    "scope": "This diagnostic samples the training cache and is not a held-out generalization estimate. It tests checkpoint integrity and whether closed-loop collapse coexists with low behavior-cloning error."
+  },
+  "zero_shot_cross_suite": null,
+  "indomain_multisuite": null,
+  "coefficient_surgery_discovery": {
+    "gate": 0.15,
+    "configurations_evaluated": 15,
+    "eligible_configurations": 0,
+    "best_by_preregistered_minimum_advantage": {
+      "file": "results/surgery_discovery_b0_k128.json",
+      "block_index": 0,
+      "rank": 128,
+      "overall_by_condition": {
+        "baseline": 0.7,
+        "keep_top": 0.65,
+        "keep_random_normmatched": 0.55,
+        "remove_top": 0.05,
+        "remove_random_normmatched": 0.45
+      },
+      "keep_advantage": 0.09999999999999998,
+      "removal_advantage": 0.4,
+      "minimum_preregistered_advantage": 0.09999999999999998,
+      "passes_both_15_point_gates": false
+    },
+    "confirmation_candidate": null,
+    "rows": [
+      {
+        "file": "results/surgery_discovery_b0_k128.json",
+        "block_index": 0,
+        "rank": 128,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.55,
+          "remove_top": 0.05,
+          "remove_random_normmatched": 0.45
+        },
+        "keep_advantage": 0.09999999999999998,
+        "removal_advantage": 0.4,
+        "minimum_preregistered_advantage": 0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b7_k128.json",
+        "block_index": 7,
+        "rank": 128,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.6,
+          "keep_random_normmatched": 0.5,
+          "remove_top": 0.2,
+          "remove_random_normmatched": 0.3
+        },
+        "keep_advantage": 0.09999999999999998,
+        "removal_advantage": 0.09999999999999998,
+        "minimum_preregistered_advantage": 0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b2_k256.json",
+        "block_index": 2,
+        "rank": 256,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.7,
+          "keep_random_normmatched": 0.65,
+          "remove_top": 0.7,
+          "remove_random_normmatched": 0.7
+        },
+        "keep_advantage": 0.04999999999999993,
+        "removal_advantage": 0.0,
+        "minimum_preregistered_advantage": 0.0,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b7_k256.json",
+        "block_index": 7,
+        "rank": 256,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.75,
+          "keep_random_normmatched": 0.6,
+          "remove_top": 0.2,
+          "remove_random_normmatched": 0.2
+        },
+        "keep_advantage": 0.15000000000000002,
+        "removal_advantage": 0.0,
+        "minimum_preregistered_advantage": 0.0,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b7_k64.json",
+        "block_index": 7,
+        "rank": 64,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.45,
+          "keep_random_normmatched": 0.5,
+          "remove_top": 0.2,
+          "remove_random_normmatched": 0.5
+        },
+        "keep_advantage": -0.04999999999999999,
+        "removal_advantage": 0.3,
+        "minimum_preregistered_advantage": -0.04999999999999999,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b2_k128.json",
+        "block_index": 2,
+        "rank": 128,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.7,
+          "keep_random_normmatched": 0.75,
+          "remove_top": 0.65,
+          "remove_random_normmatched": 0.75
+        },
+        "keep_advantage": -0.050000000000000044,
+        "removal_advantage": 0.09999999999999998,
+        "minimum_preregistered_advantage": -0.050000000000000044,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b4_k64.json",
+        "block_index": 4,
+        "rank": 64,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.7,
+          "keep_random_normmatched": 0.75,
+          "remove_top": 0.7,
+          "remove_random_normmatched": 0.8
+        },
+        "keep_advantage": -0.050000000000000044,
+        "removal_advantage": 0.10000000000000009,
+        "minimum_preregistered_advantage": -0.050000000000000044,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b6_k256.json",
+        "block_index": 6,
+        "rank": 256,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.65,
+          "remove_top": 0.55,
+          "remove_random_normmatched": 0.5
+        },
+        "keep_advantage": 0.0,
+        "removal_advantage": -0.050000000000000044,
+        "minimum_preregistered_advantage": -0.050000000000000044,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b6_k64.json",
+        "block_index": 6,
+        "rank": 64,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.6,
+          "keep_random_normmatched": 0.65,
+          "remove_top": 0.55,
+          "remove_random_normmatched": 0.55
+        },
+        "keep_advantage": -0.050000000000000044,
+        "removal_advantage": 0.0,
+        "minimum_preregistered_advantage": -0.050000000000000044,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b0_k256.json",
+        "block_index": 0,
+        "rank": 256,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.75,
+          "remove_top": 0.05,
+          "remove_random_normmatched": 0.15
+        },
+        "keep_advantage": -0.09999999999999998,
+        "removal_advantage": 0.09999999999999999,
+        "minimum_preregistered_advantage": -0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b2_k64.json",
+        "block_index": 2,
+        "rank": 64,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.7,
+          "remove_top": 0.65,
+          "remove_random_normmatched": 0.55
+        },
+        "keep_advantage": -0.04999999999999993,
+        "removal_advantage": -0.09999999999999998,
+        "minimum_preregistered_advantage": -0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b4_k128.json",
+        "block_index": 4,
+        "rank": 128,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.75,
+          "remove_top": 0.7,
+          "remove_random_normmatched": 0.7
+        },
+        "keep_advantage": -0.09999999999999998,
+        "removal_advantage": 0.0,
+        "minimum_preregistered_advantage": -0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b4_k256.json",
+        "block_index": 4,
+        "rank": 256,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.75,
+          "remove_top": 0.65,
+          "remove_random_normmatched": 0.7
+        },
+        "keep_advantage": -0.09999999999999998,
+        "removal_advantage": 0.04999999999999993,
+        "minimum_preregistered_advantage": -0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b6_k128.json",
+        "block_index": 6,
+        "rank": 128,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.65,
+          "keep_random_normmatched": 0.7,
+          "remove_top": 0.6,
+          "remove_random_normmatched": 0.5
+        },
+        "keep_advantage": -0.04999999999999993,
+        "removal_advantage": -0.09999999999999998,
+        "minimum_preregistered_advantage": -0.09999999999999998,
+        "passes_both_15_point_gates": false
+      },
+      {
+        "file": "results/surgery_discovery_b0_k64.json",
+        "block_index": 0,
+        "rank": 64,
+        "overall_by_condition": {
+          "baseline": 0.7,
+          "keep_top": 0.35,
+          "keep_random_normmatched": 0.45,
+          "remove_top": 0.1,
+          "remove_random_normmatched": 0.45
+        },
+        "keep_advantage": -0.10000000000000003,
+        "removal_advantage": 0.35,
+        "minimum_preregistered_advantage": -0.10000000000000003,
+        "passes_both_15_point_gates": false
+      }
+    ],
+    "selection_rule": "A configuration advances only when both keep-top beats Frobenius-matched random and remove-top is more damaging than Frobenius-matched random by at least the prespecified gate. The selected configuration must then be confirmed on held-out tasks before any positive coefficient-surgery claim."
   },
   "matched_training_profile": {
     "gpu": "NVIDIA A30",
@@ -1034,6 +2306,176 @@
         ],
         "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
       }
+    },
+    "a40": {
+      "chi": {
+        "architecture": "chi",
+        "shards": [
+          "athena/results/matched_a40_chi_s0_t0_3.json",
+          "athena/results/matched_a40_chi_s0_t3_6.json",
+          "athena/results/matched_a40_chi_s0_t6_8.json",
+          "athena/results/matched_a40_chi_s0_t8_10.json"
+        ],
+        "successes": 423,
+        "trials": 500,
+        "success_rate": 0.846,
+        "success_rate_wilson_95pct_ci": [
+          0.811734636678946,
+          0.8749893197216598
+        ],
+        "tasks_covered": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "complete_ten_task_suite": true,
+        "per_task": {
+          "0": {
+            "successes": 38,
+            "trials": 50,
+            "success_rate": 0.76
+          },
+          "1": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          },
+          "2": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "3": {
+            "successes": 23,
+            "trials": 50,
+            "success_rate": 0.46
+          },
+          "4": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          },
+          "5": {
+            "successes": 38,
+            "trials": 50,
+            "success_rate": 0.76
+          },
+          "6": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "7": {
+            "successes": 39,
+            "trials": 50,
+            "success_rate": 0.78
+          },
+          "8": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "9": {
+            "successes": 47,
+            "trials": 50,
+            "success_rate": 0.94
+          }
+        },
+        "parameters": 20137352,
+        "latency_ms_batch1_median_across_shards": 30.880551510490477,
+        "latency_ms_batch1_by_shard": [
+          30.84180697798729,
+          30.581366401165724,
+          30.990762561559677,
+          30.919296042993665
+        ],
+        "gpus": [
+          "NVIDIA A40"
+        ]
+      },
+      "conventional": {
+        "architecture": "conventional",
+        "shards": [
+          "athena/results/matched_a40_conv_s0_t0_3.json",
+          "athena/results/matched_a40_conv_s0_t3_6.json"
+        ],
+        "successes": 264,
+        "trials": 300,
+        "success_rate": 0.88,
+        "success_rate_wilson_95pct_ci": [
+          0.8383421861729838,
+          0.912049155696361
+        ],
+        "tasks_covered": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "complete_ten_task_suite": false,
+        "per_task": {
+          "0": {
+            "successes": 38,
+            "trials": 50,
+            "success_rate": 0.76
+          },
+          "1": {
+            "successes": 40,
+            "trials": 50,
+            "success_rate": 0.8
+          },
+          "2": {
+            "successes": 47,
+            "trials": 50,
+            "success_rate": 0.94
+          },
+          "3": {
+            "successes": 44,
+            "trials": 50,
+            "success_rate": 0.88
+          },
+          "4": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "5": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          }
+        },
+        "parameters": 20138632,
+        "latency_ms_batch1_median_across_shards": 5.81090590916574,
+        "latency_ms_batch1_by_shard": [
+          5.842511700466275,
+          5.779300117865205
+        ],
+        "gpus": [
+          "NVIDIA A40"
+        ]
+      },
+      "comparison": {
+        "chi_minus_conventional_success_rate": -0.03400000000000003,
+        "chi_to_conventional_parameter_ratio": 0.999936440568555,
+        "chi_to_conventional_latency_ratio": 5.314240497644529,
+        "same_single_gpu_class": true,
+        "same_tasks": false,
+        "hardware_controlled_complete": false,
+        "gpu_classes": [
+          "NVIDIA A40"
+        ],
+        "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+      }
     }
   },
   "matched_architecture_comparison": {
@@ -1058,6 +2500,124 @@
     ],
     "mean_success_rate": 0.3566666666666667,
     "population_std_success_rate": 0.3827944037672907
+  },
+  "chi_multiseed": {
+    "complete_seeds": 2,
+    "success_rates": [
+      0.852,
+      0.808
+    ],
+    "mean_success_rate": 0.8300000000000001,
+    "population_std_success_rate": 0.021999999999999964
+  },
+  "matched_architecture_comparison_by_seed": {
+    "0": {
+      "chi_minus_conventional_success_rate": -0.04600000000000004,
+      "chi_to_conventional_parameter_ratio": 0.999936440568555,
+      "chi_to_conventional_latency_ratio": 5.509536998165355,
+      "same_single_gpu_class": false,
+      "same_tasks": true,
+      "hardware_controlled_complete": false,
+      "gpu_classes": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ],
+      "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+    },
+    "1": {
+      "chi_minus_conventional_success_rate": 0.7180000000000001,
+      "chi_to_conventional_parameter_ratio": 0.999936440568555,
+      "chi_to_conventional_latency_ratio": 5.412122145707114,
+      "same_single_gpu_class": false,
+      "same_tasks": true,
+      "hardware_controlled_complete": false,
+      "gpu_classes": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ],
+      "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+    },
+    "2": {
+      "chi_minus_conventional_success_rate": 0.7846666666666667,
+      "chi_to_conventional_parameter_ratio": 0.999936440568555,
+      "chi_to_conventional_latency_ratio": 5.479291515408587,
+      "same_single_gpu_class": false,
+      "same_tasks": false,
+      "hardware_controlled_complete": false,
+      "gpu_classes": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ],
+      "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+    }
+  },
+  "targeted_task3_by_seed": {
+    "0": {
+      "chi": {
+        "successes": 23,
+        "trials": 50,
+        "success_rate": 0.46,
+        "success_rate_wilson_95pct_ci": [
+          0.3296965219222435,
+          0.5960112860084253
+        ]
+      },
+      "conventional": {
+        "successes": 44,
+        "trials": 50,
+        "success_rate": 0.88,
+        "success_rate_wilson_95pct_ci": [
+          0.7619518261679701,
+          0.9438239984906773
+        ]
+      },
+      "chi_minus_conventional_success_rate": -0.42,
+      "chi_source": "full canonical shards"
+    },
+    "1": {
+      "chi": {
+        "successes": 41,
+        "trials": 50,
+        "success_rate": 0.82,
+        "success_rate_wilson_95pct_ci": [
+          0.6920394632569922,
+          0.9022980732976582
+        ]
+      },
+      "conventional": {
+        "successes": 37,
+        "trials": 50,
+        "success_rate": 0.74,
+        "success_rate_wilson_95pct_ci": [
+          0.6044684273515117,
+          0.8412847250644762
+        ]
+      },
+      "chi_minus_conventional_success_rate": 0.07999999999999996,
+      "chi_source": "athena/results/chi_s1_task3.json"
+    },
+    "2": {
+      "chi": {
+        "successes": 41,
+        "trials": 50,
+        "success_rate": 0.82,
+        "success_rate_wilson_95pct_ci": [
+          0.6920394632569922,
+          0.9022980732976582
+        ]
+      },
+      "conventional": {
+        "successes": 33,
+        "trials": 50,
+        "success_rate": 0.66,
+        "success_rate_wilson_95pct_ci": [
+          0.521538260502326,
+          0.7756305077749992
+        ]
+      },
+      "chi_minus_conventional_success_rate": 0.15999999999999992,
+      "chi_source": "athena/results/chi_s2_task3.json"
+    }
   },
   "conventional_training_runs": {
     "runs": [
