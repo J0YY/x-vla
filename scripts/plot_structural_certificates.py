@@ -54,6 +54,7 @@ def main() -> None:
     ffn = load("conv_joint_ffn_certificate_v1_summary.json")
     block = load("conv_joint_block_certificate_v1_summary.json")
     modality = load("vit_modality_contribution_v1_summary.json")
+    full_forward = load("vit_full_learned_forward_v1_summary.json")
     normalizer = load("rational_norm_safety_v1_summary.json")
     seeds = np.arange(3)
 
@@ -62,8 +63,9 @@ def main() -> None:
         "Conv attn.",
         "Conv FFN",
         "Conv block",
-        "ViT sources",
-        "RNorm action",
+        "ViT\nsources",
+        "ViT full\nforward",
+        "RNorm\naction",
     )
     reconstruction_ratios = np.array(
         [
@@ -78,14 +80,21 @@ def main() -> None:
     rational_action_ratios = np.array(
         [row["action_nrmse"] / 1e-3 for row in normalizer["checkpoints"]]
     )
+    full_forward_ratios = np.array(
+        [
+            row["max_action_relative_l2_error"]
+            / full_forward["aggregate"]["end_to_end_action_relative_l2_gate"]
+            for row in full_forward["checkpoints"]
+        ]
+    )
     gate_normalized_errors = np.vstack(
-        [reconstruction_ratios, rational_action_ratios]
+        [reconstruction_ratios, full_forward_ratios, rational_action_ratios]
     )
     fig, axes = plt.subplots(1, 2, figsize=(10.6, 3.15))
 
     ax = axes[0]
     offsets = (-0.16, 0.0, 0.16)
-    categories = np.arange(5)
+    categories = np.arange(6)
     for seed, offset in zip(seeds, offsets):
         ax.scatter(
             categories + offset,
@@ -98,6 +107,7 @@ def main() -> None:
     ax.set_yscale("log")
     ax.set_ylim(1e-10, 4)
     ax.set_xticks(categories, certificate_labels)
+    ax.tick_params(axis="x", labelsize=7.7)
     ax.set_ylabel("certificate metric / frozen gate")
     ax.set_title("a  Independent reconstruction certificates")
     ax.grid(axis="y", color=COLORS["light"], lw=0.7)

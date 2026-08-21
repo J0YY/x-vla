@@ -74,6 +74,20 @@
       "raw_schema": "xvla-vit-modality-contribution-audit-v1",
       "summary": "athena/results/vit_modality_contribution_v1_summary.json",
       "summary_schema": "xvla-vit-modality-contribution-audit-summary-v1"
+    },
+    "vit_full_learned_forward": {
+      "expected_outcome": true,
+      "gate": {
+        "end_to_end_action_relative_l2_error_at_most": 0.001
+      },
+      "raw_results": [
+        "athena/results/vit_full_learned_forward_v1_s0.json",
+        "athena/results/vit_full_learned_forward_v1_s1.json",
+        "athena/results/vit_full_learned_forward_v1_s2.json"
+      ],
+      "raw_schema": "xvla-vit-full-learned-forward-certificate-v1",
+      "summary": "athena/results/vit_full_learned_forward_v1_summary.json",
+      "summary_schema": "xvla-vit-full-learned-forward-certificate-summary-v1"
     }
   },
   "description": "Immutable file identities and frozen outcomes for the anonymous structural-certificate artifact.",
@@ -187,7 +201,32 @@
       "path": "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64",
       "role": "source_snapshot",
       "sha256": "1c3a6bc32d8580a13770ed1bcb273a20c03b747b58d60d05bd83696e5e1729c5"
+    },
+    {
+      "path": "athena/results/exact_attention_frozen_sources/xvla_nn_product_routing.py.b64",
+      "role": "source_snapshot",
+      "sha256": "e2cc8b13001a5f2cdcd79f6aa135cb50453d55da13024cd1dd0a22f0e820c6d3"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "fa776eef4b7fcdd015de65dd20e9e25cc027b745ac5f35604b5b3d0844acf34a"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "3cb4cd1d89cd47462ece9bd2e61cdd1326263690633766ab044ffb19a6d517ad"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "b345563d174bb84c48851e5d14e71b73e56d0b953dd2757fd4cd162ff94ba0c9"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_summary.json",
+      "role": "summary",
+      "sha256": "dbc2d229bda4a61cb7ca1c6d9a185bee7ce19f1fa8a55df9baabeb3ce2b8ec97"
     }
   ],
-  "schema": "anonymous-structural-certificate-artifact-v2"
+  "schema": "anonymous-structural-certificate-artifact-v3"
 }

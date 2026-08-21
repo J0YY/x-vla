@@ -83,12 +83,12 @@ def verify_manifest_hashes(root: Path, manifest: dict[str, Any]) -> dict[str, st
     require_equal(
         "manifest schema",
         manifest.get("schema"),
-        "anonymous-structural-certificate-artifact-v2",
+        "anonymous-structural-certificate-artifact-v3",
     )
     entries = manifest.get("files")
     require(
-        isinstance(entries, list) and len(entries) == 22,
-        "manifest must identify twenty-two files",
+        isinstance(entries, list) and len(entries) == 27,
+        "manifest must identify twenty-seven files",
     )
     hashes: dict[str, str] = {}
     for entry in entries:
@@ -119,6 +119,7 @@ def error_value(label: str, row: dict[str, Any]) -> float:
 SOURCE_SNAPSHOTS = {
     "xvla/models/vla.py": "athena/results/exact_attention_frozen_sources/xvla_models_vla.py.b64",
     "xvla/models/vit.py": "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64",
+    "xvla/nn/product_routing.py": "athena/results/exact_attention_frozen_sources/xvla_nn_product_routing.py.b64",
 }
 
 CONV_CACHE_SHA256 = "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662"
@@ -850,6 +851,428 @@ def verify_vit_modality(
     return output
 
 
+VIT_FULL_FORWARD_CHECKPOINT_SHA256 = {
+    0: "96f11093701d6b52deefb50b7921b46e2c987e5b9dbce947997882f7c59da6c9",
+    1: "cc0780b989165a80a449c03cbb3574e2f56b2e5747a64cf32d1fde418df8ec3c",
+    2: "413a770071bd8f16b924c5604f7c7a58567d2eb6c40c66aab202bcf046fec910",
+}
+VIT_FULL_FORWARD_TASKS = (
+    "pick up the alphabet soup and place it in the basket",
+    "pick up the cream cheese and place it in the basket",
+    "pick up the salad dressing and place it in the basket",
+    "pick up the bbq sauce and place it in the basket",
+    "pick up the ketchup and place it in the basket",
+    "pick up the tomato sauce and place it in the basket",
+    "pick up the butter and place it in the basket",
+    "pick up the milk and place it in the basket",
+    "pick up the chocolate pudding and place it in the basket",
+    "pick up the orange juice and place it in the basket",
+)
+VIT_FULL_FORWARD_STAGES = (
+    "patch_projection_and_vision_position",
+    "vision_block_0",
+    "vision_block_1",
+    "vision_block_2",
+    "vision_block_3",
+    "visual_projection",
+    "joint_input_embeddings",
+    "joint_block_0",
+    "joint_block_1",
+    "joint_block_2",
+    "joint_block_3",
+    "joint_block_4",
+    "joint_block_5",
+    "joint_block_6",
+    "joint_block_7",
+    "final_rational_norm",
+    "linear_action_head",
+)
+VIT_FULL_FORWARD_STAGE_SHAPES = {
+    **{
+        name: [64, 192]
+        for name in (
+            "patch_projection_and_vision_position",
+            "vision_block_0",
+            "vision_block_1",
+            "vision_block_2",
+            "vision_block_3",
+        )
+    },
+    "visual_projection": [64, 384],
+    **{
+        name: [107, 384]
+        for name in (
+            "joint_input_embeddings",
+            "joint_block_0",
+            "joint_block_1",
+            "joint_block_2",
+            "joint_block_3",
+            "joint_block_4",
+            "joint_block_5",
+            "joint_block_6",
+            "joint_block_7",
+            "final_rational_norm",
+        )
+    },
+    "linear_action_head": [8, 7],
+}
+
+
+def verify_checkpoint_state_identity(label: str, identity: Any) -> None:
+    require(isinstance(identity, dict), f"{label}: checkpoint state identity is absent")
+    tensors = identity.get("tensors")
+    require(isinstance(tensors, dict) and tensors, f"{label}: checkpoint tensors are absent")
+    require_equal(f"{label} tensor count", identity.get("tensor_count"), len(tensors))
+    scalar_count = 0
+    digest = hashlib.sha256()
+    for name in sorted(tensors):
+        tensor = tensors[name]
+        require(isinstance(name, str) and isinstance(tensor, dict), f"{label}: malformed tensor")
+        shape = tensor.get("shape")
+        require(
+            isinstance(shape, list)
+            and all(isinstance(dimension, int) and dimension >= 0 for dimension in shape),
+            f"{label}: malformed tensor shape {name}",
+        )
+        require(isinstance(tensor.get("dtype"), str), f"{label}: missing tensor dtype {name}")
+        tensor_sha = tensor.get("sha256")
+        require(
+            isinstance(tensor_sha, str) and len(tensor_sha) == 64,
+            f"{label}: malformed tensor SHA {name}",
+        )
+        scalar_count += math.prod(shape)
+        digest.update(name.encode("utf-8") + b"\0")
+        digest.update(json.dumps(tensor, sort_keys=True).encode("ascii") + b"\0")
+    require_equal(f"{label} scalar count", identity.get("scalar_count"), scalar_count)
+    require_equal(f"{label} state digest", identity.get("identity_sha256"), digest.hexdigest())
+
+
+def verify_vit_full_forward(
+    root: Path,
+    config: dict[str, Any],
+    manifest_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Recompute the fixed-input sequential learned-forward certificate."""
+    raw_paths = config["raw_results"]
+    require_equal("ViT full-forward raw-result count", len(raw_paths), 3)
+    summary = load_json(safe_path(root, config["summary"]))
+    require_equal("ViT full-forward summary schema", summary.get("schema"), config["summary_schema"])
+    protocol = summary.get("protocol")
+    require(isinstance(protocol, dict), "ViT full-forward protocol is absent")
+    gate = float(config["gate"]["end_to_end_action_relative_l2_error_at_most"])
+    require_close("ViT full-forward protocol gate", protocol.get("end_to_end_action_relative_l2_gate"), gate)
+    require_equal("ViT full-forward protocol suite", protocol.get("suite"), "libero_object")
+    require_equal("ViT full-forward protocol encoder", protocol.get("vision_encoder"), "vit")
+    require_equal("ViT full-forward protocol precision", protocol.get("matmul_precision"), "highest")
+    require_equal("ViT full-forward protocol input count", protocol.get("full_inputs_per_checkpoint"), 16)
+    require_equal(
+        "ViT full-forward protocol task quotas",
+        protocol.get("full_official_task_quotas"),
+        {str(task): 2 if task < 6 else 1 for task in range(10)},
+    )
+    require_equal("ViT full-forward protocol stages", protocol.get("stages"), list(VIT_FULL_FORWARD_STAGES))
+    require_equal("ViT full-forward protocol shapes", protocol.get("stage_shapes"), VIT_FULL_FORWARD_STAGE_SHAPES)
+    require_equal("ViT full-forward protocol vision blocks", protocol.get("vision_blocks"), 4)
+    require_equal("ViT full-forward protocol joint blocks", protocol.get("joint_blocks"), 8)
+    require_equal("ViT full-forward protocol action horizon", protocol.get("action_horizon"), 8)
+    require_equal("ViT full-forward protocol action dimension", protocol.get("action_dim"), 7)
+
+    summary_identity = summary.get("identity", {})
+    summary_source_map = summary_identity.get("source_sha256")
+    verify_source_identity(root, "ViT full-forward summary", summary_source_map)
+    require_equal("ViT full-forward cache SHA", summary_identity.get("cache_sha256"), CONV_CACHE_SHA256)
+    require_equal(
+        "ViT full-forward provenance result SHA",
+        summary_identity.get("provenance_result_sha256"),
+        "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    )
+    require_equal(
+        "ViT full-forward provenance content SHA",
+        summary_identity.get("provenance_canonical_content_sha256"),
+        CONV_PROVENANCE_CONTENT_SHA256,
+    )
+    require_equal(
+        "ViT full-forward capability manifest SHA",
+        summary_identity.get("capability_manifest_sha256"),
+        "c23a9ba8bf791d55b0a731743fdac7810395d0030fdd6225ee98b7ec6da42453",
+    )
+    require_equal(
+        "ViT full-forward checkpoint identities",
+        summary_identity.get("checkpoint_sha256"),
+        {str(seed): digest for seed, digest in VIT_FULL_FORWARD_CHECKPOINT_SHA256.items()},
+    )
+    metadata = summary_identity.get("dataset_metadata", {})
+    require_equal("ViT full-forward metadata SHA", metadata.get("metadata_sha256"), CONV_METADATA_SHA256)
+    require_equal(
+        "ViT full-forward task permutation",
+        metadata.get("dataset_to_official_task"),
+        CONV_TASK_PERMUTATION,
+    )
+    require_equal(
+        "ViT full-forward summary runtime",
+        summary.get("runtime"),
+        {
+            "python_implementation": "CPython",
+            "python_version": "3.10.19",
+            "numpy_version": "1.26.4",
+            "torch_version": "2.7.1+cu126",
+        },
+    )
+
+    expected_gpu_runtime = {
+        "gpu": "NVIDIA RTX A6000",
+        "torch_version": "2.7.1+cu126",
+        "numpy_version": "1.26.4",
+        "cuda_version": "12.6",
+        "matmul_precision": "highest",
+        "cuda_matmul_allow_tf32": False,
+        "cudnn_allow_tf32": True,
+        "deterministic_algorithms": True,
+        "cublas_workspace_config": ":4096:8",
+    }
+    summary_rows = {int(row["seed"]): row for row in summary.get("checkpoints", [])}
+    require_equal("ViT full-forward summary seeds", set(summary_rows), {0, 1, 2})
+    recomputed = []
+    seen_seeds = set()
+    for relative in raw_paths:
+        result = load_json(safe_path(root, relative))
+        require_equal(f"{relative} schema", result.get("schema"), config["raw_schema"])
+        require_equal(f"{relative} mode", result.get("mode"), "full")
+        require_equal(f"{relative} protocol", result.get("protocol"), protocol)
+        identity = result.get("identity", {})
+        seed = int(identity.get("checkpoint_seed", -1))
+        require(seed in {0, 1, 2} and seed not in seen_seeds, f"{relative}: invalid or duplicate seed")
+        seen_seeds.add(seed)
+        require_equal(f"{relative} checkpoint SHA", identity.get("checkpoint_sha256"), VIT_FULL_FORWARD_CHECKPOINT_SHA256[seed])
+        require_equal(f"{relative} cache SHA", identity.get("cache_sha256"), CONV_CACHE_SHA256)
+        require_equal(f"{relative} provenance job", str(identity.get("provenance_job_id")), CONV_PROVENANCE_JOB_ID)
+        require_equal(
+            f"{relative} provenance result SHA",
+            identity.get("provenance_result_sha256"),
+            summary_identity["provenance_result_sha256"],
+        )
+        require_equal(
+            f"{relative} capability SHA",
+            identity.get("capability_manifest_sha256"),
+            summary_identity["capability_manifest_sha256"],
+        )
+        require_equal(f"{relative} dataset metadata", identity.get("dataset_metadata"), metadata)
+        require_equal(f"{relative} source identity", identity.get("source_sha256"), summary_source_map)
+        runtime = result.get("runtime", {})
+        for field, expected in expected_gpu_runtime.items():
+            require_equal(f"{relative} runtime {field}", runtime.get(field), expected)
+        verify_checkpoint_state_identity(relative, identity.get("checkpoint_state_identity"))
+        component_identity = result.get("component_identity", {})
+        require_equal(f"{relative} vision block identity count", len(component_identity.get("vision_blocks", [])), 4)
+        require_equal(f"{relative} joint block identity count", len(component_identity.get("joint_blocks", [])), 8)
+
+        inputs = result.get("inputs")
+        evaluations = result.get("evaluations")
+        require(isinstance(inputs, list) and len(inputs) == 16, f"{relative}: expected 16 inputs")
+        require(isinstance(evaluations, list) and len(evaluations) == 16, f"{relative}: expected 16 evaluations")
+        require_equal(
+            f"{relative} selection ranks",
+            [int(row.get("selection_rank", -1)) for row in inputs],
+            list(range(16)),
+        )
+        task_counts = {task: 0 for task in range(10)}
+        for input_index, row in enumerate(inputs):
+            task = int(row.get("official_task_index", -1))
+            require(task in task_counts, f"{relative} input {input_index}: invalid official task")
+            require_equal(f"{relative} input {input_index} instruction", row.get("instruction"), VIT_FULL_FORWARD_TASKS[task])
+            require_equal(
+                f"{relative} input {input_index} within-task rank",
+                int(row.get("selection_rank_within_official_task", -1)),
+                task_counts[task],
+            )
+            task_counts[task] += 1
+            instruction_ids = row.get("instruction_ids")
+            require(
+                isinstance(instruction_ids, list)
+                and len(instruction_ids) == 32
+                and all(isinstance(token, int) and token >= 0 for token in instruction_ids),
+                f"{relative} input {input_index}: malformed instruction IDs",
+            )
+            for field in (
+                "selection_sha256",
+                "canonical_record_sha256",
+                "image_sha256",
+                "state_sha256",
+                "action_sha256",
+            ):
+                value = row.get(field)
+                require(
+                    isinstance(value, str) and len(value) == 64,
+                    f"{relative} input {input_index}: malformed {field}",
+                )
+        require_equal(
+            f"{relative} task counts",
+            task_counts,
+            {task: 2 if task < 6 else 1 for task in range(10)},
+        )
+        for task in range(10):
+            selections = [
+                row["selection_sha256"]
+                for row in inputs
+                if int(row["official_task_index"]) == task
+            ]
+            require_equal(f"{relative} task {task} selection order", selections, sorted(selections))
+
+        action_relatives = []
+        action_absolutes = []
+        stage_relatives = []
+        for input_index, (input_row, evaluation) in enumerate(zip(inputs, evaluations)):
+            require_equal(f"{relative} evaluation {input_index} rank", evaluation.get("selection_rank"), input_index)
+            require_equal(
+                f"{relative} evaluation {input_index} selection",
+                evaluation.get("selection_sha256"),
+                input_row["selection_sha256"],
+            )
+            require(
+                evaluation.get("manual_deployed_forward_exact") is True,
+                f"{relative} evaluation {input_index}: manual traversal differs",
+            )
+            prepared = evaluation.get("prepared_inputs", {})
+            for field in (
+                "image_float32_sha256",
+                "instruction_int64_sha256",
+                "normalized_state_float32_sha256",
+                "embodiment_int64_sha256",
+            ):
+                value = prepared.get(field)
+                require(
+                    isinstance(value, str) and len(value) == 64,
+                    f"{relative} evaluation {input_index}: malformed prepared-input digest",
+                )
+            stages = evaluation.get("stages")
+            require(isinstance(stages, list), f"{relative} evaluation {input_index}: stages are absent")
+            require_equal(
+                f"{relative} evaluation {input_index} stage names",
+                [stage.get("name") for stage in stages],
+                list(VIT_FULL_FORWARD_STAGES),
+            )
+            for stage_index, stage in enumerate(stages):
+                label = f"{relative} evaluation {input_index} stage {stage_index}"
+                require_equal(f"{label} shape", stage.get("shape"), VIT_FULL_FORWARD_STAGE_SHAPES[stage["name"]])
+                stage_relatives.append(error_value(label, stage))
+                for digest_field in (
+                    "deployed_float32_as_float64_sha256",
+                    "reconstruction_float64_sha256",
+                ):
+                    digest = stage.get(digest_field)
+                    require(isinstance(digest, str) and len(digest) == 64, f"{label}: malformed digest")
+
+            actions = evaluation.get("actions", {})
+            require_equal(f"{relative} evaluation {input_index} action shape", actions.get("shape"), [8, 7])
+            deployed_rows = actions.get("deployed_float32_as_float64")
+            reconstructed_rows = actions.get("reconstruction_float64")
+            require(
+                isinstance(deployed_rows, list)
+                and isinstance(reconstructed_rows, list)
+                and len(deployed_rows) == len(reconstructed_rows) == 8
+                and all(isinstance(row, list) and len(row) == 7 for row in deployed_rows + reconstructed_rows),
+                f"{relative} evaluation {input_index}: malformed action arrays",
+            )
+            deployed = [float(value) for row in deployed_rows for value in row]
+            reconstructed = [float(value) for row in reconstructed_rows for value in row]
+            require(all(math.isfinite(value) for value in deployed + reconstructed), f"{relative}: non-finite action")
+            deployed_sha = float64_sha256(deployed)
+            reconstructed_sha = float64_sha256(reconstructed)
+            require_equal(
+                f"{relative} evaluation {input_index} deployed action SHA",
+                actions.get("deployed_float32_as_float64_sha256"),
+                deployed_sha,
+            )
+            require_equal(
+                f"{relative} evaluation {input_index} reconstructed action SHA",
+                actions.get("reconstruction_float64_sha256"),
+                reconstructed_sha,
+            )
+            difference = [left - right for left, right in zip(deployed, reconstructed)]
+            maximum = max(abs(value) for value in difference)
+            relative_error = math.sqrt(math.fsum(value * value for value in difference)) / max(
+                math.sqrt(math.fsum(value * value for value in deployed)), 1e-30
+            )
+            recorded_error = evaluation.get("end_to_end_action", {})
+            require(recorded_error.get("finite") is True, f"{relative}: non-finite action flag")
+            require_close(f"{relative} evaluation {input_index} max action error", recorded_error.get("max_abs_error"), maximum)
+            require_close(f"{relative} evaluation {input_index} relative action error", recorded_error.get("relative_l2_error"), relative_error)
+            final_stage = stages[-1]
+            require_equal(f"{relative} evaluation {input_index} final deployed SHA", final_stage.get("deployed_float32_as_float64_sha256"), deployed_sha)
+            require_equal(f"{relative} evaluation {input_index} final reconstructed SHA", final_stage.get("reconstruction_float64_sha256"), reconstructed_sha)
+            require_close(f"{relative} evaluation {input_index} final max error", final_stage.get("max_abs_error"), maximum)
+            require_close(f"{relative} evaluation {input_index} final relative error", final_stage.get("relative_l2_error"), relative_error)
+            action_absolutes.append(maximum)
+            action_relatives.append(relative_error)
+
+        row = {
+            "seed": seed,
+            "inputs_audited": 16,
+            "stage_evaluations": 16 * len(VIT_FULL_FORWARD_STAGES),
+            "action_chunks": 16,
+            "action_scalars": 16 * 8 * 7,
+            "manual_deployed_forward_exact_for_all": True,
+            "all_finite": True,
+            "max_stage_relative_l2_error": max(stage_relatives),
+            "max_action_absolute_error": max(action_absolutes),
+            "max_action_relative_l2_error": max(action_relatives),
+            "end_to_end_action_relative_l2_gate": gate,
+        }
+        row["passed"] = row["max_action_relative_l2_error"] <= gate
+        aggregate = result.get("aggregate", {})
+        for field, expected in row.items():
+            if field == "seed":
+                continue
+            actual = aggregate.get(field)
+            if isinstance(expected, float):
+                require_close(f"{relative} aggregate {field}", actual, expected)
+            else:
+                require_equal(f"{relative} aggregate {field}", actual, expected)
+
+        recorded = summary_rows[seed]
+        require_equal(f"ViT full-forward summary seed {seed} raw SHA", recorded.get("result_sha256"), manifest_hashes[relative])
+        require_equal(f"ViT full-forward summary seed {seed} result path", recorded.get("result_path"), relative.removeprefix("athena/"))
+        require_equal(f"ViT full-forward summary seed {seed} checkpoint SHA", recorded.get("checkpoint_sha256"), identity["checkpoint_sha256"])
+        for field, expected in row.items():
+            actual = recorded.get(field)
+            if isinstance(expected, float):
+                require_close(f"ViT full-forward summary seed {seed} {field}", actual, expected)
+            else:
+                require_equal(f"ViT full-forward summary seed {seed} {field}", actual, expected)
+        recomputed.append(row)
+
+    require_equal("ViT full-forward raw seed set", seen_seeds, {0, 1, 2})
+    output = {
+        "checkpoints_audited": 3,
+        "inputs_audited": 48,
+        "stage_evaluations": 48 * len(VIT_FULL_FORWARD_STAGES),
+        "action_chunks": 48,
+        "action_scalars": 48 * 8 * 7,
+        "manual_deployed_forward_exact_for_all": all(
+            row["manual_deployed_forward_exact_for_all"] for row in recomputed
+        ),
+        "all_finite": all(row["all_finite"] for row in recomputed),
+        "max_stage_relative_l2_error": max(row["max_stage_relative_l2_error"] for row in recomputed),
+        "max_action_absolute_error": max(row["max_action_absolute_error"] for row in recomputed),
+        "max_action_relative_l2_error": max(row["max_action_relative_l2_error"] for row in recomputed),
+        "end_to_end_action_relative_l2_gate": gate,
+        "all_three_checkpoints_pass": all(row["passed"] for row in recomputed),
+    }
+    recorded_aggregate = summary.get("aggregate", {})
+    for field, expected in output.items():
+        actual = recorded_aggregate.get(field)
+        if isinstance(expected, float):
+            require_close(f"ViT full-forward summary aggregate {field}", actual, expected)
+        else:
+            require_equal(f"ViT full-forward summary aggregate {field}", actual, expected)
+    require_equal(
+        "ViT full-forward immutable expected outcome",
+        output["all_three_checkpoints_pass"],
+        config["expected_outcome"],
+    )
+    return output
+
+
 def quadratic_roots(coefficients: list[float]) -> list[complex]:
     require_equal("denominator coefficient count", len(coefficients), 3)
     c, b, a = coefficients
@@ -1132,6 +1555,11 @@ def main() -> int:
         modality = verify_vit_modality(
             args.root.resolve(), manifest["certificates"]["vit_modality"], hashes
         )
+        full_forward = verify_vit_full_forward(
+            args.root.resolve(),
+            manifest["certificates"]["vit_full_learned_forward"],
+            hashes,
+        )
         rational = verify_rational(args.root.resolve(), manifest["certificates"]["rational_norm"], hashes)
     except (KeyError, TypeError, ValueError, VerificationError) as exc:
         print(f"VERIFICATION FAILED: {exc}", file=sys.stderr)
@@ -1162,6 +1590,13 @@ def main() -> int:
         f"{modality['source_group_evaluations']} source-group evaluations, "
         f"max relative L2 {modality['max_relative_l2_error']:.12g} <= "
         f"{modality['relative_l2_gate']:.12g}"
+    )
+    print(
+        "VIT FULL LEARNED-FORWARD PASS: "
+        f"{full_forward['inputs_audited']} input-conditioned replays and "
+        f"{full_forward['stage_evaluations']} stage evaluations, "
+        f"max action relative L2 {full_forward['max_action_relative_l2_error']:.12g} <= "
+        f"{full_forward['end_to_end_action_relative_l2_gate']:.12g}"
     )
     print(
         "RATIONALNORM PRIMARY PASS: "

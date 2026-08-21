@@ -44,7 +44,10 @@ operator audit of the seed-$0$ $20.1$M ViT checkpoint and local reconstructions 
 form. We derive an exact weight-based decomposition of each softmax-free attention layer and,
 on one fixed corrected cached input per checkpoint, numerically replay all $12$ modules in each of three
 ViT checkpoint artifacts with
-worst relative error $2.016119\times10^{-7}$. An $O(d^2)$ reduced Gram avoids materializing the
+worst relative error $2.016119\times10^{-7}$. A separate sequential replay independently rebuilds
+the learned path through four vision and eight joint blocks to the linear action output on $48$
+fixed inputs, with worst relative error $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. An
+$O(d^2)$ reduced Gram avoids materializing the
 coefficient tensor. In a seed-$0$ ViT checkpoint, all $36$ primary block-head tests favor the
 rank-$128$ weight-derived subspace over fixed random controls. Across the same three ViT
 checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
@@ -59,7 +62,7 @@ $1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Learned rank-$96$ visual projec
 $95.2$--$98.2\%$ of baseline successes, versus $3.3$--$13.6\%$ for random projectors. We therefore
 establish a capable model family with exact layerwise structure derived from trained coefficients
 and bounded familiar-task instruction necessity. We do not provide counterfactual goal-following
-evidence or an exact end-to-end decomposition of the complete policy.
+evidence or an input-general compact symbolic decomposition of the complete policy.
 \end{abstract}
 
 % ============================================================================
@@ -344,6 +347,17 @@ $19.2\%$ robot state, $7.9\%$ action query, and $5.1\%$ instruction. These input
 magnitudes are descriptive rather than causal importance. Familiar-prompt permutations are also
 descriptive and do not establish grounding or closed-loop success.
 
+Finally, a prospectively frozen sequential replay reaches the learned action output on the same
+three capable ViT checkpoints. For $16$ deterministic, official-task-balanced corrected inputs per
+checkpoint, an independent NumPy float64 evaluation starts from the exact prepared model tensors
+and rebuilds the learned patch projection, four vision blocks, multimodal embeddings and
+projections, eight joint blocks, final RationalNorm, and linear action head. Across $48$ inputs and
+$816$ recorded stage evaluations, the worst final-action relative $\ell_2$ error is
+$3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. Every manual PyTorch traversal is bitwise
+identical to an unmodified full model call. This is an input-conditioned full learned-forward
+numerical certificate, not one compact symbolic contraction or an input-general proof. It excludes
+preprocessing, fixed action unnormalization, chunk execution, simulator dynamics, and success.
+
 Naively materializing the real width-$384$ coefficient tensor would require approximately
 $3.2\times10^{15}$ values. We instead form an $O(d^2)$ reduced Gram. Like a covariance
 matrix, its leading eigenvectors rank important directions without constructing the full
@@ -375,27 +389,31 @@ The $36$ block-head pairs are architectural units within one checkpoint, not ind
 model-level replicates.
 
 This extends exact weight-only construction through individual attention layers. It is not an
-exact end-to-end decomposition of the complete policy. Composition across all eight blocks
+exact compact symbolic end-to-end decomposition of the complete policy. Symbolic composition across all eight blocks
 still faces rapid degree and representation growth.
 
 \subsection{What the artifact lets a reviewer test}
 
-The structural artifact separates three questions that can otherwise be conflated. First, does a
+The structural artifact separates four questions that can otherwise be conflated. First, does a
 factorized operator implement its claimed equation? The attention and FFN records answer this by
 comparing independent evaluations of the saved factors. Second, does the claimed equation survive
 the numerical boundary of the deployed implementation? The complete-block records compare a
-NumPy float64 reconstruction with a deployed PyTorch float32 block call. Third, does this agreement
-reach the action interface? The RationalNorm record recomputes normalized and physical actions from
-stored arrays. Passing one level does not imply the next, so the verifier reports each decision
-separately.
+NumPy float64 reconstruction with a deployed PyTorch float32 block call. Third, does the learned
+path preserve that agreement under sequential composition to the action output? The full-forward
+record answers this numerically on fixed prepared inputs. Fourth, is the deployed rational
+normalizer pole-free and arithmetically faithful? The RationalNorm record recomputes normalized and
+physical actions from stored arrays. Passing one level does not imply the next, so the verifier
+reports each decision separately.
 
 This ladder also clarifies what a failed control would mean. Failure of an operator identity would
 invalidate the corresponding convertibility claim before any behavioral interpretation. Agreement
 at the operator and block levels would instead localize a later discrepancy to composition,
-preprocessing, decoding, or simulator interaction. The current complete-block certificate is not a
-sequential policy replay, so it cannot by itself rule out those later sources. This distinction is
-especially important for multimodal policies, where an exact internal equation can coexist with an
-out-of-graph mode choice or a continuous-action convention that changes behavior.
+preprocessing, decoding, or simulator interaction. The complete-block certificate remains
+per-block. The separate full learned-forward record closes the learned numerical path on fixed
+prepared inputs, but it still excludes preprocessing, action unnormalization, chunk execution, and
+simulator dynamics. This distinction is especially important for multimodal policies, where an
+exact internal equation can coexist with an out-of-graph mode choice or a continuous-action
+convention that changes behavior.
 
 The modality ledger serves a different role. It assigns every joint-attention term to vision,
 instruction, robot-state, or action-query source tokens and verifies that the four reconstructed
@@ -427,8 +445,9 @@ that standard LIBERO success can coexist with weak language use
 
 \paragraph{Limitations and conclusion.}
 The benchmark is one specialist suite, so it does not establish broad robotic generalization.
-Exact reconstruction is certified layer by layer and does not yet produce one compact symbolic
-contraction of the full policy. The ViT records connect capability, exact attention, and the
+Exact layer equations are certified directly, and the learned forward path is independently
+replayed sequentially on fixed inputs. This does not yet produce one compact symbolic contraction
+or an input-general proof of the full policy. The ViT records connect capability, exact attention, and the
 reduced-Gram screen through common checkpoint basenames. Separate convolutional files replicate the joint-attention equation
 certificate across another visual encoder. A paired familiar-task audit establishes instruction
 necessity for the original goal, but not counterfactual goal following, zero-shot language use, or
@@ -440,7 +459,8 @@ coefficient-edit interface.
 The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
 behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
 verifiers independently recompute the capability totals, visual-bottleneck counts and intervals,
-and the attention, FFN, complete-block, modality-partition, and RationalNorm certificate decisions. Historical Modal
+and the attention, FFN, complete-block, modality-partition, full learned-forward, and RationalNorm
+certificate decisions. Historical Modal
 cache-backed analyses read dataset-native task metadata. The
 replacement Athena pipeline pins that metadata and maps dataset identifiers to official
 identifiers before defining task splits. A source-level audit compared all $271{,}996$ cached
@@ -593,23 +613,24 @@ This primary certificate concerns pole-free denominators and floating-point fide
 deployed rational operator. It does not claim uniform agreement with exact RMS scaling or measure
 matched alternative-normalizer runtime overhead.
 
-The joint reconstruction ladder therefore extends from individual attention heads through FFNs to
-complete joint blocks on the same fixed inputs. The full-block certificate remains per-block and
-does not sequentially reconstruct the full transformer. The ViT source-partition audit is likewise
-layerwise and input-conditioned. Figure~\ref{fig:structural-certificates} reports the frozen
-numerical gates and the descriptive depth profile without assigning causal importance.
+The reconstruction ladder extends from individual attention heads through FFNs and per-block
+replay to a separate sequential learned-forward certificate. That final record starts at exact
+prepared model tensors and reaches the linear action head on $48$ fixed inputs. It is numerical and
+input-conditioned, not a compact symbolic contraction or an input-general full-policy proof. The
+ViT source-partition audit remains layerwise and descriptive. Figure~\ref{fig:structural-certificates}
+reports the frozen numerical gates and the depth profile without assigning causal importance.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.98\textwidth]{../paper_figures/appendix_structural_certificates.pdf}
 \caption{\textbf{Frozen reconstruction ladder and descriptive ViT source partition.}
 Panel (a) reports observed-to-gate ratios for independent Conv attention, joint-FFN, and complete
-joint-block reconstruction, plus the ViT source-partition identity and primary RationalNorm
-action fidelity. All plotted primary numerical
+joint-block reconstruction, the ViT source-partition identity, the sequential ViT learned-forward
+action replay, and primary RationalNorm action fidelity. All plotted primary numerical
 gates pass. Panel (b) shows descriptive mean coherent-energy shares after the attention output
 projection across $384$ checkpoint-input cases per joint block. The depth trend is not a causal
-importance or grounding result. Complete-block replay is per-block rather than sequential
-end-to-end policy reconstruction.}
+importance or grounding result. The learned-forward replay excludes preprocessing, fixed action
+unnormalization, chunk execution, simulator dynamics, and success.}
 \label{fig:structural-certificates}
 \end{figure}
 
