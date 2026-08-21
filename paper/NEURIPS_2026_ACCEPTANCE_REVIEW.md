@@ -17,14 +17,14 @@ Estimated acceptance bands for the tailored versions after the matched seed-0 co
 three-checkpoint all-layer Athena audit, the completed conventional-seed runs, and the completed
 coefficient-surgery sweep:
 
-- VLM4RWD: 45 to 60 percent. Excellent fit across VLA architecture, grounded deployment,
+- VLM4RWD: 50 to 65 percent. Excellent fit across VLA architecture, grounded deployment,
   causal analysis, and failure diagnosis. The nonzero matched capability cost and incomplete
   task-level counterfactual grounding are material risks, and the newly observed training variance
   weakens the controlled-comparison story.
-- Neural Network Artifacts extended abstract: 50 to 65 percent. The exact all-layer reconstruction
-  and trained-checkpoint audit are unusually direct weight-artifact evidence, bounded by the lack
-  of a successful selective coefficient edit.
-- Robot Learning Workshop: 25 to 40 percent. Strong robotics evidence and an honest specialist
+- Neural Network Artifacts extended abstract: 58 to 72 percent. The exact all-layer reconstruction,
+  trained-checkpoint audit, and disjoint-sample subspace fidelity are unusually direct
+  weight-artifact evidence, bounded by the lack of a successful selective coefficient edit.
+- Robot Learning Workshop: 30 to 45 percent. Strong robotics evidence and an honest specialist
   Physical-AI result, but no zero-shot, cross-task, or cross-environment generalization.
 
 The VLM4RWD version is the best single submission today. Neural Network Artifacts is the strongest
@@ -53,7 +53,9 @@ alternative if the author wants the paper judged primarily as a model-weights co
    selected, and random conditions reach 47 of 60, 29 of 60, and 0 of 60 successes. Selected
    beats random with the same sign at every checkpoint, but it remains 30 points below full.
    The earlier near-lossless result does not replicate. Its ranking uses training-cache
-   demonstrations, and the completed offline fidelity values reuse discovery samples.
+   demonstrations. Corrected offline evaluation uses 1,024 disjoint samples per checkpoint and
+   five random projectors. The median random-to-selected MSE ratio spans 16.2 to 32.3 for
+   translation, 9.9 to 15.0 for rotation, and 15.4 to 30.9 for gripper across checkpoints.
 6. A 300-pair, three-checkpoint instruction intervention shifts the relative end-effector
    preference toward the renamed object in 84 to 88 percent of trials. Only 28 to 33 percent end
    closer to that object. A seed-0 conventional control responds even more strongly but has the
@@ -84,8 +86,9 @@ alternative if the author wants the paper judged primarily as a model-weights co
    downstream sensitivity.
 4. **Causal bottleneck is lossy.** The visual-subspace result now covers three checkpoints and
    60 paired trials over four tasks. The selected subspace beats random consistently, but loses
-   18 of the 47 full-policy successes. Completed offline values reuse the discovery sample, so
-   only the independent closed-loop canonical states support the replicated causal claim.
+   18 of the 47 full-policy successes. Corrected offline values use samples disjoint from basis
+   discovery and strongly favor the selected basis, but both splits come from the training cache.
+   Only the closed-loop canonical states support the independent behavioral claim.
 5. **No successful coefficient-level repair.** The full 15-configuration discovery sweep has no
    configuration that passes both preregistered 15-point gates. The best candidate has a 10-point
    keep advantage and a 40-point removal advantage. Its affected-weight relative norms are 56.4
@@ -112,8 +115,8 @@ alternative if the author wants the paper judged primarily as a model-weights co
    seed sensitivity or legacy-versus-native checkpoint provenance. The same-hardware
    seed-0 matrices reject the predeclared three-point noninferiority claim at this seed. Use
    partial-conversion controls to localize the task-3 deficit.
-2. Finish the three queued disjoint-sample offline diagnostics. The three-checkpoint closed-loop
-   visual-subspace replication is complete and should be reported as a causal but lossy
+2. Report the completed disjoint-sample offline diagnostics together with the three-checkpoint
+   closed-loop replication. The selected basis is strongly nonrandom but remains a lossy causal
    bottleneck. Do not promote it as near-lossless. The separate instruction intervention and
    conventional control are also complete.
 3. Release an anonymous reproducibility package containing code, exact configs, checkpoint hashes,
@@ -143,8 +146,8 @@ alternative if the author wants the paper judged primarily as a model-weights co
 Neural Network Artifacts is the safest target because its central exact-audit result is unaffected
 by the nonzero capability cost. VLM4RWD remains a strong second choice because the grounding
 failure analysis fits its call, while Robot Learning Workshop has the largest theme mismatch.
-Finish the live native-provenance, in-domain cross-suite, partial-conversion, A40, and disjoint
-offline jobs before the submission freeze, then publish the anonymous artifact and run a final
+Finish the live native-provenance, in-domain cross-suite, partial-conversion, ensemble, and
+compression jobs before the submission freeze, then publish the anonymous artifact and run a final
 citation audit. Do not submit
 the same empirical paper concurrently to multiple NeurIPS workshops without written permission from
 every affected workshop chair.

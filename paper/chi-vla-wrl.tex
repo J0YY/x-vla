@@ -45,7 +45,9 @@ module in three checkpoints with worst relative error $2.56\times10^{-7}$, and e
 subspaces beat equal-rank random controls in all $36$ primary block-head tests. Across three
 checkpoints, retaining $64$ of $384$ causally ranked visual dimensions succeeds in $29/60$
 matched trials, compared with $47/60$ for the full representation and $0/60$ for random
-subspaces. The causal effect replicates, but near-lossless preservation does not. A $300$-pair
+subspaces. The causal effect replicates, but near-lossless preservation does not. On disjoint
+cache samples, the selected basis has at least $9.9\times$ lower reconstruction error than the
+median of five random projectors in every action group and checkpoint. A $300$-pair
 instruction intervention reliably changes motion but rarely
 overcomes the scene prior completely, and a fifteen-configuration direct coefficient-edit sweep
 yields no candidate that passes both selectivity gates. A same-skeleton conventional
@@ -338,8 +340,9 @@ At the visual bond before the joint backbone, we rank directions separately for 
 rotation, and gripper actions. A subspace is a smaller coordinate system inside the model's
 $384$-dimensional visual representation. Retaining it means zeroing all other directions, then
 running the actual policy. We compare selected and random equal-width subspaces. Because the
-ranking uses cached training demonstrations and downstream action gradients, its offline
-reconstruction is an in-cache diagnostic. Closed-loop intervention uses independent canonical
+ranking uses cached training demonstrations and downstream action gradients, offline
+reconstruction remains in-cache. Its evaluation samples are disjoint from the samples that
+estimate the ranking. Closed-loop intervention uses independent canonical
 simulator states, so it tests a causal bottleneck but is not a weight-only discovery result.
 An earlier one-checkpoint screen found in-cache random-to-selected reconstruction ratios of
 $4.8\times$, $4.6\times$, and $41.8\times$ for translation, rotation, and gripper, followed by
@@ -348,8 +351,11 @@ Appendix Figure~\ref{fig:causal} reports the stronger replication. Across checkp
 conditions reach $47/60$, $29/60$, and $0/60$. The selected-versus-random direction replicates
 with an exact paired sign $p<0.008$ at every checkpoint, but the selected subspace remains $30$
 points below the full policy. The earlier near-lossless result does not replicate. Offline
-fidelity from the new jobs is not cited because discovery and evaluation reused cache samples.
-Disjoint-sample diagnostics are queued. The exact layerwise attention method in
+fidelity now uses $1{,}024$ discovery samples and $1{,}024$ disjoint evaluation samples per
+checkpoint. The selected basis has $16.2$--$32.3\times$ lower translation error,
+$9.9$--$15.0\times$ lower rotation error, and $15.4$--$30.9\times$ lower gripper error than the
+median of five equal-rank random projectors. This repairs sample reuse but remains an in-cache
+diagnostic. The exact layerwise attention method in
 Section~\ref{sec:exactattention} must still be connected to the same full-suite closed-loop
 intervention.
 

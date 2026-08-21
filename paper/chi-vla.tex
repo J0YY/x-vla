@@ -53,7 +53,9 @@ primary block-head tests favor its rank-$128$ subspace over equal-rank random co
 median fidelity ratio $2.44$. At the policy's visual bond, retaining $64$ of $384$ causally
 ranked dimensions succeeds in $29/60$ matched trials across three checkpoints, compared with
 $47/60$ for the full representation and $0/60$ for random subspaces. The causal effect
-replicates, but near-lossless preservation does not. A $300$-pair instruction intervention across
+replicates, but near-lossless preservation does not. On disjoint cache samples, the selected
+basis has at least $9.9\times$ lower reconstruction error than the median of five random
+projectors in every action group and checkpoint. A $300$-pair instruction intervention across
 three checkpoints shows consistent language-driven motion but incomplete scene-prior override.
 The evidence establishes competitive specialist capability and exact layerwise access while
 exposing nonzero seed-0 capability and systems costs. It does not establish broad generalization
@@ -443,8 +445,9 @@ rotation, and gripper actions. A subspace is a smaller coordinate system inside 
 $384$-dimensional visual representation. Retaining a subspace means zeroing every direction
 outside it, then running the actual policy. We compare the selected directions with random
 equal-width controls in offline reconstruction and closed-loop intervention. This ranking uses
-cached training demonstrations and downstream action gradients. The offline reconstruction is
-therefore an in-cache diagnostic. The closed-loop intervention uses independent canonical
+cached training demonstrations and downstream action gradients. Offline reconstruction uses a
+disjoint set of cache samples that did not estimate the ranking. Both splits still come from the
+training cache, so this is a disjoint-sample in-cache diagnostic. The closed-loop intervention uses independent canonical
 simulator states, so it tests a causal bottleneck but is not a weight-only discovery result.
 
 \begin{figure}[H]
@@ -466,8 +469,11 @@ while all random controls reach $0/20$. Exact paired sign tests for selected ver
 $p=0.0078$, $0.00049$, and $0.0039$. The selected substrate is therefore causally important and
 replicates in direction, but its $29/60$ pooled success is $30$ points below the full policy's
 $47/60$. The earlier near-lossless result does not replicate. Offline fidelity from the new runs
-is not cited because the completed jobs reused discovery samples for evaluation. Disjoint-sample
-diagnostics are queued. The exact layerwise attention method in
+now uses $1{,}024$ discovery samples and $1{,}024$ disjoint evaluation samples per checkpoint.
+Against the median of five equal-rank random projectors, the selected basis has
+$16.2$--$32.3\times$ lower translation error, $9.9$--$15.0\times$ lower rotation error, and
+$15.4$--$30.9\times$ lower gripper error across the three checkpoints. This repairs sample reuse,
+but it remains an in-cache fidelity test rather than held-out task generalization. The exact layerwise attention method in
 Section~\ref{sec:exactattention} must still be connected to the same full-suite closed-loop
 intervention.
 
