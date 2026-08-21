@@ -6,6 +6,26 @@ cd /work/joy/x-vla-workshop
 libero10_cache_job=${LIBERO10_CACHE_JOB:-830646}
 manifest=artifacts/libero_all_manifest.json
 
+if [[ -e "$manifest" ]]; then
+  echo "Refusing to reuse existing generalist manifest: $manifest" >&2
+  exit 3
+fi
+
+for architecture in chi conventional; do
+  for seed in 0 1 2; do
+    for path in \
+      "artifacts/ckpt_generalist_${architecture}_s${seed}.pt" \
+      "artifacts/ckpt_generalist_${architecture}_s${seed}.json" \
+      "artifacts/recovery_generalist_${architecture}_s${seed}.pt" \
+      "results/train_generalist_${architecture}_s${seed}.json"; do
+      if [[ -e "$path" ]]; then
+        echo "Refusing to reuse existing generalist output: $path" >&2
+        exit 3
+      fi
+    done
+  done
+done
+
 manifest_job=$(sbatch --parsable \
   --dependency="afterok:${libero10_cache_job}" \
   --job-name=xvla-generalist-manifest \
@@ -61,16 +81,6 @@ for architecture in chi conventional; do
     --profile-iters 2)
 done
 
-cache_for_suite() {
-  case "$1" in
-    libero_object) echo artifacts/libero_frames_100000_64.pkl ;;
-    libero_spatial) echo artifacts/libero_spatial_frames_100000_64.pkl ;;
-    libero_goal) echo artifacts/libero_goal_frames_100000_64.pkl ;;
-    libero_10) echo artifacts/libero_10_frames_100000_64.pkl ;;
-    *) return 1 ;;
-  esac
-}
-
 for architecture in chi conventional; do
   for seed in 0 1 2; do
     checkpoint="artifacts/ckpt_generalist_${architecture}_s${seed}.pt"
@@ -93,35 +103,12 @@ for architecture in chi conventional; do
       --recovery-output "artifacts/recovery_generalist_${architecture}_s${seed}.pt" \
       --recovery-interval 10000)
 
-    for suite in libero_object libero_spatial libero_goal libero_10; do
-      cache=$(cache_for_suite "$suite")
-      for range in "0 3" "3 6" "6 8" "8 10"; do
-        read -r start end <<<"$range"
-        evaluation_job=$(sbatch --parsable \
-          --partition=low-prio-gpu \
-          --qos=normal \
-          --dependency="afterok:${train_job}" \
-          --job-name="xvla-gen-${architecture}-s${seed}-${suite}-${start}${end}" \
-          athena/slurm_xvla.sbatch \
-          --mode capability \
-          --architecture "$architecture" \
-          --vision-encoder vit \
-          --suite "$suite" \
-          --training-suite "$suite" \
-          --checkpoint "$checkpoint" \
-          --model-metadata "$metadata" \
-          --cache "$cache" \
-          --output "results/generalist_${architecture}_s${seed}_${suite}_t${start}_${end}.json" \
-          --seed "$seed" \
-          --matmul-precision highest \
-          --task-start "$start" \
-          --task-end "$end" \
-          --eps-per-task 50 \
-          --max-steps 280 \
-          --profile-iters 20)
-        evaluation_jobs+=("$evaluation_job")
-      done
-    done
+    evaluation_job=$(sbatch --parsable \
+      --dependency="afterok:${train_job}" \
+      --job-name="xvla-gen-${architecture}-s${seed}-all" \
+      athena/slurm_eval_multisuite_checkpoint.sbatch \
+      "$architecture" "$seed" "$checkpoint" "$metadata")
+    evaluation_jobs+=("$evaluation_job")
     echo "$architecture seed $seed training job: $train_job"
   done
 done
