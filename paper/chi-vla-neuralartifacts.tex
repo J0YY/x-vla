@@ -221,11 +221,14 @@ are historical references rather than current state-of-the-art claims.}
 
 The convolutional seeds score $94.0\%$, $94.4\%$, and $92.8\%$. Their narrow spread shows that
 high specialist capability is reproduced across three independently trained checkpoints.
+These are historical Modal aggregate records. A locked replay is producing immutable
+episode-level outcomes.
 
-Elementwise averaging of the three convolutional action predictions reaches $96.2\%$. This is
-$2.3$ points above the mean of its members and $1.2$ points above the strongest member.
-The gain is largest on tomato sauce, butter, and ketchup. The ensemble requires three complete
-forward passes and is not one $20.1$M-parameter policy.
+Separately, the paired ensemble evaluation re-evaluates the three members at $93.6\%$, $95.0\%$,
+and $93.2\%$, for a $93.9\%$ mean. Elementwise prediction averaging reaches $96.2\%$. This is
+$2.3$ points above that paired mean and $1.2$ points above its strongest member. The gain is
+largest on tomato sauce, butter, and ketchup. The ensemble requires three complete forward passes
+and is not one $20.1$M-parameter policy.
 
 \subsection{What this result does and does not establish}
 
@@ -314,8 +317,10 @@ coefficient-edit interface.
 
 \paragraph{Reproducibility.}
 The final artifact will provide code, configurations, checkpoint hashes, exact certificates, and
-per-episode logs. Cache-backed operations join pinned LeRobot task metadata before using official
-LIBERO task splits. Canonical-state checks fail loudly when requested states are unavailable.
+per-episode logs. Historical Modal cache-backed analyses read dataset-native task metadata. The
+replacement Athena pipeline pins that metadata and maps dataset identifiers to official
+identifiers before defining task splits. Canonical-state checks fail loudly when requested states
+are unavailable.
 
 % ============================================================================
 \clearpage
@@ -409,9 +414,9 @@ G.~Chrysos et al.
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.96\textwidth]{../paper_figures/appendix_ensemble_per_task.pdf}
-\caption{\textbf{Per-task effect of prediction averaging.} Gray points are the three
-convolutional checkpoints, evaluated with $50$ canonical trials per task. Curves compare their
-taskwise mean with elementwise action-prediction averaging. The ensemble raises overall success
+\caption{\textbf{Per-task effect of prediction averaging in the paired ensemble evaluation.}
+Gray points are the three convolutional checkpoints, evaluated with $50$ canonical trials per
+task. Curves compare their taskwise mean with elementwise action-prediction averaging. The ensemble raises overall success
 from a $93.9\%$ member mean to $96.2\%$, with its largest gains on tomato sauce, butter, and
 ketchup. It requires three forward passes and is not a single $20.1$M-parameter policy.}
 \label{fig:ensemble-task}

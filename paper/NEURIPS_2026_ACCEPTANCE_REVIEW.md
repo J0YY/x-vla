@@ -63,7 +63,7 @@ its dataset-indexed instruction.
 
 This correction lowers the temporary acceptance estimates because the earlier policy-level causal
 evidence no longer counts. It is an infrastructure audit correction, not a negative scientific
-outcome. Clean replacement experiments are already queued under new result names.
+outcome. Corrected replacement experiments are already queued under new result names.
 
 ## Remaining rejection risks
 
