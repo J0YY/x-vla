@@ -13,27 +13,32 @@ checkpoints=(
 # This harder control is frozen before evaluation. It projects onto the top
 # uncentered visual-activation energy directions using the same discovery
 # samples, rank, and linear intervention as the downstream-sensitivity basis.
-smoke=$(sbatch --parsable \
-  --job-name=xvla-activation-energy-smoke \
-  athena/slurm_xvla.sbatch \
-  --mode visual_subspace \
-  --architecture chi \
-  --vision-encoder vit \
-  --checkpoint "${checkpoints[0]}" \
-  --cache "$cache" \
-  --output results/visual_activation_energy_smoke.json \
-  --seed 0 \
-  --rank 96 \
-  --gram-action-group all_balanced \
-  --gram-probes 1 \
-  --gram-samples 32 \
-  --offline-eval-samples 32 \
-  --gram-task-start 0 \
-  --gram-task-end 4 \
-  --random-controls 1 \
-  --activation-energy-control \
-  --subspace-offline-only \
-  --profile-iters 20)
+# Supplying a smoke job ID reuses an already queued technical gate.
+if [[ $# -gt 0 ]]; then
+  smoke=$1
+else
+  smoke=$(sbatch --parsable \
+    --job-name=xvla-activation-energy-smoke \
+    athena/slurm_xvla.sbatch \
+    --mode visual_subspace \
+    --architecture chi \
+    --vision-encoder vit \
+    --checkpoint "${checkpoints[0]}" \
+    --cache "$cache" \
+    --output results/visual_activation_energy_smoke.json \
+    --seed 0 \
+    --rank 96 \
+    --gram-action-group all_balanced \
+    --gram-probes 1 \
+    --gram-samples 32 \
+    --offline-eval-samples 32 \
+    --gram-task-start 0 \
+    --gram-task-end 4 \
+    --random-controls 1 \
+    --activation-energy-control \
+    --subspace-offline-only \
+    --profile-iters 20)
+fi
 
 for seed in 0 1 2; do
   for task in 8 9; do
@@ -58,7 +63,7 @@ for seed in 0 1 2; do
       --gram-task-end 4 \
       --random-controls 1 \
       --activation-energy-control \
-      --subspace-rollout-conditions activation_energy_topk \
+      --subspace-rollout-conditions full,causal_topk,activation_energy_topk \
       --task-start "$task" \
       --task-end "$end" \
       --eps-per-task 50 \
