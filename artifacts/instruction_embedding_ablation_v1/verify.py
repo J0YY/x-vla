@@ -22,6 +22,45 @@ DEFAULT_ROOT = ARTIFACT_DIR.parents[1]
 CONDITIONS = ("full_lexical_embeddings", "zeroed_lexical_embeddings")
 SHARDS = ((0, 2), (2, 4), (4, 6), (6, 8), (8, 10))
 RAW_RE = re.compile(r"instruction_embedding_ablation_v1_s([0-2])_t(0|2|4|6|8)_(2|4|6|8|10)\.json")
+EXPECTED_PACKAGE_MANIFEST_SHA256 = "f63ac60ecb0516ae310e8215507074b103bf09a3c48765cb6ea2c107505e0162"
+EXPECTED_PREFLIGHT_SHA256 = "a91ce8bfc4b296e4a84503db63ad2b34f1c6509a9fb5f3fad74cbfd2bafb748d"
+EXPECTED_ZERO_OUTPUT_SHA256 = "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24"
+EXPECTED_PROMPTS = (
+    "pick up the alphabet soup and place it in the basket",
+    "pick up the cream cheese and place it in the basket",
+    "pick up the salad dressing and place it in the basket",
+    "pick up the bbq sauce and place it in the basket",
+    "pick up the ketchup and place it in the basket",
+    "pick up the tomato sauce and place it in the basket",
+    "pick up the butter and place it in the basket",
+    "pick up the milk and place it in the basket",
+    "pick up the chocolate pudding and place it in the basket",
+    "pick up the orange juice and place it in the basket",
+)
+EXPECTED_INSTRUCTION_IDS = (
+    (1, 17, 25, 23, 2, 22, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 9, 7, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 20, 10, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 5, 21, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 14, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 24, 21, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 6, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 15, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 8, 19, 3, 18, 12, 11, 23, 4),
+    (1, 17, 25, 23, 16, 13, 3, 18, 12, 11, 23, 4),
+)
+EXPECTED_INSTRUCTION_ID_SHA256 = (
+    "9da4fd921a97a862ec003cc2667acd680e49f8b7b4ef76ed62503e1d679cf969",
+    "ab12ea186efc54dc7e07324eaa0c4937708016a7bd889e67e0b719cadc3e4d42",
+    "4b0f2a1cdc18214f06d0f29f96b32a2e79c4a1a3ecd72697ddf76766146aae20",
+    "ebf52dd579dd5edbbdbdb080af6f34de5b83dc2971ca40fb8696858fbdeb89de",
+    "2140993f7f55a85eab085b09d7794dccc3416b6f1892f014a90920c6e40ae0f7",
+    "82d6be799b41e70f77351122d5d13cfa200db40feb73d63d3902c171b88ab4aa",
+    "ff242138852207070d3d6948b6b25dd9573b53708011513bcc7af281a181309e",
+    "0974c1b07f045b087f531c1e984dd673ed0e91160c551761181e558c2e27bc5b",
+    "95d68b20e594bf6e8fd843f3a395139353863303ceecb0d9f58ab7c3c582eb66",
+    "aa7811556d9d6eef4e2e4952f99e7f9d6014aaa4d86b3716425f6e14d420ba24",
+)
 
 
 class VerificationError(RuntimeError):
@@ -160,7 +199,157 @@ def close(actual: Any, expected: Any) -> bool:
     return math.isclose(float(actual), float(expected), rel_tol=1e-12, abs_tol=1e-15)
 
 
+def expected_instruction_ids(task: int) -> list[int]:
+    return [*EXPECTED_INSTRUCTION_IDS[task], *([0] * (32 - len(EXPECTED_INSTRUCTION_IDS[task])))]
+
+
+def expected_condition_order(seed: int, task: int, episode: int) -> list[str]:
+    payload = f"instruction-embedding-ablation-v1-order|{seed}|{task}|{episode}".encode()
+    index = int.from_bytes(hashlib.sha256(payload).digest()[:8], "big") % 2
+    return list(CONDITIONS if index == 0 else CONDITIONS[::-1])
+
+
+def validate_identity(
+    identity: dict[str, Any],
+    seed: int,
+    preflight: dict[str, Any],
+    label: str,
+) -> tuple[str, dict[str, str]]:
+    checkpoint = preflight["checkpoints"][str(seed)]
+    cache = preflight["cache"]
+    provenance = preflight["provenance"]
+    frozen_source = preflight["source_sha256_start"]
+    require(identity.get("checkpoint_seed") == seed, f"{label}: checkpoint seed differs")
+    require(identity.get("checkpoint") == checkpoint["path"], f"{label}: checkpoint path differs")
+    require(identity.get("checkpoint_sha256") == checkpoint["sha256"], f"{label}: checkpoint SHA differs")
+    require(identity.get("cache") == cache["path"], f"{label}: cache path differs")
+    require(identity.get("cache_sha256") == cache["sha256"] == cache["live_sha256"], f"{label}: cache SHA differs")
+    require(identity.get("manifest") == "artifacts/instruction_embedding_ablation_v1_manifest.json", f"{label}: manifest path differs")
+    require(identity.get("manifest_sha256") == EXPECTED_PREFLIGHT_SHA256, f"{label}: manifest SHA differs")
+    require(identity.get("provenance_job_id") == provenance["job_id"], f"{label}: provenance job differs")
+    require(identity.get("provenance_result") == provenance["path"], f"{label}: provenance path differs")
+    require(identity.get("provenance_result_sha256") == provenance["live_sha256"], f"{label}: provenance SHA differs")
+    require(identity.get("source_sha256_start") == frozen_source, f"{label}: source start differs from preflight")
+    require(identity.get("source_sha256_end") == frozen_source, f"{label}: source end differs from preflight")
+    model_state = identity.get("model_state_sha256_start")
+    require(isinstance(model_state, str) and re.fullmatch(r"[0-9a-f]{64}", model_state) is not None, f"{label}: model-state SHA is malformed")
+    require(identity.get("model_state_sha256_end") == model_state, f"{label}: model state changed")
+    protected = identity.get("protected_component_sha256_start")
+    require(
+        isinstance(protected, dict)
+        and set(protected)
+        == {
+            "action_queries",
+            "joint_position_embeddings",
+            "learned_common_bos",
+            "state_projection_bias",
+            "state_projection_weight",
+            "token_embedding_weights",
+            "vision_position_embeddings",
+        }
+        and all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None for value in protected.values()),
+        f"{label}: protected-component identity is malformed",
+    )
+    require(identity.get("protected_component_sha256_end") == protected, f"{label}: protected model component changed")
+    return model_state, protected
+
+
+def validate_condition_metadata(
+    value: dict[str, Any],
+    mapping: dict[str, Any],
+    task: int,
+    label: str,
+    rollout: dict[str, Any] | None = None,
+) -> None:
+    ids = expected_instruction_ids(task)
+    ids_sha = EXPECTED_INSTRUCTION_ID_SHA256[task]
+    require(value.get("prompt_id") == task, f"{label}: prompt ID differs")
+    require(value.get("prompt_text") == EXPECTED_PROMPTS[task] == mapping["task_language"], f"{label}: prompt text differs")
+    require(value.get("instruction_ids") == ids, f"{label}: instruction IDs differ")
+    contract = value.get("input_contract")
+    require(isinstance(contract, dict), f"{label}: input contract is absent")
+    for field in (
+        "action_queries_preserved",
+        "common_learned_bos_preserved",
+        "embodiment_path_preserved",
+        "positions_preserved",
+        "sequence_length_preserved",
+        "state_path_preserved",
+        "vision_path_preserved",
+    ):
+        require(contract.get(field) is True, f"{label}: {field} is not preserved")
+    require(contract.get("instruction_id_shape") == [1, 32], f"{label}: instruction-ID shape differs")
+    require(contract.get("instruction_ids_sha256") == ids_sha, f"{label}: instruction-ID SHA differs")
+    require(contract.get("model_image_sha256") == mapping["settled_model_image_sha256"], f"{label}: model image differs from preflight")
+    require(contract.get("model_robot_state_sha256") == mapping["settled_model_state_sha256"], f"{label}: model state differs from preflight")
+    require(contract.get("physical_input_sha256") == mapping["settled_physical_input_sha256"], f"{label}: physical input differs from preflight")
+    if rollout is None:
+        return
+    require(rollout.get("prompt_id") == task, f"{label}: rollout prompt ID differs")
+    require(rollout.get("instruction_ids") == ids, f"{label}: rollout instruction IDs differ")
+    start_physical = rollout.get("start_physical")
+    require(isinstance(start_physical, dict), f"{label}: start-physical record is absent")
+    components = start_physical.get("component_sha256")
+    require(isinstance(components, dict), f"{label}: start components are absent")
+    require(components.get("model_image") == mapping["settled_model_image_sha256"], f"{label}: rollout image differs from preflight")
+    require(components.get("model_robot_state") == mapping["settled_model_state_sha256"], f"{label}: rollout state differs from preflight")
+    require(components.get("mujoco_state") == mapping["settled_component_sha256"]["simulator_state"], f"{label}: simulator state differs from preflight")
+
+
+def validate_hook_audit(
+    audit: dict[str, Any],
+    condition: str,
+    expected_calls: int,
+    ids_sha: str,
+    protected: dict[str, str],
+    label: str,
+) -> None:
+    require(audit.get("preexisting_hook_count") == 0 and audit.get("post_context_hook_count") == 0, f"{label}: hook lifecycle differs")
+    require(audit.get("protected_component_sha256_before") == protected, f"{label}: pre-hook protected identity differs")
+    require(audit.get("protected_component_sha256_after") == protected, f"{label}: post-hook protected identity differs")
+    calls = audit.get("calls")
+    require(isinstance(calls, list), f"{label}: hook call records are absent")
+    if condition == CONDITIONS[0]:
+        require(audit.get("enabled") is False, f"{label}: full-path hook was enabled")
+        require(audit.get("mechanism") == "deployed_model_unmodified", f"{label}: full-path mechanism differs")
+        require(audit.get("hook_calls") == 0 and calls == [], f"{label}: full-path hook calls differ")
+        require(audit.get("all_returned_outputs_exactly_zero") is None, f"{label}: full-path zero-output flag differs")
+        return
+
+    require(audit.get("enabled") is True, f"{label}: ablation hook was not enabled")
+    require(
+        audit.get("mechanism") == "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+        f"{label}: ablation mechanism differs",
+    )
+    require(audit.get("hook_calls") == expected_calls, f"{label}: ablation hook count differs")
+    require(len(calls) == expected_calls, f"{label}: ablation call-record count differs")
+    require(audit.get("instruction_token_positions_zeroed_per_call") == 32, f"{label}: zeroed-position count differs")
+    require(audit.get("all_returned_outputs_exactly_zero") is True, f"{label}: ablation output was not exactly zero")
+    pre_output_identity: tuple[str, float] | None = None
+    for index, call in enumerate(calls):
+        require(call.get("call_index") == index, f"{label}: hook call index differs")
+        require(call.get("input_ids_sha256") == ids_sha, f"{label}: hook input-ID SHA differs")
+        require(call.get("input_ids_shape") == [1, 32], f"{label}: hook input-ID shape differs")
+        require(call.get("pre_ablation_output_dtype") == "torch.float32", f"{label}: pre-ablation dtype differs")
+        require(call.get("pre_ablation_output_shape") == [1, 32, 384], f"{label}: pre-ablation shape differs")
+        pre_sha = call.get("pre_ablation_output_sha256")
+        pre_max = call.get("pre_ablation_output_max_abs")
+        require(isinstance(pre_sha, str) and re.fullmatch(r"[0-9a-f]{64}", pre_sha) is not None, f"{label}: pre-ablation output SHA is malformed")
+        require(isinstance(pre_max, (int, float)) and math.isfinite(float(pre_max)) and float(pre_max) > 0.0, f"{label}: pre-ablation output magnitude differs")
+        if pre_output_identity is None:
+            pre_output_identity = (pre_sha, float(pre_max))
+        require((pre_sha, float(pre_max)) == pre_output_identity, f"{label}: learned lookup output changed between calls")
+        require(call.get("zeroed_token_positions") == 32, f"{label}: call did not zero 32 positions")
+        require(call.get("returned_nonzero_elements") == 0, f"{label}: returned output contains nonzeros")
+        require(call.get("returned_output_max_abs") == 0.0, f"{label}: returned output magnitude is nonzero")
+        require(call.get("returned_output_sha256") == EXPECTED_ZERO_OUTPUT_SHA256, f"{label}: returned zero-tensor SHA differs")
+
+
 def verify(root: Path) -> dict[str, Any]:
+    require(
+        file_sha256(ARTIFACT_DIR / "manifest.json") == EXPECTED_PACKAGE_MANIFEST_SHA256,
+        "artifact trust-root manifest differs",
+    )
     package = load_json(ARTIFACT_DIR / "manifest.json")
     require(package.get("schema") == "anonymous-instruction-embedding-ablation-artifact-v1", "artifact schema differs")
     files = package.get("files")
@@ -169,31 +358,54 @@ def verify(root: Path) -> dict[str, Any]:
         require(".." not in Path(relative).parts and not Path(relative).is_absolute(), "unsafe artifact path")
         require(file_sha256(root / relative) == digest, f"file digest differs: {relative}")
 
-    preflight = load_json(root / "athena/results/instruction_embedding_ablation_v1_manifest.json")
+    preflight_path = root / "athena/results/instruction_embedding_ablation_v1_manifest.json"
+    require(file_sha256(preflight_path) == EXPECTED_PREFLIGHT_SHA256, "preflight trust-root digest differs")
+    preflight = load_json(preflight_path)
     smoke = load_json(root / "athena/results/instruction_embedding_ablation_v1_smoke.json")
     summary = load_json(root / "athena/results/instruction_embedding_ablation_v1_summary.json")
     require(preflight.get("schema") == "xvla-instruction-embedding-ablation-manifest-v1", "preflight schema differs")
     require(preflight.get("mapping_count") == 100 and len(preflight.get("mappings", [])) == 100, "preflight matrix differs")
-    mapping_keys = {(row.get("task_index"), row.get("episode")) for row in preflight["mappings"]}
-    require(mapping_keys == {(task, episode) for task in range(10) for episode in range(30, 40)}, "preflight state keys differ")
+    require(preflight.get("source_sha256_start") == preflight.get("source_sha256_end"), "preflight source closure changed")
+    require(preflight.get("provenance", {}).get("verified") is True, "preflight cache provenance was not verified")
+    mappings = {(row.get("task_index"), row.get("episode")): row for row in preflight["mappings"]}
+    require(len(mappings) == 100, "preflight contains duplicate state keys")
+    require(set(mappings) == {(task, episode) for task in range(10) for episode in range(30, 40)}, "preflight state keys differ")
+    for (task, episode), mapping in mappings.items():
+        require(mapping.get("task_language") == EXPECTED_PROMPTS[task], "preflight task language differs")
+        require(mapping.get("instruction_token_count") == 32, "preflight instruction-token count differs")
+        require(
+            mapping.get("init_state_index") == episode and mapping.get("reset_seed") == 100 * task + episode,
+            "preflight state index differs",
+        )
+
+    protocol = preflight.get("protocol")
+    gates_spec = preflight.get("frozen_gates")
     require(smoke.get("schema") == "xvla-instruction-embedding-ablation-run-v1" and smoke.get("mode") == "strict_smoke", "smoke identity differs")
+    require(smoke.get("protocol") == protocol and smoke.get("frozen_gates") == gates_spec, "smoke protocol or gates differ")
+    smoke_model_identity = validate_identity(smoke.get("identity", {}), 0, preflight, "smoke")
     require(len(smoke.get("smoke_rows", [])) == 10, "smoke task coverage differs")
+    smoke_tasks: set[int] = set()
     for row in smoke["smoke_rows"]:
+        task, episode = row.get("task_index"), row.get("episode")
+        require(type(task) is int and task not in smoke_tasks and 0 <= task < 10 and episode == 30, "smoke state coverage differs")
+        smoke_tasks.add(task)
+        mapping = mappings[(task, episode)]
+        require(row.get("physical_input_sha256") == mapping["settled_physical_input_sha256"], "smoke physical input differs from preflight")
+        require(row.get("condition_order") == expected_condition_order(0, task, episode), "smoke condition order differs")
         require(set(row.get("conditions", {})) == set(CONDITIONS), "smoke condition set differs")
         for condition, value in row["conditions"].items():
+            label = f"smoke task {task} {condition}"
+            validate_condition_metadata(value, mapping, task, label)
+            action_chunk, action_shape = decode_array(value["action_chunk"])
+            require(action_shape == [8, 7] and all(math.isfinite(float(x)) for x in action_chunk), f"{label}: action chunk differs")
             audit = value.get("ablation_audit", {})
-            if condition == CONDITIONS[0]:
-                require(audit.get("enabled") is False and audit.get("hook_calls") == 0, "smoke full-path hook audit differs")
-            else:
-                require(audit.get("enabled") is True and audit.get("hook_calls") == 1, "smoke ablation hook count differs")
-                require(audit.get("all_returned_outputs_exactly_zero") is True, "smoke ablation was not exactly zero")
+            validate_hook_audit(audit, condition, 1, EXPECTED_INSTRUCTION_ID_SHA256[task], smoke_model_identity[1], label)
 
     raw_paths = [root / path for path in files if RAW_RE.fullmatch(Path(path).name)]
     require(len(raw_paths) == 15, "raw shard count differs")
     records: list[dict[str, int | bool]] = []
     observed: set[tuple[int, int, int]] = set()
-    protocol = preflight.get("protocol")
-    gates_spec = preflight.get("frozen_gates")
+    model_identity_by_seed: dict[int, tuple[str, dict[str, str]]] = {}
     for path in sorted(raw_paths):
         match = RAW_RE.fullmatch(path.name)
         require(match is not None, f"raw filename differs: {path.name}")
@@ -203,10 +415,13 @@ def verify(root: Path) -> dict[str, Any]:
         require(result.get("schema") == "xvla-instruction-embedding-ablation-run-v1" and result.get("mode") == "full", "raw identity differs")
         require(result.get("protocol") == protocol and result.get("frozen_gates") == gates_spec, "raw protocol or gates differ")
         identity = result.get("identity", {})
-        require(identity.get("checkpoint_seed") == seed, "raw checkpoint seed differs")
-        require(identity.get("source_sha256_start") == identity.get("source_sha256_end"), "source closure changed")
-        require(identity.get("model_state_sha256_start") == identity.get("model_state_sha256_end"), "model state changed")
-        require(identity.get("protected_component_sha256_start") == identity.get("protected_component_sha256_end"), "protected model component changed")
+        model_identity = validate_identity(identity, seed, preflight, path.name)
+        if seed in model_identity_by_seed:
+            require(model_identity_by_seed[seed] == model_identity, f"{path.name}: model identity differs across shards")
+        else:
+            model_identity_by_seed[seed] = model_identity
+        if seed == 0:
+            require(model_identity == smoke_model_identity, f"{path.name}: model identity differs from smoke")
         evaluation = result.get("evaluation", {})
         require((evaluation.get("task_start"), evaluation.get("task_end")) == (start, end), "raw evaluation bounds differ")
         require(evaluation.get("episode_start") == 30 and evaluation.get("eps_per_task") == 10, "raw episode partition differs")
@@ -215,8 +430,16 @@ def verify(root: Path) -> dict[str, Any]:
         for row in rows:
             task, episode = row.get("task_index"), row.get("episode")
             key = (seed, task, episode)
+            require(type(task) is int and type(episode) is int, "raw state key is malformed")
             require(key not in observed and start <= task < end and 30 <= episode < 40, "duplicate or out-of-range row")
             observed.add(key)
+            mapping = mappings[(task, episode)]
+            require(row.get("condition_order") == expected_condition_order(seed, task, episode), "raw condition order differs")
+            require(row.get("init_state_index") == mapping["init_state_index"], "raw init-state index differs from preflight")
+            require(row.get("init_state_sha256") == mapping["init_state_sha256"], "raw init-state SHA differs from preflight")
+            require(row.get("original_bddl_sha256") == mapping["original_bddl_sha256"], "raw BDDL SHA differs from preflight")
+            require(row.get("physical_input_sha256") == mapping["settled_physical_input_sha256"], "raw physical input differs from preflight")
+            require(row.get("reset_seed") == mapping["reset_seed"], "raw reset seed differs from preflight")
             require(set(row.get("conditions", {})) == set(CONDITIONS), "raw condition set differs")
             starts: list[Any] = []
             contracts: list[Any] = []
@@ -225,16 +448,19 @@ def verify(root: Path) -> dict[str, Any]:
             for condition, value in row["conditions"].items():
                 rollout = value.get("rollout", {})
                 audit = value.get("ablation_audit", {})
+                label = f"seed {seed} task {task} episode {episode} {condition}"
+                validate_condition_metadata(value, mapping, task, label, rollout)
                 starts.append(rollout.get("start_physical"))
                 contracts.append(value.get("input_contract"))
                 prompts.append((value.get("prompt_id"), value.get("prompt_text"), value.get("instruction_ids")))
-                if condition == CONDITIONS[0]:
-                    require(audit.get("enabled") is False and audit.get("hook_calls") == 0, "full-path hook audit differs")
-                else:
-                    require(audit.get("enabled") is True, "ablation hook was not enabled")
-                    require(audit.get("hook_calls") == len(rollout.get("chunks", [])), "ablation hook count differs")
-                    require(audit.get("all_returned_outputs_exactly_zero") is True, "ablation hook output was not exactly zero")
-                    require(all(call.get("returned_nonzero_elements") == 0 and call.get("zeroed_token_positions") == 32 for call in audit.get("calls", [])), "ablation hook call record differs")
+                validate_hook_audit(
+                    audit,
+                    condition,
+                    len(rollout.get("chunks", [])),
+                    EXPECTED_INSTRUCTION_ID_SHA256[task],
+                    model_identity[1],
+                    label,
+                )
                 outcome["full" if condition == CONDITIONS[0] else "zeroed"] = validate_rollout(rollout)
             require(starts[0] == starts[1] and contracts[0] == contracts[1] and prompts[0] == prompts[1], "paired inputs differ")
             records.append(outcome)

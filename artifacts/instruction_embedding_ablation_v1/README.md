@@ -12,12 +12,15 @@ From the repository root, run:
 python3 artifacts/instruction_embedding_ablation_v1/verify.py
 ```
 
-The verifier uses only the Python standard library. It checks the SHA-256 digest of the preflight
-manifest, smoke result, strict summary, and all 15 raw shards. It rejects duplicate JSON keys,
-rebuilds the complete 3-checkpoint by 10-task by 10-episode matrix, verifies paired inputs and hook
-audits, decodes every saved trajectory, reproduces success from rewards, and reconstructs executed
-actions from the recorded action chunks. It then recomputes checkpoint, task, discordance, exact
-paired-test, and frozen-gate statistics.
+The verifier uses only the Python standard library. Its hard-pinned trust roots bind the artifact
+file manifest and prospective preflight manifest. It checks the SHA-256 digest of the smoke result,
+strict summary, and all 15 raw shards, then binds every shard's checkpoint, cache, provenance, source
+closure, and model identity to the preflight record. It rejects duplicate JSON keys, rebuilds the
+complete 3-checkpoint by 10-task by 10-episode matrix, and matches every pair to its frozen canonical
+state, prompt, token IDs, and condition order. Every hook call must have the correct input-ID digest
+and the exact digest of a 32-position zero tensor. The verifier also decodes every saved trajectory,
+reproduces success from rewards, and reconstructs executed actions from the recorded action chunks.
+It then recomputes checkpoint, task, discordance, exact paired-test, and frozen-gate statistics.
 
 The expected result is 263/300 successes with the intact learned lexical path and 63/300 after
 zeroing the post-lookup embeddings, a paired gap of 66.7 percentage points. Full-path success is
