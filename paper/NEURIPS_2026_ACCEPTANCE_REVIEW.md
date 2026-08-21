@@ -18,12 +18,12 @@ convolutional checkpoint files associated with the historical capability aggrega
 
 Estimated acceptance bands for the current drafts, before the corrected confirmations finish:
 
-- Neural Network Artifacts: 74 to 84 percent. This is the strongest present fit because the paper
+- Neural Network Artifacts: 81 to 89 percent. This is the strongest present fit because the paper
   treats trained weights as an inspectable artifact, verifies every joint-attention head on the
   capability checkpoint family, and provides large-scale denominator and floating-point checks.
-- VLM4RWD: 52 to 67 percent. Capability and exact access are relevant, but the current evidence is
+- VLM4RWD: 58 to 73 percent. Capability and exact access are relevant, but the current evidence is
   a single-suite specialist study without a clean policy-level instruction intervention result.
-- Robot Learning Workshop: 40 to 55 percent. Exact structure is interesting, but this venue needs
+- Robot Learning Workshop: 45 to 61 percent. Exact structure is interesting, but this venue needs
   broader control evidence more than the artifact venue does.
 
 If the corrected blind visual-bottleneck test, action-specificity control, convolutional-encoder
@@ -58,6 +58,8 @@ review decision.
    $2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
 6. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
    linear, or rational, rather than hidden incompatible nonlinear blocks.
+7. A standard-library one-command artifact checks eight immutable raw and summary files and
+   independently recomputes both structural certificate decisions.
 
 ## Integrity correction
 
@@ -89,8 +91,9 @@ outcome. Corrected replacement experiments are already queued under new result n
    Only the corrected, frozen protocol can restore it.
 5. **Instruction grounding.** Fixed LIBERO instructions do not establish robust language use.
 6. **Ensemble cost.** The strongest recorded capability number uses three forward passes.
-7. **Artifact readiness.** The anonymous package still needs hashes, environment pins, exact
-   certificates, episode logs, and a one-command audit.
+7. **Artifact readiness.** The anonymous package now verifies the structural certificates and
+   immutable hashes in one command. Full figure regeneration and unavailable historical
+   episode-level capability logs remain outside that package.
 
 ## Frozen acceptance-critical experiments
 
