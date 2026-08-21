@@ -93,9 +93,10 @@ PROTOCOL = {
         "robosuite": "1.4.1",
     },
     "task_shards": [list(bounds) for bounds in TASK_SHARDS],
-    "paired_states_per_checkpoint": 100,
+    "checkpoint_state_pairs_per_checkpoint": 100,
     "rollouts_per_checkpoint": 300,
-    "total_paired_states": 300,
+    "unique_paired_states": 100,
+    "total_checkpoint_state_pairs": 300,
     "total_rollouts": 900,
 }
 
@@ -139,9 +140,14 @@ DESIGN_PROVENANCE = {
         "distractor, task, checkpoint, or gate in this protocol."
     ),
     "pre_outcome_semantic_and_inference_hardening": {
-        "time_local": "2026-08-21T08:46:00-07:00",
+        "commit_time_local": "2026-08-21T08:40:15-07:00",
+        "first_submission_time_local": "2026-08-21T08:41:26-07:00",
+        "commit_preceded_submission": True,
         "reason": "independent code review before any preflight or rollout began",
-        "canceled_unstarted_jobs": list(range(831332, 831350)),
+        "canceled_unstarted_graphs": [
+            list(range(831332, 831350)),
+            list(range(831352, 831370)),
+        ],
         "changes": (
             "renamed controls to copresent_distractor_prompt and empty_instruction, "
             "documented their exact semantics, and added a task-stratified state-cluster "
@@ -181,12 +187,12 @@ def selector_digest(task: int, episode: int, prompt_id: int) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def select_visible_distractor(
+def select_copresent_distractor(
     task: int, episode: int, present_prompt_ids: list[int]
 ) -> tuple[int, dict[str, str]]:
     candidates = sorted(set(int(value) for value in present_prompt_ids) - {task})
     if len(candidates) != 5:
-        raise RuntimeError("Visible-distractor selection requires exactly five candidates")
+        raise RuntimeError("Co-present-distractor selection requires exactly five candidates")
     digests = {str(prompt_id): selector_digest(task, episode, prompt_id) for prompt_id in candidates}
     selected = min(candidates, key=lambda prompt_id: (digests[str(prompt_id)], prompt_id))
     return selected, digests
@@ -281,7 +287,7 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
             episode = int(row["episode"])
             present = [int(value) for value in row.get("present_prompt_ids", [])]
             try:
-                selected, digests = select_visible_distractor(task, episode, present)
+                selected, digests = select_copresent_distractor(task, episode, present)
             except RuntimeError as error:
                 errors.append(f"manifest selector input invalid: {error}")
                 break
@@ -304,7 +310,7 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
 
 
 def synthetic_known_answer() -> dict[str, Any]:
-    selected, digests = select_visible_distractor(0, 40, [0, 1, 2, 3, 4, 5])
+    selected, digests = select_copresent_distractor(0, 40, [0, 1, 2, 3, 4, 5])
     order = condition_order(2, 9, 49)
     p_value = one_sided_paired_exact_p(10, 0)
     if selected != 1 or order != [

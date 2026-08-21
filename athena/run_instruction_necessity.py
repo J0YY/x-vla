@@ -385,7 +385,9 @@ def main() -> None:
         completed_rollouts = 0
     else:
         if len(rows) != 20 or smoke_rows:
-            raise RuntimeError("Full shard does not contain exactly twenty paired states")
+            raise RuntimeError(
+                "Full shard does not contain exactly twenty checkpoint-state rows"
+            )
         completed_rollouts = 3 * len(rows)
         if completed_rollouts != args.expected_rollouts:
             raise RuntimeError("Full rollout count differs")
@@ -421,7 +423,7 @@ def main() -> None:
             "eps_per_task": args.eps_per_task,
             "expected_rollouts": args.expected_rollouts,
             "completed_rollouts": completed_rollouts,
-            "completed_paired_states": len(rows),
+            "completed_checkpoint_state_pairs": len(rows),
             "smoke_states": len(smoke_rows),
             "matmul_precision": torch.get_float32_matmul_precision(),
         },
@@ -446,7 +448,7 @@ def main() -> None:
             },
         },
         "smoke_rows": smoke_rows,
-        "paired_states": rows,
+        "checkpoint_state_pairs": rows,
         "elapsed_s": time.perf_counter() - started,
         "claim_boundary": (
             "This tests instruction necessity for familiar Object-suite tasks, prompts, "
@@ -466,7 +468,7 @@ def main() -> None:
         json.dumps(
             {
                 "mode": args.mode,
-                "paired_states": len(rows),
+                "checkpoint_state_pairs": len(rows),
                 "rollouts": completed_rollouts,
                 "smoke_states": len(smoke_rows),
             },

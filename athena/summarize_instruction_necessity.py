@@ -253,12 +253,12 @@ def main() -> None:
         "eps_per_task": 1,
         "expected_rollouts": 0,
         "completed_rollouts": 0,
-        "completed_paired_states": 0,
+        "completed_checkpoint_state_pairs": 0,
         "smoke_states": 10,
         "matmul_precision": "highest",
     }:
         raise RuntimeError("Strict smoke evaluation matrix differs")
-    if len(smoke["smoke_rows"]) != 10 or smoke["paired_states"]:
+    if len(smoke["smoke_rows"]) != 10 or smoke["checkpoint_state_pairs"]:
         raise RuntimeError("Strict smoke row matrix differs")
     for row in smoke["smoke_rows"]:
         task = int(row["task_index"])
@@ -310,15 +310,15 @@ def main() -> None:
             int(evaluation["eps_per_task"]),
             int(evaluation["expected_rollouts"]),
             int(evaluation["completed_rollouts"]),
-            int(evaluation["completed_paired_states"]),
+            int(evaluation["completed_checkpoint_state_pairs"]),
             int(evaluation["smoke_states"]),
             evaluation["matmul_precision"],
         ) != (40, 10, 60, 60, 20, 0, "highest"):
             raise RuntimeError(f"{path} full evaluation matrix differs")
-        if result["smoke_rows"] or len(result["paired_states"]) != 20:
+        if result["smoke_rows"] or len(result["checkpoint_state_pairs"]) != 20:
             raise RuntimeError(f"{path} full row matrix differs")
         result_identities[str(path)] = {"sha256": file_sha256(path)}
-        for row in result["paired_states"]:
+        for row in result["checkpoint_state_pairs"]:
             task = int(row["task_index"])
             episode = int(row["episode"])
             key = (seed, task, episode)
@@ -478,8 +478,9 @@ def main() -> None:
         ),
         "gates": gates,
         "claim_if_passed": (
-            "Across three fixed chi-ViT checkpoints and 300 paired canonical "
-            "LIBERO-Object states, correct familiar instructions improve original-goal "
+            "Across three fixed chi-ViT checkpoints and 300 paired checkpoint-state "
+            "evaluations over 100 canonical LIBERO-Object states, correct familiar "
+            "instructions improve original-goal "
             "closed-loop success by at least 20 percentage points relative to both one "
             "outcome-independent observation-verified co-present distractor instruction "
             "and the empty-string instruction encoding."

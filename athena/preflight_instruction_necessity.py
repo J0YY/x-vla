@@ -31,7 +31,7 @@ from athena.instruction_necessity_common import (
     file_sha256,
     hash_array,
     prompt_target_to_id,
-    select_visible_distractor,
+    select_copresent_distractor,
     source_hashes,
     validate_failed_local_summary,
     validate_libero_runtime,
@@ -167,7 +167,7 @@ def main() -> None:
                 if target_body is None or readable_object_name(target_body) != TARGETS[task_index]:
                     raise RuntimeError("Official target body cannot be identified")
                 present_prompt_ids = sorted(int(value) for value in body_to_prompt.values())
-                distractor, selector_digests = select_visible_distractor(
+                distractor, selector_digests = select_copresent_distractor(
                     task_index, episode, present_prompt_ids
                 )
                 selected_body = next(
