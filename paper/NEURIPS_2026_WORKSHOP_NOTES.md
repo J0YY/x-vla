@@ -1,6 +1,6 @@
 # NeurIPS 2026 workshop targeting notes
 
-Research checked on August 20, 2026.
+Research rechecked on August 21, 2026.
 
 ## Recommended portfolio
 
@@ -36,7 +36,8 @@ Confirmed requirements:
 - Venue: Sydney, Australia, December 11, 2026.
 - Submission: [VLM4RWD OpenReview](https://openreview.net/group?id=NeurIPS.cc%2F2026%2FWorkshop%2FVLM4RWD).
 - Local source: `chi-vla-vlm4rwd.tex`.
-- Compiled output: `chi-vla-vlm4rwd.pdf`, 8 content pages with references starting on page 9.
+- Compiled output: `chi-vla-vlm4rwd.pdf`, 7 content pages with references starting on page 8.
+  The complete PDF is 10 pages including references and appendix.
 
 Framing: capable specialist control, exact architectural audit, causal inspection, then the
 counterfactual language shortcut as an honest deployment failure.
@@ -62,7 +63,7 @@ Confirmed requirements:
   should be asked if either submission track has any additional publication policy.
 - Local source: `chi-vla-neuralartifacts.tex`.
 - Compiled output: `chi-vla-neuralartifacts.pdf`, a 6-page extended abstract with references
-  starting on page 7.
+  starting on page 7. The complete PDF is 9 pages including references and appendix.
 
 Framing: the trained checkpoint is the primary artifact. Capability establishes that the artifact
 is behaviorally meaningful. Exact layerwise structure and the causal subspace are the positive
@@ -86,6 +87,11 @@ Confirmed requirements:
 - Status: non-archival.
 - Local source: `chi-vla-wrl.tex`.
 - Compiled output: `chi-vla-wrl.pdf`, 6 content pages with references starting on page 7.
+  The complete PDF is 9 pages including references and appendix.
+
+The current WRL FAQ explicitly allows parallel or later conference and journal submission, but it
+does not explicitly authorize sending substantially the same manuscript to another NeurIPS 2026
+workshop. The portfolio-level caution above therefore remains.
 
 Framing: specialist Physical AI can be capable and inspectable, but benchmark success conceals a
 language shortcut. This directly answers the theme with a boundary rather than claiming zero-shot
