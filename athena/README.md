@@ -58,6 +58,12 @@ in-domain control. `launch_indomain_multisuite.sh` builds three caches in parall
 same Athena-native trainer, then queues four canonical shards per checkpoint. This matrix separates
 training provenance from the severe closed-loop seed sensitivity observed in the legacy comparison.
 
+`launch_positive_evidence.sh` submits two preregistered tests. The first evaluates mean and
+coordinate-median ensembles of the three fixed χ checkpoints over the full canonical 500-trial
+protocol. The second replaces the gripper-only visual Gram with a balanced action-Jacobian Gram,
+uses disjoint cache samples, compares three random projectors per checkpoint, and reports the full
+rank 64, 96, 128, and 192 curve on confirmation tasks 4 to 7. Smoke jobs gate every dependent run.
+
 ## First completed matched result
 
 The first mixed-GPU Athena pass gives 449/500 (89.8%) for the seed-0 conventional control and

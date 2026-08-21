@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
             "smoke",
             "profile",
             "capability",
+            "ensemble_capability",
             "offline_diagnostic",
             "causal",
             "visual_subspace",
@@ -46,6 +47,16 @@ def parse_args() -> argparse.Namespace:
         required=True,
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument(
+        "--ensemble-checkpoint",
+        type=Path,
+        action="append",
+        default=[],
+        help="Additional checkpoints for ensemble_capability mode.",
+    )
+    parser.add_argument(
+        "--ensemble-reduction", choices=("mean", "median"), default="mean"
+    )
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
@@ -76,6 +87,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rank", type=int, default=128)
     parser.add_argument("--gram-samples", type=int, default=1024)
     parser.add_argument("--offline-eval-samples", type=int, default=1024)
+    parser.add_argument("--gram-task-start", type=int, default=0)
+    parser.add_argument("--gram-task-end", type=int, default=10)
+    parser.add_argument(
+        "--gram-action-group",
+        choices=("gripper", "all_balanced"),
+        default="gripper",
+    )
+    parser.add_argument("--gram-probes", type=int, default=4)
+    parser.add_argument("--random-controls", type=int, default=1)
+    parser.add_argument("--subspace-offline-only", action="store_true")
     parser.add_argument("--offline-samples", type=int, default=4096)
     parser.add_argument(
         "--surgery-conditions",
@@ -201,7 +222,12 @@ def make_config(
     return VLAConfig(**kwargs)
 
 
-def load_model(args: argparse.Namespace, vocab_size: int, stats: dict[str, Any]) -> ChiVLA:
+def load_model(
+    args: argparse.Namespace,
+    vocab_size: int,
+    stats: dict[str, Any],
+    checkpoint: Path | None = None,
+) -> ChiVLA:
     config = make_config(
         args.architecture,
         vocab_size,
@@ -211,10 +237,37 @@ def load_model(args: argparse.Namespace, vocab_size: int, stats: dict[str, Any])
         args.horizon,
     )
     model = ChiVLA(config).cuda()
-    state_dict = torch.load(args.checkpoint, map_location="cuda", weights_only=True)
+    checkpoint_path = args.checkpoint if checkpoint is None else checkpoint
+    state_dict = torch.load(checkpoint_path, map_location="cuda", weights_only=True)
     model.load_state_dict(state_dict, strict=True)
     model.eval()
     return model
+
+
+class EnsemblePolicy(torch.nn.Module):
+    """Average or coordinate-median action chunks from fixed trained checkpoints."""
+
+    def __init__(self, models: list[ChiVLA], reduction: str) -> None:
+        super().__init__()
+        if len(models) < 2:
+            raise ValueError("An ensemble requires at least two checkpoints")
+        self.models = torch.nn.ModuleList(models)
+        self.reduction = reduction
+        self.cfg = models[0].cfg
+
+    def forward(self, *inputs):
+        predictions = [model(*inputs)[0] for model in self.models]
+        stacked = torch.stack(predictions, dim=0)
+        if self.reduction == "mean":
+            combined = stacked.mean(dim=0)
+        elif self.reduction == "median":
+            combined = stacked.median(dim=0).values
+        else:
+            raise ValueError(f"Unsupported ensemble reduction: {self.reduction}")
+        return combined, {"ensemble_members": len(self.models)}
+
+    def num_params(self) -> int:
+        return sum(model.num_params() for model in self.models)
 
 
 def official_init_states(suite, task_index: int):
@@ -265,7 +318,7 @@ def tensorize_sample(
 
 @torch.inference_mode()
 def profile_model(
-    model: ChiVLA,
+    model: Any,
     sample_tensors: tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
     iterations: int,
 ) -> dict[str, Any]:
@@ -336,7 +389,7 @@ def forward_from_visual_tokens(
 
 @torch.inference_mode()
 def predict_chunk(
-    model: ChiVLA,
+    model: Any,
     obs: dict[str, Any],
     instruction: torch.Tensor,
     stats: dict[str, Any],
@@ -367,7 +420,7 @@ def predict_chunk(
 
 def run_capability(
     args: argparse.Namespace,
-    model: ChiVLA,
+    model: Any,
     suite,
     tasks: dict[int, str],
     encode,
@@ -834,6 +887,10 @@ def run_visual_subspace_intervention(
     stats: dict[str, Any],
 ) -> dict[str, Any]:
     """Replicate the visual-bond causal intervention for one trained checkpoint."""
+    if not 0 <= args.gram_task_start < args.gram_task_end <= suite.n_tasks:
+        raise ValueError(
+            f"Invalid Gram task range [{args.gram_task_start}, {args.gram_task_end})"
+        )
     with args.cache.open("rb") as handle:
         frames = pickle.load(handle)
     episodes: dict[int, list[Any]] = defaultdict(list)
@@ -844,13 +901,15 @@ def run_visual_subspace_intervention(
         episode_frames.sort(key=lambda item: int(item[1]))
         for index in range(len(episode_frames) - args.horizon):
             frame = episode_frames[index]
-            samples.append(
-                (
-                    np.asarray(frame[2], dtype=np.uint8),
-                    int(frame[5]),
-                    np.asarray(frame[3], dtype=np.float32),
+            task_index = int(frame[5])
+            if args.gram_task_start <= task_index < args.gram_task_end:
+                samples.append(
+                    (
+                        np.asarray(frame[2], dtype=np.uint8),
+                        task_index,
+                        np.asarray(frame[3], dtype=np.float32),
+                    )
                 )
-            )
     if not samples:
         raise RuntimeError("No visual-bond samples could be built from the cache")
     if not 0 < args.rank < model.cfg.dim:
@@ -892,9 +951,17 @@ def run_visual_subspace_intervention(
         offline_eval_indices
     )
 
+    if args.gram_probes <= 0:
+        raise ValueError("gram_probes must be positive")
+    if args.random_controls <= 0:
+        raise ValueError("random_controls must be positive")
     gram = torch.zeros(model.cfg.dim, model.cfg.dim, dtype=torch.float64, device="cuda")
+    component_grams = [
+        torch.zeros_like(gram) for _ in range(model.cfg.action_dim)
+    ]
     gradient_rows = 0
     gram_batch_size = 128
+    probe_rng = torch.Generator(device="cuda").manual_seed(args.seed + 17011)
     for start in range(0, len(gram_indices), gram_batch_size):
         stop = min(start + gram_batch_size, len(gram_indices))
         with torch.no_grad():
@@ -908,42 +975,83 @@ def run_visual_subspace_intervention(
                 gram_states[start:stop],
                 gram_embodiments[start:stop],
             )
-            selected = prediction[:, :, -1].sum()
-            gradient = torch.autograd.grad(selected, visual)[0]
-        flat_gradient = gradient.reshape(-1, model.cfg.dim).double()
-        gram += flat_gradient.T @ flat_gradient
-        gradient_rows += flat_gradient.shape[0]
-    gram /= max(gradient_rows, 1)
+            if args.gram_action_group == "gripper":
+                selected = prediction[:, :, -1].sum()
+                gradient = torch.autograd.grad(selected, visual)[0]
+                flat_gradient = gradient.reshape(-1, model.cfg.dim).double()
+                gram += flat_gradient.T @ flat_gradient
+                gradient_rows += flat_gradient.shape[0]
+            else:
+                backward_index = 0
+                backward_total = model.cfg.action_dim * args.gram_probes
+                for action_index in range(model.cfg.action_dim):
+                    for _ in range(args.gram_probes):
+                        signs = torch.randint(
+                            0,
+                            2,
+                            prediction.shape[:2],
+                            generator=probe_rng,
+                            device="cuda",
+                            dtype=torch.int64,
+                        ).to(prediction.dtype)
+                        signs = signs.mul_(2).sub_(1)
+                        selected = (
+                            prediction[:, :, action_index] * signs
+                        ).sum()
+                        backward_index += 1
+                        gradient = torch.autograd.grad(
+                            selected,
+                            visual,
+                            retain_graph=backward_index < backward_total,
+                        )[0]
+                        flat_gradient = gradient.reshape(-1, model.cfg.dim).double()
+                        component_grams[action_index] += (
+                            flat_gradient.T @ flat_gradient
+                        )
+                        gradient_rows += flat_gradient.shape[0]
+    if args.gram_action_group == "gripper":
+        gram /= max(gradient_rows, 1)
+    else:
+        for component in component_grams:
+            component /= component.trace().clamp_min(1e-30)
+            gram += component
+        gram /= len(component_grams)
 
     eigenvalues, eigenvectors = torch.linalg.eigh(gram)
     eigenvalues = eigenvalues.flip(0)
     top_basis = eigenvectors.flip(1)[:, : args.rank]
     top_projector = (top_basis @ top_basis.T).float()
-    torch_rng = torch.Generator(device="cuda").manual_seed(args.seed + 4109)
-    random_matrix = torch.randn(
-        model.cfg.dim,
-        args.rank,
-        generator=torch_rng,
-        dtype=torch.float64,
-        device="cuda",
-    )
-    random_basis, _ = torch.linalg.qr(random_matrix)
-    random_projector = (random_basis @ random_basis.T).float()
+    random_projectors = []
+    for control_index in range(args.random_controls):
+        torch_rng = torch.Generator(device="cuda").manual_seed(
+            args.seed + 4109 + 7919 * control_index
+        )
+        random_matrix = torch.randn(
+            model.cfg.dim,
+            args.rank,
+            generator=torch_rng,
+            dtype=torch.float64,
+            device="cuda",
+        )
+        random_basis, _ = torch.linalg.qr(random_matrix)
+        random_projectors.append((random_basis @ random_basis.T).float())
+
+    condition_projectors: list[tuple[str, torch.Tensor | None]] = [
+        ("full", None),
+        ("causal_topk", top_projector),
+    ]
+    for control_index, projector in enumerate(random_projectors):
+        condition = "random_topk" if control_index == 0 else f"random_topk_{control_index}"
+        condition_projectors.append((condition, projector))
 
     offline_predictions: dict[str, list[torch.Tensor]] = {
-        "full": [],
-        "causal_topk": [],
-        "random_topk": [],
+        condition: [] for condition, _ in condition_projectors
     }
     with torch.inference_mode():
         for start in range(0, len(offline_eval_indices), gram_batch_size):
             stop = min(start + gram_batch_size, len(offline_eval_indices))
             visual = model._visual_tokens(eval_images[start:stop])
-            for condition, projector in (
-                ("full", None),
-                ("causal_topk", top_projector),
-                ("random_topk", random_projector),
-            ):
+            for condition, projector in condition_projectors:
                 intervened = visual if projector is None else visual @ projector.T
                 offline_predictions[condition].append(
                     forward_from_visual_tokens(
@@ -963,7 +1071,9 @@ def run_visual_subspace_intervention(
         "gripper": slice(6, 7),
     }
     offline_mse: dict[str, dict[str, float]] = {}
-    for condition in ("causal_topk", "random_topk"):
+    for condition in offline_predictions:
+        if condition == "full":
+            continue
         offline_mse[condition] = {}
         for group, action_slice in action_groups.items():
             offline_mse[condition][group] = float(
@@ -976,40 +1086,53 @@ def run_visual_subspace_intervention(
                 )
             )
 
+    random_ratios = {
+        condition: {
+            group: offline_mse[condition][group]
+            / max(offline_mse["causal_topk"][group], 1e-30)
+            for group in action_groups
+        }
+        for condition in offline_mse
+        if condition.startswith("random_topk")
+    }
     by_condition = {}
-    for condition, projector in (
-        ("full", None),
-        ("causal_topk", top_projector),
-        ("random_topk", random_projector),
-    ):
-        print(f"VISUAL_SUBSPACE condition={condition}", flush=True)
-        by_condition[condition] = run_capability(
-            args,
-            model,
-            suite,
-            tasks,
-            encode,
-            stats,
-            visual_projector=projector,
-        )
+    if not args.subspace_offline_only:
+        for condition, projector in condition_projectors:
+            print(f"VISUAL_SUBSPACE condition={condition}", flush=True)
+            by_condition[condition] = run_capability(
+                args,
+                model,
+                suite,
+                tasks,
+                encode,
+                stats,
+                visual_projector=projector,
+            )
 
     return {
         "rank": args.rank,
         "ambient_dimension": model.cfg.dim,
         "gram_samples": len(gram_indices),
+        "gram_task_range": [args.gram_task_start, args.gram_task_end],
         "offline_eval_samples": len(offline_eval_indices),
         "offline_eval_disjoint_from_gram": True,
         "gradient_rows": gradient_rows,
-        "gram_action_group": "gripper",
+        "gram_action_group": args.gram_action_group,
+        "gram_probes": args.gram_probes,
+        "random_controls": args.random_controls,
+        "offline_only": args.subspace_offline_only,
         "top_eigenvalues": eigenvalues[:16].detach().cpu().tolist(),
         "top_rank_spectral_mass": float(
             eigenvalues[: args.rank].clamp_min(0).sum()
             / eigenvalues.clamp_min(0).sum().clamp_min(1e-30)
         ),
         "offline_mse_to_full": offline_mse,
-        "offline_random_to_causal_mse_ratio": {
-            group: offline_mse["random_topk"][group]
-            / max(offline_mse["causal_topk"][group], 1e-30)
+        "offline_random_to_causal_mse_ratio": random_ratios["random_topk"],
+        "offline_random_controls_to_causal_mse_ratio": random_ratios,
+        "offline_median_random_to_causal_mse_ratio": {
+            group: float(
+                np.median([ratios[group] for ratios in random_ratios.values()])
+            )
             for group in action_groups
         },
         "overall_by_condition": {
@@ -1018,7 +1141,7 @@ def run_visual_subspace_intervention(
         },
         "by_condition": by_condition,
         "discovery_scope": (
-            "The gripper-sensitive visual-bond subspace is estimated from the training cache. "
+            f"The {args.gram_action_group} visual-bond subspace is estimated from the training cache. "
             "Offline reconstruction uses a disjoint cache sample, while closed-loop evaluation "
             "uses independent canonical simulator states. This is a data-driven causal "
             "bottleneck, not a weight-only whole-policy decomposition."
@@ -1381,7 +1504,23 @@ def main() -> None:
     training_tasks = task_languages(load_suite(args.training_suite))
     vocab, encode = build_vocab(training_tasks)
     print(f"Tasks={len(tasks)} vocab={len(vocab)} samples={stats['sample_count']}", flush=True)
-    model = load_model(args, len(vocab), stats)
+    ensemble_checkpoints = [args.checkpoint, *args.ensemble_checkpoint]
+    if args.mode == "ensemble_capability":
+        if len(ensemble_checkpoints) < 2:
+            raise ValueError(
+                "ensemble_capability requires at least one --ensemble-checkpoint"
+            )
+        member_models = [
+            load_model(args, len(vocab), stats, checkpoint=checkpoint)
+            for checkpoint in ensemble_checkpoints
+        ]
+        model: Any = EnsemblePolicy(member_models, args.ensemble_reduction).cuda().eval()
+    else:
+        if args.ensemble_checkpoint:
+            raise ValueError(
+                "--ensemble-checkpoint is only valid for ensemble_capability"
+            )
+        model = load_model(args, len(vocab), stats)
     sample_tensors = tensorize_sample(stats["first_sample"], encode, training_tasks, stats)
     with torch.inference_mode():
         prediction, _ = model(*sample_tensors)
@@ -1395,6 +1534,14 @@ def main() -> None:
         "suite": args.suite,
         "training_suite": args.training_suite,
         "checkpoint": str(args.checkpoint),
+        "ensemble_checkpoints": (
+            [str(checkpoint) for checkpoint in ensemble_checkpoints]
+            if args.mode == "ensemble_capability"
+            else None
+        ),
+        "ensemble_reduction": (
+            args.ensemble_reduction if args.mode == "ensemble_capability" else None
+        ),
         "cache": str(args.cache),
         "seed": args.seed,
         "vocab_size": len(vocab),
@@ -1423,6 +1570,8 @@ def main() -> None:
         args.max_steps = min(8, original_steps)
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "capability":
+        result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
+    elif args.mode == "ensemble_capability":
         result["capability"] = run_capability(args, model, suite, tasks, encode, stats)
     elif args.mode == "offline_diagnostic":
         if args.suite != args.training_suite:
