@@ -1,0 +1,1459 @@
+{
+  "mode": "visual_subspace",
+  "architecture": "chi",
+  "vision_encoder": "vit",
+  "suite": "libero_object",
+  "training_suite": "libero_object",
+  "checkpoint": "artifacts/ckpt_linear_rat_vit_s2.pt",
+  "ensemble_checkpoints": null,
+  "ensemble_reduction": null,
+  "cp_pruning": null,
+  "cache": "artifacts/libero_frames_100000_64.pkl",
+  "cache_task_metadata": {
+    "repository": "lerobot/libero_object_image",
+    "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f",
+    "metadata_file": "meta/tasks.parquet",
+    "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+    "dataset_to_official_task": {
+      "0": 9,
+      "1": 4,
+      "2": 1,
+      "3": 3,
+      "4": 0,
+      "5": 7,
+      "6": 2,
+      "7": 6,
+      "8": 5,
+      "9": 8
+    },
+    "ordering_matches_official": false,
+    "language_set_matches_official": true
+  },
+  "model_metadata": null,
+  "seed": 2,
+  "matmul_precision": "high",
+  "numerical_environment": {
+    "torch_version": "2.7.1+cu126",
+    "cuda_version": "12.6",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true,
+    "libero_version": "0.1.0",
+    "robosuite_version": "1.4.1",
+    "mujoco_version": "3.5.0"
+  },
+  "evaluation_protocol": {
+    "res": 64,
+    "horizon": 8,
+    "num_steps_wait": 10,
+    "exec_h": 8,
+    "eps_per_task": 50,
+    "max_steps": 400
+  },
+  "vocab_size": 26,
+  "cache_stats": {
+    "frame_count": 66984,
+    "sample_count": 63352,
+    "action_mean": [
+      0.0689610093832016,
+      0.14728403091430664,
+      -0.05295417085289955,
+      0.0016317926347255707,
+      0.006103633902966976,
+      -0.014664511196315289,
+      0.1320992261171341
+    ],
+    "action_std": [
+      0.2726696729660034,
+      0.4459349811077118,
+      0.4579801559448242,
+      0.024709034711122513,
+      0.04944734275341034,
+      0.0426940843462944,
+      0.9903656244277954
+    ],
+    "state_mean": [
+      -0.03134441003203392,
+      -0.023217646405100822,
+      0.20341111719608307,
+      3.1097357273101807,
+      -0.20446741580963135,
+      -0.10824166983366013,
+      0.029097234830260277,
+      -0.030324405059218407
+    ],
+    "state_std": [
+      0.06831111013889313,
+      0.16870158910751343,
+      0.07987862080335617,
+      0.08342526108026505,
+      0.3292630910873413,
+      0.20355737209320068,
+      0.009620374999940395,
+      0.009267615154385567
+    ],
+    "state_dim": 8,
+    "action_dim": 7
+  },
+  "profile": {
+    "parameters": 20137352,
+    "parameters_millions": 20.137352,
+    "latency_ms_batch1": 35.769730550237,
+    "peak_allocated_gb": 0.093832704,
+    "peak_reserved_gb": 0.18874368,
+    "profile_iterations": 20,
+    "gpu": "NVIDIA RTX A6000"
+  },
+  "prediction_shape": [
+    1,
+    8,
+    7
+  ],
+  "prediction_finite": true,
+  "prediction_sample": [
+    [
+      -0.7757788300514221,
+      -0.30707135796546936,
+      -0.04880242794752121,
+      -0.7157143950462341,
+      -0.5257912874221802,
+      -0.4962657392024994,
+      -1.1569157838821411
+    ],
+    [
+      -0.6748819351196289,
+      -0.2814621925354004,
+      -0.02469811402261257,
+      -0.717872142791748,
+      -0.42907512187957764,
+      -0.4681161344051361,
+      -1.1598076820373535
+    ],
+    [
+      -0.4874081611633301,
+      -0.3054874539375305,
+      0.0069879088550806046,
+      -0.7985854744911194,
+      -0.26921382546424866,
+      -0.451095312833786,
+      -1.1695959568023682
+    ],
+    [
+      -0.3677847385406494,
+      -0.2842182219028473,
+      0.019620763137936592,
+      -1.1240379810333252,
+      -0.15266087651252747,
+      -0.3957013785839081,
+      -1.1662615537643433
+    ],
+    [
+      -0.13816648721694946,
+      -0.26915863156318665,
+      0.05019376426935196,
+      -1.7524563074111938,
+      -0.2984583377838135,
+      -0.42387452721595764,
+      -1.1328994035720825
+    ],
+    [
+      0.5885821580886841,
+      -0.33643263578414917,
+      0.12131533771753311,
+      -2.1602582931518555,
+      -0.23883749544620514,
+      -0.4093174636363983,
+      -1.1130824089050293
+    ],
+    [
+      1.2960866689682007,
+      -0.6559314131736755,
+      0.1060003861784935,
+      -1.5443027019500732,
+      -0.13334326446056366,
+      -0.5473968982696533,
+      -1.1392719745635986
+    ],
+    [
+      1.7660244703292847,
+      -0.9062536358833313,
+      0.11951937526464462,
+      -1.040223479270935,
+      -0.11287325620651245,
+      -0.684221088886261,
+      -1.1388580799102783
+    ]
+  ],
+  "evaluation_scope": "In-domain suite evaluation",
+  "training_metadata": null,
+  "visual_subspace": {
+    "rank": 96,
+    "ambient_dimension": 384,
+    "gram_samples": 1024,
+    "gram_task_range": [
+      0,
+      4
+    ],
+    "gram_task_index_space": "official LIBERO task indices",
+    "cache_task_metadata": {
+      "repository": "lerobot/libero_object_image",
+      "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f",
+      "metadata_file": "meta/tasks.parquet",
+      "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+      "dataset_to_official_task": {
+        "0": 9,
+        "1": 4,
+        "2": 1,
+        "3": 3,
+        "4": 0,
+        "5": 7,
+        "6": 2,
+        "7": 6,
+        "8": 5,
+        "9": 8
+      },
+      "ordering_matches_official": false,
+      "language_set_matches_official": true
+    },
+    "offline_eval_samples": 1024,
+    "offline_eval_disjoint_from_gram": true,
+    "gradient_rows": 1835008,
+    "activation_energy_control": true,
+    "activation_rows": 65536,
+    "gram_action_group": "all_balanced",
+    "gram_probes": 4,
+    "random_controls": 1,
+    "offline_only": false,
+    "subspace_rollout_conditions": [
+      "activation_energy_topk",
+      "causal_topk",
+      "full"
+    ],
+    "top_eigenvalues": [
+      0.051893230365066954,
+      0.040479607821088094,
+      0.029096879773589376,
+      0.022185247262242372,
+      0.01610680727876363,
+      0.014307720075937393,
+      0.012853401992269272,
+      0.011872649972000066,
+      0.011203411583686531,
+      0.010141229538080181,
+      0.0098814796931297,
+      0.009605408025184604,
+      0.009122997713948373,
+      0.00850625663701418,
+      0.008184336593131579,
+      0.007724554809346495
+    ],
+    "top_rank_spectral_mass": 0.5950618833555203,
+    "activation_top_eigenvalues": [
+      2632.256692592361,
+      1115.7783310142188,
+      784.3522918965209,
+      670.4121239255094,
+      561.9303059026927,
+      518.0613829700285,
+      459.7407119740315,
+      359.1009952756288,
+      314.9190757475246,
+      301.03604058853796,
+      256.477630120328,
+      222.8452264877464,
+      188.12718184256823,
+      177.3225111674865,
+      164.9553446310784,
+      157.75719136920094
+    ],
+    "activation_top_rank_spectral_mass": 0.996610424006338,
+    "offline_activation_reconstruction_mse": {
+      "causal_topk": 8.300383410721222,
+      "activation_energy_topk": 0.10192888950458451,
+      "random_topk": 22.5526921437915
+    },
+    "offline_mse_to_full": {
+      "causal_topk": {
+        "translation": 0.002920210361480713,
+        "rotation": 0.005485024303197861,
+        "gripper": 0.0005250757094472647
+      },
+      "activation_energy_topk": {
+        "translation": 0.0002269634569529444,
+        "rotation": 0.00048595198313705623,
+        "gripper": 2.7189835236640647e-05
+      },
+      "random_topk": {
+        "translation": 0.20432054996490479,
+        "rotation": 0.3071485459804535,
+        "gripper": 0.28192389011383057
+      }
+    },
+    "offline_activation_to_causal_mse_ratio": {
+      "translation": 0.07772161209573307,
+      "rotation": 0.08859614037694201,
+      "gripper": 0.05178269485225811
+    },
+    "offline_random_to_causal_mse_ratio": {
+      "translation": 69.96775049496867,
+      "rotation": 55.99766363867901,
+      "gripper": 536.9204574528985
+    },
+    "offline_random_controls_to_causal_mse_ratio": {
+      "random_topk": {
+        "translation": 69.96775049496867,
+        "rotation": 55.99766363867901,
+        "gripper": 536.9204574528985
+      }
+    },
+    "offline_median_random_to_causal_mse_ratio": {
+      "translation": 69.96775049496867,
+      "rotation": 55.99766363867901,
+      "gripper": 536.9204574528985
+    },
+    "overall_by_condition": {
+      "full": 0.88,
+      "causal_topk": 0.82,
+      "activation_energy_topk": 0.88
+    },
+    "by_condition": {
+      "full": {
+        "overall": 0.88,
+        "per_task": {
+          "pick up the orange juice and place it in the basket": 0.88
+        },
+        "episodes": [
+          {
+            "task_index": 9,
+            "episode": 0,
+            "success": true,
+            "steps": 128,
+            "elapsed_s": 3.285202570259571
+          },
+          {
+            "task_index": 9,
+            "episode": 1,
+            "success": true,
+            "steps": 129,
+            "elapsed_s": 3.459116417914629
+          },
+          {
+            "task_index": 9,
+            "episode": 2,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 3.542529669124633
+          },
+          {
+            "task_index": 9,
+            "episode": 3,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 3.4458799879066646
+          },
+          {
+            "task_index": 9,
+            "episode": 4,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 9.33247551228851
+          },
+          {
+            "task_index": 9,
+            "episode": 5,
+            "success": true,
+            "steps": 108,
+            "elapsed_s": 3.256189815234393
+          },
+          {
+            "task_index": 9,
+            "episode": 6,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 3.3343374030664563
+          },
+          {
+            "task_index": 9,
+            "episode": 7,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.9534925697371364
+          },
+          {
+            "task_index": 9,
+            "episode": 8,
+            "success": true,
+            "steps": 129,
+            "elapsed_s": 2.891355282627046
+          },
+          {
+            "task_index": 9,
+            "episode": 9,
+            "success": true,
+            "steps": 137,
+            "elapsed_s": 3.378807723056525
+          },
+          {
+            "task_index": 9,
+            "episode": 10,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 2.7399580869823694
+          },
+          {
+            "task_index": 9,
+            "episode": 11,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.70915560470894
+          },
+          {
+            "task_index": 9,
+            "episode": 12,
+            "success": true,
+            "steps": 129,
+            "elapsed_s": 3.242431982886046
+          },
+          {
+            "task_index": 9,
+            "episode": 13,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 10.663871131371707
+          },
+          {
+            "task_index": 9,
+            "episode": 14,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 3.087989989668131
+          },
+          {
+            "task_index": 9,
+            "episode": 15,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 9.37512316275388
+          },
+          {
+            "task_index": 9,
+            "episode": 16,
+            "success": true,
+            "steps": 146,
+            "elapsed_s": 3.3750901091843843
+          },
+          {
+            "task_index": 9,
+            "episode": 17,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 3.230466949287802
+          },
+          {
+            "task_index": 9,
+            "episode": 18,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.7052077460102737
+          },
+          {
+            "task_index": 9,
+            "episode": 19,
+            "success": true,
+            "steps": 125,
+            "elapsed_s": 2.793753436766565
+          },
+          {
+            "task_index": 9,
+            "episode": 20,
+            "success": true,
+            "steps": 115,
+            "elapsed_s": 2.613634955137968
+          },
+          {
+            "task_index": 9,
+            "episode": 21,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.8922830959782004
+          },
+          {
+            "task_index": 9,
+            "episode": 22,
+            "success": true,
+            "steps": 143,
+            "elapsed_s": 3.407584915868938
+          },
+          {
+            "task_index": 9,
+            "episode": 23,
+            "success": true,
+            "steps": 128,
+            "elapsed_s": 2.8664671517908573
+          },
+          {
+            "task_index": 9,
+            "episode": 24,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 2.669683468993753
+          },
+          {
+            "task_index": 9,
+            "episode": 25,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 2.766857277136296
+          },
+          {
+            "task_index": 9,
+            "episode": 26,
+            "success": true,
+            "steps": 157,
+            "elapsed_s": 3.3950039888732135
+          },
+          {
+            "task_index": 9,
+            "episode": 27,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.720825759228319
+          },
+          {
+            "task_index": 9,
+            "episode": 28,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.727521685883403
+          },
+          {
+            "task_index": 9,
+            "episode": 29,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.7644858839921653
+          },
+          {
+            "task_index": 9,
+            "episode": 30,
+            "success": true,
+            "steps": 127,
+            "elapsed_s": 2.850418354384601
+          },
+          {
+            "task_index": 9,
+            "episode": 31,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.750236858148128
+          },
+          {
+            "task_index": 9,
+            "episode": 32,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.288440089672804
+          },
+          {
+            "task_index": 9,
+            "episode": 33,
+            "success": true,
+            "steps": 115,
+            "elapsed_s": 2.6461071777157485
+          },
+          {
+            "task_index": 9,
+            "episode": 34,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.724815073888749
+          },
+          {
+            "task_index": 9,
+            "episode": 35,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.833066312596202
+          },
+          {
+            "task_index": 9,
+            "episode": 36,
+            "success": true,
+            "steps": 120,
+            "elapsed_s": 2.694038007874042
+          },
+          {
+            "task_index": 9,
+            "episode": 37,
+            "success": true,
+            "steps": 148,
+            "elapsed_s": 3.595951530151069
+          },
+          {
+            "task_index": 9,
+            "episode": 38,
+            "success": true,
+            "steps": 118,
+            "elapsed_s": 3.0985456658527255
+          },
+          {
+            "task_index": 9,
+            "episode": 39,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 3.0352997411973774
+          },
+          {
+            "task_index": 9,
+            "episode": 40,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.5815996690653265
+          },
+          {
+            "task_index": 9,
+            "episode": 41,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.594751903787255
+          },
+          {
+            "task_index": 9,
+            "episode": 42,
+            "success": true,
+            "steps": 126,
+            "elapsed_s": 2.8292061230167747
+          },
+          {
+            "task_index": 9,
+            "episode": 43,
+            "success": true,
+            "steps": 116,
+            "elapsed_s": 2.561445217113942
+          },
+          {
+            "task_index": 9,
+            "episode": 44,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.72434897813946
+          },
+          {
+            "task_index": 9,
+            "episode": 45,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.757194315083325
+          },
+          {
+            "task_index": 9,
+            "episode": 46,
+            "success": true,
+            "steps": 120,
+            "elapsed_s": 2.9005567538551986
+          },
+          {
+            "task_index": 9,
+            "episode": 47,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.634002197999507
+          },
+          {
+            "task_index": 9,
+            "episode": 48,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.65665163565427
+          },
+          {
+            "task_index": 9,
+            "episode": 49,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.709865454118699
+          }
+        ],
+        "successes": 44,
+        "trials": 50,
+        "task_indices": [
+          9
+        ],
+        "eps_per_task": 50,
+        "max_steps": 400,
+        "num_steps_wait": 10,
+        "exec_h": 8,
+        "canonical_init_states": true,
+        "task_protocol": {
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "problem_folder": "libero_object",
+            "bddl_file": "pick_up_the_orange_juice_and_place_it_in_the_basket.bddl",
+            "bddl_sha256": "6298533e7bcfb83e40779a77fda39216e8cd53f22bf1af6388585dad0abb0b50",
+            "init_state_count": 50,
+            "init_states_sha256": "c198880f92818df55d0a8e53ab739bbfd36acfab236a276c7ac72a27a27baf0d"
+          }
+        },
+        "elapsed_s": 261.1654308633879
+      },
+      "causal_topk": {
+        "overall": 0.82,
+        "per_task": {
+          "pick up the orange juice and place it in the basket": 0.82
+        },
+        "episodes": [
+          {
+            "task_index": 9,
+            "episode": 0,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.236957305110991
+          },
+          {
+            "task_index": 9,
+            "episode": 1,
+            "success": true,
+            "steps": 115,
+            "elapsed_s": 2.5854175076819956
+          },
+          {
+            "task_index": 9,
+            "episode": 2,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.656016650144011
+          },
+          {
+            "task_index": 9,
+            "episode": 3,
+            "success": true,
+            "steps": 126,
+            "elapsed_s": 2.771787297911942
+          },
+          {
+            "task_index": 9,
+            "episode": 4,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.25044019985944
+          },
+          {
+            "task_index": 9,
+            "episode": 5,
+            "success": true,
+            "steps": 115,
+            "elapsed_s": 2.5757427401840687
+          },
+          {
+            "task_index": 9,
+            "episode": 6,
+            "success": true,
+            "steps": 131,
+            "elapsed_s": 2.9161888868547976
+          },
+          {
+            "task_index": 9,
+            "episode": 7,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.6738608251325786
+          },
+          {
+            "task_index": 9,
+            "episode": 8,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 2.5658669802360237
+          },
+          {
+            "task_index": 9,
+            "episode": 9,
+            "success": true,
+            "steps": 136,
+            "elapsed_s": 2.978103179950267
+          },
+          {
+            "task_index": 9,
+            "episode": 10,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.7366376239806414
+          },
+          {
+            "task_index": 9,
+            "episode": 11,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.918215005658567
+          },
+          {
+            "task_index": 9,
+            "episode": 12,
+            "success": true,
+            "steps": 127,
+            "elapsed_s": 3.033617628272623
+          },
+          {
+            "task_index": 9,
+            "episode": 13,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 10.156779271084815
+          },
+          {
+            "task_index": 9,
+            "episode": 14,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.7737636230885983
+          },
+          {
+            "task_index": 9,
+            "episode": 15,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.66652103420347
+          },
+          {
+            "task_index": 9,
+            "episode": 16,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.877152450848371
+          },
+          {
+            "task_index": 9,
+            "episode": 17,
+            "success": true,
+            "steps": 127,
+            "elapsed_s": 2.8207326540723443
+          },
+          {
+            "task_index": 9,
+            "episode": 18,
+            "success": true,
+            "steps": 128,
+            "elapsed_s": 2.964760795701295
+          },
+          {
+            "task_index": 9,
+            "episode": 19,
+            "success": true,
+            "steps": 125,
+            "elapsed_s": 3.091200571972877
+          },
+          {
+            "task_index": 9,
+            "episode": 20,
+            "success": true,
+            "steps": 129,
+            "elapsed_s": 2.902315446175635
+          },
+          {
+            "task_index": 9,
+            "episode": 21,
+            "success": true,
+            "steps": 126,
+            "elapsed_s": 2.716446117963642
+          },
+          {
+            "task_index": 9,
+            "episode": 22,
+            "success": true,
+            "steps": 144,
+            "elapsed_s": 3.2078033331781626
+          },
+          {
+            "task_index": 9,
+            "episode": 23,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 2.6194555242545903
+          },
+          {
+            "task_index": 9,
+            "episode": 24,
+            "success": true,
+            "steps": 125,
+            "elapsed_s": 2.7712943316437304
+          },
+          {
+            "task_index": 9,
+            "episode": 25,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.6693843081593513
+          },
+          {
+            "task_index": 9,
+            "episode": 26,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.443208449985832
+          },
+          {
+            "task_index": 9,
+            "episode": 27,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.7829785561189055
+          },
+          {
+            "task_index": 9,
+            "episode": 28,
+            "success": true,
+            "steps": 128,
+            "elapsed_s": 3.109222430270165
+          },
+          {
+            "task_index": 9,
+            "episode": 29,
+            "success": true,
+            "steps": 131,
+            "elapsed_s": 2.8311918596737087
+          },
+          {
+            "task_index": 9,
+            "episode": 30,
+            "success": true,
+            "steps": 137,
+            "elapsed_s": 3.0227669971063733
+          },
+          {
+            "task_index": 9,
+            "episode": 31,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.686125776730478
+          },
+          {
+            "task_index": 9,
+            "episode": 32,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 9.224590911064297
+          },
+          {
+            "task_index": 9,
+            "episode": 33,
+            "success": true,
+            "steps": 135,
+            "elapsed_s": 3.271193621214479
+          },
+          {
+            "task_index": 9,
+            "episode": 34,
+            "success": true,
+            "steps": 137,
+            "elapsed_s": 3.030273478012532
+          },
+          {
+            "task_index": 9,
+            "episode": 35,
+            "success": true,
+            "steps": 130,
+            "elapsed_s": 2.9940570620819926
+          },
+          {
+            "task_index": 9,
+            "episode": 36,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.841991381254047
+          },
+          {
+            "task_index": 9,
+            "episode": 37,
+            "success": true,
+            "steps": 168,
+            "elapsed_s": 3.6095942952670157
+          },
+          {
+            "task_index": 9,
+            "episode": 38,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 2.6086017000488937
+          },
+          {
+            "task_index": 9,
+            "episode": 39,
+            "success": true,
+            "steps": 115,
+            "elapsed_s": 2.525290284305811
+          },
+          {
+            "task_index": 9,
+            "episode": 40,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 2.7775758001953363
+          },
+          {
+            "task_index": 9,
+            "episode": 41,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.521207397338003
+          },
+          {
+            "task_index": 9,
+            "episode": 42,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.7136808107607067
+          },
+          {
+            "task_index": 9,
+            "episode": 43,
+            "success": true,
+            "steps": 136,
+            "elapsed_s": 3.0278274277225137
+          },
+          {
+            "task_index": 9,
+            "episode": 44,
+            "success": true,
+            "steps": 126,
+            "elapsed_s": 2.965036130975932
+          },
+          {
+            "task_index": 9,
+            "episode": 45,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 9.260171050205827
+          },
+          {
+            "task_index": 9,
+            "episode": 46,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.6508931880816817
+          },
+          {
+            "task_index": 9,
+            "episode": 47,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.8227514792233706
+          },
+          {
+            "task_index": 9,
+            "episode": 48,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.555689572356641
+          },
+          {
+            "task_index": 9,
+            "episode": 49,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.925890527199954
+          }
+        ],
+        "successes": 41,
+        "trials": 50,
+        "task_indices": [
+          9
+        ],
+        "eps_per_task": 50,
+        "max_steps": 400,
+        "num_steps_wait": 10,
+        "exec_h": 8,
+        "canonical_init_states": true,
+        "task_protocol": {
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "problem_folder": "libero_object",
+            "bddl_file": "pick_up_the_orange_juice_and_place_it_in_the_basket.bddl",
+            "bddl_sha256": "6298533e7bcfb83e40779a77fda39216e8cd53f22bf1af6388585dad0abb0b50",
+            "init_state_count": 50,
+            "init_states_sha256": "c198880f92818df55d0a8e53ab739bbfd36acfab236a276c7ac72a27a27baf0d"
+          }
+        },
+        "elapsed_s": 265.3747463901527
+      },
+      "activation_energy_topk": {
+        "overall": 0.88,
+        "per_task": {
+          "pick up the orange juice and place it in the basket": 0.88
+        },
+        "episodes": [
+          {
+            "task_index": 9,
+            "episode": 0,
+            "success": true,
+            "steps": 128,
+            "elapsed_s": 2.7538264370523393
+          },
+          {
+            "task_index": 9,
+            "episode": 1,
+            "success": true,
+            "steps": 126,
+            "elapsed_s": 2.788484940305352
+          },
+          {
+            "task_index": 9,
+            "episode": 2,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.5895852972753346
+          },
+          {
+            "task_index": 9,
+            "episode": 3,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 2.552284378092736
+          },
+          {
+            "task_index": 9,
+            "episode": 4,
+            "success": true,
+            "steps": 191,
+            "elapsed_s": 4.218409758992493
+          },
+          {
+            "task_index": 9,
+            "episode": 5,
+            "success": true,
+            "steps": 110,
+            "elapsed_s": 2.3626774051226676
+          },
+          {
+            "task_index": 9,
+            "episode": 6,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.7108398186974227
+          },
+          {
+            "task_index": 9,
+            "episode": 7,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.7017091438174248
+          },
+          {
+            "task_index": 9,
+            "episode": 8,
+            "success": true,
+            "steps": 143,
+            "elapsed_s": 3.205718453042209
+          },
+          {
+            "task_index": 9,
+            "episode": 9,
+            "success": true,
+            "steps": 140,
+            "elapsed_s": 3.088645020034164
+          },
+          {
+            "task_index": 9,
+            "episode": 10,
+            "success": true,
+            "steps": 117,
+            "elapsed_s": 2.558386619668454
+          },
+          {
+            "task_index": 9,
+            "episode": 11,
+            "success": true,
+            "steps": 124,
+            "elapsed_s": 2.690727300941944
+          },
+          {
+            "task_index": 9,
+            "episode": 12,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 2.664107622113079
+          },
+          {
+            "task_index": 9,
+            "episode": 13,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.833547892980278
+          },
+          {
+            "task_index": 9,
+            "episode": 14,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 2.677614792250097
+          },
+          {
+            "task_index": 9,
+            "episode": 15,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.443338507786393
+          },
+          {
+            "task_index": 9,
+            "episode": 16,
+            "success": true,
+            "steps": 162,
+            "elapsed_s": 3.6338245146907866
+          },
+          {
+            "task_index": 9,
+            "episode": 17,
+            "success": true,
+            "steps": 121,
+            "elapsed_s": 2.702302822843194
+          },
+          {
+            "task_index": 9,
+            "episode": 18,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.685881684999913
+          },
+          {
+            "task_index": 9,
+            "episode": 19,
+            "success": true,
+            "steps": 138,
+            "elapsed_s": 3.1117918929085135
+          },
+          {
+            "task_index": 9,
+            "episode": 20,
+            "success": true,
+            "steps": 118,
+            "elapsed_s": 2.619000670965761
+          },
+          {
+            "task_index": 9,
+            "episode": 21,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.7133080791682005
+          },
+          {
+            "task_index": 9,
+            "episode": 22,
+            "success": true,
+            "steps": 162,
+            "elapsed_s": 3.72561413096264
+          },
+          {
+            "task_index": 9,
+            "episode": 23,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.7462216187268496
+          },
+          {
+            "task_index": 9,
+            "episode": 24,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.7302754833362997
+          },
+          {
+            "task_index": 9,
+            "episode": 25,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.7340329843573272
+          },
+          {
+            "task_index": 9,
+            "episode": 26,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.491283527109772
+          },
+          {
+            "task_index": 9,
+            "episode": 27,
+            "success": true,
+            "steps": 136,
+            "elapsed_s": 2.993675221223384
+          },
+          {
+            "task_index": 9,
+            "episode": 28,
+            "success": true,
+            "steps": 130,
+            "elapsed_s": 2.8958358680829406
+          },
+          {
+            "task_index": 9,
+            "episode": 29,
+            "success": true,
+            "steps": 128,
+            "elapsed_s": 2.805837143678218
+          },
+          {
+            "task_index": 9,
+            "episode": 30,
+            "success": true,
+            "steps": 120,
+            "elapsed_s": 2.6793351620435715
+          },
+          {
+            "task_index": 9,
+            "episode": 31,
+            "success": true,
+            "steps": 123,
+            "elapsed_s": 2.648455637972802
+          },
+          {
+            "task_index": 9,
+            "episode": 32,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.45377563079819
+          },
+          {
+            "task_index": 9,
+            "episode": 33,
+            "success": true,
+            "steps": 115,
+            "elapsed_s": 2.5153554533608258
+          },
+          {
+            "task_index": 9,
+            "episode": 34,
+            "success": true,
+            "steps": 145,
+            "elapsed_s": 3.1983547573909163
+          },
+          {
+            "task_index": 9,
+            "episode": 35,
+            "success": true,
+            "steps": 162,
+            "elapsed_s": 3.6232993942685425
+          },
+          {
+            "task_index": 9,
+            "episode": 36,
+            "success": true,
+            "steps": 137,
+            "elapsed_s": 3.0336691816337407
+          },
+          {
+            "task_index": 9,
+            "episode": 37,
+            "success": true,
+            "steps": 135,
+            "elapsed_s": 3.0307021499611437
+          },
+          {
+            "task_index": 9,
+            "episode": 38,
+            "success": true,
+            "steps": 113,
+            "elapsed_s": 2.4986896282061934
+          },
+          {
+            "task_index": 9,
+            "episode": 39,
+            "success": true,
+            "steps": 114,
+            "elapsed_s": 2.535103584174067
+          },
+          {
+            "task_index": 9,
+            "episode": 40,
+            "success": true,
+            "steps": 120,
+            "elapsed_s": 2.639972905162722
+          },
+          {
+            "task_index": 9,
+            "episode": 41,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.66497422521934
+          },
+          {
+            "task_index": 9,
+            "episode": 42,
+            "success": true,
+            "steps": 122,
+            "elapsed_s": 2.741732968017459
+          },
+          {
+            "task_index": 9,
+            "episode": 43,
+            "success": true,
+            "steps": 131,
+            "elapsed_s": 2.9523117779754102
+          },
+          {
+            "task_index": 9,
+            "episode": 44,
+            "success": true,
+            "steps": 129,
+            "elapsed_s": 2.918610861990601
+          },
+          {
+            "task_index": 9,
+            "episode": 45,
+            "success": true,
+            "steps": 120,
+            "elapsed_s": 2.680540607776493
+          },
+          {
+            "task_index": 9,
+            "episode": 46,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.663409089203924
+          },
+          {
+            "task_index": 9,
+            "episode": 47,
+            "success": true,
+            "steps": 119,
+            "elapsed_s": 2.692674177698791
+          },
+          {
+            "task_index": 9,
+            "episode": 48,
+            "success": false,
+            "steps": 400,
+            "elapsed_s": 8.335582495201379
+          },
+          {
+            "task_index": 9,
+            "episode": 49,
+            "success": true,
+            "steps": 130,
+            "elapsed_s": 2.8644078597426414
+          }
+        ],
+        "successes": 44,
+        "trials": 50,
+        "task_indices": [
+          9
+        ],
+        "eps_per_task": 50,
+        "max_steps": 400,
+        "num_steps_wait": 10,
+        "exec_h": 8,
+        "canonical_init_states": true,
+        "task_protocol": {
+          "9": {
+            "language": "pick up the orange juice and place it in the basket",
+            "problem_folder": "libero_object",
+            "bddl_file": "pick_up_the_orange_juice_and_place_it_in_the_basket.bddl",
+            "bddl_sha256": "6298533e7bcfb83e40779a77fda39216e8cd53f22bf1af6388585dad0abb0b50",
+            "init_state_count": 50,
+            "init_states_sha256": "c198880f92818df55d0a8e53ab739bbfd36acfab236a276c7ac72a27a27baf0d"
+          }
+        },
+        "elapsed_s": 244.3851575809531
+      }
+    },
+    "discovery_scope": "The all_balanced visual-bond subspace is estimated from the training cache after translating pinned dataset task IDs to official LIBERO task IDs. Offline reconstruction uses a disjoint cache sample, while closed-loop evaluation uses independent canonical simulator states. This is a data-driven causal bottleneck, not a weight-only whole-policy decomposition."
+  }
+}
