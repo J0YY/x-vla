@@ -119,6 +119,14 @@ def parse_args() -> argparse.Namespace:
             "energy directions as a gradient-free compression baseline."
         ),
     )
+    parser.add_argument(
+        "--subspace-rollout-conditions",
+        default="",
+        help=(
+            "Optional comma-separated subset of visual-subspace conditions to "
+            "evaluate closed loop. Empty evaluates every constructed condition."
+        ),
+    )
     parser.add_argument("--subspace-offline-only", action="store_true")
     parser.add_argument("--offline-samples", type=int, default=4096)
     parser.add_argument(
@@ -1186,12 +1194,23 @@ def run_visual_subspace_intervention(
     offline_predictions: dict[str, list[torch.Tensor]] = {
         condition: [] for condition, _ in condition_projectors
     }
+    activation_reconstruction_sse = {
+        condition: 0.0
+        for condition, projector in condition_projectors
+        if projector is not None
+    }
+    activation_reconstruction_elements = 0
     with torch.inference_mode():
         for start in range(0, len(offline_eval_indices), gram_batch_size):
             stop = min(start + gram_batch_size, len(offline_eval_indices))
             visual = model._visual_tokens(eval_images[start:stop])
+            activation_reconstruction_elements += visual.numel()
             for condition, projector in condition_projectors:
                 intervened = visual if projector is None else visual @ projector.T
+                if projector is not None:
+                    activation_reconstruction_sse[condition] += float(
+                        torch.sum((intervened - visual).double().square())
+                    )
                 offline_predictions[condition].append(
                     forward_from_visual_tokens(
                         model,
@@ -1243,7 +1262,23 @@ def run_visual_subspace_intervention(
         }
     by_condition = {}
     if not args.subspace_offline_only:
+        requested_conditions = {
+            value.strip()
+            for value in args.subspace_rollout_conditions.split(",")
+            if value.strip()
+        }
+        available_conditions = {
+            condition for condition, _ in condition_projectors
+        }
+        unknown_conditions = requested_conditions - available_conditions
+        if unknown_conditions:
+            raise ValueError(
+                "Unknown subspace rollout conditions: "
+                + ", ".join(sorted(unknown_conditions))
+            )
         for condition, projector in condition_projectors:
+            if requested_conditions and condition not in requested_conditions:
+                continue
             print(f"VISUAL_SUBSPACE condition={condition}", flush=True)
             by_condition[condition] = run_capability(
                 args,
@@ -1269,6 +1304,7 @@ def run_visual_subspace_intervention(
         "gram_probes": args.gram_probes,
         "random_controls": args.random_controls,
         "offline_only": args.subspace_offline_only,
+        "subspace_rollout_conditions": sorted(by_condition),
         "top_eigenvalues": eigenvalues[:16].detach().cpu().tolist(),
         "top_rank_spectral_mass": float(
             eigenvalues[: args.rank].clamp_min(0).sum()
@@ -1287,6 +1323,11 @@ def run_visual_subspace_intervention(
             if activation_eigenvalues is not None
             else None
         ),
+        "offline_activation_reconstruction_mse": {
+            condition: squared_error
+            / max(activation_reconstruction_elements, 1)
+            for condition, squared_error in activation_reconstruction_sse.items()
+        },
         "offline_mse_to_full": offline_mse,
         "offline_activation_to_causal_mse_ratio": activation_to_causal_ratios,
         "offline_random_to_causal_mse_ratio": random_ratios["random_topk"],

@@ -91,6 +91,13 @@ The following jobs were chosen before seeing their outcomes:
 5. **In-domain second suites:** finish native training and canonical evaluation on LIBERO-Spatial,
    LIBERO-Goal, and LIBERO-10. Zero-shot controls with out-of-vocabulary instructions are not a
    substitute.
+6. **Activation-energy specificity control:** construct the uncentered activation-covariance basis
+   from the same 1,024 task-0-to-3 samples and evaluate its top 96 directions on blind tasks 8 and
+   9. Promote a specificity claim only if the causal basis has at least 90 percent conditional
+   retention, beats this control by at least 10 points pooled and in every checkpoint, and has a
+   task-and-checkpoint-stratified paired-bootstrap 95 percent lower bound above zero. Also require
+   the activation basis to preserve at least as much raw activation energy, so any behavioral win
+   cannot be attributed to easier generic reconstruction.
 
 The blind causal result should be promoted only if selected retention remains at least 85 percent of
 full-policy successes, selected beats each matched random control with the same sign across

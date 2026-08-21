@@ -36,31 +36,35 @@ smoke=$(sbatch --parsable \
   --profile-iters 20)
 
 for seed in 0 1 2; do
-  sbatch --parsable \
-    --dependency="afterok:${smoke}" \
-    --job-name="xvla-activation-energy-s${seed}" \
-    athena/slurm_xvla.sbatch \
-    --mode visual_subspace \
-    --architecture chi \
-    --vision-encoder vit \
-    --checkpoint "${checkpoints[$seed]}" \
-    --cache "$cache" \
-    --output "results/visual_activation_energy_s${seed}_r96.json" \
-    --seed "$seed" \
-    --rank 96 \
-    --gram-action-group all_balanced \
-    --gram-probes 4 \
-    --gram-samples 1024 \
-    --offline-eval-samples 1024 \
-    --gram-task-start 0 \
-    --gram-task-end 4 \
-    --random-controls 3 \
-    --activation-energy-control \
-    --task-start 4 \
-    --task-end 8 \
-    --eps-per-task 5 \
-    --max-steps 400 \
-    --profile-iters 20
+  for task in 8 9; do
+    end=$((task + 1))
+    sbatch --parsable \
+      --dependency="afterok:${smoke}" \
+      --job-name="xvla-activation-energy-s${seed}-t${task}" \
+      athena/slurm_xvla.sbatch \
+      --mode visual_subspace \
+      --architecture chi \
+      --vision-encoder vit \
+      --checkpoint "${checkpoints[$seed]}" \
+      --cache "$cache" \
+      --output "results/visual_activation_energy_s${seed}_r96_t${task}.json" \
+      --seed "$seed" \
+      --rank 96 \
+      --gram-action-group all_balanced \
+      --gram-probes 4 \
+      --gram-samples 1024 \
+      --offline-eval-samples 1024 \
+      --gram-task-start 0 \
+      --gram-task-end 4 \
+      --random-controls 1 \
+      --activation-energy-control \
+      --subspace-rollout-conditions activation_energy_topk \
+      --task-start "$task" \
+      --task-end "$end" \
+      --eps-per-task 50 \
+      --max-steps 400 \
+      --profile-iters 20
+  done
 done
 
 echo "Activation-energy smoke job: ${smoke}"
