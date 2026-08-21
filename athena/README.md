@@ -80,6 +80,12 @@ ensemble on Athena. Arithmetic mean is the primary replication of the existing 9
 Modal result. Coordinate median is reported as a prespecified secondary reduction. Each uses all
 500 canonical trials and three complete forward passes per action chunk.
 
+`launch_corrected_conv_ensemble.sh` is an exploratory full-suite test of three fixed checkpoints
+after low-dosage corrective fine-tuning on tasks 3 and 5. Two single checkpoints improved on the
+pilot slice and one regressed. The only eligible result is the arithmetic-mean ensemble over all
+500 canonical trials. All ten tasks are reported to expose collateral damage outside the two
+correction tasks. The unmodified convolutional ensemble is the fixed comparator.
+
 ## First completed matched result
 
 The first mixed-GPU Athena pass gives 449/500 (89.8%) for the seed-0 conventional control and
