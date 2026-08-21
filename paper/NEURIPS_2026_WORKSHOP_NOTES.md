@@ -12,8 +12,8 @@ safe authorization.
 
 Recommended order:
 
-1. VLM4RWD for the strongest overall topical fit.
-2. Neural Network Artifacts for the strongest decomposition and weight-analysis fit.
+1. Neural Network Artifacts for the strongest current evidence-to-call match.
+2. VLM4RWD for the strongest overall topical fit once the controlled capability matrix closes.
 3. Robot Learning Workshop for the broadest robotics audience, with a real theme mismatch on
    zero-shot generalization.
 
@@ -106,8 +106,9 @@ paper reports matched FLOPs, latency, memory, and energy measurements.
 - Manual geometry, caption sizing, and compact-list overrides are absent, so the venue style
   controls layout.
 - All abstracts are one paragraph.
-- The appendix adds per-task ensemble behavior, intervention diagnostics, and the expanded
-  96-head plus direct-surgery screen.
+- The appendix adds per-task ensemble behavior, three-checkpoint and conventional-control
+  grounding, systems profiling, intervention diagnostics, and the expanded all-attention plus
+  direct-surgery screen.
 
 Compile each source twice from `paper/`:
 

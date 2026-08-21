@@ -152,11 +152,16 @@ def main_capability() -> None:
 
 def appendix_matched_architecture_cost() -> None:
     labels = ["Conventional twin", "Rational χ-VLA"]
-    success = np.array([89.8, 89.8])
-    latency = np.array([6.36, 35.4])
+    successes = np.array([449, 426])
+    trials = np.array([500, 500])
+    success = 100 * successes / trials
+    eager_latency = np.array([7.1415, 38.0482])
+    compiled_latency = np.array([0.8766, 1.5236])
     colors = [COLORS["gray"], COLORS["blue"]]
-    low, high = wilson_interval(449, 500)
-    error = np.array([[89.8 - 100 * low], [100 * high - 89.8]])
+    intervals = np.array(
+        [wilson_interval(int(value), int(total)) for value, total in zip(successes, trials)]
+    )
+    error = np.vstack([success - 100 * intervals[:, 0], 100 * intervals[:, 1] - success])
 
     fig, axes = plt.subplots(1, 2, figsize=(8.3, 3.15))
     ax = axes[0]
@@ -165,7 +170,7 @@ def appendix_matched_architecture_cost() -> None:
     ax.errorbar(
         positions,
         success,
-        yerr=np.repeat(error, 2, axis=1),
+        yerr=error,
         fmt="none",
         ecolor=COLORS["ink"],
         elinewidth=1.2,
@@ -174,29 +179,46 @@ def appendix_matched_architecture_cost() -> None:
     for position, value in zip(positions, success):
         ax.text(position, value + 1.0, f"{value:.1f}%", ha="center", fontweight="bold")
     ax.set_xticks(positions, labels)
-    ax.set_ylim(80, 95)
+    ax.set_ylim(78, 95)
     ax.set_ylabel("Closed-loop success (%)")
-    ax.set_title("Capability, seed 0")
+    ax.set_title("Initial mixed-device replication")
     ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
     panel_label(ax, "a")
 
     ax = axes[1]
-    ax.bar(positions, latency, color=colors, width=0.62)
-    for position, value in zip(positions, latency):
-        ax.text(position, value + 1.0, f"{value:.2f} ms", ha="center", fontweight="bold")
+    width = 0.34
+    ax.bar(
+        positions - width / 2,
+        eager_latency,
+        width,
+        color=COLORS["gold"],
+        label="Eager",
+    )
+    ax.bar(
+        positions + width / 2,
+        compiled_latency,
+        width,
+        color=COLORS["green"],
+        label="Compiled",
+    )
+    for position, value in zip(positions - width / 2, eager_latency):
+        ax.text(position, value + 1.0, f"{value:.2f}", ha="center", fontweight="bold")
+    for position, value in zip(positions + width / 2, compiled_latency):
+        ax.text(position, value + 1.0, f"{value:.2f}", ha="center", fontweight="bold")
     ax.set_xticks(positions, labels)
     ax.set_ylim(0, 41)
-    ax.set_ylabel("Eager batch-one latency (ms)")
-    ax.set_title("Current A6000 implementation")
+    ax.set_ylabel("Batch-one latency (ms)")
+    ax.set_title("Same-A30 systems control")
     ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    ax.legend(frameon=False, loc="upper left")
     panel_label(ax, "b")
 
-    fig.suptitle("Matched architecture control: equal success, unequal eager runtime", y=1.03)
+    fig.suptitle("Matched architecture study: capability needs a device control", y=1.03)
     fig.text(
         0.5,
         -0.02,
-        "Both policies succeed in 449/500 canonical trials. Parameter counts are 20,138,632 "
-        "and 20,137,352. Error bars are 95% Wilson intervals over trials.",
+        "The 449/500 vs 426/500 pass mixed A6000 and A30 task shards, so it is not a clean "
+        "architecture estimate. Same-A30 compilation narrows the latency ratio from 5.33× to 1.74×.",
         ha="center",
         fontsize=7.7,
         color=COLORS["muted"],
