@@ -42,9 +42,9 @@ only bilinear, linear, and rational learned operations. Its checkpoint therefore
 explicit rational tensor program rather than only an opaque executable function. A runtime
 operator audit of the seed-$0$ $20.1$M ViT checkpoint and local reconstructions verify its operator-level
 form. We derive an exact weight-based decomposition of each softmax-free attention layer and,
-on one fixed cached input per checkpoint, numerically replay all $12$ modules in each of three
+on one fixed corrected cached input per checkpoint, numerically replay all $12$ modules in each of three
 ViT checkpoint artifacts with
-worst relative error $2.56\times10^{-7}$. An $O(d^2)$ reduced Gram avoids materializing the
+worst relative error $2.016119\times10^{-7}$. An $O(d^2)$ reduced Gram avoids materializing the
 coefficient tensor. In a seed-$0$ ViT checkpoint, all $36$ primary block-head tests favor the
 rank-$128$ weight-derived subspace over fixed random controls. Across the same three ViT
 checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
@@ -300,14 +300,15 @@ The deployed attention also normalizes each query and key with Equation~\ref{eq:
 Each normalization multiplies all channels of one token by the same scalar rational factor.
 Those factors can be pulled outside the bilinear dot products. The polynomial attention core
 is unchanged, while explicit numerator and denominator factors carry the normalization.
-The rational extension agrees to $3.61\times10^{-16}$. On one fixed cached input per checkpoint,
+The rational extension agrees to $3.61\times10^{-16}$. On one fixed corrected cached input per checkpoint,
 we numerically replay all four vision and eight joint attention modules in each of three records
 that name the same ViT checkpoint artifacts as the capability results. This covers $36$
 module-input cases and $384$ architectural heads. The worst relative $\ell_2$ error is
-$2.56\times10^{-7}$ and the worst absolute difference
-is $2.23\times10^{-5}$. This residual comes from the deployed implementation's intentional
+$2.016119\times10^{-7}$ and the worst absolute difference
+is $2.44\times10^{-5}$. This residual comes from the deployed implementation's intentional
 float32 statistic, while the reconstruction itself uses the learned coefficients. The algebraic
-identity is input-general. The fixed inputs provide a numerical replay audit.
+identity is input-general. The one-input-per-checkpoint records provide a layerwise numerical
+replay audit, not an exact end-to-end policy decomposition.
 
 We separately certify three convolutional checkpoints from the same rational architecture family.
 Their vision stacks contain no attention, so we independently rebuild all eight joint
