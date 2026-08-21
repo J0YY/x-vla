@@ -51,18 +51,18 @@
   "libero_runtime_end": {
     "git_commit": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
     "git_status_porcelain": "?? libero/__init__.py\n",
-    "package_root": "/athenahomes/joy/LIBERO/libero",
+    "package_root": "/anonymous/cluster/home/LIBERO/libero",
     "python_file_count": 83,
     "python_tree_sha256": "b11dfeed8e4430a392a38a2dcc5c21ac186fb0345d7de2979cd53e4af9fb0b55",
-    "repository_root": "/athenahomes/joy/LIBERO"
+    "repository_root": "/anonymous/cluster/home/LIBERO"
   },
   "libero_runtime_start": {
     "git_commit": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
     "git_status_porcelain": "?? libero/__init__.py\n",
-    "package_root": "/athenahomes/joy/LIBERO/libero",
+    "package_root": "/anonymous/cluster/home/LIBERO/libero",
     "python_file_count": 83,
     "python_tree_sha256": "b11dfeed8e4430a392a38a2dcc5c21ac186fb0345d7de2979cd53e4af9fb0b55",
-    "repository_root": "/athenahomes/joy/LIBERO"
+    "repository_root": "/anonymous/cluster/home/LIBERO"
   },
   "mapping_count": 100,
   "mappings": [
@@ -3512,7 +3512,7 @@
     "settle_steps": 10,
     "suite": "libero_object",
     "summary_cuda_visible_devices": "",
-    "summary_python_executable": "/athenahomes/joy/miniconda3/envs/safesae-openvla/bin/python",
+    "summary_python_executable": "/anonymous/cluster/home/miniconda3/envs/safesae-openvla/bin/python",
     "task_indices": [
       0,
       1,

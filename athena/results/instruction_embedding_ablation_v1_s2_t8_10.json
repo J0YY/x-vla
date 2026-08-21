@@ -37476,7 +37476,7 @@
     "checkpoint_seed": 2,
     "checkpoint_sha256": "413a770071bd8f16b924c5604f7c7a58567d2eb6c40c66aab202bcf046fec910",
     "manifest": "artifacts/instruction_embedding_ablation_v1_manifest.json",
-    "manifest_sha256": "a91ce8bfc4b296e4a84503db63ad2b34f1c6509a9fb5f3fad74cbfd2bafb748d",
+    "manifest_sha256": "c543af066251379f74ce4e2a09cba16da6181dad74fc3dca67e03b534dc727d0",
     "model_state_sha256_end": "c16213b76f021ae205d49f7b902a9026adece6ca488e7701626a5a2472340215",
     "model_state_sha256_start": "c16213b76f021ae205d49f7b902a9026adece6ca488e7701626a5a2472340215",
     "protected_component_sha256_end": {
@@ -37613,7 +37613,7 @@
     "settle_steps": 10,
     "suite": "libero_object",
     "summary_cuda_visible_devices": "",
-    "summary_python_executable": "/athenahomes/joy/miniconda3/envs/safesae-openvla/bin/python",
+    "summary_python_executable": "/anonymous/cluster/home/miniconda3/envs/safesae-openvla/bin/python",
     "task_indices": [
       0,
       1,
@@ -37672,18 +37672,18 @@
     "libero_source_end": {
       "git_commit": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
       "git_status_porcelain": "?? libero/__init__.py\n",
-      "package_root": "/athenahomes/joy/LIBERO/libero",
+      "package_root": "/anonymous/cluster/home/LIBERO/libero",
       "python_file_count": 83,
       "python_tree_sha256": "b11dfeed8e4430a392a38a2dcc5c21ac186fb0345d7de2979cd53e4af9fb0b55",
-      "repository_root": "/athenahomes/joy/LIBERO"
+      "repository_root": "/anonymous/cluster/home/LIBERO"
     },
     "libero_source_start": {
       "git_commit": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
       "git_status_porcelain": "?? libero/__init__.py\n",
-      "package_root": "/athenahomes/joy/LIBERO/libero",
+      "package_root": "/anonymous/cluster/home/LIBERO/libero",
       "python_file_count": 83,
       "python_tree_sha256": "b11dfeed8e4430a392a38a2dcc5c21ac186fb0345d7de2979cd53e4af9fb0b55",
-      "repository_root": "/athenahomes/joy/LIBERO"
+      "repository_root": "/anonymous/cluster/home/LIBERO"
     },
     "mujoco": "3.5.0",
     "numpy": "1.26.4",

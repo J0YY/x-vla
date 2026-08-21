@@ -1,0 +1,2 @@
+/artifacts/instruction_embedding_ablation_v1/*.json text eol=lf
+/athena/results/instruction_embedding_ablation_v1*.json text eol=lf

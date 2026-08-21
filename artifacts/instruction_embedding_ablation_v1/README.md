@@ -6,6 +6,11 @@ tensor. The ablated condition replaces only the learned token-embedding output w
 after lookup. Vision, robot state, embodiment, sequence length, positions, the separate learned
 common BOS, action queries, and all weights remain unchanged.
 
+For anonymous release, account-specific prefixes in recorded absolute cluster paths were replaced
+with `/anonymous/cluster/home` and `/anonymous/cluster/work`. This redaction changes no runtime,
+protocol, identity, source, trajectory, outcome, or statistical field. The release manifest binds
+the redacted evidence bytes, and repository attributes require LF checkouts for every hashed JSON.
+
 From the repository root, run:
 
 ```bash
