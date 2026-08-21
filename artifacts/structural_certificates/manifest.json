@@ -1,0 +1,81 @@
+{
+  "artifact_version": 1,
+  "certificates": {
+    "conv_joint_attention": {
+      "expected_outcome": true,
+      "gate": {
+        "relative_l2_error_at_most": 1e-06
+      },
+      "raw_results": [
+        "athena/results/conv_joint_attention_certificate_v1_s0.json",
+        "athena/results/conv_joint_attention_certificate_v1_s1.json",
+        "athena/results/conv_joint_attention_certificate_v1_s2.json"
+      ],
+      "raw_schema": "xvla-conv-joint-attention-certificate-v1",
+      "summary": "athena/results/conv_joint_attention_certificate_v1_summary.json",
+      "summary_schema": "xvla-conv-joint-attention-certificate-summary-v1"
+    },
+    "rational_norm": {
+      "expected_primary_outcome": true,
+      "expected_secondary_outcome": false,
+      "gates": {
+        "primary_action_nrmse_at_most": 0.001,
+        "secondary_each_site_fraction_local_scale_error_at_or_below_threshold_at_least": 0.99,
+        "secondary_each_site_fraction_rows_v_in_0p1_10_at_least": 0.99,
+        "secondary_local_scale_relative_error_threshold": 0.034
+      },
+      "raw_results": [
+        "athena/results/rational_norm_safety_v1_s0.json",
+        "athena/results/rational_norm_safety_v1_s1.json",
+        "athena/results/rational_norm_safety_v1_s2.json"
+      ],
+      "raw_schema": "xvla-rational-norm-safety-v1",
+      "summary": "athena/results/rational_norm_safety_v1_summary.json",
+      "summary_schema": "xvla-rational-norm-safety-summary-v1"
+    }
+  },
+  "description": "Immutable file identities and frozen outcomes for the anonymous structural-certificate artifact.",
+  "files": [
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "691c6b7de74f9bd5f763083e994d0c017ae98aa6a15d5634e7826b748e213f76"
+    },
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "2449d4dab33b954828ecee0f05f7218904f92a85d800f1f13fb73224419e3c13"
+    },
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "f4fe8fda1b4d5691cbf602f9cf6f2101779fc9cfe8fed3d9443a8705fea20d36"
+    },
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_summary.json",
+      "role": "summary",
+      "sha256": "3c380a899e5621d312cc45d62aff99ce883dd8dd029de56078e1cdc67838613f"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "681d60627eac0eb6e8e65e75896f85375eae98d68c9bb2f2788bf5b13e0b9693"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "ac89373a2309403adb9ade624357760b06c3720fc4dc5366ad4e37ebea88f00d"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "b0711074948293dbc309564a49398b26e6198be4ee13a450bf0aa5f740cfc8fb"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_summary.json",
+      "role": "summary",
+      "sha256": "25c9dd61bfc805c321b12ba1b6575e4463fb76c1369de3b7a317dbdb524b17a8"
+    }
+  ],
+  "schema": "anonymous-structural-certificate-artifact-v1"
+}
