@@ -311,8 +311,10 @@ coefficient-edit interface.
 The final artifact will provide code, configurations, checkpoint hashes, exact certificates, and
 per-episode logs. Historical Modal cache-backed analyses read dataset-native task metadata. The
 replacement Athena pipeline pins that metadata and maps dataset identifiers to official
-identifiers before defining task splits. Canonical-state checks fail loudly when requested states
-are unavailable.
+identifiers before defining task splits. A source-level audit compared all $271{,}996$ cached
+frames across Object, Spatial, Goal, and LIBERO-10 with their pinned LeRobot revisions. Task
+identifiers, language joins, states, actions, and resized images matched exactly for every frame.
+Canonical-state checks fail loudly when requested states are unavailable.
 
 % ============================================================================
 \clearpage

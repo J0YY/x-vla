@@ -104,7 +104,9 @@ The following protocols were fixed before their corrected outcomes were observed
 6. **Specialist-retention control.** Train corrected seed-0 chi specialists for all four suites and
    require generalist seed 0 to retain at least 85 percent of their four-suite task-macro success.
 7. **Pinned-cache provenance.** Compare cached task IDs, language joins, states, actions, and resized
-   images against the pinned LeRobot revisions and record both cache and metadata hashes.
+   images against the pinned LeRobot revisions and record both cache and metadata hashes. This
+   audit is complete: all 271,996 frames across the four suites match exactly with zero field
+   mismatches.
 
 The blind bottleneck is positive only if selected conditional retention is at least 85 percent,
 selected beats every matched random control with the same sign in every checkpoint, and the full

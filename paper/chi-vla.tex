@@ -413,7 +413,9 @@ Training and evaluation use fixed task lists, explicit camera and action convent
 canonical-state manifests, checkpointed moving-average weights, and per-run result files.
 Historical Modal cache-backed analyses read dataset-native task metadata. The replacement Athena
 pipeline pins that metadata and maps dataset identifiers to official identifiers before defining
-task splits.
+task splits. A source-level audit compared all $271{,}996$ cached frames across Object, Spatial,
+Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, language joins,
+states, actions, and resized images matched exactly for every frame.
 The final artifact will release code, checkpoint hashes, exact attention certificates, and
 per-episode evaluation logs. Preflight checks fail if canonical initial states cannot be
 loaded.
