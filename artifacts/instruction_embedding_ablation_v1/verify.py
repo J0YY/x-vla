@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 import hashlib
 import json
 import math
@@ -22,8 +23,11 @@ DEFAULT_ROOT = ARTIFACT_DIR.parents[1]
 CONDITIONS = ("full_lexical_embeddings", "zeroed_lexical_embeddings")
 SHARDS = ((0, 2), (2, 4), (4, 6), (6, 8), (8, 10))
 RAW_RE = re.compile(r"instruction_embedding_ablation_v1_s([0-2])_t(0|2|4|6|8)_(2|4|6|8|10)\.json")
-EXPECTED_PACKAGE_MANIFEST_SHA256 = "a137ba480a0763e0b4d7b0c9d29dfeecb010fa47d5031a74c4143011b14464f8"
+EXPECTED_PACKAGE_MANIFEST_SHA256 = "66eb583354c367f592f27c3610494b82aa3ca0f53ab8f896f4393bc1cd0da326"
+EXPECTED_REDACTION_ATTESTATION_SHA256 = "24906b64997ef3ac744c2e17d6995733090afb8e1c9411f5bfc99df347951f6f"
 EXPECTED_PREFLIGHT_SHA256 = "c543af066251379f74ce4e2a09cba16da6181dad74fc3dca67e03b534dc727d0"
+EXPECTED_ORIGINAL_PREFLIGHT_SHA256 = "a91ce8bfc4b296e4a84503db63ad2b34f1c6509a9fb5f3fad74cbfd2bafb748d"
+EXPECTED_ORIGINAL_SUMMARY_SHA256 = "84976425791829d114a04ea467b34f3446c81298862cf803934f40d69260d140"
 EXPECTED_ZERO_OUTPUT_SHA256 = "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24"
 BOOTSTRAP_SEED = 2026082701
 BOOTSTRAP_DRAWS = 20000
@@ -67,6 +71,11 @@ EXPECTED_INSTRUCTION_ID_SHA256 = (
     "95d68b20e594bf6e8fd843f3a395139353863303ceecb0d9f58ab7c3c582eb66",
     "aa7811556d9d6eef4e2e4952f99e7f9d6014aaa4d86b3716425f6e14d420ba24",
 )
+SOURCE_SNAPSHOTS = {
+    "xvla/models/vit.py": "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64",
+    "xvla/models/vla.py": "athena/results/exact_attention_frozen_sources/xvla_models_vla.py.b64",
+    "xvla/nn/product_routing.py": "athena/results/exact_attention_frozen_sources/xvla_nn_product_routing.py.b64",
+}
 
 
 class VerificationError(RuntimeError):
@@ -112,6 +121,127 @@ def file_sha256(path: Path) -> str:
     except OSError as exc:
         raise VerificationError(f"cannot hash {path}: {exc}") from exc
     return digest.hexdigest()
+
+
+def safe_path(root: Path, relative: str) -> Path:
+    path = Path(relative)
+    require(not path.is_absolute() and ".." not in path.parts, f"unsafe artifact path {relative!r}")
+    return root / path
+
+
+def validate_redaction_attestation(
+    root: Path,
+    package_files: dict[str, str],
+) -> dict[str, Any]:
+    relative = "artifacts/instruction_embedding_ablation_v1/redaction_attestation.json"
+    path = safe_path(root, relative)
+    require(
+        file_sha256(path) == EXPECTED_REDACTION_ATTESTATION_SHA256 == package_files.get(relative),
+        "redaction attestation trust root differs",
+    )
+    attestation = load_json(path)
+    require(
+        attestation.get("schema") == "instruction-embedding-ablation-redaction-attestation-v1"
+        and attestation.get("attestation_version") == 1,
+        "redaction attestation identity differs",
+    )
+    records = attestation.get("files")
+    evidence = {
+        relative_path: digest
+        for relative_path, digest in package_files.items()
+        if relative_path.startswith("athena/results/instruction_embedding_ablation_v1")
+    }
+    require(isinstance(records, dict) and set(records) == set(evidence), "redaction file set differs")
+    original_digests: set[str] = set()
+    direct_total = 0
+    derived_total = 0
+    for relative_path, release_digest in evidence.items():
+        record = records.get(relative_path)
+        require(isinstance(record, dict), f"redaction record is absent: {relative_path}")
+        original = record.get("original_sha256")
+        require(
+            isinstance(original, str)
+            and re.fullmatch(r"[0-9a-f]{64}", original) is not None
+            and original not in original_digests,
+            f"original evidence digest differs: {relative_path}",
+        )
+        original_digests.add(original)
+        require(record.get("release_sha256") == release_digest, f"release evidence digest differs: {relative_path}")
+        direct = record.get("direct_path_redactions")
+        derived = record.get("derived_digest_updates")
+        require(type(direct) is int and direct >= 0, f"redaction count differs: {relative_path}")
+        require(type(derived) is int and derived >= 0, f"derived-digest count differs: {relative_path}")
+        direct_total += direct
+        derived_total += derived
+    counts_value = attestation.get("field_changes")
+    require(
+        isinstance(counts_value, dict)
+        and direct_total == counts_value.get("direct_path_redactions") == 88
+        and derived_total == counts_value.get("derived_digest_updates") == 33
+        and direct_total + derived_total == counts_value.get("total") == 121,
+        "redaction field-change totals differ",
+    )
+    preflight_record = records["athena/results/instruction_embedding_ablation_v1_manifest.json"]
+    summary_record = records["athena/results/instruction_embedding_ablation_v1_summary.json"]
+    require(preflight_record.get("original_sha256") == EXPECTED_ORIGINAL_PREFLIGHT_SHA256, "original preflight trust root differs")
+    require(summary_record.get("original_sha256") == EXPECTED_ORIGINAL_SUMMARY_SHA256, "original summary trust root differs")
+    require(
+        attestation.get("direct_path_rules")
+        == {
+            "preflight_manifest": [
+                "/libero_runtime_end/package_root",
+                "/libero_runtime_end/repository_root",
+                "/libero_runtime_start/package_root",
+                "/libero_runtime_start/repository_root",
+                "/protocol/summary_python_executable",
+            ],
+            "each_raw_or_smoke_result": [
+                "/protocol/summary_python_executable",
+                "/runtime/libero_source_end/package_root",
+                "/runtime/libero_source_end/repository_root",
+                "/runtime/libero_source_start/package_root",
+                "/runtime/libero_source_start/repository_root",
+            ],
+            "summary": [
+                "/protocol/summary_python_executable",
+                "/summary_runtime/declared_python_executable",
+                "/summary_runtime/python_executable",
+            ],
+        },
+        "direct path-redaction rules differ",
+    )
+    require(
+        attestation.get("derived_digest_rules")
+        == {
+            "each_raw_or_smoke_result": ["/identity/manifest_sha256"],
+            "summary": ["/manifest_sha256", "/smoke_sha256", "/input_results/*/sha256"],
+        },
+        "derived digest-redaction rules differ",
+    )
+    return attestation
+
+
+def verify_source_identity(root: Path, source_map: Any) -> None:
+    require(isinstance(source_map, dict) and len(source_map) == 31, "frozen source map differs")
+    for relative, expected in source_map.items():
+        require(
+            isinstance(relative, str)
+            and isinstance(expected, str)
+            and re.fullmatch(r"[0-9a-f]{64}", expected) is not None,
+            "frozen source identity is malformed",
+        )
+        source = safe_path(root, relative)
+        if source.is_file() and file_sha256(source) == expected:
+            continue
+        snapshot_relative = SOURCE_SNAPSHOTS.get(relative)
+        require(snapshot_relative is not None, f"missing or stale source {relative}")
+        snapshot = safe_path(root, snapshot_relative)
+        try:
+            encoded = "".join(snapshot.read_text(encoding="ascii").split())
+            payload = base64.b64decode(encoded, validate=True)
+        except (OSError, UnicodeError, binascii.Error) as exc:
+            raise VerificationError(f"invalid source snapshot {snapshot}") from exc
+        require(hashlib.sha256(payload).hexdigest() == expected, f"snapshot source digest differs: {relative}")
 
 
 def product(values: list[int]) -> int:
@@ -433,10 +563,10 @@ def verify(root: Path) -> dict[str, Any]:
     package = load_json(ARTIFACT_DIR / "manifest.json")
     require(package.get("schema") == "anonymous-instruction-embedding-ablation-artifact-v1", "artifact schema differs")
     files = package.get("files")
-    require(isinstance(files, dict) and len(files) == 18, "artifact file manifest differs")
+    require(isinstance(files, dict) and len(files) == 22, "artifact file manifest differs")
     for relative, digest in files.items():
-        require(".." not in Path(relative).parts and not Path(relative).is_absolute(), "unsafe artifact path")
-        require(file_sha256(root / relative) == digest, f"file digest differs: {relative}")
+        require(file_sha256(safe_path(root, relative)) == digest, f"file digest differs: {relative}")
+    validate_redaction_attestation(root, files)
 
     preflight_path = root / "athena/results/instruction_embedding_ablation_v1_manifest.json"
     require(file_sha256(preflight_path) == EXPECTED_PREFLIGHT_SHA256, "preflight trust-root digest differs")
@@ -446,6 +576,7 @@ def verify(root: Path) -> dict[str, Any]:
     require(preflight.get("schema") == "xvla-instruction-embedding-ablation-manifest-v1", "preflight schema differs")
     require(preflight.get("mapping_count") == 100 and len(preflight.get("mappings", [])) == 100, "preflight matrix differs")
     require(preflight.get("source_sha256_start") == preflight.get("source_sha256_end"), "preflight source closure changed")
+    verify_source_identity(root, preflight.get("source_sha256_start"))
     require(preflight.get("provenance", {}).get("verified") is True, "preflight cache provenance was not verified")
     mappings = {(row.get("task_index"), row.get("episode")): row for row in preflight["mappings"]}
     require(len(mappings) == 100, "preflight contains duplicate state keys")

@@ -2,6 +2,10 @@
   "schema": "anonymous-instruction-embedding-ablation-artifact-v1",
   "artifact_version": 1,
   "files": {
+    "artifacts/instruction_embedding_ablation_v1/redaction_attestation.json": "24906b64997ef3ac744c2e17d6995733090afb8e1c9411f5bfc99df347951f6f",
+    "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64": "1c3a6bc32d8580a13770ed1bcb273a20c03b747b58d60d05bd83696e5e1729c5",
+    "athena/results/exact_attention_frozen_sources/xvla_models_vla.py.b64": "b1f1309182bee516882962415d0bf358adb63a8f50e5a9fe2757f448b82527b6",
+    "athena/results/exact_attention_frozen_sources/xvla_nn_product_routing.py.b64": "e2cc8b13001a5f2cdcd79f6aa135cb50453d55da13024cd1dd0a22f0e820c6d3",
     "athena/results/instruction_embedding_ablation_v1_manifest.json": "c543af066251379f74ce4e2a09cba16da6181dad74fc3dca67e03b534dc727d0",
     "athena/results/instruction_embedding_ablation_v1_s0_t0_2.json": "b7be66c36b1be50808a664283f7a8b8547d83ae3e095c49e0e4dc0fa5d438767",
     "athena/results/instruction_embedding_ablation_v1_s0_t2_4.json": "81be3bd14c4c38c3bb0d3891af264a87a91a56f38c0ca5af511b8a5abf5bec37",

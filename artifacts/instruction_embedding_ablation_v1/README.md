@@ -7,9 +7,11 @@ after lookup. Vision, robot state, embodiment, sequence length, positions, the s
 common BOS, action queries, and all weights remain unchanged.
 
 For anonymous release, account-specific prefixes in recorded absolute cluster paths were replaced
-with `/anonymous/cluster/home` and `/anonymous/cluster/work`. This redaction changes no runtime,
-protocol, identity, source, trajectory, outcome, or statistical field. The release manifest binds
-the redacted evidence bytes, and repository attributes require LF checkouts for every hashed JSON.
+with `/anonymous/cluster/home` and `/anonymous/cluster/work`. The machine-readable redaction
+attestation preserves the SHA-256 digest of every original Athena result, binds every release
+digest, enumerates 88 path-field replacements, and declares the 33 dependent digest updates. No
+source, trajectory, outcome, or statistical value changed. The package manifest binds the release
+bytes, and repository attributes require LF checkouts for every byte-hashed package input.
 
 From the repository root, run:
 
@@ -18,11 +20,13 @@ python3 artifacts/instruction_embedding_ablation_v1/verify.py
 ```
 
 The verifier uses only the Python standard library. Its hard-pinned trust roots bind the artifact
-file manifest and prospective preflight manifest. It checks the SHA-256 digest of the smoke result,
-strict summary, and all 15 raw shards, then binds every shard's checkpoint, cache, provenance, source
-closure, and model identity to the preflight record. It rejects duplicate JSON keys, rebuilds the
-complete 3-checkpoint by 10-task by 10-episode matrix, and matches every pair to its frozen canonical
-state, prompt, token IDs, and condition order. Every hook call must have the correct input-ID digest
+file manifest, redaction attestation, prospective preflight manifest, and original result digests.
+It checks the SHA-256 digest of the smoke result, strict summary, all 15 raw shards, and the three
+frozen model-source snapshots. It then verifies every path in the recorded 31-file source closure
+against live bytes or a pinned snapshot and binds every shard's checkpoint, cache, provenance,
+source closure, and model identity to the preflight record. It rejects duplicate JSON keys,
+rebuilds the complete 3-checkpoint by 10-task by 10-episode matrix, and matches every pair to its
+frozen canonical state, prompt, token IDs, and condition order. Every hook call must have the correct input-ID digest
 and the exact digest of a 32-position zero tensor. The verifier also decodes every saved trajectory,
 reproduces success from rewards, and reconstructs executed actions from the recorded action chunks.
 It then recomputes checkpoint, task, discordance, exact paired-test, and frozen-gate statistics. A
@@ -31,10 +35,11 @@ minimal standard-library implementation of the frozen NumPy 1.26 PCG64 stream al
 
 The expected result is 263/300 successes with the intact learned lexical path and 63/300 after
 zeroing the post-lookup embeddings, a paired gap of 66.7 percentage points. Full-path success is
-84%, 87%, and 92% by checkpoint. All ten task gaps are positive. The one-sided paired exact
-p-value is 1.42e-56, and the frozen task-stratified state-cluster bootstrap interval is 61.7 to
-71.3 points. The verifier also derives a 20-point lower bound over the entire support of that
-bootstrap resampling scheme, independently establishing that its lower endpoint must be positive.
+84%, 87%, and 92% by checkpoint. All ten task gaps are positive. The pooled one-sided paired exact
+p-value is 1.42e-56 but is not cluster-robust. The frozen task-stratified state-cluster bootstrap
+interval is 61.7 to 71.3 points. The verifier also derives a 20-point lower bound over the entire
+support of that bootstrap resampling scheme, independently establishing that its lower endpoint
+must be positive.
 
 The paper figure is generated from verifier output rather than hand-entered results:
 
