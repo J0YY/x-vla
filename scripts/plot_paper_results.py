@@ -152,73 +152,90 @@ def main_capability() -> None:
 
 def appendix_matched_architecture_cost() -> None:
     labels = ["Conventional twin", "Rational χ-VLA"]
-    successes = np.array([449, 426])
-    trials = np.array([500, 500])
-    success = 100 * successes / trials
-    eager_latency = np.array([7.1415, 38.0482])
-    compiled_latency = np.array([0.8766, 1.5236])
+    hardware_labels = ["A30", "A6000"]
+    successes = {
+        "Conventional twin": np.array([448, 451]),
+        "Rational χ-VLA": np.array([426, 422]),
+    }
+    trials = 500
+    eager_ratio = np.array([5.3278, 3.4892])
+    compiled_ratio = np.array([1.7381, 1.7305])
     colors = [COLORS["gray"], COLORS["blue"]]
-    intervals = np.array(
-        [wilson_interval(int(value), int(total)) for value, total in zip(successes, trials)]
-    )
-    error = np.vstack([success - 100 * intervals[:, 0], 100 * intervals[:, 1] - success])
 
     fig, axes = plt.subplots(1, 2, figsize=(8.3, 3.15))
     ax = axes[0]
     positions = np.arange(2)
-    ax.bar(positions, success, color=colors, width=0.62)
-    ax.errorbar(
-        positions,
-        success,
-        yerr=error,
-        fmt="none",
-        ecolor=COLORS["ink"],
-        elinewidth=1.2,
-        capsize=3,
-    )
-    for position, value in zip(positions, success):
-        ax.text(position, value + 1.0, f"{value:.1f}%", ha="center", fontweight="bold")
-    ax.set_xticks(positions, labels)
+    width = 0.34
+    for model_index, (label, color) in enumerate(zip(labels, colors)):
+        values = 100 * successes[label] / trials
+        intervals = np.array(
+            [wilson_interval(int(value), trials) for value in successes[label]]
+        )
+        error = np.vstack(
+            [values - 100 * intervals[:, 0], 100 * intervals[:, 1] - values]
+        )
+        x_values = positions + (model_index - 0.5) * width
+        ax.bar(x_values, values, width, color=color, label=label)
+        ax.errorbar(
+            x_values,
+            values,
+            yerr=error,
+            fmt="none",
+            ecolor=COLORS["ink"],
+            elinewidth=1.1,
+            capsize=3,
+        )
+        for position, value in zip(x_values, values):
+            ax.text(position, value + 1.0, f"{value:.1f}%", ha="center", fontweight="bold")
+    ax.set_xticks(positions, hardware_labels)
     ax.set_ylim(78, 95)
     ax.set_ylabel("Closed-loop success (%)")
-    ax.set_title("Initial mixed-device replication")
+    ax.set_title("Complete same-hardware controls")
     ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
+    ax.legend(
+        frameon=True,
+        facecolor="white",
+        framealpha=0.92,
+        edgecolor="none",
+        fontsize=7.2,
+        loc="lower right",
+    )
     panel_label(ax, "a")
 
     ax = axes[1]
     width = 0.34
     ax.bar(
         positions - width / 2,
-        eager_latency,
+        eager_ratio,
         width,
         color=COLORS["gold"],
         label="Eager",
     )
     ax.bar(
         positions + width / 2,
-        compiled_latency,
+        compiled_ratio,
         width,
         color=COLORS["green"],
         label="Compiled",
     )
-    for position, value in zip(positions - width / 2, eager_latency):
-        ax.text(position, value + 1.0, f"{value:.2f}", ha="center", fontweight="bold")
-    for position, value in zip(positions + width / 2, compiled_latency):
-        ax.text(position, value + 1.0, f"{value:.2f}", ha="center", fontweight="bold")
-    ax.set_xticks(positions, labels)
-    ax.set_ylim(0, 41)
-    ax.set_ylabel("Batch-one latency (ms)")
-    ax.set_title("Same-A30 systems control")
+    for position, value in zip(positions - width / 2, eager_ratio):
+        ax.text(position, value + 0.15, f"{value:.2f}×", ha="center", fontweight="bold")
+    for position, value in zip(positions + width / 2, compiled_ratio):
+        ax.text(position, value + 0.15, f"{value:.2f}×", ha="center", fontweight="bold")
+    ax.set_xticks(positions, hardware_labels)
+    ax.set_ylim(0, 6.3)
+    ax.set_ylabel("χ / conventional latency ratio")
+    ax.set_title("Compiler narrows the runtime gap")
     ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8)
-    ax.legend(frameon=False, loc="upper left")
+    ax.legend(frameon=False, loc="upper right")
     panel_label(ax, "b")
 
-    fig.suptitle("Matched architecture study: capability needs a device control", y=1.03)
+    fig.suptitle("Conversion cost is nonzero, while compilation narrows the systems gap", y=1.03)
     fig.text(
         0.5,
         -0.02,
-        "The 449/500 vs 426/500 pass mixed A6000 and A30 task shards, so it is not a clean "
-        "architecture estimate. Same-A30 compilation narrows the latency ratio from 5.33× to 1.74×.",
+        "Each capability bar uses the same 500 canonical trials on one GPU class. The χ deficit "
+        "is 4.4 points on A30 and 5.8 on A6000. Compilation narrows the latency ratio to 1.73–1.74× on both GPUs.",
         ha="center",
         fontsize=7.7,
         color=COLORS["muted"],

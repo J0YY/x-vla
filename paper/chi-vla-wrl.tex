@@ -47,9 +47,9 @@ of $384$ causally ranked visual dimensions preserves $18/20$ successes, while a 
 preserves none. A $300$-pair instruction intervention reliably changes motion but rarely
 overcomes the scene prior completely, and the first direct coefficient edit fails its
 selectivity gate. A same-skeleton conventional
-twin differs by only $0.006\%$ in parameters. An initial mixed-device pass gives $89.8\%$ for
-the control and $85.2\%$ for the rational checkpoint, so the capability cost is not yet isolated.
-Compilation reduces the same-A30 latency ratio from $5.33\times$ to $1.74\times$.
+twin differs by only $0.006\%$ in parameters. Complete same-hardware replications find a
+$4.4$-point rational deficit on A30 and $5.8$ points on A6000. Compilation reduces the same-A30
+latency ratio from $3.49$--$5.33\times$ eager to $1.73$--$1.74\times$ compiled.
 The result is a capable and structurally inspectable specialist, not a zero-shot generalist,
 a compute-matched system, or a solved editing interface.
 \end{abstract}
@@ -97,8 +97,8 @@ Our contributions are:
   \item We evaluate two fully rational $20.1$M-parameter policies under a protocol aligned with
         published LIBERO-Object results. The strongest single architecture reaches
         $93.7\%\pm0.8\%$ over three seeds, and a three-checkpoint ensemble reaches $96.2\%$.
-        A same-skeleton conventional twin differs by only $0.006\%$ in parameters, while its
-        mixed-device capability comparison remains an explicitly open control.
+        A same-skeleton conventional twin differs by only $0.006\%$ in parameters. Two complete
+        same-hardware replications place the seed-0 capability cost between $4.4$ and $5.8$ points.
   \item We mechanically audit the real trained policy and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
@@ -243,13 +243,13 @@ consistent in this three-seed comparison.
 
 The same-skeleton conventional twin replaces the rational blocks with softmax attention,
 SwiGLU, and RMSNorm while holding the data, updates, seed, decoder, and $500$ canonical trials
-fixed. The initial Athena pass gives $449/500$ successes for the conventional twin and $426/500$
-for the rational checkpoint. Their parameter counts differ by only $0.006\%$. Task shards span
-A6000 and A30 GPUs, and the architecture difference changes sign between the hardware-assigned
-task groups, so this is a portability warning rather than a clean cost estimate. On one A30,
-eager latency is $38.05$ versus $7.14$ ms. Compilation reduces it to $1.52$ versus $0.88$ ms,
-a $1.74\times$ gap. Rational training is $3.12\times$ slower at batch $128$ and uses
-$1.63\times$ the peak allocated memory.
+fixed. On A30, the conventional twin succeeds in $448/500$ trials and the rational checkpoint in
+$426/500$. On A6000, they reach $451/500$ and $422/500$. Their parameter counts differ by only
+$0.006\%$. The rational deficit is $4.4$ and $5.8$ points, and task 3 accounts for $21$ lost
+successes on each platform. On one A30, eager latency is $38.05$ versus $7.14$ ms. Compilation
+reduces it to $1.52$ versus $0.88$ ms, a $1.74\times$ gap. Rational training is $3.12\times$
+slower at batch $128$ and uses $1.63\times$ the peak allocated memory. A6000 profiling confirms
+a $1.73\times$ compiled ratio.
 
 Elementwise averaging of the three convolutional action predictions reaches $96.2\%$. This is
 $2.3$ points above the mean of its members and $1.2$ points above the strongest member.
@@ -259,9 +259,9 @@ forward passes and is not one $20.1$M-parameter policy.
 \subsection{What this result does and does not establish}
 
 The result shows that the rational architecture supports high closed-loop specialist
-capability. A multi-seed noninferiority claim still requires a same-hardware seed-0 estimate,
-conventional seeds 1 and 2, and partial-conversion controls. The current result does not yet
-isolate architecture-level capability cost or eliminate systems cost.
+capability. Seed 0 misses the predeclared three-point noninferiority margin on both GPU classes.
+A multi-seed claim still requires conventional seeds 1 and 2 and partial-conversion controls.
+The result isolates a modest capability cost and a remaining systems cost.
 
 % ============================================================================
 \section{Exact weight-derived structure through attention}
@@ -379,8 +379,8 @@ that standard LIBERO success can coexist with weak language use
 \cite{liberopro,liberocf,liberopara}.
 
 \paragraph{Limitations and conclusion.}
-The same-skeleton control has one completed seed, a hardware-confounded capability comparison,
-and a residual compiled-runtime tax. The benchmark is one specialist suite, counterfactual
+The same-skeleton control has one completed seed, a $4.4$ to $5.8$ point capability gap, and a
+residual compiled-runtime tax. The benchmark is one specialist suite, counterfactual
 instructions do not fully reroute the policy, and exact decomposition is layerwise rather than
 end to end. The closed-loop
 subspace test uses one checkpoint and twenty trials, while
@@ -492,10 +492,10 @@ trials, and a longer horizon.
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.96\textwidth]{../paper_figures/appendix_matched_architecture_cost.pdf}
-\caption{\textbf{The initial capability pass is hardware-confounded, while the systems control
-is not.} The mixed-device evaluation gives $449/500$ conventional and $426/500$ rational
-successes, with a $0.006\%$ parameter difference. On the same A30, compilation narrows the
-batch-one latency ratio from $5.33\times$ to $1.74\times$.}
+\caption{\textbf{Conversion cost is modest but nonzero, and compilation narrows the systems
+gap.} Complete same-hardware evaluations give $89.6\%$ versus $85.2\%$ on A30 and $90.2\%$
+versus $84.4\%$ on A6000, conventional then rational. Parameters differ by $0.006\%$.
+Compilation narrows the batch-one latency ratio to $1.73$--$1.74\times$ on both GPUs.}
 \label{fig:matched-cost}
 \end{figure}
 

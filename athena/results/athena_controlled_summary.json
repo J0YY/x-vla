@@ -1,0 +1,876 @@
+{
+  "conventional_capability": {
+    "architecture": "conventional",
+    "shards": [
+      "athena/results/conventional_s0_t0_3.json",
+      "athena/results/conventional_s0_t3_6.json",
+      "athena/results/conventional_s0_t6_8.json",
+      "athena/results/conventional_s0_t8_10.json"
+    ],
+    "successes": 449,
+    "trials": 500,
+    "success_rate": 0.898,
+    "success_rate_wilson_95pct_ci": [
+      0.868365377095774,
+      0.9215656478968306
+    ],
+    "tasks_covered": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "complete_ten_task_suite": true,
+    "per_task": {
+      "0": {
+        "successes": 38,
+        "trials": 50,
+        "success_rate": 0.76
+      },
+      "1": {
+        "successes": 40,
+        "trials": 50,
+        "success_rate": 0.8
+      },
+      "2": {
+        "successes": 47,
+        "trials": 50,
+        "success_rate": 0.94
+      },
+      "3": {
+        "successes": 44,
+        "trials": 50,
+        "success_rate": 0.88
+      },
+      "4": {
+        "successes": 50,
+        "trials": 50,
+        "success_rate": 1
+      },
+      "5": {
+        "successes": 45,
+        "trials": 50,
+        "success_rate": 0.9
+      },
+      "6": {
+        "successes": 47,
+        "trials": 50,
+        "success_rate": 0.94
+      },
+      "7": {
+        "successes": 45,
+        "trials": 50,
+        "success_rate": 0.9
+      },
+      "8": {
+        "successes": 50,
+        "trials": 50,
+        "success_rate": 1
+      },
+      "9": {
+        "successes": 43,
+        "trials": 50,
+        "success_rate": 0.86
+      }
+    },
+    "parameters": 20138632,
+    "latency_ms_batch1_median_across_shards": 6.856176170986146,
+    "latency_ms_batch1_by_shard": [
+      6.419362020678818,
+      7.41957311052829,
+      7.292990321293473,
+      6.2960464507341385
+    ],
+    "gpus": [
+      "NVIDIA A30",
+      "NVIDIA RTX A6000"
+    ]
+  },
+  "conventional_capability_by_seed": {
+    "0": {
+      "architecture": "conventional",
+      "shards": [
+        "athena/results/conventional_s0_t0_3.json",
+        "athena/results/conventional_s0_t3_6.json",
+        "athena/results/conventional_s0_t6_8.json",
+        "athena/results/conventional_s0_t8_10.json"
+      ],
+      "successes": 449,
+      "trials": 500,
+      "success_rate": 0.898,
+      "success_rate_wilson_95pct_ci": [
+        0.868365377095774,
+        0.9215656478968306
+      ],
+      "tasks_covered": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "complete_ten_task_suite": true,
+      "per_task": {
+        "0": {
+          "successes": 38,
+          "trials": 50,
+          "success_rate": 0.76
+        },
+        "1": {
+          "successes": 40,
+          "trials": 50,
+          "success_rate": 0.8
+        },
+        "2": {
+          "successes": 47,
+          "trials": 50,
+          "success_rate": 0.94
+        },
+        "3": {
+          "successes": 44,
+          "trials": 50,
+          "success_rate": 0.88
+        },
+        "4": {
+          "successes": 50,
+          "trials": 50,
+          "success_rate": 1
+        },
+        "5": {
+          "successes": 45,
+          "trials": 50,
+          "success_rate": 0.9
+        },
+        "6": {
+          "successes": 47,
+          "trials": 50,
+          "success_rate": 0.94
+        },
+        "7": {
+          "successes": 45,
+          "trials": 50,
+          "success_rate": 0.9
+        },
+        "8": {
+          "successes": 50,
+          "trials": 50,
+          "success_rate": 1
+        },
+        "9": {
+          "successes": 43,
+          "trials": 50,
+          "success_rate": 0.86
+        }
+      },
+      "parameters": 20138632,
+      "latency_ms_batch1_median_across_shards": 6.856176170986146,
+      "latency_ms_batch1_by_shard": [
+        6.419362020678818,
+        7.41957311052829,
+        7.292990321293473,
+        6.2960464507341385
+      ],
+      "gpus": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ]
+    },
+    "1": null,
+    "2": null
+  },
+  "chi_s0_capability": {
+    "architecture": "chi",
+    "shards": [
+      "athena/results/chi_s0_t0_3.json",
+      "athena/results/chi_s0_t3_6.json",
+      "athena/results/chi_s0_t6_8.json",
+      "athena/results/chi_s0_t8_10.json"
+    ],
+    "successes": 426,
+    "trials": 500,
+    "success_rate": 0.852,
+    "success_rate_wilson_95pct_ci": [
+      0.8181938697042727,
+      0.8804385946107945
+    ],
+    "tasks_covered": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "complete_ten_task_suite": true,
+    "per_task": {
+      "0": {
+        "successes": 37,
+        "trials": 50,
+        "success_rate": 0.74
+      },
+      "1": {
+        "successes": 45,
+        "trials": 50,
+        "success_rate": 0.9
+      },
+      "2": {
+        "successes": 49,
+        "trials": 50,
+        "success_rate": 0.98
+      },
+      "3": {
+        "successes": 23,
+        "trials": 50,
+        "success_rate": 0.46
+      },
+      "4": {
+        "successes": 48,
+        "trials": 50,
+        "success_rate": 0.96
+      },
+      "5": {
+        "successes": 41,
+        "trials": 50,
+        "success_rate": 0.82
+      },
+      "6": {
+        "successes": 49,
+        "trials": 50,
+        "success_rate": 0.98
+      },
+      "7": {
+        "successes": 38,
+        "trials": 50,
+        "success_rate": 0.76
+      },
+      "8": {
+        "successes": 49,
+        "trials": 50,
+        "success_rate": 0.98
+      },
+      "9": {
+        "successes": 47,
+        "trials": 50,
+        "success_rate": 0.94
+      }
+    },
+    "parameters": 20137352,
+    "latency_ms_batch1_median_across_shards": 37.77435627998784,
+    "latency_ms_batch1_by_shard": [
+      36.27028827089816,
+      38.945221840403974,
+      40.15351625159383,
+      36.60349071957171
+    ],
+    "gpus": [
+      "NVIDIA A30",
+      "NVIDIA RTX A6000"
+    ]
+  },
+  "causal_intervention": {
+    "files": [
+      "athena/results/causal_s0.json",
+      "athena/results/causal_s1.json",
+      "athena/results/causal_s2.json"
+    ],
+    "by_checkpoint": {
+      "ckpt_linear_rat_vit_s0_v2": {
+        "n_trials": 100,
+        "mean_paired_preference_shift_m": 0.17502854803868076,
+        "mean_paired_preference_shift_95pct_bootstrap_ci_m": [
+          0.13836088984278622,
+          0.2126530584894685
+        ],
+        "fraction_shift_toward_counterfactual_named_object": 0.84,
+        "fraction_counterfactual_ended_closer_to_named_object": 0.33,
+        "true_instruction_bddl_success": 0.0
+      },
+      "ckpt_linear_rat_vit_s1": {
+        "n_trials": 100,
+        "mean_paired_preference_shift_m": 0.16754317945234984,
+        "mean_paired_preference_shift_95pct_bootstrap_ci_m": [
+          0.13528583077780715,
+          0.2007942547901593
+        ],
+        "fraction_shift_toward_counterfactual_named_object": 0.86,
+        "fraction_counterfactual_ended_closer_to_named_object": 0.28,
+        "true_instruction_bddl_success": 0.0
+      },
+      "ckpt_linear_rat_vit_s2": {
+        "n_trials": 100,
+        "mean_paired_preference_shift_m": 0.1886126371839733,
+        "mean_paired_preference_shift_95pct_bootstrap_ci_m": [
+          0.15305513421377787,
+          0.22385289691361374
+        ],
+        "fraction_shift_toward_counterfactual_named_object": 0.88,
+        "fraction_counterfactual_ended_closer_to_named_object": 0.28,
+        "true_instruction_bddl_success": 0.0
+      }
+    },
+    "pooled_trials": 300,
+    "pooled_mean_paired_preference_shift_m": 0.17706145489166797,
+    "pooled_fraction_shift_toward_counterfactual_named_object": 0.86,
+    "pooling_note": "The pooled estimate is descriptive. Checkpoint-level estimates are the primary replication result because trials within a checkpoint share learned weights."
+  },
+  "exact_attention": {
+    "runs": [
+      {
+        "file": "athena/results/exact_attention_s0.json",
+        "modules_audited": 12,
+        "heads_audited": 128,
+        "max_abs_error": 1.888672306904482e-05,
+        "max_relative_l2_error": 1.9359468185708838e-07,
+        "all_modules_below_1e_minus_5": false,
+        "all_modules_below_2e_minus_5": true
+      },
+      {
+        "file": "athena/results/exact_attention_s1.json",
+        "modules_audited": 12,
+        "heads_audited": 128,
+        "max_abs_error": 7.968145993686448e-06,
+        "max_relative_l2_error": 2.5523455725900214e-07,
+        "all_modules_below_1e_minus_5": true,
+        "all_modules_below_2e_minus_5": true
+      },
+      {
+        "file": "athena/results/exact_attention_s2.json",
+        "modules_audited": 12,
+        "heads_audited": 128,
+        "max_abs_error": 2.2333674138508286e-05,
+        "max_relative_l2_error": 1.88074655559472e-07,
+        "all_modules_below_1e_minus_5": false,
+        "all_modules_below_2e_minus_5": false
+      }
+    ],
+    "checkpoints": 3,
+    "runs_below_absolute_2e_minus_5": 2,
+    "all_runs_relative_l2_below_3e_minus_7": true,
+    "worst_max_abs_error": 2.2333674138508286e-05,
+    "worst_max_relative_l2_error": 2.5523455725900214e-07,
+    "heads_audited_total": 384,
+    "threshold_note": "The absolute 2e-5 indicator is retained per run. Relative error is the primary scale-aware reconstruction diagnostic, and no failed absolute indicator is hidden."
+  },
+  "matched_training_profile": {
+    "gpu": "NVIDIA A30",
+    "batch_size": 128,
+    "warmup_steps": 10,
+    "profile_steps": 100,
+    "fixed_batch_seed": 2026,
+    "conventional": {
+      "architecture": "conventional",
+      "parameters": 20138632,
+      "elapsed_s": 6.60642381478101,
+      "steps": 100,
+      "steps_per_s": 15.136782441396367,
+      "examples_per_s": 1937.508152498735,
+      "ms_per_step": 66.0642381478101,
+      "peak_allocated_gb": 2.954330624,
+      "peak_reserved_gb": 3.353346048,
+      "loss_first": 0.01621878147125244,
+      "loss_last": 0.00010893611033679917
+    },
+    "chi": {
+      "architecture": "chi",
+      "parameters": 20137352,
+      "elapsed_s": 20.604568468872458,
+      "steps": 100,
+      "steps_per_s": 4.8532926157163185,
+      "examples_per_s": 621.2214548116888,
+      "ms_per_step": 206.04568468872458,
+      "peak_allocated_gb": 4.801561088,
+      "peak_reserved_gb": 5.517606912,
+      "loss_first": 0.0045408629812300205,
+      "loss_last": 0.00025013857521116734
+    },
+    "chi_to_conventional_ms_per_step_ratio": 3.1188687021217785,
+    "chi_to_conventional_peak_allocated_ratio": 1.6252619287068664,
+    "scope": "Steady-state forward, backward, gradient clipping, and AdamW update cost on the same fixed batch and physical GPU. This is not a time-to-convergence comparison."
+  },
+  "matched_inference_profile": {
+    "gpu": "NVIDIA A30",
+    "warmup_iters": 20,
+    "profile_iters": 200,
+    "conventional": {
+      "architecture": "conventional",
+      "parameters": 20138632,
+      "eager_latency_ms_batch1": 7.141495670657605,
+      "compiled_latency_ms_batch1": 0.8765579550527036,
+      "compiled_to_eager_ratio": 0.12274150898868895,
+      "compile_and_warmup_elapsed_s": 21.924141376744956,
+      "compile_error": null
+    },
+    "chi": {
+      "architecture": "chi",
+      "parameters": 20137352,
+      "eager_latency_ms_batch1": 38.048228356055915,
+      "compiled_latency_ms_batch1": 1.5235826396383345,
+      "compiled_to_eager_ratio": 0.04004345814424326,
+      "compile_and_warmup_elapsed_s": 36.377621110063046,
+      "compile_error": null
+    },
+    "eager_chi_to_conventional_latency_ratio": 5.327767474870197,
+    "compiled_chi_to_conventional_latency_ratio": 1.7381425048463888,
+    "scope": "Full image, instruction, state, backbone, and linear action-head forward pass at batch one on the same checkpoint pair and physical GPU."
+  },
+  "matched_inference_profile_a6000": {
+    "gpu": "NVIDIA RTX A6000",
+    "warmup_iters": 20,
+    "profile_iters": 200,
+    "conventional": {
+      "architecture": "conventional",
+      "parameters": 20138632,
+      "eager_latency_ms_batch1": 7.397613129578531,
+      "compiled_latency_ms_batch1": 0.7489701034501195,
+      "compiled_to_eager_ratio": 0.10124483266845168,
+      "compile_and_warmup_elapsed_s": 16.51048321882263,
+      "compile_error": null
+    },
+    "chi": {
+      "architecture": "chi",
+      "parameters": 20137352,
+      "eager_latency_ms_batch1": 25.811664503999054,
+      "compiled_latency_ms_batch1": 1.296099480241537,
+      "compiled_to_eager_ratio": 0.05021371171319578,
+      "compile_and_warmup_elapsed_s": 23.253385527059436,
+      "compile_error": null
+    },
+    "eager_chi_to_conventional_latency_ratio": 3.489188208666116,
+    "compiled_chi_to_conventional_latency_ratio": 1.730508967275295,
+    "scope": "Full image, instruction, state, backbone, and linear action-head forward pass at batch one on the same checkpoint pair and physical GPU."
+  },
+  "same_hardware_capability": {
+    "a30": {
+      "chi": {
+        "architecture": "chi",
+        "shards": [
+          "athena/results/matched_a30_chi_s0_t0_3.json",
+          "athena/results/chi_s0_t3_6.json",
+          "athena/results/chi_s0_t6_8.json",
+          "athena/results/matched_a30_chi_s0_t8_10.json"
+        ],
+        "successes": 426,
+        "trials": 500,
+        "success_rate": 0.852,
+        "success_rate_wilson_95pct_ci": [
+          0.8181938697042727,
+          0.8804385946107945
+        ],
+        "tasks_covered": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "complete_ten_task_suite": true,
+        "per_task": {
+          "0": {
+            "successes": 37,
+            "trials": 50,
+            "success_rate": 0.74
+          },
+          "1": {
+            "successes": 46,
+            "trials": 50,
+            "success_rate": 0.92
+          },
+          "2": {
+            "successes": 48,
+            "trials": 50,
+            "success_rate": 0.96
+          },
+          "3": {
+            "successes": 23,
+            "trials": 50,
+            "success_rate": 0.46
+          },
+          "4": {
+            "successes": 48,
+            "trials": 50,
+            "success_rate": 0.96
+          },
+          "5": {
+            "successes": 41,
+            "trials": 50,
+            "success_rate": 0.82
+          },
+          "6": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "7": {
+            "successes": 38,
+            "trials": 50,
+            "success_rate": 0.76
+          },
+          "8": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "9": {
+            "successes": 47,
+            "trials": 50,
+            "success_rate": 0.94
+          }
+        },
+        "parameters": 20137352,
+        "latency_ms_batch1_median_across_shards": 39.616440567187965,
+        "latency_ms_batch1_by_shard": [
+          39.57779641263187,
+          38.945221840403974,
+          40.15351625159383,
+          39.65508472174406
+        ],
+        "gpus": [
+          "NVIDIA A30"
+        ]
+      },
+      "conventional": {
+        "architecture": "conventional",
+        "shards": [
+          "athena/results/matched_a30_conv_s0_t0_3.json",
+          "athena/results/conventional_s0_t3_6.json",
+          "athena/results/conventional_s0_t6_8.json",
+          "athena/results/matched_a30_conv_s0_t8_10.json"
+        ],
+        "successes": 448,
+        "trials": 500,
+        "success_rate": 0.896,
+        "success_rate_wilson_95pct_ci": [
+          0.8661557291243417,
+          0.919805793230109
+        ],
+        "tasks_covered": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "complete_ten_task_suite": true,
+        "per_task": {
+          "0": {
+            "successes": 37,
+            "trials": 50,
+            "success_rate": 0.74
+          },
+          "1": {
+            "successes": 41,
+            "trials": 50,
+            "success_rate": 0.82
+          },
+          "2": {
+            "successes": 46,
+            "trials": 50,
+            "success_rate": 0.92
+          },
+          "3": {
+            "successes": 44,
+            "trials": 50,
+            "success_rate": 0.88
+          },
+          "4": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "5": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          },
+          "6": {
+            "successes": 47,
+            "trials": 50,
+            "success_rate": 0.94
+          },
+          "7": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          },
+          "8": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "9": {
+            "successes": 43,
+            "trials": 50,
+            "success_rate": 0.86
+          }
+        },
+        "parameters": 20138632,
+        "latency_ms_batch1_median_across_shards": 7.287570680491626,
+        "latency_ms_batch1_by_shard": [
+          7.2466294933110476,
+          7.41957311052829,
+          7.292990321293473,
+          7.282151039689779
+        ],
+        "gpus": [
+          "NVIDIA A30"
+        ]
+      },
+      "comparison": {
+        "chi_minus_conventional_success_rate": -0.04400000000000004,
+        "chi_to_conventional_parameter_ratio": 0.999936440568555,
+        "chi_to_conventional_latency_ratio": 5.436165535003141,
+        "same_single_gpu_class": true,
+        "same_tasks": true,
+        "hardware_controlled_complete": true,
+        "gpu_classes": [
+          "NVIDIA A30"
+        ],
+        "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+      }
+    },
+    "a6000": {
+      "chi": {
+        "architecture": "chi",
+        "shards": [
+          "athena/results/chi_s0_t0_3.json",
+          "athena/results/matched_a6000_chi_s0_t3_6.json",
+          "athena/results/matched_a6000_chi_s0_t6_8.json",
+          "athena/results/chi_s0_t8_10.json"
+        ],
+        "successes": 422,
+        "trials": 500,
+        "success_rate": 0.844,
+        "success_rate_wilson_95pct_ci": [
+          0.809585245166297,
+          0.8731692085961551
+        ],
+        "tasks_covered": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "complete_ten_task_suite": true,
+        "per_task": {
+          "0": {
+            "successes": 37,
+            "trials": 50,
+            "success_rate": 0.74
+          },
+          "1": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          },
+          "2": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "3": {
+            "successes": 23,
+            "trials": 50,
+            "success_rate": 0.46
+          },
+          "4": {
+            "successes": 45,
+            "trials": 50,
+            "success_rate": 0.9
+          },
+          "5": {
+            "successes": 38,
+            "trials": 50,
+            "success_rate": 0.76
+          },
+          "6": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "7": {
+            "successes": 39,
+            "trials": 50,
+            "success_rate": 0.78
+          },
+          "8": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "9": {
+            "successes": 47,
+            "trials": 50,
+            "success_rate": 0.94
+          }
+        },
+        "parameters": 20137352,
+        "latency_ms_batch1_median_across_shards": 36.43688949523494,
+        "latency_ms_batch1_by_shard": [
+          36.27028827089816,
+          40.314503256231546,
+          33.96112107671797,
+          36.60349071957171
+        ],
+        "gpus": [
+          "NVIDIA RTX A6000"
+        ]
+      },
+      "conventional": {
+        "architecture": "conventional",
+        "shards": [
+          "athena/results/conventional_s0_t0_3.json",
+          "athena/results/matched_a6000_conv_s0_t3_6.json",
+          "athena/results/matched_a6000_conv_s0_t6_8.json",
+          "athena/results/conventional_s0_t8_10.json"
+        ],
+        "successes": 451,
+        "trials": 500,
+        "success_rate": 0.902,
+        "success_rate_wilson_95pct_ci": [
+          0.8727939491335183,
+          0.9250760811353939
+        ],
+        "tasks_covered": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "complete_ten_task_suite": true,
+        "per_task": {
+          "0": {
+            "successes": 38,
+            "trials": 50,
+            "success_rate": 0.76
+          },
+          "1": {
+            "successes": 40,
+            "trials": 50,
+            "success_rate": 0.8
+          },
+          "2": {
+            "successes": 47,
+            "trials": 50,
+            "success_rate": 0.94
+          },
+          "3": {
+            "successes": 44,
+            "trials": 50,
+            "success_rate": 0.88
+          },
+          "4": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "5": {
+            "successes": 44,
+            "trials": 50,
+            "success_rate": 0.88
+          },
+          "6": {
+            "successes": 49,
+            "trials": 50,
+            "success_rate": 0.98
+          },
+          "7": {
+            "successes": 46,
+            "trials": 50,
+            "success_rate": 0.92
+          },
+          "8": {
+            "successes": 50,
+            "trials": 50,
+            "success_rate": 1
+          },
+          "9": {
+            "successes": 43,
+            "trials": 50,
+            "success_rate": 0.86
+          }
+        },
+        "parameters": 20138632,
+        "latency_ms_batch1_median_across_shards": 6.3683628919534385,
+        "latency_ms_batch1_by_shard": [
+          6.419362020678818,
+          6.317363763228059,
+          6.737252362072468,
+          6.2960464507341385
+        ],
+        "gpus": [
+          "NVIDIA RTX A6000"
+        ]
+      },
+      "comparison": {
+        "chi_minus_conventional_success_rate": -0.05800000000000005,
+        "chi_to_conventional_parameter_ratio": 0.999936440568555,
+        "chi_to_conventional_latency_ratio": 5.7215472977009085,
+        "same_single_gpu_class": true,
+        "same_tasks": true,
+        "hardware_controlled_complete": true,
+        "gpu_classes": [
+          "NVIDIA RTX A6000"
+        ],
+        "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+      }
+    }
+  },
+  "matched_architecture_comparison": {
+    "chi_minus_conventional_success_rate": -0.04600000000000004,
+    "chi_to_conventional_parameter_ratio": 0.999936440568555,
+    "chi_to_conventional_latency_ratio": 5.509536998165355,
+    "same_single_gpu_class": false,
+    "same_tasks": true,
+    "hardware_controlled_complete": false,
+    "gpu_classes": [
+      "NVIDIA A30",
+      "NVIDIA RTX A6000"
+    ],
+    "protocol": "Same skeleton, seed, cache, dimensions, action head, canonical initial states, task set, trial count, step cap, and Athena runner. The block family is the controlled difference. hardware_controlled_complete must be true before interpreting the comparison as a complete hardware-controlled estimate."
+  },
+  "conventional_multiseed": {
+    "complete_seeds": 1,
+    "success_rates": [
+      0.898
+    ],
+    "mean_success_rate": 0.898,
+    "population_std_success_rate": 0.0
+  }
+}

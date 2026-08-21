@@ -16,13 +16,13 @@ coefficient-level payoff remain incomplete.
 Estimated acceptance bands for the tailored versions after the matched seed-0 control and the
 three-checkpoint all-layer Athena audit:
 
-- VLM4RWD: 55 to 70 percent. Excellent fit across VLA architecture, grounded deployment,
-  causal analysis, and failure diagnosis. The newly exposed hardware sensitivity and incomplete
-  task-level counterfactual grounding are material fit risks.
-- Neural Network Artifacts extended abstract: 60 to 75 percent. The exact all-layer reconstruction
+- VLM4RWD: 50 to 65 percent. Excellent fit across VLA architecture, grounded deployment,
+  causal analysis, and failure diagnosis. The nonzero matched capability cost and incomplete
+  task-level counterfactual grounding are material risks.
+- Neural Network Artifacts extended abstract: 55 to 70 percent. The exact all-layer reconstruction
   and trained-checkpoint audit are unusually direct weight-artifact evidence, bounded by the lack
   of a successful selective coefficient edit.
-- Robot Learning Workshop: 35 to 50 percent. Strong robotics evidence and an honest specialist
+- Robot Learning Workshop: 30 to 45 percent. Strong robotics evidence and an honest specialist
   Physical-AI result, but no zero-shot, cross-task, or cross-environment generalization.
 
 The VLM4RWD version is the best single submission today. Neural Network Artifacts is the strongest
@@ -32,11 +32,10 @@ alternative if the author wants the paper judged primarily as a model-weights co
 
 1. The $93.7\%\pm0.8\%$ three-seed result uses the published $280$-step, $50$-trial-per-task
    protocol and is supported by 1,500 closed-loop rollouts.
-2. The same-skeleton models differ by only 1,280 parameters, or 0.006 percent. The first mixed-GPU
-   Athena pass reaches 449 of 500 for the conventional twin and 426 of 500 for the rational model.
-   Because the rational model is ahead on A6000-assigned tasks and far behind on A30-assigned tasks,
-   all-task same-hardware matrices are running. This is evidence of a real portability risk, not yet
-   a clean estimate of architectural capability cost.
+2. The same-skeleton models differ by only 1,280 parameters, or 0.006 percent. Complete all-task
+   controls reach 448 of 500 conventional versus 426 rational on A30, and 451 versus 422 on A6000.
+   The seed-0 rational deficit is 4.4 to 5.8 points and misses the predeclared three-point
+   noninferiority margin on both platforms. Task 3 accounts for 21 lost successes in each matrix.
 3. The operator claim is not based only on an architecture diagram. The trained checkpoint is
    mechanically audited, and representative rational and bilinear branches are reconstructed.
 4. The exact attention calculation is mathematically specific and scales through a reduced Gram.
@@ -53,10 +52,9 @@ alternative if the author wants the paper judged primarily as a model-weights co
 
 ## Main rejection risks
 
-1. **The matched capability result is hardware-confounded.** The mixed Athena pass shows a
-   4.6-point rational deficit and a large architecture-by-GPU interaction. Same-A30, same-A6000,
-   and same-A40 matrices are queued or running. Conventional seeds 1 and 2 are also still needed
-   for a three-seed noninferiority claim.
+1. **The matched capability cost is nonzero at seed 0.** The rational policy trails by 4.4 points
+   on A30 and 5.8 on A6000. Conventional seeds 1 and 2 are running and are required before treating
+   this as an across-training-seed estimate. Partial-conversion controls must localize the task-3 gap.
 2. **Incomplete task-level language grounding.** The longer paired rollout shows a replicated
    directional response to the renamed object, but only 28 to 33 percent of counterfactual runs end
    closer to it and the original one-step screen remains weak. The conventional control is stronger,
@@ -85,10 +83,9 @@ alternative if the author wants the paper judged primarily as a model-weights co
 
 ### Tier 1
 
-1. Finish the same-hardware capability matrices first. Then finish conventional seeds 1 and 2,
-   their 1,000 canonical rollouts, and the optimized-inference profiles. Report the mixed-GPU
-   discrepancy even if the controlled rerun is favorable, and retain the predeclared
-   noninferiority margin.
+1. Finish conventional seeds 1 and 2 and their 1,000 canonical rollouts. The same-hardware
+   seed-0 matrices are complete and reject the predeclared three-point noninferiority claim at
+   this seed. Use partial-conversion controls to localize the task-3 deficit.
 2. Repeat the causal visual-subspace intervention across checkpoints with paired canonical trials
    and confidence intervals. The separate three-checkpoint instruction intervention and
    conventional control are complete.
@@ -114,10 +111,10 @@ alternative if the author wants the paper judged primarily as a model-weights co
 
 ## Submission recommendation
 
-Neural Network Artifacts is the safest target if the portfolio must be ranked before the
-same-hardware matrix completes, because the exact-audit result is unaffected by the capability
-confound. VLM4RWD becomes the first choice again if the controlled capability result is stable and
-the three-seed grounding result remains consistent. Finish the live Athena jobs before freezing
-either PDF, then publish the anonymous artifact and run a final citation audit. Do not submit
+Neural Network Artifacts is the safest target because its central exact-audit result is unaffected
+by the nonzero capability cost. VLM4RWD remains a strong second choice because the grounding
+failure analysis fits its call, while Robot Learning Workshop has the largest theme mismatch.
+Finish the live multi-seed and surgery jobs before the submission freeze if time permits, then
+publish the anonymous artifact and run a final citation audit. Do not submit
 the same empirical paper concurrently to multiple NeurIPS workshops without written permission from
 every affected workshop chair.

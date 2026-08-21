@@ -43,10 +43,10 @@ state, and action coordinates accessible from the weights. A mechanical audit fi
 incompatible operation, and local reconstructions agree near the float32 precision floor.
 On all ten LIBERO-Object tasks, the $20.1$M-parameter policy reaches $92.8\%\pm2.1\%$ with a
 ViT encoder and $93.7\%\pm0.8\%$ with a convolutional encoder under the published three-seed
-protocol. A same-skeleton conventional twin differs by only $0.006\%$ in parameters. An initial
-mixed-device replication gives it $89.8\%$, versus $85.2\%$ for the rational checkpoint, so a
-same-device capability matrix is required. Compilation reduces the same-A30 latency ratio from
-$5.33\times$ in eager mode to $1.74\times$.
+protocol. A same-skeleton conventional twin differs by only $0.006\%$ in parameters. Complete
+same-hardware replications find a $4.4$-point rational deficit on A30 and $5.8$ points on A6000.
+Compilation reduces the latency ratio from $3.49$--$5.33\times$ in eager mode to
+$1.73$--$1.74\times$ across the two GPU classes.
 We derive an exact weight-based decomposition of softmax-free attention and reconstruct every
 attention module in three checkpoints with worst relative error $2.56\times10^{-7}$. All $36$
 primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
@@ -54,8 +54,8 @@ median fidelity ratio $2.44$. At the policy's visual bond, retaining $64$ of $38
 ranked dimensions preserves $18/20$ closed-loop successes, compared with $19/20$ for the full
 representation and $0/20$ for a random subspace. A $300$-pair instruction intervention across
 three checkpoints shows consistent language-driven motion but incomplete scene-prior override.
-The evidence establishes competitive specialist capability and exact layerwise access, not a
-settled architecture-level capability gap, broad generalization, compute parity,
+The evidence establishes competitive specialist capability and exact layerwise access while
+exposing nonzero seed-0 capability and systems costs. It does not establish broad generalization
 or selective coefficient-level repair.
 \end{abstract}
 
@@ -107,8 +107,8 @@ Our contributions are:
   \item We evaluate two fully rational $20.1$M-parameter policies under a protocol aligned with
         published LIBERO-Object results. The strongest single architecture reaches
         $93.7\%\pm0.8\%$ over three seeds, and a three-checkpoint ensemble reaches $96.2\%$.
-        A same-skeleton conventional twin differs by only $0.006\%$ in parameters. Its initial
-        mixed-device comparison motivates the controlled hardware study reported below.
+        A same-skeleton conventional twin differs by only $0.006\%$ in parameters. Two complete
+        same-hardware replications place the seed-0 capability cost between $4.4$ and $5.8$ points.
   \item We mechanically audit the real trained policy and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
@@ -132,8 +132,8 @@ a coefficient-level editing interface.
 \textbf{Conjunct} & \textbf{Current evidence} & \textbf{Decisive missing test} \\
 \midrule
 Small capability cost &
-The rational policy reaches $92.8\%\pm2.1\%$ over three seeds, and a conventional twin differs by $0.006\%$ in parameters. &
-Complete the same-device conventional seeds and partial-conversion controls, then separate capability from runtime cost. \\
+The rational policy reaches $92.8\%\pm2.1\%$ over three seeds. A matched seed-0 twin shows a $4.4$ to $5.8$ point cost across two GPU classes. &
+Complete conventional seeds 1 and 2 and partial-conversion controls, then localize the task-specific gap. \\
 Weight-only diagnosis &
 Exact layerwise attention decomposition consistently beats fixed random subspaces. &
 Recover a concrete behavioral condition from weights before viewing its test rollouts. \\
@@ -333,15 +333,17 @@ consistent in this three-seed comparison.
 The same-skeleton conventional control replaces bilinear attention, bilinear FFNs, and rational
 normalization with softmax attention, SwiGLU, and RMSNorm. It keeps the observations, token
 layout, demonstrations, optimizer, updates, seed, action decoder, canonical initial states, and
-trial budget fixed. In the initial Athena pass, the conventional policy succeeds in $449/500$
-trials and the rational policy in $426/500$. The rational model has
+trial budget fixed. On A30, the conventional policy succeeds in $448/500$ trials and the rational
+policy in $426/500$. On A6000, they reach $451/500$ and $422/500$. The rational model has
 $20{,}137{,}352$ parameters and the conventional model has $20{,}138{,}632$, a difference of
-$0.006\%$. The pass assigns different task groups to A6000 and A30 hardware, and the sign of the
-architecture difference changes between those groups. We therefore report it as a portability
-warning rather than a clean capability-cost estimate. On one A30, eager batch-one latency is
-$38.05$ ms for the rational model and $7.14$ ms for the conventional control. Compilation reduces
-these to $1.52$ and $0.88$ ms, a $1.74\times$ gap. At batch $128$, rational training is
-$3.12\times$ slower and uses $1.63\times$ the peak allocated memory.
+$0.006\%$. The rational deficit is therefore $4.4$ and $5.8$ points. A stratified trial bootstrap
+gives intervals of $[-8.0,-0.8]$ and $[-9.4,-2.2]$ points, respectively. These intervals quantify
+the fixed-checkpoint canonical states, not across-seed uncertainty. Task 3 accounts for $21$ of
+the lost successes on both platforms. On one A30, eager batch-one latency is $38.05$ ms for the
+rational model and $7.14$ ms for the conventional control. Compilation reduces these to $1.52$
+and $0.88$ ms, a $1.74\times$ gap. At batch $128$, rational training is $3.12\times$ slower and
+uses $1.63\times$ the peak allocated memory. A6000 profiling independently reduces the eager
+$3.49\times$ gap to $1.73\times$ after compilation.
 
 Elementwise averaging of the three convolutional action predictions reaches $96.2\%$. This is
 $2.3$ points above the mean of its members and $1.2$ points above the strongest member.
@@ -487,10 +489,10 @@ weight-derived terms can localize and selectively repair that shortcut.
 % ============================================================================
 
 \paragraph{1. Complete the controlled conversion study.}
-Finish the same-hardware seed-0 matrix, then complete seeds 1 and 2, add partial-conversion
-controls, and retain the predeclared three-point noninferiority margin.
+Complete seeds 1 and 2, add partial-conversion controls, and retain the predeclared three-point
+noninferiority margin. Seed 0 misses that margin on both tested GPU classes.
 Report FLOPs, training throughput, memory, eager latency, and optimized latency separately.
-The current evidence supports strong rational capability, not a settled conversion-cost estimate.
+The current evidence supports strong rational capability and a modest nonzero seed-0 cost.
 
 \paragraph{2. Direct coefficient surgery.}
 Our first preregistered four-task screen directly edits query, key, and value columns selected
@@ -571,8 +573,8 @@ weight-derived analysis now crosses individual attention layers, and a compact c
 subspace preserves almost all tested behavior.
 
 Five limits determine the next version of the paper. First, the same-skeleton control has one
-completed seed, a hardware-confounded capability comparison, and a residual compiled-runtime
-tax. Second, the
+completed seed, a $4.4$ to $5.8$ point capability gap, and a residual compiled-runtime tax.
+Second, the
 benchmark is one narrow suite and counterfactual instructions do not fully reroute the policy.
 Third, exact
 decomposition is layerwise rather than end to end. Fourth, the closed-loop causal intervention
@@ -581,9 +583,9 @@ direct coefficient-edit screen fails its selectivity gate, so no behaviorally va
 edit has yet been established.
 
 The defensible conclusion is therefore narrow. Polynomial and rational restrictions do not
-prevent a compact policy from reaching competitive LIBERO-Object capability. The current
-matched control does not yet isolate architecture from device sensitivity. The restrictions
-also provide a precise
+prevent a compact policy from reaching competitive LIBERO-Object capability. The matched
+seed-0 control isolates a modest nonzero cost that now requires multi-seed explanation. The
+restrictions also provide a precise
 weight-derived analysis surface. Establishing multi-seed conversion cost, broad
 language-grounded control, semantic diagnosis from weights, and a decomposition-enabled repair
 requires the controlled experiments in Section~\ref{sec:next}. If all three conjuncts in
@@ -695,10 +697,10 @@ trials, and a longer horizon.
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.96\textwidth]{../paper_figures/appendix_matched_architecture_cost.pdf}
-\caption{\textbf{The initial capability pass is hardware-confounded, while the systems control
-is not.} The mixed-device evaluation gives $449/500$ conventional and $426/500$ rational
-successes, with a $0.006\%$ parameter difference. On the same A30, compilation narrows the
-batch-one latency ratio from $5.33\times$ to $1.74\times$.}
+\caption{\textbf{Conversion cost is modest but nonzero, and compilation narrows the systems
+gap.} Complete same-hardware evaluations give $89.6\%$ versus $85.2\%$ on A30 and $90.2\%$
+versus $84.4\%$ on A6000, conventional then rational. Parameters differ by $0.006\%$.
+Compilation narrows the batch-one latency ratio to $1.73$--$1.74\times$ on both GPUs.}
 \label{fig:matched-cost}
 \end{figure}
 

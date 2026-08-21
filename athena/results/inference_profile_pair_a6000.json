@@ -1,0 +1,26 @@
+{
+  "gpu": "NVIDIA RTX A6000",
+  "warmup_iters": 20,
+  "profile_iters": 200,
+  "conventional": {
+    "architecture": "conventional",
+    "parameters": 20138632,
+    "eager_latency_ms_batch1": 7.397613129578531,
+    "compiled_latency_ms_batch1": 0.7489701034501195,
+    "compiled_to_eager_ratio": 0.10124483266845168,
+    "compile_and_warmup_elapsed_s": 16.51048321882263,
+    "compile_error": null
+  },
+  "chi": {
+    "architecture": "chi",
+    "parameters": 20137352,
+    "eager_latency_ms_batch1": 25.811664503999054,
+    "compiled_latency_ms_batch1": 1.296099480241537,
+    "compiled_to_eager_ratio": 0.05021371171319578,
+    "compile_and_warmup_elapsed_s": 23.253385527059436,
+    "compile_error": null
+  },
+  "eager_chi_to_conventional_latency_ratio": 3.489188208666116,
+  "compiled_chi_to_conventional_latency_ratio": 1.730508967275295,
+  "scope": "Full image, instruction, state, backbone, and linear action-head forward pass at batch one on the same checkpoint pair and physical GPU."
+}

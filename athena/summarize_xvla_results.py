@@ -43,6 +43,10 @@ def aggregate_capability(paths: list[Path]) -> dict[str, Any] | None:
         by_task.setdefault(int(episode["task_index"]), []).append(bool(episode["success"]))
     successes = sum(int(episode["success"]) for episode in episodes)
     trials = len(episodes)
+    tasks_covered = sorted(by_task)
+    complete_ten_task_suite = tasks_covered == list(range(10)) and all(
+        len(by_task[task]) == 50 for task in tasks_covered
+    )
     return {
         "architecture": architecture,
         "shards": [str(path) for path in paths],
@@ -50,6 +54,8 @@ def aggregate_capability(paths: list[Path]) -> dict[str, Any] | None:
         "trials": trials,
         "success_rate": successes / trials,
         "success_rate_wilson_95pct_ci": wilson_interval(successes, trials),
+        "tasks_covered": tasks_covered,
+        "complete_ten_task_suite": complete_ten_task_suite,
         "per_task": {
             str(task): {
                 "successes": sum(values),
@@ -67,6 +73,38 @@ def aggregate_capability(paths: list[Path]) -> dict[str, Any] | None:
         ],
         "gpus": sorted({str(profile["gpu"]) for profile in profiles}),
     }
+
+
+def same_hardware_capability_paths(
+    results_dir: Path, architecture: str, hardware: str
+) -> list[Path]:
+    """Prefer tagged reruns, then reuse nonoverlapping base shards from the same GPU."""
+    selected_by_tasks: dict[tuple[int, ...], Path] = {}
+    tagged_architecture = "conv" if architecture == "conventional" else architecture
+    candidates = [
+        *sorted(
+            results_dir.glob(
+                f"matched_{hardware}_{tagged_architecture}_s0_t*.json"
+            )
+        ),
+        *sorted(results_dir.glob(f"{architecture}_s0_t*.json")),
+    ]
+    hardware_token = hardware.lower().replace(" ", "")
+    for path in candidates:
+        result = load_json(path)
+        gpu = str(result["profile"]["gpu"]).lower().replace(" ", "")
+        if hardware_token not in gpu:
+            continue
+        task_key = tuple(
+            sorted(
+                {
+                    int(episode["task_index"])
+                    for episode in result["capability"]["episodes"]
+                }
+            )
+        )
+        selected_by_tasks.setdefault(task_key, path)
+    return [selected_by_tasks[key] for key in sorted(selected_by_tasks)]
 
 
 def aggregate_causal(paths: list[Path]) -> dict[str, Any] | None:
@@ -157,6 +195,13 @@ def compare_capability(
     chi_gpus = set(chi["gpus"])
     conventional_gpus = set(conventional["gpus"])
     same_single_gpu_class = len(chi_gpus) == 1 and chi_gpus == conventional_gpus
+    same_tasks = chi["tasks_covered"] == conventional["tasks_covered"]
+    hardware_controlled_complete = (
+        same_single_gpu_class
+        and same_tasks
+        and chi["complete_ten_task_suite"]
+        and conventional["complete_ten_task_suite"]
+    )
     return {
         "chi_minus_conventional_success_rate": (
             chi["success_rate"] - conventional["success_rate"]
@@ -169,12 +214,14 @@ def compare_capability(
             / conventional["latency_ms_batch1_median_across_shards"]
         ),
         "same_single_gpu_class": same_single_gpu_class,
+        "same_tasks": same_tasks,
+        "hardware_controlled_complete": hardware_controlled_complete,
         "gpu_classes": sorted(chi_gpus | conventional_gpus),
         "protocol": (
             "Same skeleton, seed, cache, dimensions, action head, canonical initial states, "
             "task set, trial count, step cap, and Athena runner. The block family is the "
-            "controlled difference. same_single_gpu_class must be true before interpreting "
-            "the comparison as hardware-controlled."
+            "controlled difference. hardware_controlled_complete must be true before "
+            "interpreting the comparison as a complete hardware-controlled estimate."
         ),
     }
 
@@ -212,14 +259,23 @@ def main() -> None:
             if (args.results_dir / "inference_profile_pair.json").exists()
             else None
         ),
+        "matched_inference_profile_a6000": (
+            load_json(args.results_dir / "inference_profile_pair_a6000.json")
+            if (args.results_dir / "inference_profile_pair_a6000.json").exists()
+            else None
+        ),
     }
     result["same_hardware_capability"] = {}
     for hardware in ("a30", "a6000", "a40"):
         chi_hardware = aggregate_capability(
-            sorted(args.results_dir.glob(f"matched_{hardware}_chi_s0_t*.json"))
+            same_hardware_capability_paths(args.results_dir, "chi", hardware)
         )
         conventional_hardware = aggregate_capability(
-            sorted(args.results_dir.glob(f"matched_{hardware}_conv_s0_t*.json"))
+            same_hardware_capability_paths(
+                results_dir=args.results_dir,
+                architecture="conventional",
+                hardware=hardware,
+            )
         )
         if chi_hardware is not None or conventional_hardware is not None:
             result["same_hardware_capability"][hardware] = {

@@ -13,7 +13,7 @@ safe authorization.
 Recommended order:
 
 1. Neural Network Artifacts for the strongest current evidence-to-call match.
-2. VLM4RWD for the strongest overall topical fit once the controlled capability matrix closes.
+2. VLM4RWD for the strongest overall topical fit, with the nonzero matched cost stated directly.
 3. Robot Learning Workshop for the broadest robotics audience, with a real theme mismatch on
    zero-shot generalization.
 
