@@ -46,8 +46,9 @@ Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Obje
 $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
 prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
 On a separate three-checkpoint convolutional instantiation, independent reconstruction covers all
-$4{,}608$ joint-attention head-input cases
-with worst relative error $6.36\times10^{-16}$. Exact-attention records naming the same three ViT
+$4{,}608$ joint-attention head-input cases, all $384$ joint-FFN module-input cases, and all $384$
+complete joint-block input cases. The respective worst relative errors are
+$6.36\times10^{-16}$, $1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Exact-attention records naming the same three ViT
 checkpoint artifacts derive the softmax-free attention decomposition and numerically replay every
 attention module on one fixed corrected cached input per checkpoint, with worst relative error
 $2.016119\times10^{-7}$. In a seed-$0$
@@ -180,7 +181,8 @@ residual, and normalization operations update this pair. The model therefore kee
 input-specific rescaling while remaining exactly representable as a rational tensor network.
 Training and deployment use $r$ itself. The exactness claims below therefore concern faithful
 evaluation of the deployed rational computation, not uniform agreement with RMSNorm.
-Appendix~\ref{app:rational-scope} quantifies that distinction.
+Appendix~\ref{app:rational-scope} certifies pole-free denominators and deployed arithmetic
+fidelity while retaining that boundary.
 
 \begin{figure}[H]
 \centering
@@ -347,14 +349,25 @@ identity is input-general. The one-input-per-checkpoint records provide a layerw
 replay audit, not an exact end-to-end policy decomposition.
 
 We separately certify three convolutional checkpoints from the same rational architecture family.
-Their vision stacks contain no attention, so we independently
-rebuild all eight joint modules and all twelve heads per module from the saved weights. Sixteen
-deterministically selected cache inputs per checkpoint yield $384$ module cases and $4{,}608$
-head-input cases. Every output is finite and the worst relative $\ell_2$ error is
-$6.36\times10^{-16}$, far below the frozen $10^{-6}$ gate. This same-checkpoint certificate
-covers the joint-attention equation at each normalized layer input. It does not rebuild the
-convolutional stem, feed-forward blocks, residual composition, final normalization, or action
-head as one end-to-end contraction.
+Their vision stacks contain no attention, so we independently rebuild all eight joint modules and
+all twelve heads per module from the saved weights. Sixteen deterministically selected cache
+inputs per checkpoint yield $4{,}608$ head-input cases. Every output is finite and the worst
+relative $\ell_2$ error is $6.36\times10^{-16}$, below the frozen $10^{-6}$ gate. On the same
+inputs, independent CP-factor evaluation covers all $384$ joint-FFN module-input cases at worst
+relative error $1.3871\times10^{-15}$ against a $10^{-10}$ gate. Independent complete-block
+equations cover all $384$ block-input cases at worst relative error $1.5024\times10^{-7}$ against
+a $10^{-4}$ gate. The complete-block comparison crosses a deployed PyTorch float32 block call and
+a NumPy float64 reconstruction. It is input-conditioned and per-block, not a sequential
+end-to-end reconstruction of the joint transformer or policy.
+
+A separately frozen ViT audit partitions joint attention into vision, instruction, robot-state,
+and action-query source tokens. Across $128$ deterministic, official-task-balanced inputs for each
+of the three capability checkpoints, all $36{,}864$ head-input cases and $147{,}456$ source-group evaluations
+are finite, with worst reconstruction error $5.0741\times10^{-7}$ against a $10^{-6}$ gate.
+Across the $3{,}072$ projected module-input cases, mean coherent-energy shares are $67.7\%$ vision,
+$19.2\%$ robot state, $7.9\%$ action query, and $5.1\%$ instruction. These input-conditioned
+magnitudes are descriptive rather than causal importance. Familiar-prompt permutations are also
+descriptive and do not establish grounding or closed-loop success.
 
 Naively materializing the real width-$384$ coefficient tensor would require approximately
 $3.2\times10^{15}$ values. We instead contract the CP factors into an $O(d^2)$ reduced Gram.
@@ -469,7 +482,7 @@ states, actions, and resized images matched exactly for every frame.
 The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
 behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
 verifiers independently recompute the capability totals, visual-bottleneck counts and intervals,
-and the convolutional-attention and RationalNorm certificate decisions. Preflight checks
+and the attention, FFN, complete-block, modality-partition, and RationalNorm certificate decisions. Preflight checks
 fail if canonical initial states cannot be loaded.
 
 % ============================================================================
@@ -612,24 +625,27 @@ is nonfinite. Comparing deployed float32 normalization with an otherwise identic
 recomputes only RationalNorm scales in float64, the largest checkpoint-level primary metric,
 defined as the maximum of normalized- and physical-action NRMSE, is
 $2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
+This primary certificate concerns pole-free denominators and floating-point fidelity to the
+deployed rational operator. It does not claim uniform agreement with exact RMS scaling or measure
+matched alternative-normalizer runtime overhead.
 
-The certificate also bounds what the operator approximates. Observed normalized mean-square ratios $v$ span
-$1.66\times10^{-4}$ to $17.17$, outside the nominal fit interval $[0.1,10]$. Across site-checkpoint
-pairs, the minimum coverages are $60.018\%$ in that interval and $60.022\%$ with
-rational-versus-exact-RMS scale error at most $3.4\%$. The frozen $99\%$ secondary coverage gates
-therefore do not pass. The positive claim is therefore global absence of nonnegative denominator
-poles and cache-conditioned floating-point fidelity to the deployed rational operator,
-not uniform agreement with exact RMS scaling. Matched alternative-normalizer runtime overhead
-remains unmeasured.
+The joint reconstruction ladder therefore extends from individual attention heads through FFNs to
+complete joint blocks on the same fixed inputs. The full-block certificate remains per-block and
+does not sequentially reconstruct the full transformer. The ViT source-partition audit is likewise
+layerwise and input-conditioned. Figure~\ref{fig:structural-certificates} reports the frozen
+numerical gates and the descriptive depth profile without assigning causal importance.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.98\textwidth]{../paper_figures/appendix_structural_certificates.pdf}
-\caption{\textbf{Frozen structural certificates on three independent convolutional checkpoints.}
-Panels (a) and (b) pass their primary gates with large margins. Panel (a) reconstructs all
-$4{,}608$ audited joint-attention head-input cases. Panel (b) compares deployed float32
-normalization with an otherwise identical pass that recomputes only RationalNorm scales in float64. Panel (c) reports the
-separately frozen exact-RMS approximation coverage, which does not pass its $99\%$ secondary gate.}
+\caption{\textbf{Frozen reconstruction ladder and descriptive ViT source partition.}
+Panel (a) reports observed-to-gate ratios for independent Conv attention, joint-FFN, and complete
+joint-block reconstruction, plus the ViT source-partition identity and primary RationalNorm
+action fidelity. All plotted primary numerical
+gates pass. Panel (b) shows descriptive mean coherent-energy shares after the attention output
+projection across $384$ checkpoint-input cases per joint block. The depth trend is not a causal
+importance or grounding result. Complete-block replay is per-block rather than sequential
+end-to-end policy reconstruction.}
 \label{fig:structural-certificates}
 \end{figure}
 

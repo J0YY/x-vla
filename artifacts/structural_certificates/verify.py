@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import cmath
 import hashlib
 import json
 import math
+import struct
 import sys
 from pathlib import Path
 from typing import Any
@@ -80,10 +83,13 @@ def verify_manifest_hashes(root: Path, manifest: dict[str, Any]) -> dict[str, st
     require_equal(
         "manifest schema",
         manifest.get("schema"),
-        "anonymous-structural-certificate-artifact-v1",
+        "anonymous-structural-certificate-artifact-v2",
     )
     entries = manifest.get("files")
-    require(isinstance(entries, list) and len(entries) == 8, "manifest must identify eight files")
+    require(
+        isinstance(entries, list) and len(entries) == 22,
+        "manifest must identify twenty-two files",
+    )
     hashes: dict[str, str] = {}
     for entry in entries:
         require(isinstance(entry, dict), "manifest file entry is not an object")
@@ -110,6 +116,126 @@ def error_value(label: str, row: dict[str, Any]) -> float:
     return relative
 
 
+SOURCE_SNAPSHOTS = {
+    "xvla/models/vla.py": "athena/results/exact_attention_frozen_sources/xvla_models_vla.py.b64",
+    "xvla/models/vit.py": "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64",
+}
+
+CONV_CACHE_SHA256 = "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662"
+CONV_PROVENANCE_JOB_ID = "830988"
+CONV_PROVENANCE_CONTENT_SHA256 = "01bc724b9bf8c158b983e34b82bbb40dce9dba2cb86dd9be2a5bf8910be341c7"
+CONV_METADATA_SHA256 = "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42"
+CONV_TASK_PERMUTATION = {
+    "0": 9,
+    "1": 4,
+    "2": 1,
+    "3": 3,
+    "4": 0,
+    "5": 7,
+    "6": 2,
+    "7": 6,
+    "8": 5,
+    "9": 8,
+}
+CONV_CHECKPOINT_SHA256 = {
+    0: "4f9f3eef4bd661934b7c66af117995f02bdfc777368f52464f03d229ccb3e72d",
+    1: "9d8df0c30583222490536b21aac040b47c5f89556aa23c08265605f7c2bc8cb6",
+    2: "fc2e0bfa1a2ea2737ed0af13b168cd2562e4b0e36b159d0f98f3c5038131ace5",
+}
+CONV_SELECTION_SEQUENCE_SHA256 = {
+    0: "d167baee5b55cb974f82f28045fc448e0478c456a9a5fe6dc9acc75369e0acfe",
+    1: "38c763da8371744f8634bf816b4431818ce4c1e3d16342376df0210c7a78b33b",
+    2: "0128f5e8940ad7e51a4ff05faafa8c3aa01c0eaf75c159a3de46584ac156377c",
+}
+
+
+def verify_conv_input_identity(
+    label: str,
+    identity: dict[str, Any],
+    inputs: Any,
+    seed: int,
+) -> list[dict[str, Any]]:
+    """Bind the three Conv certificates to one frozen checkpoint/cache input set."""
+    require_equal(f"{label} checkpoint SHA", identity.get("checkpoint_sha256"), CONV_CHECKPOINT_SHA256[seed])
+    require_equal(f"{label} cache SHA", identity.get("cache_sha256"), CONV_CACHE_SHA256)
+    require_equal(f"{label} provenance job", str(identity.get("provenance_job_id")), CONV_PROVENANCE_JOB_ID)
+    require_equal(
+        f"{label} provenance content SHA",
+        identity.get("provenance_canonical_content_sha256"),
+        CONV_PROVENANCE_CONTENT_SHA256,
+    )
+    metadata = identity.get("dataset_metadata")
+    require(isinstance(metadata, dict), f"{label}: dataset metadata is absent")
+    require_equal(f"{label} metadata SHA", metadata.get("metadata_sha256"), CONV_METADATA_SHA256)
+    require_equal(
+        f"{label} task permutation",
+        metadata.get("dataset_to_official_task"),
+        CONV_TASK_PERMUTATION,
+    )
+    require(isinstance(inputs, list) and len(inputs) == 16, f"{label}: expected 16 inputs")
+    require_equal(
+        f"{label} input ranks",
+        [int(row.get("selection_rank", -1)) for row in inputs],
+        list(range(16)),
+    )
+    selections = [row.get("selection_sha256") for row in inputs]
+    require(
+        all(isinstance(value, str) and len(value) == 64 for value in selections),
+        f"{label}: malformed selection identities",
+    )
+    require_equal(f"{label} sorted selections", selections, sorted(selections))
+    sequence_digest = hashlib.sha256(("\n".join(selections) + "\n").encode("ascii")).hexdigest()
+    require_equal(
+        f"{label} selection sequence SHA",
+        sequence_digest,
+        CONV_SELECTION_SEQUENCE_SHA256[seed],
+    )
+    for index, row in enumerate(inputs):
+        for field in (
+            "canonical_record_sha256",
+            "image_sha256",
+            "state_sha256",
+            "action_sha256",
+        ):
+            value = row.get(field)
+            require(
+                isinstance(value, str) and len(value) == 64,
+                f"{label} input {index}: malformed {field}",
+            )
+    return inputs
+
+
+def verify_source_identity(
+    root: Path,
+    label: str,
+    source_map: Any,
+) -> None:
+    require(isinstance(source_map, dict) and source_map, f"{label}: source map is absent")
+    for relative, expected in source_map.items():
+        require(
+            isinstance(relative, str)
+            and isinstance(expected, str)
+            and len(expected) == 64,
+            f"{label}: malformed source identity",
+        )
+        source = safe_path(root, relative)
+        if source.is_file() and file_sha256(source) == expected:
+            continue
+        snapshot_relative = SOURCE_SNAPSHOTS.get(relative)
+        require(snapshot_relative is not None, f"{label}: missing or stale source {relative}")
+        snapshot = safe_path(root, snapshot_relative)
+        try:
+            encoded = "".join(snapshot.read_text(encoding="ascii").split())
+            payload = base64.b64decode(encoded, validate=True)
+        except (OSError, UnicodeError, binascii.Error) as exc:
+            raise VerificationError(f"{label}: invalid source snapshot {snapshot}") from exc
+        require_equal(
+            f"{label} snapshot source SHA-256 {relative}",
+            hashlib.sha256(payload).hexdigest(),
+            expected,
+        )
+
+
 def verify_conv(
     root: Path,
     config: dict[str, Any],
@@ -123,22 +249,37 @@ def verify_conv(
     require(isinstance(protocol, dict), "Conv summary protocol is absent")
     gate = float(config["gate"]["relative_l2_error_at_most"])
     require_close("Conv protocol gate", protocol.get("relative_l2_gate"), gate)
+    require_equal("Conv protocol full inputs", protocol.get("full_inputs_per_checkpoint"), 16)
+    require_equal("Conv protocol joint modules", protocol.get("joint_modules_per_input"), 8)
+    require_equal("Conv protocol heads", protocol.get("heads_per_module"), 12)
+    require_equal("Conv protocol precision", protocol.get("matmul_precision"), "highest")
+    require_equal("Conv protocol suite", protocol.get("suite"), "libero_object")
+    require_equal("Conv protocol vision encoder", protocol.get("vision_encoder"), "conv")
+    summary_source_map = summary.get("identity", {}).get("source_sha256")
+    verify_source_identity(root, "Conv attention summary", summary_source_map)
 
     summary_rows = {int(row["seed"]): row for row in summary.get("checkpoints", [])}
     require_equal("Conv summary seeds", set(summary_rows), {0, 1, 2})
     recomputed = []
+    inputs_by_seed: dict[int, list[dict[str, Any]]] = {}
     for relative in raw_paths:
         result = load_json(safe_path(root, relative))
         require_equal(f"{relative} schema", result.get("schema"), config["raw_schema"])
         require_equal(f"{relative} mode", result.get("mode"), "full")
         require_equal(f"{relative} protocol", result.get("protocol"), protocol)
-        seed = int(result.get("identity", {}).get("checkpoint_seed", -1))
+        identity = result.get("identity", {})
+        require_equal(
+            f"{relative} source map",
+            identity.get("source_sha256"),
+            summary_source_map,
+        )
+        seed = int(identity.get("checkpoint_seed", -1))
         require(seed in {0, 1, 2}, f"{relative}: invalid seed {seed}")
         require(seed not in {row["seed"] for row in recomputed}, f"duplicate Conv seed {seed}")
 
-        inputs = result.get("inputs")
+        inputs = verify_conv_input_identity(relative, identity, result.get("inputs"), seed)
+        inputs_by_seed[seed] = inputs
         modules = result.get("module_rows")
-        require(isinstance(inputs, list), f"{relative}: inputs are absent")
         require(isinstance(modules, list), f"{relative}: module rows are absent")
         expected_modules = len(inputs) * int(protocol["joint_modules_per_input"])
         require_equal(f"{relative} module count", len(modules), expected_modules)
@@ -146,6 +287,26 @@ def verify_conv(
         head_errors = []
         for module_index, module in enumerate(modules):
             require(isinstance(module, dict), f"{relative}: malformed module {module_index}")
+            input_index, block_index = divmod(module_index, 8)
+            require_equal(
+                f"{relative} module {module_index} rank",
+                int(module.get("selection_rank", -1)),
+                input_index,
+            )
+            require_equal(
+                f"{relative} module {module_index} block",
+                int(module.get("block_index", -1)),
+                block_index,
+            )
+            require_equal(
+                f"{relative} module {module_index} selection",
+                module.get("selection_sha256"),
+                inputs[input_index]["selection_sha256"],
+            )
+            require_equal(f"{relative} module {module_index} stack", module.get("stack"), "joint")
+            require_equal(f"{relative} module {module_index} sequence", module.get("sequence_length"), 107)
+            require_equal(f"{relative} module {module_index} width", module.get("dim"), 384)
+            require_equal(f"{relative} module {module_index} head dim", module.get("head_dim"), 32)
             module_errors.append(error_value(f"{relative} module {module_index}", module))
             heads = module.get("heads")
             require(isinstance(heads, list), f"{relative}: heads are absent at module {module_index}")
@@ -235,7 +396,458 @@ def verify_conv(
         aggregate["all_three_checkpoints_pass"],
         config["expected_outcome"],
     )
+    aggregate["_inputs_by_seed"] = inputs_by_seed
     return aggregate
+
+
+def verify_joint_module_certificate(
+    root: Path,
+    config: dict[str, Any],
+    manifest_hashes: dict[str, str],
+    certificate_name: str,
+    expected_inputs_by_seed: dict[int, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """Recompute the FFN or complete-block fidelity certificate from raw rows."""
+    raw_paths = config["raw_results"]
+    require_equal(f"{certificate_name} raw-result count", len(raw_paths), 3)
+    summary = load_json(safe_path(root, config["summary"]))
+    require_equal(
+        f"{certificate_name} summary schema",
+        summary.get("schema"),
+        config["summary_schema"],
+    )
+    protocol = summary.get("protocol")
+    require(isinstance(protocol, dict), f"{certificate_name}: missing protocol")
+    gate = float(config["gate"]["relative_l2_error_at_most"])
+    count_field = (
+        "module_evaluations"
+        if certificate_name == "Conv joint FFN"
+        else "complete_block_evaluations"
+    )
+    blocks_key = (
+        "joint_modules_per_input"
+        if certificate_name == "Conv joint FFN"
+        else "joint_blocks_per_input"
+    )
+    protocol_gate = (
+        "relative_l2_gate"
+        if certificate_name == "Conv joint FFN"
+        else "complete_block_relative_l2_gate"
+    )
+    require_close(f"{certificate_name} protocol gate", protocol.get(protocol_gate), gate)
+    summary_rows = {int(row["seed"]): row for row in summary.get("checkpoints", [])}
+    require_equal(f"{certificate_name} summary seeds", set(summary_rows), {0, 1, 2})
+    summary_source_map = summary.get("identity", {}).get("source_sha256")
+    verify_source_identity(root, f"{certificate_name} summary", summary_source_map)
+
+    recomputed = []
+    for relative in raw_paths:
+        result = load_json(safe_path(root, relative))
+        require_equal(f"{relative} schema", result.get("schema"), config["raw_schema"])
+        require_equal(f"{relative} mode", result.get("mode"), "full")
+        require_equal(f"{relative} protocol", result.get("protocol"), protocol)
+        identity = result.get("identity", {})
+        require_equal(
+            f"{relative} source map",
+            identity.get("source_sha256"),
+            summary_source_map,
+        )
+        seed = int(identity.get("checkpoint_seed", -1))
+        require(seed in {0, 1, 2}, f"{relative}: invalid seed {seed}")
+        require(seed not in {row["seed"] for row in recomputed}, f"duplicate seed {seed}")
+        inputs = verify_conv_input_identity(relative, identity, result.get("inputs"), seed)
+        require_equal(
+            f"{relative} exact attention input identities",
+            inputs,
+            expected_inputs_by_seed[seed],
+        )
+        rows = result.get("module_rows")
+        blocks = int(protocol[blocks_key])
+        require(isinstance(rows, list), f"{relative}: module rows are absent")
+        require_equal(f"{relative} row count", len(rows), len(inputs) * blocks)
+        relatives = []
+        absolutes = []
+        for index, row in enumerate(rows):
+            input_index, block_index = divmod(index, blocks)
+            require_equal(f"{relative} row {index} rank", int(row.get("selection_rank", -1)), input_index)
+            require_equal(f"{relative} row {index} block", int(row.get("block_index", -1)), block_index)
+            require_equal(
+                f"{relative} row {index} selection",
+                row.get("selection_sha256"),
+                inputs[input_index]["selection_sha256"],
+            )
+            require_equal(f"{relative} row {index} stack", row.get("stack"), "joint")
+            require_equal(f"{relative} row {index} sequence", int(row.get("sequence_length", -1)), 107)
+            require(row.get("finite") is True, f"{relative} row {index} is non-finite")
+            absolute = float(row.get("max_abs_error", float("nan")))
+            relative_error = float(row.get("relative_l2_error", float("nan")))
+            require(
+                math.isfinite(absolute)
+                and math.isfinite(relative_error)
+                and absolute >= 0
+                and relative_error >= 0,
+                f"{relative} row {index} has invalid error values",
+            )
+            absolutes.append(absolute)
+            relatives.append(relative_error)
+
+        row = {
+            "seed": seed,
+            "inputs_audited": len(inputs),
+            count_field: len(rows),
+            "token_rows": len(rows) * 107,
+            "scalar_outputs": len(rows) * 107 * 384,
+            "max_absolute_error": max(absolutes),
+            "max_relative_l2_error": max(relatives),
+            "all_finite": True,
+        }
+        row["passed"] = row["max_relative_l2_error"] <= gate
+        aggregate = result.get("aggregate", {})
+        for field in (
+            "inputs_audited",
+            count_field,
+            "token_rows",
+            "scalar_outputs",
+            "all_finite",
+            "passed",
+        ):
+            require_equal(f"{relative} aggregate {field}", aggregate.get(field), row[field])
+        for field in ("max_absolute_error", "max_relative_l2_error"):
+            require_close(f"{relative} aggregate {field}", aggregate.get(field), row[field])
+        require_close(f"{relative} aggregate gate", aggregate.get("relative_l2_gate"), gate)
+
+        recorded = summary_rows[seed]
+        require_equal(
+            f"{certificate_name} seed {seed} source hash",
+            recorded.get("source_file_sha256"),
+            manifest_hashes[relative],
+        )
+        require_equal(
+            f"{certificate_name} seed {seed} checkpoint SHA",
+            recorded.get("checkpoint_sha256"),
+            identity.get("checkpoint_sha256"),
+        )
+        for field in (
+            "inputs_audited",
+            count_field,
+            "token_rows",
+            "scalar_outputs",
+            "all_finite",
+            "passed",
+        ):
+            require_equal(f"{certificate_name} seed {seed} {field}", recorded.get(field), row[field])
+        for field in ("max_absolute_error", "max_relative_l2_error"):
+            require_close(f"{certificate_name} seed {seed} {field}", recorded.get(field), row[field])
+        recomputed.append(row)
+
+    output = {
+        "checkpoints_audited": 3,
+        "inputs_audited": sum(row["inputs_audited"] for row in recomputed),
+        count_field: sum(row[count_field] for row in recomputed),
+        "token_rows": sum(row["token_rows"] for row in recomputed),
+        "scalar_outputs": sum(row["scalar_outputs"] for row in recomputed),
+        "max_absolute_error": max(row["max_absolute_error"] for row in recomputed),
+        "max_relative_l2_error": max(row["max_relative_l2_error"] for row in recomputed),
+        "all_finite": True,
+        "relative_l2_gate": gate,
+        "all_three_checkpoints_pass": all(row["passed"] for row in recomputed),
+    }
+    recorded = summary.get("aggregate", {})
+    for field, expected in output.items():
+        if isinstance(expected, float):
+            require_close(f"{certificate_name} summary {field}", recorded.get(field), expected)
+        else:
+            require_equal(f"{certificate_name} summary {field}", recorded.get(field), expected)
+    require_equal(
+        f"{certificate_name} immutable expected outcome",
+        output["all_three_checkpoints_pass"],
+        config["expected_outcome"],
+    )
+    return output
+
+
+def quantile(values: list[float], probability: float) -> float:
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * probability
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return ordered[lower]
+    fraction = position - lower
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+def distribution(values: list[float]) -> dict[str, Any]:
+    require(values and all(math.isfinite(value) for value in values), "invalid distribution")
+    count = len(values)
+    mean = math.fsum(values) / count
+    sample_sd = (
+        math.sqrt(math.fsum((value - mean) ** 2 for value in values) / (count - 1))
+        if count > 1
+        else 0.0
+    )
+    return {
+        "count": count,
+        "mean": mean,
+        "sample_sd": sample_sd,
+        "min": min(values),
+        "q05": quantile(values, 0.05),
+        "q25": quantile(values, 0.25),
+        "median": quantile(values, 0.5),
+        "q75": quantile(values, 0.75),
+        "q95": quantile(values, 0.95),
+        "max": max(values),
+    }
+
+
+def verify_distribution(label: str, actual: dict[str, Any], values: list[float]) -> None:
+    expected = distribution(values)
+    for field, value in expected.items():
+        if isinstance(value, float):
+            require_close(f"{label} {field}", actual.get(field), value)
+        else:
+            require_equal(f"{label} {field}", actual.get(field), value)
+
+
+def verify_source_fractions(label: str, sources: dict[str, Any]) -> None:
+    names = {"vision", "instruction", "robot_state", "action_query"}
+    require_equal(f"{label} source names", set(sources), names)
+    for metric in (
+        "coherent_energy_fraction",
+        "signed_projection_fraction",
+    ):
+        values = [float(sources[source][metric]) for source in names]
+        require(all(math.isfinite(value) for value in values), f"{label} {metric} is non-finite")
+        total = math.fsum(values)
+        if metric == "signed_projection_fraction":
+            require(
+                math.isclose(total, 1.0, rel_tol=1e-7, abs_tol=1e-12),
+                f"{label} {metric} does not sum to one",
+            )
+        else:
+            require_close(f"{label} {metric} sum", total, 1.0)
+    if "token_energy_fraction" in sources["vision"]:
+        for metric in ("token_energy_fraction", "per_source_token_energy_fraction"):
+            values = [float(sources[source][metric]) for source in names]
+            require(all(math.isfinite(value) for value in values), f"{label} {metric} is non-finite")
+            require_close(f"{label} {metric} sum", math.fsum(values), 1.0)
+
+
+def flatten_action(value: Any) -> list[float]:
+    require(isinstance(value, list) and len(value) == 8, "prompt action must have eight rows")
+    output = []
+    for row in value:
+        require(isinstance(row, list) and len(row) == 7, "prompt action row must have seven values")
+        numbers = [float(item) for item in row]
+        require(all(math.isfinite(item) for item in numbers), "prompt action is non-finite")
+        output.extend(numbers)
+    return output
+
+
+def float64_sha256(values: list[float]) -> str:
+    digest = hashlib.sha256()
+    digest.update(b"<f8")
+    digest.update(struct.pack("<2q", 8, 7))
+    digest.update(struct.pack(f"<{len(values)}d", *values))
+    return digest.hexdigest()
+
+
+def vector_comparison(reference: list[float], candidate: list[float]) -> dict[str, float]:
+    difference = [candidate_value - reference_value for reference_value, candidate_value in zip(reference, candidate, strict=True)]
+    reference_norm = max(math.sqrt(math.fsum(value * value for value in reference)), 1e-30)
+    candidate_norm = max(math.sqrt(math.fsum(value * value for value in candidate)), 1e-30)
+    dot = math.fsum(left * right for left, right in zip(reference, candidate, strict=True))
+    return {
+        "relative_l2_change": math.sqrt(math.fsum(value * value for value in difference)) / reference_norm,
+        "mean_absolute_change": math.fsum(abs(value) for value in difference) / len(difference),
+        "signed_projection": dot / (reference_norm * reference_norm),
+        "cosine": dot / (reference_norm * candidate_norm),
+        "reference_l2_denominator": reference_norm,
+        "cosine_denominator": reference_norm * candidate_norm,
+    }
+
+
+def verify_vit_modality(
+    root: Path,
+    config: dict[str, Any],
+    manifest_hashes: dict[str, str],
+) -> dict[str, Any]:
+    summary = load_json(safe_path(root, config["summary"]))
+    require_equal("modality summary schema", summary.get("schema"), config["summary_schema"])
+    protocol = summary.get("protocol")
+    require(isinstance(protocol, dict), "modality summary protocol is absent")
+    gate = float(config["gate"]["relative_l2_error_at_most"])
+    require_close("modality protocol gate", protocol.get("relative_l2_gate"), gate)
+    summary_rows = {int(row["seed"]): row for row in summary.get("checkpoints", [])}
+    require_equal("modality summary seeds", set(summary_rows), {0, 1, 2})
+    summary_source_map = summary.get("identity", {}).get("source_sha256")
+    verify_source_identity(root, "modality summary", summary_source_map)
+    source_names = ("vision", "instruction", "robot_state", "action_query")
+    head_coherent = {source: [] for source in source_names}
+    module_coherent = {source: [] for source in source_names}
+    prompt_all = []
+    prompt_mismatched = []
+    recomputed = []
+
+    for relative in config["raw_results"]:
+        result = load_json(safe_path(root, relative))
+        require_equal(f"{relative} schema", result.get("schema"), config["raw_schema"])
+        require_equal(f"{relative} mode", result.get("mode"), "full")
+        require_equal(f"{relative} protocol", result.get("protocol"), protocol)
+        identity = result.get("identity", {})
+        require_equal(
+            f"{relative} source map",
+            identity.get("source_sha256"),
+            summary_source_map,
+        )
+        seed = int(identity.get("checkpoint_seed", -1))
+        require(seed in {0, 1, 2}, f"{relative}: invalid seed {seed}")
+        require(seed not in {row["seed"] for row in recomputed}, f"duplicate modality seed {seed}")
+        require_equal(f"{relative} cache SHA", identity.get("cache_sha256"), "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662")
+        require_equal(f"{relative} provenance job", str(identity.get("provenance_job_id")), "830988")
+        layout = result.get("layout_confirmation", {})
+        require(layout.get("deployed_manual_hidden_exact") is True, f"{relative}: hidden layout differs")
+        require(layout.get("deployed_causal_mask_exact") is True, f"{relative}: causal mask differs")
+        require_close(f"{relative} layout absolute error", layout.get("max_abs_error"), 0.0)
+        require_close(f"{relative} layout relative error", layout.get("relative_l2_error"), 0.0)
+
+        inputs = result.get("inputs")
+        rows = result.get("module_rows")
+        require(isinstance(inputs, list) and len(inputs) == 128, f"{relative}: expected 128 inputs")
+        require_equal(f"{relative} input ranks", [int(row.get("selection_rank", -1)) for row in inputs], list(range(128)))
+        task_counts = {str(task): 0 for task in range(10)}
+        for row in inputs:
+            task_counts[str(int(row.get("official_task_index", -1)))] += 1
+        require_equal(f"{relative} official task quotas", task_counts, protocol["full_official_task_quotas"])
+        require(isinstance(rows, list) and len(rows) == 1024, f"{relative}: expected 1024 module rows")
+        errors = []
+        for index, row in enumerate(rows):
+            input_index, block_index = divmod(index, 8)
+            require_equal(f"{relative} row {index} rank", int(row.get("selection_rank", -1)), input_index)
+            require_equal(f"{relative} row {index} block", int(row.get("block_index", -1)), block_index)
+            heads = row.get("heads")
+            require(isinstance(heads, list) and len(heads) == 12, f"{relative} row {index}: expected 12 heads")
+            for head_index, head in enumerate(heads):
+                require_equal(f"{relative} row {index} head index", int(head.get("head_index", -1)), head_index)
+                errors.append(error_value(f"{relative} row {index} head {head_index}", head.get("group_sum_error", {})))
+                sources = head.get("sources", {})
+                verify_source_fractions(f"{relative} row {index} head {head_index}", sources)
+                for source in source_names:
+                    head_coherent[source].append(float(sources[source]["coherent_energy_fraction"]))
+            module = row.get("module", {})
+            for error_name in (
+                "group_sum_prebias_error",
+                "group_sum_plus_bias_error",
+                "deployed_float32_vs_grouped_float64_error",
+                "deployed_gain_scaled_update_error",
+            ):
+                errors.append(error_value(f"{relative} row {index} {error_name}", module.get(error_name, {})))
+            sources = module.get("sources", {})
+            verify_source_fractions(f"{relative} row {index} module", sources)
+            for source in source_names:
+                module_coherent[source].append(float(sources[source]["coherent_energy_fraction"]))
+
+        prompts = result.get("prompt_permutation_rows")
+        require(isinstance(prompts, list) and len(prompts) == 100, f"{relative}: expected 100 prompt rows")
+        predictions = {}
+        comparisons = {}
+        for row in prompts:
+            observation = int(row.get("observation_official_task_index", -1))
+            prompt = int(row.get("prompt_official_task_index", -1))
+            require((observation, prompt) not in predictions, f"{relative}: duplicate prompt pair")
+            action = flatten_action(row.get("physical_action_prediction"))
+            require_equal(f"{relative} prompt action SHA", row.get("physical_action_prediction_sha256"), float64_sha256(action))
+            predictions[(observation, prompt)] = action
+            comparisons[(observation, prompt)] = row.get("comparison_to_matched_prompt", {})
+        require_equal(f"{relative} prompt pairs", set(predictions), {(observation, prompt) for observation in range(10) for prompt in range(10)})
+        for key, candidate in predictions.items():
+            observation, prompt = key
+            expected = vector_comparison(predictions[(observation, observation)], candidate)
+            actual = comparisons[key]
+            require_equal(f"{relative} prompt comparison fields", set(actual), set(expected))
+            for field, value in expected.items():
+                require_close(f"{relative} prompt {observation}/{prompt} {field}", actual.get(field), value)
+            prompt_all.append(expected["relative_l2_change"])
+            if observation != prompt:
+                prompt_mismatched.append(expected["relative_l2_change"])
+
+        maximum = max(errors)
+        row = {
+            "seed": seed,
+            "inputs_audited": 128,
+            "module_evaluations": 1024,
+            "head_evaluations": 12288,
+            "source_group_evaluations": 49152,
+            "prompt_permutation_evaluations": 100,
+            "max_relative_l2_error": maximum,
+            "passed": maximum <= gate,
+        }
+        aggregate = result.get("aggregate", {})
+        for field in (
+            "inputs_audited",
+            "module_evaluations",
+            "head_evaluations",
+            "source_group_evaluations",
+            "prompt_permutation_evaluations",
+            "passed",
+        ):
+            require_equal(f"{relative} aggregate {field}", aggregate.get(field), row[field])
+        require(aggregate.get("all_finite") is True and aggregate.get("prompt_all_finite") is True, f"{relative}: aggregate is non-finite")
+        require_close(f"{relative} aggregate maximum", aggregate.get("max_relative_l2_error"), maximum)
+        recorded = summary_rows[seed]
+        require_equal(f"modality seed {seed} source hash", recorded.get("source_file_sha256"), manifest_hashes[relative])
+        require_equal(f"modality seed {seed} checkpoint SHA", recorded.get("checkpoint_sha256"), identity.get("checkpoint_sha256"))
+        for field, value in row.items():
+            if field == "seed":
+                continue
+            if isinstance(value, float):
+                require_close(f"modality seed {seed} {field}", recorded.get(field), value)
+            else:
+                require_equal(f"modality seed {seed} {field}", recorded.get(field), value)
+        recomputed.append(row)
+        del result
+
+    output = {
+        "checkpoints_audited": 3,
+        "inputs_audited": 384,
+        "module_evaluations": 3072,
+        "head_evaluations": 36864,
+        "source_group_evaluations": 147456,
+        "prompt_permutation_evaluations": 300,
+        "max_relative_l2_error": max(row["max_relative_l2_error"] for row in recomputed),
+        "relative_l2_gate": gate,
+        "all_three_checkpoints_pass": all(row["passed"] for row in recomputed),
+    }
+    for field, value in output.items():
+        actual = summary.get("aggregate", {}).get(field)
+        if isinstance(value, float):
+            require_close(f"modality summary {field}", actual, value)
+        else:
+            require_equal(f"modality summary {field}", actual, value)
+    for source in source_names:
+        verify_distribution(
+            f"modality head coherent {source}",
+            summary["head_contribution_distributions"]["overall"][source]["coherent_energy_fraction"],
+            head_coherent[source],
+        )
+        verify_distribution(
+            f"modality module coherent {source}",
+            summary["module_contribution_distributions"]["overall"][source]["coherent_energy_fraction"],
+            module_coherent[source],
+        )
+    prompt_summary = summary["prompt_permutation_characterization"]
+    verify_distribution(
+        "modality prompt changes including matched",
+        prompt_summary["relative_l2_change_distribution_including_matched"],
+        prompt_all,
+    )
+    verify_distribution(
+        "modality prompt changes mismatched only",
+        prompt_summary["relative_l2_change_distribution_mismatched_only"],
+        prompt_mismatched,
+    )
+    require_equal("modality immutable expected outcome", output["all_three_checkpoints_pass"], config["expected_outcome"])
+    return output
 
 
 def quadratic_roots(coefficients: list[float]) -> list[complex]:
@@ -331,6 +943,8 @@ def verify_rational(
     require_equal("RationalNorm raw-result count", len(raw_paths), 3)
     summary = load_json(safe_path(root, config["summary"]))
     require_equal("RationalNorm summary schema", summary.get("schema"), config["summary_schema"])
+    summary_source_map = summary.get("inputs", {}).get("source_sha256")
+    verify_source_identity(root, "RationalNorm summary", summary_source_map)
     gates = config["gates"]
     for field, expected in gates.items():
         require_close(f"RationalNorm summary frozen gate {field}", summary.get("frozen_gates", {}).get(field), expected)
@@ -341,6 +955,11 @@ def verify_rational(
     for relative in raw_paths:
         result = load_json(safe_path(root, relative))
         require_equal(f"{relative} schema", result.get("schema"), config["raw_schema"])
+        require_equal(
+            f"{relative} source map",
+            result.get("implementation", {}).get("source_sha256"),
+            summary_source_map,
+        )
         require_equal(f"{relative} mode", result.get("mode"), "full")
         for field, expected in gates.items():
             require_close(f"{relative} frozen gate {field}", result.get("frozen_gates", {}).get(field), expected)
@@ -496,17 +1115,53 @@ def main() -> int:
         manifest = load_json(ARTIFACT_DIR / "manifest.json")
         hashes = verify_manifest_hashes(args.root.resolve(), manifest)
         conv = verify_conv(args.root.resolve(), manifest["certificates"]["conv_joint_attention"], hashes)
+        ffn = verify_joint_module_certificate(
+            args.root.resolve(),
+            manifest["certificates"]["conv_joint_ffn"],
+            hashes,
+            "Conv joint FFN",
+            conv["_inputs_by_seed"],
+        )
+        block = verify_joint_module_certificate(
+            args.root.resolve(),
+            manifest["certificates"]["conv_joint_block"],
+            hashes,
+            "Conv complete joint block",
+            conv["_inputs_by_seed"],
+        )
+        modality = verify_vit_modality(
+            args.root.resolve(), manifest["certificates"]["vit_modality"], hashes
+        )
         rational = verify_rational(args.root.resolve(), manifest["certificates"]["rational_norm"], hashes)
     except (KeyError, TypeError, ValueError, VerificationError) as exc:
         print(f"VERIFICATION FAILED: {exc}", file=sys.stderr)
         return 1
 
-    print(f"HASHES PASS: {len(hashes)} immutable JSON files")
+    print(f"HASHES PASS: {len(hashes)} immutable evidence files")
     print(
         "CONV JOINT ATTENTION PASS: "
         f"{conv['head_evaluations']} head-input cases, "
         f"max relative L2 {conv['max_relative_l2_error']:.12g} <= "
         f"{conv['relative_l2_gate']:.12g}"
+    )
+    print(
+        "CONV JOINT FFN PASS: "
+        f"{ffn['module_evaluations']} module-input cases, "
+        f"max relative L2 {ffn['max_relative_l2_error']:.12g} <= "
+        f"{ffn['relative_l2_gate']:.12g}"
+    )
+    print(
+        "CONV COMPLETE JOINT BLOCK PASS: "
+        f"{block['complete_block_evaluations']} block-input cases, "
+        f"max relative L2 {block['max_relative_l2_error']:.12g} <= "
+        f"{block['relative_l2_gate']:.12g}"
+    )
+    print(
+        "VIT MODALITY DECOMPOSITION PASS: "
+        f"{modality['head_evaluations']} head-input cases and "
+        f"{modality['source_group_evaluations']} source-group evaluations, "
+        f"max relative L2 {modality['max_relative_l2_error']:.12g} <= "
+        f"{modality['relative_l2_gate']:.12g}"
     )
     print(
         "RATIONALNORM PRIMARY PASS: "

@@ -1,4 +1,4 @@
-"""Plot the frozen Conv-attention and rational-normalizer certificates."""
+"""Plot the frozen joint-block, modality, and rational-normalizer certificates."""
 
 from __future__ import annotations
 
@@ -49,118 +49,95 @@ def load(name: str) -> dict:
     return json.loads((RESULTS / name).read_text())
 
 
-def direct_labels(ax, x, values, formatter, offset_points=6) -> None:
-    for xpos, value in zip(x, values):
-        ax.annotate(
-            formatter(value),
-            (xpos, value),
-            xytext=(0, offset_points),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            fontsize=7.2,
-            color=COLORS["ink"],
-        )
-
-
 def main() -> None:
     attention = load("conv_joint_attention_certificate_v1_summary.json")
+    ffn = load("conv_joint_ffn_certificate_v1_summary.json")
+    block = load("conv_joint_block_certificate_v1_summary.json")
+    modality = load("vit_modality_contribution_v1_summary.json")
     normalizer = load("rational_norm_safety_v1_summary.json")
     seeds = np.arange(3)
-    labels = ["seed 0", "seed 1", "seed 2"]
 
-    attention_error = np.array(
-        [row["max_relative_l2_error"] for row in attention["checkpoints"]]
+    certificate_summaries = (attention, ffn, block, modality)
+    certificate_labels = (
+        "Conv attn.",
+        "Conv FFN",
+        "Conv block",
+        "ViT sources",
+        "RNorm action",
     )
-    action_nrmse = np.array(
-        [row["action_nrmse"] for row in normalizer["checkpoints"]]
-    )
-    range_coverage = 100 * np.array(
+    reconstruction_ratios = np.array(
         [
-            row["minimum_site_fraction_rows_v_in_0p1_10"]
-            for row in normalizer["checkpoints"]
+            [
+                row["max_relative_l2_error"]
+                / summary["aggregate"]["relative_l2_gate"]
+                for row in summary["checkpoints"]
+            ]
+            for summary in certificate_summaries
         ]
     )
-    scale_coverage = 100 * np.array(
-        [
-            row["minimum_site_fraction_rows_local_scale_error_at_or_below_threshold"]
-            for row in normalizer["checkpoints"]
-        ]
+    rational_action_ratios = np.array(
+        [row["action_nrmse"] / 1e-3 for row in normalizer["checkpoints"]]
     )
-
-    fig, axes = plt.subplots(1, 3, figsize=(10.6, 3.15))
+    gate_normalized_errors = np.vstack(
+        [reconstruction_ratios, rational_action_ratios]
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(10.6, 3.15))
 
     ax = axes[0]
-    ax.scatter(seeds, attention_error, s=48, color=COLORS["blue"], zorder=3)
-    ax.axhline(1e-6, color=COLORS["red"], lw=1.2, ls="--", label="gate $10^{-6}$")
+    offsets = (-0.16, 0.0, 0.16)
+    categories = np.arange(5)
+    for seed, offset in zip(seeds, offsets):
+        ax.scatter(
+            categories + offset,
+            gate_normalized_errors[:, seed],
+            s=40,
+            label=f"seed {seed}",
+            zorder=3,
+        )
+    ax.axhline(1.0, color=COLORS["red"], lw=1.2, ls="--", label="frozen gate")
     ax.set_yscale("log")
-    ax.set_ylim(1e-17, 1e-5)
-    ax.set_xticks(seeds, labels)
-    ax.set_ylabel("maximum relative $L_2$ error")
-    ax.set_title("a  Exact joint attention")
+    ax.set_ylim(1e-10, 4)
+    ax.set_xticks(categories, certificate_labels)
+    ax.set_ylabel("certificate metric / frozen gate")
+    ax.set_title("a  Independent reconstruction certificates")
     ax.grid(axis="y", color=COLORS["light"], lw=0.7)
-    ax.legend(frameon=False, loc="upper left", fontsize=7.2)
-    direct_labels(ax, seeds, attention_error, lambda x: f"{x:.2g}", 5)
-    ax.text(
-        0.03,
-        0.05,
-        "4,608 head-input cases, all finite",
-        transform=ax.transAxes,
-        fontsize=7.2,
-        color=COLORS["gray"],
-    )
+    ax.legend(frameon=False, loc="lower right", fontsize=6.9, ncol=2)
 
     ax = axes[1]
-    ax.scatter(seeds, action_nrmse, s=48, color=COLORS["green"], zorder=3)
-    ax.axhline(1e-3, color=COLORS["red"], lw=1.2, ls="--", label="gate $10^{-3}$")
-    ax.set_yscale("log")
-    ax.set_ylim(1e-7, 3e-3)
-    ax.set_xticks(seeds, labels)
-    ax.set_ylabel("action NRMSE, deployed vs fp64 RNorm")
-    ax.set_title("b  Deployed rational fidelity")
-    ax.grid(axis="y", color=COLORS["light"], lw=0.7)
-    ax.legend(frameon=False, loc="upper left", fontsize=7.2)
-    direct_labels(ax, seeds, action_nrmse, lambda x: f"{x:.2g}", 5)
-    ax.text(
-        0.03,
-        0.05,
-        "544.5M norm rows, all finite",
-        transform=ax.transAxes,
-        fontsize=7.2,
-        color=COLORS["gray"],
-    )
-
-    ax = axes[2]
-    width = 0.34
-    ax.bar(
-        seeds - width / 2,
-        range_coverage,
-        width,
-        color=COLORS["orange"],
-        label="$v\\in[0.1,10]$",
-        zorder=3,
-    )
-    ax.bar(
-        seeds + width / 2,
-        scale_coverage,
-        width,
-        color=COLORS["blue"],
-        label="scale error $\\leq3.4\\%$",
-        zorder=3,
-    )
-    ax.axhline(99, color=COLORS["red"], lw=1.2, ls="--", label="secondary gate 99%")
-    ax.set_ylim(50, 102)
-    ax.set_xticks(seeds, labels)
-    ax.set_ylabel("minimum site coverage (%)")
-    ax.set_title("c  Exact-RMS approximation scope")
+    sources = ("vision", "robot_state", "action_query", "instruction")
+    source_labels = ("Vision", "Robot state", "Action query", "Instruction")
+    source_colors = (COLORS["blue"], COLORS["orange"], COLORS["green"], COLORS["gray"])
+    blocks = np.arange(8)
+    bottom = np.zeros(8)
+    for source, label, color in zip(sources, source_labels, source_colors):
+        values = 100 * np.array(
+            [
+                modality["module_contribution_distributions"]["by_layer"][
+                    f"block_{block_index}"
+                ][source]["coherent_energy_fraction"]["mean"]
+                for block_index in blocks
+            ]
+        )
+        ax.bar(blocks, values, bottom=bottom, color=color, label=label, zorder=3)
+        bottom += values
+    ax.set_xticks(blocks)
+    ax.set_ylim(0, 100)
+    ax.set_xlabel("joint block")
+    ax.set_ylabel("mean coherent-energy share (%)")
+    ax.set_title("b  ViT attention source partition by depth", pad=31)
     ax.grid(axis="y", color=COLORS["light"], lw=0.7, zorder=0)
-    ax.legend(frameon=False, loc="center right", fontsize=6.8)
-    for xpos, value in zip(seeds - width / 2, range_coverage):
-        ax.text(xpos, value + 1.2, f"{value:.2f}", ha="center", fontsize=7.0)
-    for xpos, value in zip(seeds + width / 2, scale_coverage):
-        ax.text(xpos, value + 1.2, f"{value:.2f}", ha="center", fontsize=7.0)
+    ax.legend(
+        frameon=True,
+        facecolor="white",
+        framealpha=0.88,
+        edgecolor="none",
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.0),
+        fontsize=6.8,
+        ncol=4,
+    )
 
-    fig.tight_layout(w_pad=2.4)
+    fig.tight_layout(w_pad=2.0)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUTPUT.with_suffix(".pdf"), bbox_inches="tight")
     fig.savefig(OUTPUT.with_suffix(".png"), dpi=260, bbox_inches="tight")

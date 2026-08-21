@@ -1,0 +1,158 @@
+{
+  "aggregate": {
+    "all_finite": true,
+    "all_three_checkpoints_pass": true,
+    "checkpoints_audited": 3,
+    "inputs_audited": 48,
+    "max_absolute_error": 5.400124791776761e-13,
+    "max_relative_l2_error": 1.387055228492097e-15,
+    "module_evaluations": 384,
+    "relative_l2_gate": 1e-10,
+    "scalar_outputs": 15777792,
+    "token_rows": 41088,
+    "unique_checkpoint_module_parameters": 31905792,
+    "unique_checkpoint_modules": 24
+  },
+  "boundaries": [
+    "This is a same-checkpoint numerical identity, not a comparison with the ViT policy.",
+    "The FFN audit is layerwise and input-conditioned. It does not materialize a dense third-order core or one compact symbolic contraction for the complete policy.",
+    "The combined scope does not reconstruct the three bilinear-convolution vision stages, residual composition, linear embeddings and projections, or action head.",
+    "The selected FFN inputs come from the verified training-domain Object cache. They do not establish cross-suite behavior or robustness outside those observations.",
+    "Passing establishes independent numerical reproduction from learned factors on preregistered inputs. It does not establish uniqueness, human-nameable factors, causal selectivity, or a complete symbolic proof of the end-to-end policy."
+  ],
+  "checkpoints": [
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s0.pt",
+      "checkpoint_sha256": "4f9f3eef4bd661934b7c66af117995f02bdfc777368f52464f03d229ccb3e72d",
+      "inputs_audited": 16,
+      "max_absolute_error": 4.831690603168681e-13,
+      "max_relative_l2_error": 1.3462653922290489e-15,
+      "module_evaluations": 128,
+      "passed": true,
+      "scalar_outputs": 5259264,
+      "seed": 0,
+      "source_file": "results/conv_joint_ffn_certificate_v1_s0.json",
+      "source_file_sha256": "fe2dc6c2c5db060d8164c127ab5b00e1d4b554e087879e929edf26a53853c433",
+      "token_rows": 13696,
+      "unique_module_parameters": 10635264,
+      "unique_modules": 8
+    },
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s1_matched.pt",
+      "checkpoint_sha256": "9d8df0c30583222490536b21aac040b47c5f89556aa23c08265605f7c2bc8cb6",
+      "inputs_audited": 16,
+      "max_absolute_error": 3.694822225952521e-13,
+      "max_relative_l2_error": 1.387055228492097e-15,
+      "module_evaluations": 128,
+      "passed": true,
+      "scalar_outputs": 5259264,
+      "seed": 1,
+      "source_file": "results/conv_joint_ffn_certificate_v1_s1.json",
+      "source_file_sha256": "866279d50d3ee2f7412452893e58ae1b46aadf3b6bbfd0289000e7c99594943e",
+      "token_rows": 13696,
+      "unique_module_parameters": 10635264,
+      "unique_modules": 8
+    },
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s2_matched.pt",
+      "checkpoint_sha256": "fc2e0bfa1a2ea2737ed0af13b168cd2562e4b0e36b159d0f98f3c5038131ace5",
+      "inputs_audited": 16,
+      "max_absolute_error": 5.400124791776761e-13,
+      "max_relative_l2_error": 1.3539993232639302e-15,
+      "module_evaluations": 128,
+      "passed": true,
+      "scalar_outputs": 5259264,
+      "seed": 2,
+      "source_file": "results/conv_joint_ffn_certificate_v1_s2.json",
+      "source_file_sha256": "6b261868a4cc60d11a0a4c894397e7664ffdebe38eb9e580e529c7cd539a3317",
+      "token_rows": 13696,
+      "unique_module_parameters": 10635264,
+      "unique_modules": 8
+    }
+  ],
+  "claim_if_passed": "On the same 16 deterministic SHA-256-ranked LIBERO-Object cache inputs per checkpoint used by the attention certificate, independent NumPy float64 CP-factor contractions reconstruct every bilinear FFN in the eight-block joint transformer for three fixed convolutional \u03c7-VLA checkpoints. This covers 384 module-input cases, 41,088 token rows, and 15,777,792 scalar outputs with finite values and maximum relative L2 error at most 1e-10.",
+  "combined_scope_if_passed": "Together with the frozen passing attention and primary RationalNorm certificates on the same three checkpoint files, the certificate package covers all eight attention modules, all eight bilinear FFNs, and all 53 deployed RationalNorm sites per checkpoint. This is complete primitive-level coverage of the eight-block joint transformer plus every deployed RationalNorm site, not complete end-to-end policy reconstruction.",
+  "identity": {
+    "cache_basename": "libero_frames_100000_64.pkl",
+    "cache_frames": 66984,
+    "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+    "companion_certificates": {
+      "attention": {
+        "path": "results/conv_joint_attention_certificate_v1_summary.json",
+        "schema": "xvla-conv-joint-attention-certificate-summary-v1",
+        "sha256": "3c380a899e5621d312cc45d62aff99ce883dd8dd029de56078e1cdc67838613f"
+      },
+      "rational_norm": {
+        "path": "results/rational_norm_safety_v1_summary.json",
+        "schema": "xvla-rational-norm-safety-summary-v1",
+        "sha256": "25c9dd61bfc805c321b12ba1b6575e4463fb76c1369de3b7a317dbdb524b17a8"
+      }
+    },
+    "dataset_metadata": {
+      "dataset_to_official_task": {
+        "0": 9,
+        "1": 4,
+        "2": 1,
+        "3": 3,
+        "4": 0,
+        "5": 7,
+        "6": 2,
+        "7": 6,
+        "8": 5,
+        "9": 8
+      },
+      "language_set_matches_official": true,
+      "metadata_file": "meta/tasks.parquet",
+      "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+      "ordering_matches_official": false,
+      "repository": "lerobot/libero_object_image",
+      "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f"
+    },
+    "provenance_canonical_content_sha256": "01bc724b9bf8c158b983e34b82bbb40dce9dba2cb86dd9be2a5bf8910be341c7",
+    "provenance_job_id": "830988",
+    "provenance_result": "results/cache_provenance_libero_object.json",
+    "provenance_result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    "source_sha256": {
+      "athena/launch_conv_joint_ffn_certificate.sh": "9e6799a43651e366535748a1b94993691793ab287a95da8dbe68a78188da700a",
+      "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+      "athena/run_conv_joint_attention_certificate.py": "1e838bfb61cb16a946a48f9c75ed0291008d9c1a87eb953444f949998a688325",
+      "athena/run_conv_joint_ffn_certificate.py": "d7e78469e87146e5edaf56b6e91857cd6ea8e1dfcfdde736cc10ce0774be5df4",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/slurm_conv_joint_ffn_certificate.sbatch": "63a16bfe30163df2703c3a7a767d99504cff77b8905042d4a22a37294e020e57",
+      "athena/slurm_summarize_conv_joint_ffn_certificate.sbatch": "465ceeeeea3fe8149f377454b090b9da50d20f2d388b2389b0dff73ae32b01e0",
+      "athena/summarize_conv_joint_ffn_certificate.py": "08d0268cf682cfd999d171c8ec5d238397476b1d77941054ed43e3e5dfc96439",
+      "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+      "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+      "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+      "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+      "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+      "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9"
+    }
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "architecture": "chi",
+    "cp_rank": 1152,
+    "down_bias": false,
+    "full_inputs_per_checkpoint": 16,
+    "input_dim": 384,
+    "input_identity_source": "xvla-conv-joint-attention-certificate-v1",
+    "input_selection": "lexicographically smallest SHA256(protocol_id || checkpoint_sha256 || canonical_cache_record_sha256) over every record in the frozen cache",
+    "joint_modules_per_input": 8,
+    "matmul_precision": "highest",
+    "output_dim": 384,
+    "parameters_per_unique_module": 1329408,
+    "reconstruction": "independent NumPy float64 CP-factor contraction from saved left, right, and down factors without materializing a dense third-order core",
+    "reference": "explicit PyTorch float64 affine left, affine right, elementwise product, and down projection evaluated from the trained weights",
+    "relative_l2_gate": 1e-10,
+    "resolution": 64,
+    "sequence_length": 107,
+    "smoke_inputs": 1,
+    "suite": "libero_object",
+    "vision_encoder": "conv"
+  },
+  "schema": "xvla-conv-joint-ffn-certificate-summary-v1"
+}
