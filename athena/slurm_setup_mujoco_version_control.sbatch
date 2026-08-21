@@ -86,7 +86,22 @@ grep -Evi '^mujoco([=@[:space:]]|$)' "$result_dir/overlay_pip_freeze.txt" \
   > "$result_dir/overlay_without_mujoco.txt"
 cmp "$result_dir/base_without_mujoco.txt" "$result_dir/overlay_without_mujoco.txt"
 grep -ix 'mujoco==3.5.0' "$result_dir/base_pip_freeze.txt"
-grep -ix 'mujoco==3.1.6' "$result_dir/overlay_pip_freeze.txt"
+env PYTHONPATH="$overlay" XVLA_MUJOCO_OVERLAY="$overlay" \
+  "$base/bin/python" - "$overlay" <<'PY'
+import importlib.metadata
+import sys
+from pathlib import Path
+
+overlay = Path(sys.argv[1]).resolve()
+distribution = importlib.metadata.distribution("mujoco")
+distribution_root = Path(distribution.locate_file("")).resolve()
+if distribution.version != "3.1.6":
+    raise SystemExit(f"Unexpected overlay MuJoCo version: {distribution.version}")
+if overlay not in (distribution_root, *distribution_root.parents):
+    raise SystemExit(
+        f"Overlay MuJoCo metadata resolved outside {overlay}: {distribution_root}"
+    )
+PY
 
 set +e
 env -u PYTHONPATH -u XVLA_MUJOCO_OVERLAY \
