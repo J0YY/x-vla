@@ -17,6 +17,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import TwoSlopeNorm
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -439,6 +440,98 @@ def main_causal_subspace() -> None:
     save_both(fig, "main_causal_subspace")
 
 
+def main_causal_subspace_replication() -> None:
+    checkpoint_labels = ["Checkpoint 0", "Checkpoint 1", "Checkpoint 2"]
+    conditions = ["Full 384", "Selected 64", "Random 64"]
+    successes = np.array(
+        [
+            [14, 8, 0],
+            [19, 12, 0],
+            [14, 9, 0],
+        ]
+    )
+    total_per_checkpoint = 20
+    colors = [COLORS["ink"], COLORS["green"], COLORS["red"]]
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.55), gridspec_kw={"width_ratios": [1.45, 0.9]})
+
+    ax = axes[0]
+    positions = np.arange(len(checkpoint_labels))
+    width = 0.24
+    for condition_index, (condition, color) in enumerate(zip(conditions, colors)):
+        rates = 100 * successes[:, condition_index] / total_per_checkpoint
+        x_values = positions + (condition_index - 1) * width
+        bars = ax.bar(x_values, rates, width, color=color, label=condition, zorder=3)
+        for bar, count in zip(bars, successes[:, condition_index]):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                max(bar.get_height() + 2.0, 1.5),
+                f"{count}/20",
+                ha="center",
+                fontsize=7.3,
+                fontweight="bold",
+            )
+    ax.set_xticks(positions, checkpoint_labels)
+    ax.set_ylim(0, 108)
+    ax.set_ylabel("Closed-loop success (%)")
+    ax.set_title("Same direction across checkpoints")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8, zorder=0)
+    ax.legend(frameon=False, fontsize=7.4, loc="upper center", ncol=3)
+    panel_label(ax, "a")
+
+    ax = axes[1]
+    pooled = successes.sum(axis=0)
+    pooled_total = 3 * total_per_checkpoint
+    rates = 100 * pooled / pooled_total
+    intervals = np.array(
+        [wilson_interval(int(count), pooled_total) for count in pooled]
+    ) * 100
+    yerr = np.vstack([rates - intervals[:, 0], intervals[:, 1] - rates])
+    bars = ax.bar(np.arange(3), rates, color=colors, width=0.65, zorder=3)
+    ax.errorbar(
+        np.arange(3),
+        rates,
+        yerr=yerr,
+        fmt="none",
+        ecolor=COLORS["ink"],
+        elinewidth=1,
+        capsize=3,
+        zorder=4,
+    )
+    for bar, count in zip(bars, pooled):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            max(bar.get_height() + 3, 2),
+            f"{count}/{pooled_total}",
+            ha="center",
+            fontweight="bold",
+        )
+    ax.set_xticks(np.arange(3), ["Full\n384 dims", "Selected\n64 dims", "Random\n64 dims"])
+    ax.set_ylim(0, 108)
+    ax.set_ylabel("Closed-loop success (%)")
+    ax.set_title("Pooled descriptive result")
+    ax.grid(axis="y", color=COLORS["grid"], linewidth=0.8, zorder=0)
+    panel_label(ax, "b")
+
+    fig.suptitle(
+        "The selected visual subspace is causal, but not near-lossless",
+        fontsize=12,
+        fontweight="bold",
+        y=1.03,
+    )
+    fig.text(
+        0.5,
+        -0.025,
+        "Four tasks and five paired canonical trials per task and checkpoint. Selected versus random "
+        "exact paired sign p values are 0.0078, 0.00049, and 0.0039. Pooled intervals are descriptive.",
+        ha="center",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    fig.tight_layout()
+    save_both(fig, "main_causal_subspace_replication")
+
+
 BLOCK_IDS = [0, 6, 7]
 RATIOS_BY_RANK = {
     8: [
@@ -664,12 +757,75 @@ def appendix_ensemble_per_task() -> None:
     save_both(fig, "appendix_ensemble_per_task")
 
 
+def appendix_surgery_sweep() -> None:
+    summary_path = ROOT / "athena" / "results" / "surgery_discovery_summary.json"
+    summary = json.loads(summary_path.read_text())
+    blocks = [0, 2, 4, 6, 7]
+    ranks = [64, 128, 256]
+    rows = {(int(row["block_index"]), int(row["rank"])): row for row in summary["rows"]}
+    keep = np.array(
+        [[100 * rows[(block, rank)]["keep_advantage"] for rank in ranks] for block in blocks]
+    )
+    removal = np.array(
+        [[100 * rows[(block, rank)]["removal_advantage"] for rank in ranks] for block in blocks]
+    )
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.6), constrained_layout=True)
+    panels = [
+        (keep, "Keep selected minus matched random", TwoSlopeNorm(vmin=-15, vcenter=0, vmax=15)),
+        (
+            removal,
+            "Matched random removal minus selected removal",
+            TwoSlopeNorm(vmin=-15, vcenter=0, vmax=40),
+        ),
+    ]
+    for ax, (values, title, norm) in zip(axes, panels):
+        image = ax.imshow(values, cmap="RdYlGn", norm=norm, aspect="auto")
+        ax.set_xticks(range(len(ranks)), [str(rank) for rank in ranks])
+        ax.set_yticks(range(len(blocks)), [str(block) for block in blocks])
+        ax.set_xlabel("Edited subspace rank")
+        ax.set_ylabel("Joint block")
+        ax.set_title(title)
+        for row_index in range(len(blocks)):
+            for column_index in range(len(ranks)):
+                value = values[row_index, column_index]
+                color = "white" if abs(value) >= 20 else COLORS["ink"]
+                ax.text(
+                    column_index,
+                    row_index,
+                    f"{value:+.0f}",
+                    ha="center",
+                    va="center",
+                    fontweight="bold",
+                    color=color,
+                )
+        colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+        colorbar.set_label("Success advantage (points)")
+
+    fig.suptitle(
+        "No coefficient-surgery configuration passes both 15-point gates",
+        fontsize=12,
+        fontweight="bold",
+    )
+    fig.text(
+        0.5,
+        -0.025,
+        "Positive is favorable in both panels. The best minimum margin is +10 points at block 0, rank 128.",
+        ha="center",
+        fontsize=7.5,
+        color=COLORS["muted"],
+    )
+    save_both(fig, "appendix_surgery_sweep")
+
+
 if __name__ == "__main__":
     main_capability()
     appendix_matched_architecture_cost()
     appendix_counterfactual_grounding()
     main_causal_subspace()
+    main_causal_subspace_replication()
     main_exact_attention_odt()
     appendix_decomposability_audit()
     appendix_ensemble_per_task()
+    appendix_surgery_sweep()
     print(f"Wrote publication figures to {OUT}")
