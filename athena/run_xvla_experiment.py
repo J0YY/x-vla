@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import pickle
 import random
@@ -32,7 +33,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--mode",
-        choices=("smoke", "profile", "capability", "causal", "exact_attention"),
+        choices=(
+            "smoke",
+            "profile",
+            "capability",
+            "causal",
+            "exact_attention",
+            "surgery",
+        ),
         required=True,
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -48,6 +56,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exec-h", type=int, default=8)
     parser.add_argument("--profile-iters", type=int, default=200)
     parser.add_argument("--causal-steps", type=int, default=80)
+    parser.add_argument("--block-index", type=int, default=6)
+    parser.add_argument("--rank", type=int, default=128)
+    parser.add_argument(
+        "--surgery-conditions",
+        default=(
+            "baseline,keep_top,keep_random_normmatched,"
+            "remove_top,remove_random_normmatched"
+        ),
+    )
     parser.add_argument("--res", type=int, default=64)
     parser.add_argument("--horizon", type=int, default=8)
     return parser.parse_args()
@@ -729,11 +746,210 @@ def run_exact_attention_audit(
         "all_modules_below_1e_minus_5": all(
             float(row["max_abs_error"]) < 1e-5 for row in rows
         ),
+        "all_modules_below_2e_minus_5": all(
+            float(row["max_abs_error"]) < 2e-5 for row in rows
+        ),
         "rows": rows,
         "scope": (
             "This validates exact learned-weight reconstruction for every individual attention "
             "module in the vision and joint stacks. It remains a layerwise audit and does not "
             "materialize one compact symbolic contraction for the complete policy."
+        ),
+    }
+
+
+def run_weight_surgery(
+    args: argparse.Namespace,
+    model: ChiVLA,
+    suite,
+    tasks: dict[int, str],
+    encode,
+    stats: dict[str, Any],
+) -> dict[str, Any]:
+    """Apply exact-weight attention subspaces directly to learned coefficient columns."""
+    from xvla.train.exact_odt_attention_proto import build_gram_reduced_head
+
+    if not 0 <= args.block_index < len(model.backbone.blocks):
+        raise ValueError(f"block-index {args.block_index} is outside the joint stack")
+    attention = model.backbone.blocks[args.block_index].attn
+    if not hasattr(attention, "wq1"):
+        raise ValueError("Weight surgery requires bilinear attention")
+    if not 0 < args.rank < attention.dim:
+        raise ValueError(f"rank must be between 1 and {attention.dim - 1}")
+
+    matrix_names = ("wq1", "wk1", "wq2", "wk2", "wv")
+    original_weights = {
+        name: getattr(attention, name).weight.detach().clone() for name in matrix_names
+    }
+
+    def weight_and_bias(linear) -> tuple[np.ndarray, np.ndarray]:
+        return (
+            linear.weight.detach().double().cpu().numpy(),
+            linear.bias.detach().double().cpu().numpy(),
+        )
+
+    q1_weight, q1_bias = weight_and_bias(attention.wq1)
+    k1_weight, k1_bias = weight_and_bias(attention.wk1)
+    q2_weight, q2_bias = weight_and_bias(attention.wq2)
+    k2_weight, k2_bias = weight_and_bias(attention.wk2)
+    value_weight, value_bias = weight_and_bias(attention.wv)
+    output_weight = attention.wo.weight.detach().double().cpu().numpy()
+    matrices = (q1_weight, k1_weight, q2_weight, k2_weight, value_weight)
+    rng = np.random.default_rng(args.seed)
+    identity = np.eye(attention.dim)
+    projectors: dict[str, list[np.ndarray]] = {
+        "keep_top": [],
+        "keep_random": [],
+        "remove_top": [],
+        "remove_random": [],
+    }
+    norm_match_scales: dict[str, list[float]] = {
+        "keep_random_normmatched": [],
+        "remove_random_normmatched": [],
+    }
+    spectra = {}
+    for head_index in range(attention.n_heads):
+        start = head_index * attention.head_dim
+        stop = (head_index + 1) * attention.head_dim
+        head_slice = slice(start, stop)
+        gram = build_gram_reduced_head(
+            q1_weight[head_slice],
+            q1_bias[head_slice],
+            k1_weight[head_slice],
+            k1_bias[head_slice],
+            q2_weight[head_slice],
+            q2_bias[head_slice],
+            k2_weight[head_slice],
+            k2_bias[head_slice],
+            value_weight[head_slice],
+            value_bias[head_slice],
+            output_weight[:, head_slice],
+        )
+        eigenvalues, eigenvectors = np.linalg.eigh(gram)
+        order = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[order]
+        eigenvectors = eigenvectors[:, order]
+        top_basis = eigenvectors[:, : args.rank]
+        top_projector = top_basis @ top_basis.T
+        random_basis, _ = np.linalg.qr(rng.normal(size=(attention.dim, args.rank)))
+        random_projector = random_basis @ random_basis.T
+        projectors["keep_top"].append(top_projector)
+        projectors["keep_random"].append(random_projector)
+        projectors["remove_top"].append(identity - top_projector)
+        projectors["remove_random"].append(identity - random_projector)
+
+        deltas = {}
+        for projector_name, projector in (
+            ("keep_top", top_projector),
+            ("keep_random", random_projector),
+            ("remove_top", identity - top_projector),
+            ("remove_random", identity - random_projector),
+        ):
+            deltas[projector_name] = sum(
+                float(np.square(matrix[head_slice] @ projector - matrix[head_slice]).sum())
+                for matrix in matrices
+            )
+        norm_match_scales["keep_random_normmatched"].append(
+            math.sqrt(deltas["keep_top"] / max(deltas["keep_random"], 1e-30))
+        )
+        norm_match_scales["remove_random_normmatched"].append(
+            math.sqrt(deltas["remove_top"] / max(deltas["remove_random"], 1e-30))
+        )
+        nonnegative = np.clip(eigenvalues, 0, None)
+        spectra[str(head_index)] = {
+            "top_eigenvalues": eigenvalues[:8].tolist(),
+            "top_rank_spectral_mass": float(
+                nonnegative[: args.rank].sum() / max(nonnegative.sum(), 1e-30)
+            ),
+        }
+
+    def restore_weights() -> None:
+        with torch.no_grad():
+            for name in matrix_names:
+                getattr(attention, name).weight.copy_(original_weights[name])
+
+    def apply_condition(condition: str) -> float:
+        restore_weights()
+        if condition == "baseline":
+            return 0.0
+        projector_condition = condition.replace("_normmatched", "")
+        if projector_condition not in projectors:
+            raise ValueError(f"Unknown surgery condition {condition}")
+        squared_delta = 0.0
+        squared_base = 0.0
+        with torch.no_grad():
+            for head_index in range(attention.n_heads):
+                start = head_index * attention.head_dim
+                stop = (head_index + 1) * attention.head_dim
+                head_slice = slice(start, stop)
+                projector = torch.tensor(
+                    projectors[projector_condition][head_index],
+                    dtype=original_weights["wq1"].dtype,
+                    device="cuda",
+                )
+                interpolation = (
+                    norm_match_scales[condition][head_index]
+                    if condition in norm_match_scales
+                    else 1.0
+                )
+                for name in matrix_names:
+                    original = original_weights[name][head_slice]
+                    projected = original @ projector
+                    edited = original + interpolation * (projected - original)
+                    getattr(attention, name).weight[head_slice].copy_(edited)
+                    squared_delta += float((edited - original).float().pow(2).sum())
+                    squared_base += float(original.float().pow(2).sum())
+        return math.sqrt(squared_delta / max(squared_base, 1e-30))
+
+    conditions = [item.strip() for item in args.surgery_conditions.split(",") if item.strip()]
+    by_condition = {}
+    relative_weight_change = {}
+    try:
+        for condition in conditions:
+            relative_weight_change[condition] = apply_condition(condition)
+            print(
+                f"SURGERY {condition}: relative weight change "
+                f"{relative_weight_change[condition]:.6f}",
+                flush=True,
+            )
+            by_condition[condition] = run_capability(
+                args, model, suite, tasks, encode, stats
+            )
+    finally:
+        restore_weights()
+
+    overall = {
+        condition: float(result["overall"]) for condition, result in by_condition.items()
+    }
+    comparisons = {}
+    if "keep_top" in overall and "keep_random_normmatched" in overall:
+        comparisons["keep_top_minus_random_normmatched"] = (
+            overall["keep_top"] - overall["keep_random_normmatched"]
+        )
+    if "remove_top" in overall and "remove_random_normmatched" in overall:
+        comparisons["remove_random_normmatched_minus_top"] = (
+            overall["remove_random_normmatched"] - overall["remove_top"]
+        )
+    return {
+        "block_index": args.block_index,
+        "rank": args.rank,
+        "rank_fraction": args.rank / attention.dim,
+        "conditions": conditions,
+        "overall_by_condition": overall,
+        "comparisons": comparisons,
+        "relative_weight_change": relative_weight_change,
+        "by_condition": by_condition,
+        "spectra": spectra,
+        "discovery_inputs": "trained weights only",
+        "evaluation_split": {
+            "task_start": args.task_start,
+            "task_end": args.task_end,
+            "eps_per_task": args.eps_per_task,
+        },
+        "scope": (
+            "This is direct coefficient surgery with weight-derived subspaces. A discovery "
+            "sweep must be followed by a held-out task confirmation before making a selective "
+            "behavior-edit claim."
         ),
     }
 
@@ -803,6 +1019,12 @@ def main() -> None:
         if args.architecture != "chi":
             raise ValueError("exact_attention requires architecture=chi")
         result["exact_attention"] = run_exact_attention_audit(model, sample_tensors)
+    elif args.mode == "surgery":
+        if args.architecture != "chi":
+            raise ValueError("surgery requires architecture=chi")
+        result["surgery"] = run_weight_surgery(
+            args, model, suite, tasks, encode, stats
+        )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")

@@ -1,0 +1,17 @@
+{
+  "architecture": "conventional",
+  "seed": 99,
+  "steps": 1,
+  "batch_size": 16,
+  "samples": 63352,
+  "parameters": 20138632,
+  "elapsed_s": 2.353551991749555,
+  "steps_per_s": 0.8497794002473955,
+  "examples_per_s": 13.596470403958328,
+  "peak_allocated_gb": 3.875303936,
+  "peak_reserved_gb": 3.917479936,
+  "last_loss": 1.0557068586349487,
+  "gpu": "NVIDIA A30",
+  "checkpoint": "artifacts/ckpt_train_smoke.pt",
+  "ema_decay": 0.999
+}

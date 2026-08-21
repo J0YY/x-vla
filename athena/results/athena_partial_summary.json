@@ -1,0 +1,179 @@
+{
+  "conventional_capability": {
+    "architecture": "conventional",
+    "shards": [
+      "/work/joy/x-vla-workshop/results/conventional_s0_t0_3.json",
+      "/work/joy/x-vla-workshop/results/conventional_s0_t3_6.json",
+      "/work/joy/x-vla-workshop/results/conventional_s0_t6_8.json",
+      "/work/joy/x-vla-workshop/results/conventional_s0_t8_10.json"
+    ],
+    "successes": 449,
+    "trials": 500,
+    "success_rate": 0.898,
+    "success_rate_wilson_95pct_ci": [
+      0.868365377095774,
+      0.9215656478968306
+    ],
+    "per_task": {
+      "0": {
+        "successes": 38,
+        "trials": 50,
+        "success_rate": 0.76
+      },
+      "1": {
+        "successes": 40,
+        "trials": 50,
+        "success_rate": 0.8
+      },
+      "2": {
+        "successes": 47,
+        "trials": 50,
+        "success_rate": 0.94
+      },
+      "3": {
+        "successes": 44,
+        "trials": 50,
+        "success_rate": 0.88
+      },
+      "4": {
+        "successes": 50,
+        "trials": 50,
+        "success_rate": 1
+      },
+      "5": {
+        "successes": 45,
+        "trials": 50,
+        "success_rate": 0.9
+      },
+      "6": {
+        "successes": 47,
+        "trials": 50,
+        "success_rate": 0.94
+      },
+      "7": {
+        "successes": 45,
+        "trials": 50,
+        "success_rate": 0.9
+      },
+      "8": {
+        "successes": 50,
+        "trials": 50,
+        "success_rate": 1
+      },
+      "9": {
+        "successes": 43,
+        "trials": 50,
+        "success_rate": 0.86
+      }
+    },
+    "parameters": 20138632,
+    "latency_ms_batch1_median_across_shards": 6.856176170986146,
+    "latency_ms_batch1_by_shard": [
+      6.419362020678818,
+      7.41957311052829,
+      7.292990321293473,
+      6.2960464507341385
+    ],
+    "gpus": [
+      "NVIDIA A30",
+      "NVIDIA RTX A6000"
+    ]
+  },
+  "conventional_capability_by_seed": {
+    "0": {
+      "architecture": "conventional",
+      "shards": [
+        "/work/joy/x-vla-workshop/results/conventional_s0_t0_3.json",
+        "/work/joy/x-vla-workshop/results/conventional_s0_t3_6.json",
+        "/work/joy/x-vla-workshop/results/conventional_s0_t6_8.json",
+        "/work/joy/x-vla-workshop/results/conventional_s0_t8_10.json"
+      ],
+      "successes": 449,
+      "trials": 500,
+      "success_rate": 0.898,
+      "success_rate_wilson_95pct_ci": [
+        0.868365377095774,
+        0.9215656478968306
+      ],
+      "per_task": {
+        "0": {
+          "successes": 38,
+          "trials": 50,
+          "success_rate": 0.76
+        },
+        "1": {
+          "successes": 40,
+          "trials": 50,
+          "success_rate": 0.8
+        },
+        "2": {
+          "successes": 47,
+          "trials": 50,
+          "success_rate": 0.94
+        },
+        "3": {
+          "successes": 44,
+          "trials": 50,
+          "success_rate": 0.88
+        },
+        "4": {
+          "successes": 50,
+          "trials": 50,
+          "success_rate": 1
+        },
+        "5": {
+          "successes": 45,
+          "trials": 50,
+          "success_rate": 0.9
+        },
+        "6": {
+          "successes": 47,
+          "trials": 50,
+          "success_rate": 0.94
+        },
+        "7": {
+          "successes": 45,
+          "trials": 50,
+          "success_rate": 0.9
+        },
+        "8": {
+          "successes": 50,
+          "trials": 50,
+          "success_rate": 1
+        },
+        "9": {
+          "successes": 43,
+          "trials": 50,
+          "success_rate": 0.86
+        }
+      },
+      "parameters": 20138632,
+      "latency_ms_batch1_median_across_shards": 6.856176170986146,
+      "latency_ms_batch1_by_shard": [
+        6.419362020678818,
+        7.41957311052829,
+        7.292990321293473,
+        6.2960464507341385
+      ],
+      "gpus": [
+        "NVIDIA A30",
+        "NVIDIA RTX A6000"
+      ]
+    },
+    "1": null,
+    "2": null
+  },
+  "chi_s0_capability": null,
+  "causal_intervention": null,
+  "exact_attention": null,
+  "matched_training_profile": null,
+  "matched_inference_profile": null,
+  "conventional_multiseed": {
+    "complete_seeds": 1,
+    "success_rates": [
+      0.898
+    ],
+    "mean_success_rate": 0.898,
+    "population_std_success_rate": 0.0
+  }
+}
