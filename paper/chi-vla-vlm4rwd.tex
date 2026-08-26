@@ -33,47 +33,25 @@
 \maketitle
 
 \begin{abstract}
-Tensor decomposition factors a large table of interactions into a small set of low-rank
-components that can be ranked and inspected. Applying it directly to a conventional robot
-policy is difficult because softmax, ordinary activations, and normalization interrupt the
-required algebraic form. We introduce \chivla, a compact vision-language-action policy whose
-learned map uses only bilinear, linear, and rational operations. Its checkpoint therefore
-defines an explicit rational tensor program, making interactions among image, instruction,
-state, and action coordinates accessible from the weights. A runtime operator audit of the
-seed-$0$ $20.1$M ViT checkpoint finds no incompatible learned operation, and local reconstructions
-reproduce its deployed rational and bilinear branches near the float32 precision floor.
-Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Object success is
-$85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
-prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
-Separately, three jointly trained checkpoints spanning $40$ familiar LIBERO tasks reach
-$70.35\%\pm1.32\%$ task-macro success, compared with $69.12\%\pm2.33\%$ for
-parameter-matched conventional controls under the same recipe. Their frozen three-pass mean-prediction ensemble
-reaches $74.75\%$ with every suite at or above $50\%$. At equal aggregate updates, a frozen
-seed-$0$ joint checkpoint retains $95.16\%$ of four suite specialists' pooled success.
-On the three LIBERO-Object checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
-states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
-co-present control instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes,
-zeroing only the learned post-lookup token vectors drops success from $263/300=87.7\%$ to
-$63/300=21.0\%$, with positive gaps for all ten task aggregates.
-On a separate three-checkpoint convolutional instantiation, independent reconstruction covers all
-$4{,}608$ joint-attention head-input cases, all $384$ joint-FFN module-input cases, and all $384$
-complete joint-block input cases. The respective worst relative errors are
-$6.36\times10^{-16}$, $1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Exact-attention records naming the same three ViT
-checkpoint artifacts derive the softmax-free attention decomposition and numerically replay every
-attention module on one fixed corrected cached input per checkpoint, with worst relative error
-$2.016119\times10^{-7}$. A separate sequential replay independently rebuilds the learned path
-through four vision and eight joint blocks to the linear action output on $48$ fixed inputs, with
-worst relative error $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. In a seed-$0$
-ViT checkpoint, all $36$ primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
-median fidelity ratio $2.44$. Separately, prospectively fixed rank-$96$ visual projectors retain
-$95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
-random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong single-suite and
-four-suite familiar-task capability together
-with exact, checkpoint-native access to learned attention structure and bounded familiar-task
-instruction necessity. Such access is relevant when deployment failures may involve visual
-shortcuts or weak language use. The present results do not establish unseen-task generalization,
-counterfactual goal following, selective behavioral editing, or an input-general compact symbolic
-decomposition of the full policy.
+Reliable vision-language control requires both closed-loop capability and evidence about which
+learned paths support an action. Conventional policy checkpoints make exact weight-level analysis
+difficult because softmax, ordinary activations, and square-root normalization interrupt the
+required algebraic form. We introduce \chivla, a compact policy built only from linear, bilinear,
+and rational learned operations. A runtime audit of its seed-$0$ $20.1$M ViT checkpoint finds no
+incompatible learned operation, and independent reconstructions reproduce deployed branches near
+the float32 precision floor. Three policies reach $85.3\%\pm4.6\%$ closed-loop success on
+LIBERO-Object, while a fixed three-pass ensemble reaches $93.4\%$. In a separate same-recipe
+experiment over $40$ familiar tasks, three joint checkpoints reach $70.35\%\pm1.32\%$ task-macro
+success versus $69.12\%\pm2.33\%$ for conventional controls differing by only $0.006\%$ in
+parameter count. Their frozen ensemble reaches $74.75\%$. Prospectively frozen paired audits then
+test whether success depends on language. Correct instructions succeed on $82.3\%$ of
+checkpoint-state pairs versus $24.0\%$ for a co-present control, while zeroing only post-lookup
+token vectors reduces success from $87.7\%$ to $21.0\%$ on disjoint episodes. Exact coefficient
+reconstructions extend through learned attention, and an independent $48$-input sequential replay
+reaches the action output with worst relative error $3.9822\times10^{-7}$. The result is a capable
+familiar-task VLA family with checkpoint-native diagnostics for learned structure and language-path
+necessity. It does not establish unseen-task generalization, counterfactual goal following,
+validated behavioral editing, or deployment-grade grounding.
 \end{abstract}
 
 % ============================================================================

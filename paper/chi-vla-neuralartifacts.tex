@@ -33,43 +33,26 @@
 \maketitle
 
 \begin{abstract}
-Tensor decomposition rewrites a multidimensional table as a small set of low-rank factors. In
-a neural network, those factors can expose which combinations of inputs and outputs are encoded
-by the weights. Conventional nonlinear operations make such a table difficult to obtain
-directly. We introduce \chivla, a rational vision-language-action model family with a $19.2$M
-convolutional policy and a $20.1$M ViT policy, each containing
-only bilinear, linear, and rational learned operations. Its checkpoint therefore specifies an
-explicit rational tensor program rather than only an opaque executable function. A runtime
-operator audit of the seed-$0$ $20.1$M ViT checkpoint and local reconstructions verify its operator-level
-form. We derive an exact weight-based decomposition of each softmax-free attention layer and,
-on one fixed corrected cached input per checkpoint, numerically replay all $12$ modules in each of three
-ViT checkpoint artifacts with
-worst relative error $2.016119\times10^{-7}$. A separate sequential replay independently rebuilds
-the learned path through four vision and eight joint blocks to the linear action output on $48$
-fixed inputs, with worst relative error $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. An
-$O(d^2)$ reduced Gram avoids materializing the
-coefficient tensor. In a seed-$0$ ViT checkpoint, all $36$ primary block-head tests favor the
-rank-$128$ weight-derived subspace over fixed random controls. Across the same three ViT
-checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
-per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. Across the three
-jointly trained checkpoints spanning $40$ familiar LIBERO tasks, task-macro success is
-$70.35\%\pm1.32\%$, compared with $69.12\%\pm2.33\%$ for parameter-matched conventional
-controls under the same recipe. Their frozen three-pass mean-prediction ensemble reaches $74.75\%$ with
-every suite at or above $50\%$. At equal aggregate updates, a frozen seed-$0$ joint checkpoint
-retains $95.16\%$ of four suite specialists' pooled success. On the three LIBERO-Object
-checkpoints, a prospectively frozen paired test on $100$ unique familiar-task states finds
-$247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a co-present control
-instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes, zeroing only the
-learned post-lookup token vectors drops success from $263/300=87.7\%$ to $63/300=21.0\%$, with
-positive gaps for all ten task aggregates. Separate Conv
-audits reconstruct $4{,}608$ attention-head cases, $384$ joint-FFN module-input cases, and $384$
-complete joint-block input cases, with worst relative errors $6.36\times10^{-16}$,
-$1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Learned rank-$96$ visual projectors retain
-$95.2$--$98.2\%$ of baseline successes, versus $3.3$--$13.6\%$ for random projectors. We therefore
-establish a capable single-suite and four-suite familiar-task model family with exact layerwise
-structure derived from trained coefficients
-and bounded familiar-task instruction necessity. We do not provide counterfactual goal-following
-evidence or an input-general compact symbolic decomposition of the complete policy.
+Neural checkpoints are usually treated as opaque containers for functions. We instead design a
+vision-language-action checkpoint as an analyzable weight-space artifact. \chivla\ uses only
+linear, bilinear, and rational learned operations, so its parameters define an explicit rational
+tensor program. A runtime audit of the seed-$0$ $20.1$M ViT checkpoint finds no incompatible
+learned operation, while weight-derived reconstructions reproduce deployed branches near the
+float32 precision floor. Exact reduced-Gram analysis derives attention subspaces directly from
+trained coefficients without materializing the full high-order tensor. Its rank-$128$ subspaces
+beat fixed equal-rank random controls in all $36$ primary block-head comparisons. The artifact is
+also behaviorally meaningful. Three policies reach $85.3\%\pm4.6\%$ closed-loop success on
+LIBERO-Object, and a fixed three-pass ensemble reaches $93.4\%$. In a separate same-recipe
+experiment over $40$ familiar tasks, three joint checkpoints reach $70.35\%\pm1.32\%$ task-macro
+success versus $69.12\%\pm2.33\%$ for conventional controls differing by only $0.006\%$ in
+parameter count. Prospectively frozen audits further show bounded familiar-task language-path
+necessity, including a drop from $87.7\%$ to $21.0\%$ when only post-lookup token vectors are
+zeroed. An independent sequential replay rebuilds the learned path through all $12$ transformer
+blocks to the action output on $48$ fixed inputs with worst relative error
+$3.9822\times10^{-7}$. The anonymous artifact binds raw outcomes, checkpoint metadata,
+provenance, and independently recomputed gates. It supports exact layerwise structural access in
+a capable familiar-task policy family, not unseen-task generalization, validated coefficient
+editing, or a compact input-general symbolic decomposition of the complete policy.
 \end{abstract}
 
 % ============================================================================
@@ -512,18 +495,6 @@ F.~Oozeer, Y.~Erisken, A.~Rigg, J.~Oramas, and L.~Sharkey.
 B.~H\"aon, K.~Stocking, I.~Chuang, and C.~Tomlin.
 \newblock \emph{Mechanistic Interpretability for Steering Vision-Language-Action Models.}
 \newblock 2025.
-
-\bibitem{sparsecircuits}
-S.~Marks et al.
-\newblock \emph{Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs
-in Language Models.}
-\newblock ICLR, 2025.
-
-\bibitem{causalreduction}
-M.~Keki\'c et al.
-\newblock \emph{Learning Nonlinear Causal Reductions to Explain Reinforcement Learning
-Policies.}
-\newblock ICLR, 2026.
 
 \bibitem{liberopro}
 X.~Zhou et al.

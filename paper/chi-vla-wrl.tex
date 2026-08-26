@@ -33,42 +33,25 @@
 \maketitle
 
 \begin{abstract}
-Tensor decomposition turns a large table of learned interactions into simpler low-rank factors
-that can be ranked and inspected. Conventional robot policies contain operations that block this
-direct weight-level view. We introduce \chivla, a rational vision-language-action model family
-with a $19.2$M convolutional policy and a $20.1$M ViT policy, both built only from bilinear,
-linear, and rational learned operations. Their weights can therefore be
-reorganized into explicit interaction tensors rather than treated only as an opaque checkpoint.
-A runtime operator audit of the seed-$0$ $20.1$M ViT checkpoint and local numerical reconstructions verify
-its operator-level form. Across three independently trained $20.1$M ViT policies, closed-loop
-LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A fixed
-elementwise prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
-Separately, three jointly trained checkpoints spanning $40$ familiar LIBERO tasks reach
-$70.35\%\pm1.32\%$ task-macro success, compared with $69.12\%\pm2.33\%$ for
-parameter-matched conventional controls under the same recipe. Their frozen three-pass mean-prediction ensemble
-reaches $74.75\%$ with every suite at or above $50\%$. At equal aggregate updates, a frozen
-seed-$0$ joint checkpoint retains $95.16\%$ of four suite specialists' pooled success.
-On the three LIBERO-Object checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
-states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
-co-present control instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes,
-zeroing only the learned post-lookup token vectors drops success from $263/300=87.7\%$ to
-$63/300=21.0\%$, with positive gaps for all ten task aggregates.
-A separate convolutional instantiation passes independent $4{,}608$-case joint-attention,
-$384$-case joint-FFN, and $384$-case complete joint-block certificates. Their respective worst
-relative errors are $6.36\times10^{-16}$, $1.39\times10^{-15}$, and
-$1.5024\times10^{-7}$. Exact-attention records naming those same ViT checkpoint
-artifacts numerically replay every attention module on one fixed corrected cached input per checkpoint,
-with worst relative error $2.016119\times10^{-7}$. Across $48$ fixed inputs, a sequential replay
-rebuilds all $12$ learned transformer blocks to the action output at worst relative error
-$3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. In a
-seed-$0$ ViT checkpoint, exact weight-derived subspaces beat equal-rank random controls in all
-$36$ primary block-head tests. Separately, prospectively fixed rank-$96$ visual projectors retain
-$95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
-random projectors retain only $3.3$--$13.6\%$. The result is a capable and structurally
-inspectable single-suite and four-suite familiar-task family with exact access to trained attention
-coefficients and bounded familiar-task instruction necessity. It does not establish counterfactual
-goal following, zero-shot language use, or an input-general compact symbolic decomposition of the
-full policy.
+Physical AI can succeed on familiar benchmarks without supporting zero-shot use or exposing why
+an action was chosen. We introduce \chivla, a compact vision-language-action policy family built
+only from linear, bilinear, and rational learned operations. Its weights therefore define explicit
+interaction tensors that can be audited directly. Three $20.1$M ViT policies reach
+$85.3\%\pm4.6\%$ closed-loop success on LIBERO-Object, while a fixed three-pass ensemble reaches
+$93.4\%$. More importantly for breadth, three joint checkpoints spanning $40$ familiar tasks
+reach $70.35\%\pm1.32\%$ task-macro success versus $69.12\%\pm2.33\%$ for same-recipe
+conventional controls differing by only $0.006\%$ in parameter count. Their frozen ensemble
+reaches $74.75\%$ with every suite at or above $50\%$, and an equal-update seed-$0$ joint model
+retains $95.16\%$ of four suite specialists' pooled success. A runtime operator audit finds no
+incompatible learned operation. Independent coefficient reconstructions extend through learned
+attention, and a $48$-input sequential replay reaches the action output with worst relative error
+$3.9822\times10^{-7}$. Prospectively frozen paired tests also establish bounded familiar-task
+instruction necessity. Correct instructions succeed on $82.3\%$ of checkpoint-state pairs versus
+$24.0\%$ for a co-present control, while zeroing only post-lookup token vectors reduces success
+from $87.7\%$ to $21.0\%$ on disjoint episodes. Thus one rational policy family can combine
+multi-suite familiar-task capability with exact checkpoint-native structural access. Every tested
+task and instruction appeared during training, so we do not claim zero-shot language use,
+counterfactual goal following, or unseen-task generalization.
 \end{abstract}
 
 % ============================================================================
@@ -426,18 +409,6 @@ F.~Oozeer, Y.~Erisken, A.~Rigg, J.~Oramas, and L.~Sharkey.
 B.~H\"aon, K.~Stocking, I.~Chuang, and C.~Tomlin.
 \newblock \emph{Mechanistic Interpretability for Steering Vision-Language-Action Models.}
 \newblock 2025.
-
-\bibitem{sparsecircuits}
-S.~Marks et al.
-\newblock \emph{Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs
-in Language Models.}
-\newblock ICLR, 2025.
-
-\bibitem{causalreduction}
-M.~Keki\'c et al.
-\newblock \emph{Learning Nonlinear Causal Reductions to Explain Reinforcement Learning
-Policies.}
-\newblock ICLR, 2026.
 
 \bibitem{liberopro}
 X.~Zhou et al.

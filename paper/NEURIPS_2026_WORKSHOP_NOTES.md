@@ -1,6 +1,6 @@
 # NeurIPS 2026 workshop targeting notes
 
-Research rechecked on August 21, 2026.
+Research rechecked against the live workshop calls on August 26, 2026.
 
 ## Recommended portfolio
 
@@ -37,7 +37,7 @@ Confirmed requirements:
 - Submission: [VLM4RWD OpenReview](https://openreview.net/group?id=NeurIPS.cc%2F2026%2FWorkshop%2FVLM4RWD).
 - Local source: `chi-vla-vlm4rwd.tex`.
 - Compiled output: `chi-vla-vlm4rwd.pdf`, 7 content pages with references starting on page 8.
-  The complete PDF is 10 pages including references and appendix.
+  The complete PDF is 11 pages including references and appendix.
 
 Framing: capable specialist control, exact architectural audit, causal inspection, then the
 counterfactual language shortcut as an honest deployment failure.
@@ -62,8 +62,9 @@ Confirmed requirements:
 - NeurIPS 2026 workshop guidance states that workshop papers are non-archival. The organizers
   should be asked if either submission track has any additional publication policy.
 - Local source: `chi-vla-neuralartifacts.tex`.
-- Compiled output: `chi-vla-neuralartifacts.pdf`, a 6-page extended abstract with references
-  starting on page 7. The complete PDF is 9 pages including references and appendix.
+- Submission track: full paper.
+- Compiled output: `chi-vla-neuralartifacts.pdf`, 9 content pages with references starting on
+  page 10. The complete PDF is 12 pages including references and appendix.
 
 Framing: the trained checkpoint is the primary artifact. Capability establishes that the artifact
 is behaviorally meaningful. Exact layerwise structure and the causal subspace are the positive
@@ -87,7 +88,7 @@ Confirmed requirements:
 - Status: non-archival.
 - Local source: `chi-vla-wrl.tex`.
 - Compiled output: `chi-vla-wrl.pdf`, 6 content pages with references starting on page 7.
-  The complete PDF is 9 pages including references and appendix.
+  The complete PDF is 10 pages including references and appendix.
 
 The current WRL FAQ explicitly allows parallel or later conference and journal submission, but it
 does not explicitly authorize sending substantially the same manuscript to another NeurIPS 2026
@@ -112,6 +113,8 @@ paper reports matched FLOPs, latency, memory, and energy measurements.
 - Manual geometry, caption sizing, and compact-list overrides are absent, so the venue style
   controls layout.
 - All abstracts are one paragraph.
+- The general VLM audit copy, `chi-vla.pdf`, has 8 content pages with references starting on
+  page 9. Its complete PDF is 12 pages including references and appendix.
 - The appendix adds per-task ensemble behavior, three-checkpoint and conventional-control
   grounding, systems profiling, intervention diagnostics, and the expanded all-attention plus
   direct-surgery screen.
