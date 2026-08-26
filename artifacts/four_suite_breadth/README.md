@@ -2,8 +2,8 @@
 
 This anonymous, CPU-only artifact verifies the recorded χ-VLA breadth results over the 40 familiar
 tasks in LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, and LIBERO-10. It uses only the Python standard
-library and sixteen committed JSON records. No checkpoint, dataset, GPU, network access, or package
-installation is needed.
+library, sixteen manifest records, and 96 raw evaluation shards. No checkpoint, dataset, GPU,
+network access, or package installation is needed.
 
 From the repository root, run:
 
@@ -13,11 +13,12 @@ python3 artifacts/four_suite_breadth/verify.py
 
 The verifier checks the immutable SHA-256 identity of the frozen ensemble manifest, the strict
 ensemble summary, and the separate seed-0 specialist-retention summary. It then independently
-recomputes the three member macro scores, their mean and sample standard deviation, the matched
-conventional comparison, suite means, task-threshold counts, ensemble uplift and gates, and the
-generalist-to-specialist retention ratio. Six training records and their exact checkpoint metadata
-verify that both architecture families used the same recipe and differed in parameter count by only
-1,280 parameters, or 0.006%.
+verifies the SHA-256 identity and frozen provenance of every raw shard, then recomputes all 12,000
+matched-comparison episode outcomes. From those outcomes it derives the three member macro scores,
+their mean and sample standard deviation, the matched conventional comparison, suite means,
+task-threshold counts, ensemble uplift and gates, and the generalist-to-specialist retention ratio.
+Six training records and their exact checkpoint metadata verify that both architecture families
+used the same recipe and differed in parameter count by only 1,280 parameters, or 0.006%.
 
 The expected verified results are:
 
@@ -32,5 +33,6 @@ The expected verified results are:
 
 All 40 tasks appeared during training. The ensemble performs three policy forward passes per query,
 and its protocol was frozen after the member checkpoints had been selected but before ensemble
-outcomes were observed. This package verifies the recorded summaries and their internal arithmetic.
-It does not rerun model inference or establish unseen-task generalization.
+outcomes were observed. This package verifies the recorded raw evaluation outcomes and derives the
+matched comparison from their episode rows. It does not rerun model inference or establish
+unseen-task generalization.

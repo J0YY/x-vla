@@ -306,6 +306,235 @@ def verify_training_records(
     return parameters
 
 
+def verify_generalist_sources(
+    result: dict[str, Any],
+    architecture: str,
+    seed: int,
+    identity: dict[str, Any],
+    training_record: dict[str, Any],
+    all_source_paths: set[str],
+) -> dict[str, float]:
+    source_files = result.get("source_files")
+    require(isinstance(source_files, list), f"{architecture} seed {seed}: sources are absent")
+    equal(f"{architecture} seed {seed} source count", len(source_files), 16)
+    task_protocol = result.get("task_protocol")
+    require(
+        isinstance(task_protocol, dict) and len(task_protocol) == 40,
+        f"{architecture} seed {seed}: task protocol is incomplete",
+    )
+    expected_protocol = {
+        "res": 64,
+        "horizon": 8,
+        "num_steps_wait": 10,
+        "exec_h": 8,
+        "eps_per_task": 50,
+        "max_steps": 280,
+    }
+    task_success: dict[str, float] = {}
+    seen_tasks: set[str] = set()
+    seed_source_paths: set[str] = set()
+    total_trials = 0
+    total_successes = 0
+    for source_number, source in enumerate(source_files):
+        require(
+            isinstance(source, dict),
+            f"{architecture} seed {seed} source {source_number}: source entry is not an object",
+        )
+        relative = source.get("path")
+        expected_digest = source.get("sha256")
+        require(
+            isinstance(relative, str) and relative.startswith("results/"),
+            f"{architecture} seed {seed} source {source_number}: invalid source path",
+        )
+        require(
+            isinstance(expected_digest, str) and len(expected_digest) == 64,
+            f"{architecture} seed {seed} source {source_number}: invalid source digest",
+        )
+        require(
+            relative not in seed_source_paths and relative not in all_source_paths,
+            f"duplicate generalist source path: {relative}",
+        )
+        seed_source_paths.add(relative)
+        all_source_paths.add(relative)
+        path = safe_path(f"athena/{relative}")
+        equal(f"{relative} SHA-256", file_sha256(path), expected_digest)
+        shard = load_json(path)
+
+        equal(f"{relative} mode", shard.get("mode"), "capability")
+        equal(f"{relative} architecture", shard.get("architecture"), architecture)
+        equal(f"{relative} vision encoder", shard.get("vision_encoder"), "vit")
+        equal(f"{relative} seed", shard.get("seed"), seed)
+        suite = shard.get("suite")
+        require(suite in SUITES, f"{relative}: invalid suite {suite!r}")
+        equal(
+            f"{relative} checkpoint path",
+            shard.get("checkpoint"),
+            f"artifacts/ckpt_generalist_hardened_{architecture}_s{seed}.pt",
+        )
+        equal(
+            f"{relative} model metadata path",
+            shard.get("model_metadata"),
+            f"artifacts/ckpt_generalist_hardened_{architecture}_s{seed}.json",
+        )
+        equal(
+            f"{relative} evaluation scope",
+            shard.get("evaluation_scope"),
+            "In-domain evaluation of a jointly trained multi-suite checkpoint",
+        )
+        equal(f"{relative} matmul precision", shard.get("matmul_precision"), "highest")
+        equal(f"{relative} evaluation protocol", shard.get("evaluation_protocol"), expected_protocol)
+
+        source_identity = shard.get("source_identity")
+        require(isinstance(source_identity, dict), f"{relative}: source identity is absent")
+        equal(f"{relative} source closure", source_identity.get("start"), source_identity.get("end"))
+        start = source_identity.get("start")
+        require(isinstance(start, dict), f"{relative}: source identity start is absent")
+        equal(
+            f"{relative} expected evaluator",
+            source_identity.get("expected_evaluator_sha256"),
+            identity["evaluator_sha256"],
+        )
+        equal(f"{relative} evaluator", start.get("evaluator_sha256"), identity["evaluator_sha256"])
+        equal(f"{relative} evaluation GPU", start.get("evaluation_gpu_name"), identity["evaluation_gpu"])
+        equal(
+            f"{relative} checkpoint identity",
+            start.get("checkpoint_sha256"),
+            result["checkpoint_sha256"],
+        )
+        equal(
+            f"{relative} metadata identity",
+            start.get("model_metadata_sha256"),
+            result["model_metadata_sha256"],
+        )
+        equal(
+            f"{relative} manifest identity",
+            start.get("manifest_sha256"),
+            identity["manifest_start_sha256"],
+        )
+        equal(
+            f"{relative} cache identity",
+            start.get("evaluation_cache_sha256"),
+            identity["cache_provenance"][suite]["cache_sha256"],
+        )
+
+        training_metadata = shard.get("training_metadata")
+        require(isinstance(training_metadata, dict), f"{relative}: training metadata is absent")
+        equal(
+            f"{relative} training metadata format",
+            training_metadata.get("format"),
+            "xvla_multisuite_checkpoint_v1",
+        )
+        for field in (
+            "architecture",
+            "seed",
+            "steps",
+            "batch_size",
+            "suite_batch_size",
+            "lr",
+            "ema_decay",
+            "horizon",
+            "res",
+            "vision_encoder",
+            "training_suites",
+            "checkpoint_sha256",
+            "manifest_sha256",
+            "trainer_sha256",
+            "recipe_version",
+        ):
+            equal(
+                f"{relative} training metadata {field}",
+                training_metadata.get(field),
+                training_record.get(field),
+            )
+
+        capability = shard.get("capability")
+        require(isinstance(capability, dict), f"{relative}: capability record is absent")
+        equal(f"{relative} canonical initial states", capability.get("canonical_init_states"), True)
+        for field, expected_value in (
+            ("eps_per_task", 50),
+            ("exec_h", 8),
+            ("max_steps", 280),
+            ("num_steps_wait", 10),
+        ):
+            equal(f"{relative} capability {field}", capability.get(field), expected_value)
+        task_indices = capability.get("task_indices")
+        require(
+            isinstance(task_indices, list)
+            and task_indices
+            and all(type(task) is int and 0 <= task < 10 for task in task_indices),
+            f"{relative}: invalid task indices",
+        )
+        equal(f"{relative} unique task indices", len(set(task_indices)), len(task_indices))
+        shard_protocol = capability.get("task_protocol")
+        require(isinstance(shard_protocol, dict), f"{relative}: task protocol is absent")
+        equal(f"{relative} task protocol keys", set(shard_protocol), {str(task) for task in task_indices})
+        for task in task_indices:
+            key = f"{suite}:{task}"
+            require(key not in seen_tasks, f"{relative}: duplicate task coverage {key}")
+            seen_tasks.add(key)
+            equal(f"{relative} task protocol {key}", shard_protocol[str(task)], task_protocol[key])
+
+        episodes = capability.get("episodes")
+        require(isinstance(episodes, list), f"{relative}: episode records are absent")
+        equal(f"{relative} episode count", len(episodes), 50 * len(task_indices))
+        episode_ids: dict[int, set[int]] = {task: set() for task in task_indices}
+        task_successes: dict[int, int] = {task: 0 for task in task_indices}
+        for episode_number, episode in enumerate(episodes):
+            require(isinstance(episode, dict), f"{relative} episode {episode_number}: not an object")
+            task = episode.get("task_index")
+            episode_id = episode.get("episode")
+            success = episode.get("success")
+            steps = episode.get("steps")
+            elapsed = episode.get("elapsed_s")
+            require(task in episode_ids, f"{relative} episode {episode_number}: unexpected task")
+            require(type(episode_id) is int and 0 <= episode_id < 50, f"{relative}: invalid episode id")
+            require(
+                episode_id not in episode_ids[task],
+                f"{relative}: duplicate episode {task}:{episode_id}",
+            )
+            require(
+                type(success) is bool,
+                f"{relative} episode {task}:{episode_id}: success is not Boolean",
+            )
+            require(
+                type(steps) is int and 1 <= steps <= 280,
+                f"{relative} episode {task}:{episode_id}: invalid steps",
+            )
+            require(
+                type(elapsed) in (int, float)
+                and math.isfinite(float(elapsed))
+                and elapsed >= 0,
+                f"{relative} episode {task}:{episode_id}: invalid elapsed time",
+            )
+            episode_ids[task].add(episode_id)
+            task_successes[task] += int(success)
+        shard_successes = sum(task_successes.values())
+        equal(f"{relative} recorded trials", capability.get("trials"), len(episodes))
+        equal(f"{relative} recorded successes", capability.get("successes"), shard_successes)
+        close(f"{relative} recorded overall", capability.get("overall"), shard_successes / len(episodes))
+        per_task = capability.get("per_task")
+        require(isinstance(per_task, dict), f"{relative}: per-task results are absent")
+        expected_languages = {task_protocol[f"{suite}:{task}"]["language"] for task in task_indices}
+        equal(f"{relative} per-task languages", set(per_task), expected_languages)
+        for task in task_indices:
+            equal(f"{relative} episode ids for task {task}", episode_ids[task], set(range(50)))
+            key = f"{suite}:{task}"
+            value = task_successes[task] / 50
+            close(
+                f"{relative} per-task result {key}",
+                per_task[task_protocol[key]["language"]],
+                value,
+            )
+            task_success[key] = value
+        total_trials += len(episodes)
+        total_successes += shard_successes
+
+    equal(f"{architecture} seed {seed} source task coverage", seen_tasks, set(task_protocol))
+    equal(f"{architecture} seed {seed} raw trial count", total_trials, 2000)
+    equal(f"{architecture} seed {seed} raw success count", total_successes, result.get("successes"))
+    return task_success
+
+
 def verify_matched_comparison(
     record: dict[str, Any],
     members: dict[str, Any],
@@ -340,6 +569,7 @@ def verify_matched_comparison(
     parameters = verify_training_records(records, record, expected, evidence)
 
     observed: dict[str, dict[str, Any]] = {}
+    all_source_paths: set[str] = set()
     for architecture in ("chi", "conventional"):
         seed_macros: list[float] = []
         suite_seed_values = {suite: [] for suite in SUITES}
@@ -347,18 +577,24 @@ def verify_matched_comparison(
         for seed in SEEDS:
             result = record["by_architecture_and_seed"][architecture][str(seed)]
             equal(f"{architecture} seed {seed} trials", result.get("trials"), 2000)
-            source_files = result.get("source_files")
-            require(isinstance(source_files, list), f"{architecture} seed {seed}: sources are absent")
-            equal(f"{architecture} seed {seed} source count", len(source_files), 16)
-            equal(
-                f"{architecture} seed {seed} unique sources",
-                len({item["path"] for item in source_files}),
-                16,
+            task_success = verify_generalist_sources(
+                result,
+                architecture,
+                seed,
+                identity,
+                records[f"train_{architecture}_s{seed}"],
+                all_source_paths,
             )
-            task_success = result.get("task_success")
+            recorded_task_success = result.get("task_success")
             suite_success = result.get("suite_macro_success")
-            require(isinstance(task_success, dict) and len(task_success) == 40, f"{architecture} seed {seed}: task map is incomplete")
+            require(isinstance(recorded_task_success, dict) and len(recorded_task_success) == 40, f"{architecture} seed {seed}: task map is incomplete")
             require(isinstance(suite_success, dict) and set(suite_success) == set(SUITES), f"{architecture} seed {seed}: suite map is incomplete")
+            for key, value in task_success.items():
+                close(
+                    f"{architecture} seed {seed} raw versus recorded task {key}",
+                    recorded_task_success[key],
+                    value,
+                )
             macro = statistics.fmean(float(task_success[key]) for key in sorted(task_success))
             close(f"{architecture} seed {seed} recorded macro", result.get("macro_task_success"), macro)
             close(f"{architecture} seed {seed} successes", result.get("successes"), 2000 * macro)
@@ -401,6 +637,8 @@ def verify_matched_comparison(
             "suite_means": suite_means,
             "tasks_at_least": tasks_at_least,
         }
+
+    equal("generalist unique raw source count", len(all_source_paths), 96)
 
     conventional = observed["conventional"]
     for seed, (actual, wanted) in enumerate(zip(conventional["macros"], expected["conventional_macro_successes"], strict=True)):

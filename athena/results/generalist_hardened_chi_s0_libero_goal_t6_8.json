@@ -1,0 +1,1450 @@
+{
+  "mode": "capability",
+  "architecture": "chi",
+  "vision_encoder": "vit",
+  "suite": "libero_goal",
+  "training_suite": "libero_goal",
+  "checkpoint": "artifacts/ckpt_generalist_hardened_chi_s0.pt",
+  "ensemble_checkpoints": null,
+  "ensemble_reduction": null,
+  "cp_pruning": null,
+  "cache": "artifacts/libero_goal_frames_100000_64.pkl",
+  "cache_task_metadata": {
+    "repository": "lerobot/libero_goal_image",
+    "revision": "91a97115558b5b611200a432d9c82e4f30991b60",
+    "metadata_file": "meta/tasks.parquet",
+    "metadata_sha256": "80f750568ef991a406e9e1ffcdfe638eaa2dcf452c5e69c1b911c7dae0de8986",
+    "dataset_to_official_task": {
+      "0": 8,
+      "1": 9,
+      "2": 3,
+      "3": 6,
+      "4": 2,
+      "5": 5,
+      "6": 7,
+      "7": 1,
+      "8": 4,
+      "9": 0
+    },
+    "ordering_matches_official": false,
+    "language_set_matches_official": true
+  },
+  "model_metadata": "artifacts/ckpt_generalist_hardened_chi_s0.json",
+  "seed": 0,
+  "matmul_precision": "highest",
+  "numerical_environment": {
+    "torch_version": "2.7.1+cu126",
+    "cuda_version": "12.6",
+    "cuda_matmul_allow_tf32": false,
+    "cudnn_allow_tf32": true,
+    "libero_version": "0.1.0",
+    "robosuite_version": "1.4.1",
+    "mujoco_version": "3.5.0"
+  },
+  "evaluation_protocol": {
+    "res": 64,
+    "horizon": 8,
+    "num_steps_wait": 10,
+    "exec_h": 8,
+    "eps_per_task": 50,
+    "max_steps": 280
+  },
+  "vocab_size": 71,
+  "cache_stats": {
+    "frame_count": 52042,
+    "sample_count": 48618,
+    "state_dim": 8,
+    "action_dim": 7,
+    "action_mean": [
+      0.06055660545825958,
+      0.09092166274785995,
+      -0.09936840832233429,
+      0.0007960734656080604,
+      0.004930675029754639,
+      -0.004774368833750486,
+      -0.005141358356922865
+    ],
+    "action_std": [
+      0.3401202857494354,
+      0.3849916458129883,
+      0.4516366124153137,
+      0.039688825607299805,
+      0.06370578706264496,
+      0.07867124676704407,
+      0.999987781047821
+    ],
+    "state_mean": [
+      -0.04779553413391113,
+      0.027872906997799873,
+      0.7647799253463745,
+      2.9754700660705566,
+      -0.2157314419746399,
+      -0.12461689859628677,
+      0.026876473799347878,
+      -0.027153940871357918
+    ],
+    "state_std": [
+      0.10416152328252792,
+      0.14872132241725922,
+      0.37955522537231445,
+      0.3418324589729309,
+      0.9011379480361938,
+      0.32278531789779663,
+      0.014261600561439991,
+      0.014149376191198826
+    ]
+  },
+  "profile": {
+    "parameters": 20154632,
+    "parameters_millions": 20.154632,
+    "latency_ms_batch1": 32.50076659023762,
+    "peak_allocated_gb": 0.093901824,
+    "peak_reserved_gb": 0.18874368,
+    "profile_iterations": 20,
+    "gpu": "NVIDIA RTX A6000"
+  },
+  "prediction_shape": [
+    1,
+    8,
+    7
+  ],
+  "prediction_finite": true,
+  "prediction_sample": [
+    [
+      0.0571134015917778,
+      -0.17993448674678802,
+      0.1908530741930008,
+      -0.329973965883255,
+      0.5739855766296387,
+      0.441901832818985,
+      -0.989702045917511
+    ],
+    [
+      0.14574256539344788,
+      -0.09178464114665985,
+      0.23558953404426575,
+      -0.32395660877227783,
+      0.448833167552948,
+      0.29868564009666443,
+      -0.9885291457176208
+    ],
+    [
+      0.38444194197654724,
+      0.04034936800599098,
+      0.17603816092014313,
+      -0.3376263380050659,
+      0.39362457394599915,
+      0.2674334943294525,
+      -1.0063717365264893
+    ],
+    [
+      0.8284237384796143,
+      0.23124617338180542,
+      0.21864275634288788,
+      -0.3142755329608917,
+      0.6172290444374084,
+      0.3549463450908661,
+      -1.0009539127349854
+    ],
+    [
+      1.241896152496338,
+      0.3755384683609009,
+      0.2230670154094696,
+      -0.357490211725235,
+      0.8918397426605225,
+      0.4551113247871399,
+      -1.003678560256958
+    ],
+    [
+      1.5472346544265747,
+      0.46455129981040955,
+      0.20114469528198242,
+      -0.42354652285575867,
+      1.2209010124206543,
+      0.5449438691139221,
+      -1.0032529830932617
+    ],
+    [
+      1.7886180877685547,
+      0.528789222240448,
+      0.19932836294174194,
+      -0.48538634181022644,
+      1.386576533317566,
+      0.5813857913017273,
+      -1.0005781650543213
+    ],
+    [
+      1.970587134361267,
+      0.5655752420425415,
+      0.183555468916893,
+      -0.5366442203521729,
+      1.3706015348434448,
+      0.5438486933708191,
+      -0.9973768591880798
+    ]
+  ],
+  "evaluation_scope": "In-domain evaluation of a jointly trained multi-suite checkpoint",
+  "training_metadata": {
+    "format": "xvla_multisuite_checkpoint_v1",
+    "training_suites": [
+      "libero_object",
+      "libero_spatial",
+      "libero_goal",
+      "libero_10"
+    ],
+    "suite_task_offsets": {
+      "libero_object": 0,
+      "libero_spatial": 10,
+      "libero_goal": 20,
+      "libero_10": 30
+    },
+    "task_languages": {
+      "0": "pick up the orange juice and place it in the basket",
+      "1": "pick up the ketchup and place it in the basket",
+      "2": "pick up the cream cheese and place it in the basket",
+      "3": "pick up the bbq sauce and place it in the basket",
+      "4": "pick up the alphabet soup and place it in the basket",
+      "5": "pick up the milk and place it in the basket",
+      "6": "pick up the salad dressing and place it in the basket",
+      "7": "pick up the butter and place it in the basket",
+      "8": "pick up the tomato sauce and place it in the basket",
+      "9": "pick up the chocolate pudding and place it in the basket",
+      "10": "pick up the black bowl next to the cookie box and place it on the plate",
+      "11": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+      "12": "pick up the black bowl on the ramekin and place it on the plate",
+      "13": "pick up the black bowl on the stove and place it on the plate",
+      "14": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+      "15": "pick up the black bowl on the cookie box and place it on the plate",
+      "16": "pick up the black bowl next to the plate and place it on the plate",
+      "17": "pick up the black bowl next to the ramekin and place it on the plate",
+      "18": "pick up the black bowl from table center and place it on the plate",
+      "19": "pick up the black bowl on the wooden cabinet and place it on the plate",
+      "20": "put the bowl on the plate",
+      "21": "put the wine bottle on the rack",
+      "22": "open the top drawer and put the bowl inside",
+      "23": "put the cream cheese in the bowl",
+      "24": "put the wine bottle on top of the cabinet",
+      "25": "push the plate to the front of the stove",
+      "26": "turn on the stove",
+      "27": "put the bowl on the stove",
+      "28": "put the bowl on top of the cabinet",
+      "29": "open the middle drawer of the cabinet",
+      "30": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+      "31": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+      "32": "put the yellow and white mug in the microwave and close it",
+      "33": "turn on the stove and put the moka pot on it",
+      "34": "put both the alphabet soup and the cream cheese box in the basket",
+      "35": "put both the alphabet soup and the tomato sauce in the basket",
+      "36": "put both moka pots on the stove",
+      "37": "put both the cream cheese box and the butter in the basket",
+      "38": "put the black bowl in the bottom drawer of the cabinet and close it",
+      "39": "pick up the book and place it in the back compartment of the caddy"
+    },
+    "source_caches": {
+      "libero_object": {
+        "path": "artifacts/libero_frames_100000_64.pkl",
+        "sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+        "frame_count": 66984,
+        "sample_count": 63352,
+        "local_tasks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "image_shape": [
+          64,
+          64,
+          3
+        ],
+        "state_dim": 8,
+        "action_dim": 7,
+        "task_metadata": {
+          "repository": "lerobot/libero_object_image",
+          "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f",
+          "metadata_file": "meta/tasks.parquet",
+          "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+          "dataset_to_official_task": {
+            "0": 9,
+            "1": 4,
+            "2": 1,
+            "3": 3,
+            "4": 0,
+            "5": 7,
+            "6": 2,
+            "7": 6,
+            "8": 5,
+            "9": 8
+          },
+          "ordering_matches_official": false,
+          "language_set_matches_official": true
+        }
+      },
+      "libero_spatial": {
+        "path": "artifacts/libero_spatial_frames_100000_64.pkl",
+        "sha256": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb",
+        "frame_count": 52970,
+        "sample_count": 49514,
+        "local_tasks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "image_shape": [
+          64,
+          64,
+          3
+        ],
+        "state_dim": 8,
+        "action_dim": 7,
+        "task_metadata": {
+          "repository": "lerobot/libero_spatial_image",
+          "revision": "d86c0b94922572b3b657e1d1a3d01f0952ddeb46",
+          "metadata_file": "meta/tasks.parquet",
+          "metadata_sha256": "90ef6a4278e2f2307d64f1649ecd4f84ee481cff5007f15d8683f1f9cc917af3",
+          "dataset_to_official_task": {
+            "0": 6,
+            "1": 4,
+            "2": 5,
+            "3": 7,
+            "4": 0,
+            "5": 3,
+            "6": 8,
+            "7": 1,
+            "8": 2,
+            "9": 9
+          },
+          "ordering_matches_official": false,
+          "language_set_matches_official": true
+        }
+      },
+      "libero_goal": {
+        "path": "artifacts/libero_goal_frames_100000_64.pkl",
+        "sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550",
+        "frame_count": 52042,
+        "sample_count": 48618,
+        "local_tasks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "image_shape": [
+          64,
+          64,
+          3
+        ],
+        "state_dim": 8,
+        "action_dim": 7,
+        "task_metadata": {
+          "repository": "lerobot/libero_goal_image",
+          "revision": "91a97115558b5b611200a432d9c82e4f30991b60",
+          "metadata_file": "meta/tasks.parquet",
+          "metadata_sha256": "80f750568ef991a406e9e1ffcdfe638eaa2dcf452c5e69c1b911c7dae0de8986",
+          "dataset_to_official_task": {
+            "0": 8,
+            "1": 9,
+            "2": 3,
+            "3": 6,
+            "4": 2,
+            "5": 5,
+            "6": 7,
+            "7": 1,
+            "8": 4,
+            "9": 0
+          },
+          "ordering_matches_official": false,
+          "language_set_matches_official": true
+        }
+      },
+      "libero_10": {
+        "path": "artifacts/libero_10_frames_100000_64.pkl",
+        "sha256": "571691dac732f9aa6c0837dbd3505e497b8dd18ea247b35ae10038c476eb44d0",
+        "frame_count": 100000,
+        "sample_count": 97008,
+        "local_tasks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "image_shape": [
+          64,
+          64,
+          3
+        ],
+        "state_dim": 8,
+        "action_dim": 7,
+        "task_metadata": {
+          "repository": "lerobot/libero_10_image",
+          "revision": "7e324b526699f444044952c82ce3f438e8d300d0",
+          "metadata_file": "meta/tasks.parquet",
+          "metadata_sha256": "10bb12686977333e729ef5c444cb9eb06377fff5b08a6f87f422dc6bf232205e",
+          "dataset_to_official_task": {
+            "0": 4,
+            "1": 6,
+            "2": 9,
+            "3": 2,
+            "4": 7,
+            "5": 0,
+            "6": 8,
+            "7": 1,
+            "8": 3,
+            "9": 5
+          },
+          "ordering_matches_official": false,
+          "language_set_matches_official": true
+        }
+      }
+    },
+    "vocab": {
+      "<pad>": 0,
+      "<bos>": 1,
+      "alphabet": 2,
+      "and": 3,
+      "back": 4,
+      "basket": 5,
+      "bbq": 6,
+      "between": 7,
+      "black": 8,
+      "book": 9,
+      "both": 10,
+      "bottle": 11,
+      "bottom": 12,
+      "bowl": 13,
+      "box": 14,
+      "butter": 15,
+      "cabinet": 16,
+      "caddy": 17,
+      "center": 18,
+      "cheese": 19,
+      "chocolate": 20,
+      "close": 21,
+      "compartment": 22,
+      "cookie": 23,
+      "cream": 24,
+      "drawer": 25,
+      "dressing": 26,
+      "from": 27,
+      "front": 28,
+      "in": 29,
+      "inside": 30,
+      "it": 31,
+      "juice": 32,
+      "ketchup": 33,
+      "left": 34,
+      "microwave": 35,
+      "middle": 36,
+      "milk": 37,
+      "moka": 38,
+      "mug": 39,
+      "next": 40,
+      "of": 41,
+      "on": 42,
+      "open": 43,
+      "orange": 44,
+      "pick": 45,
+      "place": 46,
+      "plate": 47,
+      "pot": 48,
+      "pots": 49,
+      "pudding": 50,
+      "push": 51,
+      "put": 52,
+      "rack": 53,
+      "ramekin": 54,
+      "right": 55,
+      "salad": 56,
+      "sauce": 57,
+      "soup": 58,
+      "stove": 59,
+      "table": 60,
+      "the": 61,
+      "to": 62,
+      "tomato": 63,
+      "top": 64,
+      "turn": 65,
+      "up": 66,
+      "white": 67,
+      "wine": 68,
+      "wooden": 69,
+      "yellow": 70
+    },
+    "normalization": {
+      "action_mean": [
+        0.060556603872623585,
+        0.09092165948906974,
+        -0.09936840873751457,
+        0.0007960734401292327,
+        0.004930675003631792,
+        -0.0047743688908487335,
+        -0.005141358339909939
+      ],
+      "action_std": [
+        0.34012028376171194,
+        0.384991634949855,
+        0.45163660682662415,
+        0.0396888260280201,
+        0.06370578726143981,
+        0.07867125005443229,
+        0.9999877831298675
+      ],
+      "state_mean": [
+        -0.04779553270239923,
+        0.027872907726766847,
+        0.7647799086859752,
+        2.975470065034995,
+        -0.21573144804061065,
+        -0.12461689871110325,
+        0.026876473862097842,
+        -0.027153941204252647
+      ],
+      "state_std": [
+        0.10416152203176929,
+        0.14872131812922873,
+        0.3795552210879,
+        0.3418324737325693,
+        0.9011379386017876,
+        0.3227853109055957,
+        0.014261600792939843,
+        0.014149375939927917
+      ]
+    },
+    "action_count": 2067936,
+    "state_count": 258492,
+    "state_dim": 8,
+    "action_dim": 7,
+    "task_count": 40,
+    "horizon": 8,
+    "res": 64,
+    "source_manifest": "artifacts/libero_all_manifest.json",
+    "architecture": "chi",
+    "vision_encoder": "vit",
+    "seed": 0,
+    "steps": 160000,
+    "batch_size": 256,
+    "suite_batch_size": 64,
+    "lr": 0.0008,
+    "ema_decay": 0.999,
+    "checkpoint": "artifacts/ckpt_generalist_hardened_chi_s0.pt",
+    "checkpoint_sha256": "56a1ca50809c7b791eebd0b19efb19886d55bff68dfceef8710663eebc0f5a8b",
+    "manifest_sha256": "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd",
+    "recipe_version": "multisuite_balanced_v1",
+    "trainer_sha256": "9b63cce90d6c99a3e4f9ecef1db2914352e0221f57ed0bbd3e159eb6c1534f98",
+    "source_identity": {
+      "expected_trainer_sha256": "9b63cce90d6c99a3e4f9ecef1db2914352e0221f57ed0bbd3e159eb6c1534f98",
+      "trainer_start_sha256": "9b63cce90d6c99a3e4f9ecef1db2914352e0221f57ed0bbd3e159eb6c1534f98",
+      "trainer_end_sha256": "9b63cce90d6c99a3e4f9ecef1db2914352e0221f57ed0bbd3e159eb6c1534f98",
+      "imported_sources_start": {
+        "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+        "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+        "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+        "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+        "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+        "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+        "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+        "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla/train/__init__.py": "b1a7a347ca176ef4626ecc1f1d3318dcff63aa5350a9f6df7b8eee19e6058f42",
+        "xvla/train/balance.py": "c444c959dfef3935bbad316f514a3175de92a7f5c1df5dea3f1a5e3e146a6208",
+        "xvla/train/calibrate.py": "f40387995adeca41a94d1d2c2d524b5fa4bfcd1f1bfda3fa6f7555f2648426f7",
+        "xvla/train/data.py": "2b2dd182c654979aff8905097ba577d97c82a386d6d36220dd9e2a49b142c992",
+        "xvla/train/exact_odt_attention_proto.py": "048e094f384ef6064cbd02c6d5668024a49ed8a218d4c318f7846e66d47e3238",
+        "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+        "xvla/train/train_lm.py": "e6ecdcc12a9a252afb3b5fcb75de7ff2728a81183b6c05710fd0c23bf6e2f525"
+      },
+      "imported_sources_end": {
+        "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+        "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+        "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+        "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+        "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+        "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+        "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+        "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla/train/__init__.py": "b1a7a347ca176ef4626ecc1f1d3318dcff63aa5350a9f6df7b8eee19e6058f42",
+        "xvla/train/balance.py": "c444c959dfef3935bbad316f514a3175de92a7f5c1df5dea3f1a5e3e146a6208",
+        "xvla/train/calibrate.py": "f40387995adeca41a94d1d2c2d524b5fa4bfcd1f1bfda3fa6f7555f2648426f7",
+        "xvla/train/data.py": "2b2dd182c654979aff8905097ba577d97c82a386d6d36220dd9e2a49b142c992",
+        "xvla/train/exact_odt_attention_proto.py": "048e094f384ef6064cbd02c6d5668024a49ed8a218d4c318f7846e66d47e3238",
+        "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+        "xvla/train/train_lm.py": "e6ecdcc12a9a252afb3b5fcb75de7ff2728a81183b6c05710fd0c23bf6e2f525"
+      },
+      "imported_bundle_start_sha256": "b8ee89ccaa64b561bde16597961416b2fd1ead4a4e5fac493f6d274706d82049",
+      "imported_bundle_end_sha256": "b8ee89ccaa64b561bde16597961416b2fd1ead4a4e5fac493f6d274706d82049",
+      "manifest_start_sha256": "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd",
+      "manifest_end_sha256": "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd",
+      "source_cache_hashes_start": {
+        "libero_object": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+        "libero_spatial": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb",
+        "libero_goal": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550",
+        "libero_10": "571691dac732f9aa6c0837dbd3505e497b8dd18ea247b35ae10038c476eb44d0"
+      },
+      "source_cache_hashes_end": {
+        "libero_object": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+        "libero_spatial": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb",
+        "libero_goal": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550",
+        "libero_10": "571691dac732f9aa6c0837dbd3505e497b8dd18ea247b35ae10038c476eb44d0"
+      }
+    },
+    "training_environment": {
+      "torch_version": "2.7.1+cu126",
+      "cuda_version": "12.6",
+      "gpu": "NVIDIA RTX A6000",
+      "matmul_precision": "high",
+      "autocast_dtype": "bfloat16"
+    }
+  },
+  "capability": {
+    "overall": 0.83,
+    "per_task": {
+      "put the cream cheese in the bowl": 0.68,
+      "turn on the stove": 0.98
+    },
+    "episodes": [
+      {
+        "task_index": 6,
+        "episode": 0,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.758134901057929
+      },
+      {
+        "task_index": 6,
+        "episode": 1,
+        "success": true,
+        "steps": 95,
+        "elapsed_s": 2.434687166940421
+      },
+      {
+        "task_index": 6,
+        "episode": 2,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.635316911153495
+      },
+      {
+        "task_index": 6,
+        "episode": 3,
+        "success": true,
+        "steps": 90,
+        "elapsed_s": 2.2876185863278806
+      },
+      {
+        "task_index": 6,
+        "episode": 4,
+        "success": true,
+        "steps": 213,
+        "elapsed_s": 6.089983532670885
+      },
+      {
+        "task_index": 6,
+        "episode": 5,
+        "success": true,
+        "steps": 96,
+        "elapsed_s": 2.4380209422670305
+      },
+      {
+        "task_index": 6,
+        "episode": 6,
+        "success": true,
+        "steps": 87,
+        "elapsed_s": 2.2013533459976315
+      },
+      {
+        "task_index": 6,
+        "episode": 7,
+        "success": true,
+        "steps": 89,
+        "elapsed_s": 2.2677805540151894
+      },
+      {
+        "task_index": 6,
+        "episode": 8,
+        "success": true,
+        "steps": 94,
+        "elapsed_s": 2.387131187133491
+      },
+      {
+        "task_index": 6,
+        "episode": 9,
+        "success": true,
+        "steps": 95,
+        "elapsed_s": 2.408161085564643
+      },
+      {
+        "task_index": 6,
+        "episode": 10,
+        "success": true,
+        "steps": 89,
+        "elapsed_s": 2.243347377050668
+      },
+      {
+        "task_index": 6,
+        "episode": 11,
+        "success": true,
+        "steps": 90,
+        "elapsed_s": 2.2857173387892544
+      },
+      {
+        "task_index": 6,
+        "episode": 12,
+        "success": true,
+        "steps": 96,
+        "elapsed_s": 2.4394562281668186
+      },
+      {
+        "task_index": 6,
+        "episode": 13,
+        "success": true,
+        "steps": 95,
+        "elapsed_s": 2.386542099993676
+      },
+      {
+        "task_index": 6,
+        "episode": 14,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.988402391783893
+      },
+      {
+        "task_index": 6,
+        "episode": 15,
+        "success": true,
+        "steps": 92,
+        "elapsed_s": 2.3542888038791716
+      },
+      {
+        "task_index": 6,
+        "episode": 16,
+        "success": true,
+        "steps": 105,
+        "elapsed_s": 2.668583869934082
+      },
+      {
+        "task_index": 6,
+        "episode": 17,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.664439884014428
+      },
+      {
+        "task_index": 6,
+        "episode": 18,
+        "success": true,
+        "steps": 96,
+        "elapsed_s": 2.430072721093893
+      },
+      {
+        "task_index": 6,
+        "episode": 19,
+        "success": true,
+        "steps": 88,
+        "elapsed_s": 2.1818257570266724
+      },
+      {
+        "task_index": 6,
+        "episode": 20,
+        "success": true,
+        "steps": 85,
+        "elapsed_s": 2.149392738007009
+      },
+      {
+        "task_index": 6,
+        "episode": 21,
+        "success": true,
+        "steps": 97,
+        "elapsed_s": 2.4731259243562818
+      },
+      {
+        "task_index": 6,
+        "episode": 22,
+        "success": true,
+        "steps": 102,
+        "elapsed_s": 2.6009067040868104
+      },
+      {
+        "task_index": 6,
+        "episode": 23,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.83991753635928
+      },
+      {
+        "task_index": 6,
+        "episode": 24,
+        "success": true,
+        "steps": 106,
+        "elapsed_s": 2.6949763637967408
+      },
+      {
+        "task_index": 6,
+        "episode": 25,
+        "success": true,
+        "steps": 88,
+        "elapsed_s": 2.2192245847545564
+      },
+      {
+        "task_index": 6,
+        "episode": 26,
+        "success": true,
+        "steps": 89,
+        "elapsed_s": 2.3074461561627686
+      },
+      {
+        "task_index": 6,
+        "episode": 27,
+        "success": true,
+        "steps": 84,
+        "elapsed_s": 2.104447509162128
+      },
+      {
+        "task_index": 6,
+        "episode": 28,
+        "success": true,
+        "steps": 89,
+        "elapsed_s": 2.301034616306424
+      },
+      {
+        "task_index": 6,
+        "episode": 29,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 7.373992215842009
+      },
+      {
+        "task_index": 6,
+        "episode": 30,
+        "success": true,
+        "steps": 94,
+        "elapsed_s": 2.391165927052498
+      },
+      {
+        "task_index": 6,
+        "episode": 31,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.986009880900383
+      },
+      {
+        "task_index": 6,
+        "episode": 32,
+        "success": true,
+        "steps": 90,
+        "elapsed_s": 2.317872593179345
+      },
+      {
+        "task_index": 6,
+        "episode": 33,
+        "success": true,
+        "steps": 97,
+        "elapsed_s": 2.4169977852143347
+      },
+      {
+        "task_index": 6,
+        "episode": 34,
+        "success": true,
+        "steps": 96,
+        "elapsed_s": 2.4760471219196916
+      },
+      {
+        "task_index": 6,
+        "episode": 35,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.937021629884839
+      },
+      {
+        "task_index": 6,
+        "episode": 36,
+        "success": true,
+        "steps": 85,
+        "elapsed_s": 2.2035245271399617
+      },
+      {
+        "task_index": 6,
+        "episode": 37,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 7.4475892670452595
+      },
+      {
+        "task_index": 6,
+        "episode": 38,
+        "success": true,
+        "steps": 90,
+        "elapsed_s": 2.318858112208545
+      },
+      {
+        "task_index": 6,
+        "episode": 39,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.81511675613001
+      },
+      {
+        "task_index": 6,
+        "episode": 40,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.809401412028819
+      },
+      {
+        "task_index": 6,
+        "episode": 41,
+        "success": true,
+        "steps": 82,
+        "elapsed_s": 2.0682852691970766
+      },
+      {
+        "task_index": 6,
+        "episode": 42,
+        "success": true,
+        "steps": 90,
+        "elapsed_s": 2.266224937979132
+      },
+      {
+        "task_index": 6,
+        "episode": 43,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.86944471206516
+      },
+      {
+        "task_index": 6,
+        "episode": 44,
+        "success": true,
+        "steps": 98,
+        "elapsed_s": 2.5265160468406975
+      },
+      {
+        "task_index": 6,
+        "episode": 45,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 7.225320206023753
+      },
+      {
+        "task_index": 6,
+        "episode": 46,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.736874885857105
+      },
+      {
+        "task_index": 6,
+        "episode": 47,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.913329517934471
+      },
+      {
+        "task_index": 6,
+        "episode": 48,
+        "success": true,
+        "steps": 85,
+        "elapsed_s": 2.1958812922239304
+      },
+      {
+        "task_index": 6,
+        "episode": 49,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.805031246971339
+      },
+      {
+        "task_index": 7,
+        "episode": 0,
+        "success": false,
+        "steps": 280,
+        "elapsed_s": 6.884468382690102
+      },
+      {
+        "task_index": 7,
+        "episode": 1,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.8462544428184628
+      },
+      {
+        "task_index": 7,
+        "episode": 2,
+        "success": true,
+        "steps": 73,
+        "elapsed_s": 1.7773462790064514
+      },
+      {
+        "task_index": 7,
+        "episode": 3,
+        "success": true,
+        "steps": 69,
+        "elapsed_s": 1.677447019610554
+      },
+      {
+        "task_index": 7,
+        "episode": 4,
+        "success": true,
+        "steps": 75,
+        "elapsed_s": 1.8442997531965375
+      },
+      {
+        "task_index": 7,
+        "episode": 5,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.847736395895481
+      },
+      {
+        "task_index": 7,
+        "episode": 6,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.817062568385154
+      },
+      {
+        "task_index": 7,
+        "episode": 7,
+        "success": true,
+        "steps": 83,
+        "elapsed_s": 2.084900917019695
+      },
+      {
+        "task_index": 7,
+        "episode": 8,
+        "success": true,
+        "steps": 73,
+        "elapsed_s": 1.818490114994347
+      },
+      {
+        "task_index": 7,
+        "episode": 9,
+        "success": true,
+        "steps": 73,
+        "elapsed_s": 1.813456648029387
+      },
+      {
+        "task_index": 7,
+        "episode": 10,
+        "success": true,
+        "steps": 85,
+        "elapsed_s": 2.0985685507766902
+      },
+      {
+        "task_index": 7,
+        "episode": 11,
+        "success": true,
+        "steps": 88,
+        "elapsed_s": 2.145668820012361
+      },
+      {
+        "task_index": 7,
+        "episode": 12,
+        "success": true,
+        "steps": 69,
+        "elapsed_s": 1.6882129651494324
+      },
+      {
+        "task_index": 7,
+        "episode": 13,
+        "success": true,
+        "steps": 77,
+        "elapsed_s": 1.8862121449783444
+      },
+      {
+        "task_index": 7,
+        "episode": 14,
+        "success": true,
+        "steps": 67,
+        "elapsed_s": 1.608294810168445
+      },
+      {
+        "task_index": 7,
+        "episode": 15,
+        "success": true,
+        "steps": 69,
+        "elapsed_s": 1.6951700248755515
+      },
+      {
+        "task_index": 7,
+        "episode": 16,
+        "success": true,
+        "steps": 75,
+        "elapsed_s": 1.8216348211281002
+      },
+      {
+        "task_index": 7,
+        "episode": 17,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.869643236976117
+      },
+      {
+        "task_index": 7,
+        "episode": 18,
+        "success": true,
+        "steps": 66,
+        "elapsed_s": 1.6058717989362776
+      },
+      {
+        "task_index": 7,
+        "episode": 19,
+        "success": true,
+        "steps": 72,
+        "elapsed_s": 1.7433242066763341
+      },
+      {
+        "task_index": 7,
+        "episode": 20,
+        "success": true,
+        "steps": 71,
+        "elapsed_s": 1.733134756796062
+      },
+      {
+        "task_index": 7,
+        "episode": 21,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.846595039125532
+      },
+      {
+        "task_index": 7,
+        "episode": 22,
+        "success": true,
+        "steps": 68,
+        "elapsed_s": 1.7089567021466792
+      },
+      {
+        "task_index": 7,
+        "episode": 23,
+        "success": true,
+        "steps": 78,
+        "elapsed_s": 1.9336202261038125
+      },
+      {
+        "task_index": 7,
+        "episode": 24,
+        "success": true,
+        "steps": 81,
+        "elapsed_s": 1.9860540181398392
+      },
+      {
+        "task_index": 7,
+        "episode": 25,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.857173150870949
+      },
+      {
+        "task_index": 7,
+        "episode": 26,
+        "success": true,
+        "steps": 72,
+        "elapsed_s": 1.7685936051420867
+      },
+      {
+        "task_index": 7,
+        "episode": 27,
+        "success": true,
+        "steps": 85,
+        "elapsed_s": 2.0708457799628377
+      },
+      {
+        "task_index": 7,
+        "episode": 28,
+        "success": true,
+        "steps": 69,
+        "elapsed_s": 1.6777219241485
+      },
+      {
+        "task_index": 7,
+        "episode": 29,
+        "success": true,
+        "steps": 68,
+        "elapsed_s": 1.6696775197051466
+      },
+      {
+        "task_index": 7,
+        "episode": 30,
+        "success": true,
+        "steps": 77,
+        "elapsed_s": 1.8982057343237102
+      },
+      {
+        "task_index": 7,
+        "episode": 31,
+        "success": true,
+        "steps": 82,
+        "elapsed_s": 2.0246983021497726
+      },
+      {
+        "task_index": 7,
+        "episode": 32,
+        "success": true,
+        "steps": 75,
+        "elapsed_s": 1.8562095719389617
+      },
+      {
+        "task_index": 7,
+        "episode": 33,
+        "success": true,
+        "steps": 74,
+        "elapsed_s": 1.8592441203072667
+      },
+      {
+        "task_index": 7,
+        "episode": 34,
+        "success": true,
+        "steps": 69,
+        "elapsed_s": 1.6961671602912247
+      },
+      {
+        "task_index": 7,
+        "episode": 35,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.857344413176179
+      },
+      {
+        "task_index": 7,
+        "episode": 36,
+        "success": true,
+        "steps": 71,
+        "elapsed_s": 1.74356051068753
+      },
+      {
+        "task_index": 7,
+        "episode": 37,
+        "success": true,
+        "steps": 201,
+        "elapsed_s": 5.444425018038601
+      },
+      {
+        "task_index": 7,
+        "episode": 38,
+        "success": true,
+        "steps": 65,
+        "elapsed_s": 1.6258057937957346
+      },
+      {
+        "task_index": 7,
+        "episode": 39,
+        "success": true,
+        "steps": 66,
+        "elapsed_s": 1.6063833748921752
+      },
+      {
+        "task_index": 7,
+        "episode": 40,
+        "success": true,
+        "steps": 76,
+        "elapsed_s": 1.8729227338917553
+      },
+      {
+        "task_index": 7,
+        "episode": 41,
+        "success": true,
+        "steps": 74,
+        "elapsed_s": 1.83584357611835
+      },
+      {
+        "task_index": 7,
+        "episode": 42,
+        "success": true,
+        "steps": 67,
+        "elapsed_s": 1.6544216610491276
+      },
+      {
+        "task_index": 7,
+        "episode": 43,
+        "success": true,
+        "steps": 80,
+        "elapsed_s": 1.978995239827782
+      },
+      {
+        "task_index": 7,
+        "episode": 44,
+        "success": true,
+        "steps": 68,
+        "elapsed_s": 1.6614789660088718
+      },
+      {
+        "task_index": 7,
+        "episode": 45,
+        "success": true,
+        "steps": 71,
+        "elapsed_s": 1.7434924887493253
+      },
+      {
+        "task_index": 7,
+        "episode": 46,
+        "success": true,
+        "steps": 73,
+        "elapsed_s": 1.8366385390982032
+      },
+      {
+        "task_index": 7,
+        "episode": 47,
+        "success": true,
+        "steps": 67,
+        "elapsed_s": 1.6689180079847574
+      },
+      {
+        "task_index": 7,
+        "episode": 48,
+        "success": true,
+        "steps": 66,
+        "elapsed_s": 1.6552529581822455
+      },
+      {
+        "task_index": 7,
+        "episode": 49,
+        "success": true,
+        "steps": 81,
+        "elapsed_s": 2.0000189538113773
+      }
+    ],
+    "successes": 83,
+    "trials": 100,
+    "task_indices": [
+      6,
+      7
+    ],
+    "eps_per_task": 50,
+    "max_steps": 280,
+    "num_steps_wait": 10,
+    "exec_h": 8,
+    "canonical_init_states": true,
+    "task_protocol": {
+      "6": {
+        "language": "put the cream cheese in the bowl",
+        "problem_folder": "libero_goal",
+        "bddl_file": "put_the_cream_cheese_in_the_bowl.bddl",
+        "bddl_sha256": "81c54eace32b92466598103b3b6e8435ce90f10996ef18cec4a35fe6c4d31a98",
+        "init_state_count": 50,
+        "init_states_sha256": "69c23da5c835a3a15a897e29fc329651522df8bfa3422bab5ff0e3eb30abe530"
+      },
+      "7": {
+        "language": "turn on the stove",
+        "problem_folder": "libero_goal",
+        "bddl_file": "turn_on_the_stove.bddl",
+        "bddl_sha256": "cbd2a0514d53226c5d09e17af40b22935d4cb6ff8fdaff0d55f555de1adecc13",
+        "init_state_count": 50,
+        "init_states_sha256": "c2fa5581d4931c9541be4149884ec3f63f66fb0b352013a18e5d796e34a4f7be"
+      }
+    },
+    "elapsed_s": 407.7282216278836
+  },
+  "source_identity": {
+    "expected_evaluator_sha256": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+    "start": {
+      "evaluator_sha256": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "evaluation_gpu_family": "a6000",
+      "evaluation_gpu_name": "NVIDIA RTX A6000",
+      "imported_sources": {
+        "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+        "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+        "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+        "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+        "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+        "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+        "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+        "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla/train/__init__.py": "b1a7a347ca176ef4626ecc1f1d3318dcff63aa5350a9f6df7b8eee19e6058f42",
+        "xvla/train/balance.py": "c444c959dfef3935bbad316f514a3175de92a7f5c1df5dea3f1a5e3e146a6208",
+        "xvla/train/calibrate.py": "f40387995adeca41a94d1d2c2d524b5fa4bfcd1f1bfda3fa6f7555f2648426f7",
+        "xvla/train/data.py": "2b2dd182c654979aff8905097ba577d97c82a386d6d36220dd9e2a49b142c992",
+        "xvla/train/exact_odt_attention_proto.py": "048e094f384ef6064cbd02c6d5668024a49ed8a218d4c318f7846e66d47e3238"
+      },
+      "imported_bundle_sha256": "758a688b8172d858e8504e6348fae488496957e57d0edb3f72d84657e64c269b",
+      "checkpoint_sha256": "56a1ca50809c7b791eebd0b19efb19886d55bff68dfceef8710663eebc0f5a8b",
+      "model_metadata_sha256": "90e326c2afe4490c31baf1c591136555c6f46cdc77b6f625176de2d51e846914",
+      "manifest_sha256": "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd",
+      "evaluation_cache_sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550"
+    },
+    "end": {
+      "evaluator_sha256": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "evaluation_gpu_family": "a6000",
+      "evaluation_gpu_name": "NVIDIA RTX A6000",
+      "imported_sources": {
+        "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+        "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+        "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+        "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+        "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+        "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+        "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+        "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla/train/__init__.py": "b1a7a347ca176ef4626ecc1f1d3318dcff63aa5350a9f6df7b8eee19e6058f42",
+        "xvla/train/balance.py": "c444c959dfef3935bbad316f514a3175de92a7f5c1df5dea3f1a5e3e146a6208",
+        "xvla/train/calibrate.py": "f40387995adeca41a94d1d2c2d524b5fa4bfcd1f1bfda3fa6f7555f2648426f7",
+        "xvla/train/data.py": "2b2dd182c654979aff8905097ba577d97c82a386d6d36220dd9e2a49b142c992",
+        "xvla/train/exact_odt_attention_proto.py": "048e094f384ef6064cbd02c6d5668024a49ed8a218d4c318f7846e66d47e3238"
+      },
+      "imported_bundle_sha256": "758a688b8172d858e8504e6348fae488496957e57d0edb3f72d84657e64c269b",
+      "checkpoint_sha256": "56a1ca50809c7b791eebd0b19efb19886d55bff68dfceef8710663eebc0f5a8b",
+      "model_metadata_sha256": "90e326c2afe4490c31baf1c591136555c6f46cdc77b6f625176de2d51e846914",
+      "manifest_sha256": "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd",
+      "evaluation_cache_sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550"
+    }
+  }
+}
