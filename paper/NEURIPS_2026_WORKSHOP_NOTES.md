@@ -39,8 +39,8 @@ Confirmed requirements:
 - Compiled output: `chi-vla-vlm4rwd.pdf`, 7 content pages with references starting on page 8.
   The complete PDF is 11 pages including references and appendix.
 
-Framing: capable specialist control, exact architectural audit, causal inspection, then the
-counterfactual language shortcut as an honest deployment failure.
+Framing: capable familiar-task control, exact architectural audit, checkpoint-native diagnostics,
+strong language-path necessity, and honest limits around counterfactual or unseen grounding.
 
 ## 2. Neural Network Artifacts as a New Data Modality
 
@@ -67,8 +67,9 @@ Confirmed requirements:
   page 10. The complete PDF is 12 pages including references and appendix.
 
 Framing: the trained checkpoint is the primary artifact. Capability establishes that the artifact
-is behaviorally meaningful. Exact layerwise structure and the causal subspace are the positive
-results, while the failed direct edit defines the next research question.
+is behaviorally meaningful. Exact layerwise structure, reduced-Gram analysis, and executable
+verifiers are the positive results. Input-conditioned replay and the absence of a validated
+coefficient-edit interface define the claim boundary.
 
 ## 3. 8th Robot Learning Workshop
 
@@ -94,9 +95,9 @@ The current WRL FAQ explicitly allows parallel or later conference and journal s
 does not explicitly authorize sending substantially the same manuscript to another NeurIPS 2026
 workshop. The portfolio-level caution above therefore remains.
 
-Framing: specialist Physical AI can be capable and inspectable, but benchmark success conceals a
-language shortcut. This directly answers the theme with a boundary rather than claiming zero-shot
-generalization.
+Framing: familiar-task Physical AI can be multi-suite capable and inspectable. The language-path
+audits show that this success depends on learned instruction vectors, while the paper explicitly
+withholds zero-shot and unseen-task claims.
 
 ## Other plausible workshop
 

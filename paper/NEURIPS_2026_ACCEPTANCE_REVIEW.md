@@ -1,6 +1,6 @@
 # NeurIPS 2026 workshop acceptance review
 
-Assessment date: August 21, 2026.
+Assessment date: August 26, 2026.
 
 These are subjective probability bands based on topical fit, paper completeness, and typical
 workshop review standards. They are not official acceptance rates, and no experiment can ensure
@@ -46,18 +46,30 @@ state-cluster bootstrap interval is 61.7 to 71.3 points. This strengthens the ev
 specialists use learned instruction vectors. It does not establish semantic grounding or
 generalization.
 
-Estimated acceptance bands after integrating the lexical-path ablation and learned-forward
-certificate:
+The breadth package now closes the earlier single-suite objection. Three jointly trained
+$20.1$M checkpoints spanning all $40$ familiar LIBERO tasks reach $70.35\%\pm1.32\%$
+task-macro success, compared with $69.12\%\pm2.33\%$ for same-recipe conventional controls
+whose parameter counts differ by $0.006\%$. The fixed mean-prediction ensemble reaches $74.75\%$
+with every suite at or above $50\%$, and the equal-update seed-$0$ joint checkpoint retains
+$95.16\%$ of four suite specialists' pooled success. The anonymous artifact independently
+recomputes these quantities from $12{,}000$ canonical outcomes across $96$ immutable raw shards.
+All tasks appeared in training, so this establishes multi-suite capacity rather than unseen-task
+transfer.
 
-- Neural Network Artifacts: 89 to 95 percent. The sequential learned-forward replay now covers the
-  capable ViT family on 48 fixed inputs, while the lexical study adds an independently specified
-  behavioral audit. Neither turns the fixed-input replay into one compact symbolic contraction.
-- VLM4RWD: 82 to 90 percent. Two disjoint paired studies now show both prompt-level instruction
-  necessity and necessity of the learned post-lookup lexical path. The evidence still does not show
+Estimated acceptance bands after the four-suite matched-control result, submission-format audit,
+and final claim-to-artifact review:
+
+- Neural Network Artifacts: 91 to 96 percent. The checkpoint is a behaviorally capable artifact,
+  its structural claims have executable verifiers, and the matched four-suite result reduces the
+  risk that the artifact is only a single-suite curiosity. The remaining limitation is that the
+  learned-forward replay is input-conditioned rather than one compact symbolic contraction.
+- VLM4RWD: 86 to 93 percent. Two disjoint paired studies show both prompt-level instruction
+  necessity and necessity of the learned post-lookup lexical path, while matched four-suite
+  capability strengthens the deployment relevance. The evidence still does not show
   counterfactual goal completion, unseen language, or conflicting-cue resolution.
-- Robot Learning Workshop: 60 to 73 percent. Familiar-task lexical-path necessity improves the
-  behavioral story, but the single-suite specialist setting still limits fit for a venue centered on
-  broader robot-learning behavior and deployment.
+- Robot Learning Workshop: 77 to 88 percent. The four-suite joint policies and specialist-retention
+  comparison close the former breadth blocker. Fit remains limited because every task and
+  instruction appeared in training and there is no physical-robot or zero-shot evaluation.
 
 The largest remaining reviewer objection differs by venue:
 
@@ -66,9 +78,8 @@ The largest remaining reviewer objection differs by venue:
 - VLM4RWD: the paired controls establish familiar-task instruction necessity for the original goal,
   not counterfactual goal selection. All tested task instructions appeared during policy training,
   and co-presence in simulator fields does not guarantee unoccluded camera visibility.
-- Robot Learning Workshop: all validated closed-loop capability remains on one specialist
-  LIBERO-Object suite. The paper does not yet demonstrate the zero-shot, generalist, cross-suite,
-  or physical-robot behavior emphasized by the workshop.
+- Robot Learning Workshop: the validated breadth is multi-suite but remains familiar-task
+  simulation. The paper does not demonstrate zero-shot, unseen-task, or physical-robot behavior.
 
 The stronger action-specificity gate did not pass. Pooled across all three checkpoints, the
 activation-energy basis retains $267/272$ baseline successes and the action-Jacobian basis retains
@@ -80,17 +91,24 @@ action-Jacobian-specific mechanism.
 The counterfactual goal-following study did not pass its frozen gate. Checkpoint 0 reached only
 49/500 counterfactual-goal matching successes, or 9.8 percent, below the fixed 20 percent minimum,
 so the remaining checkpoints were stopped and the result is not presented as positive evidence.
-The separate lexical-path ablation passes and can be reported within its narrower claim. A strong
-four-suite generalist that also passes the 85 percent specialist-retention gate could move Robot
-Learning Workshop substantially, while grounding or paraphrase evidence would be the most direct
-remaining gain for VLM4RWD. No combination of outcomes can guarantee a review decision.
+The separate lexical-path ablation passes and can be reported within its narrower claim. The
+four-suite generalist and the 85 percent specialist-retention gate have now passed. Grounding or
+paraphrase evidence would be the most direct remaining gain for VLM4RWD, but neither is a bounded
+acceptance-critical follow-up at this stage. No combination of outcomes can guarantee a review
+decision.
 
 ## Evidence that currently carries the paper
 
 1. Three independently trained 20.1M ViT policies reach 426/500, 404/500, and 450/500 on
    LIBERO-Object, for $85.3\%\pm4.6\%$. A fixed elementwise prediction-mean ensemble reaches
    467/500, or 93.4 percent, with three forward passes. All $2{,}000$ episode rows are immutable.
-2. The prospectively frozen instruction study contains 100 unique canonical states, 300
+2. Three jointly trained checkpoints span $40$ familiar tasks and reach $70.35\%\pm1.32\%$
+   task-macro success, compared with $69.12\%\pm2.33\%$ for the near-equal-parameter
+   conventional controls. Their fixed ensemble reaches $74.75\%$, every suite is at or above
+   $50\%$, and the equal-update seed-$0$ joint checkpoint retains $95.16\%$ of the four
+   specialists' pooled success. A standard-library verifier recomputes the result from $12{,}000$
+   raw outcomes.
+3. The prospectively frozen instruction study contains 100 unique canonical states, 300
    checkpoint-state pairs, and 900 full 280-step rollouts. Correct, co-present control, and empty
    instructions succeed on 247/300, 72/300, and 78/300 pairs. Both paired gaps exceed 56 points,
    pass the exact paired and state-cluster bootstrap gates, and remain positive for every checkpoint
@@ -99,12 +117,12 @@ remaining gain for VLM4RWD. No combination of outcomes can guarantee a review de
    A disjoint lexical-path ablation adds another 300 paired checkpoint-state evaluations. Exact
    post-lookup zeroing changes success from 263/300 to 63/300, a 66.7-point gap with all ten task
    aggregates positive and a 61.7 to 71.3-point state-cluster bootstrap interval.
-3. On three separate convolutional checkpoints and the same sixteen deterministic inputs per
+4. On three separate convolutional checkpoints and the same sixteen deterministic inputs per
    checkpoint, independent certificates reconstruct all 4,608 joint-attention head-input cases,
    all 384 joint-FFN module-input cases, and all 384 complete joint-block input cases. Worst
    relative errors are $6.36\times10^{-16}$, $1.3871\times10^{-15}$, and
    $1.5024\times10^{-7}$ against frozen $10^{-6}$, $10^{-10}$, and $10^{-4}$ gates.
-4. The corrected-input ViT exact-attention records name the same checkpoint artifacts and
+5. The corrected-input ViT exact-attention records name the same checkpoint artifacts and
    numerically replay all 12 modules on one fixed cached input per checkpoint, covering 36
    module-input cases and 384 architectural heads. Maximum relative error is
    $2.016119\times10^{-7}$. A standard-library verifier binds all raw result, cache, provenance,
@@ -113,23 +131,23 @@ remaining gain for VLM4RWD. No combination of outcomes can guarantee a review de
    linear action output on 48 fixed inputs. The worst final-action relative error is
    $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate, and the manual deployed traversal equals
    the unmodified model call bitwise.
-5. On 128 deterministic, official-task-balanced inputs for each of the three ViT capability
+6. On 128 deterministic, official-task-balanced inputs for each of the three ViT capability
    checkpoints, exhaustive vision, instruction, robot-state, and action-query groups reconstruct
    all 36,864 action-query head-input updates and 3,072 projected module-input cases. Maximum
    relative error is $5.0741\times10^{-7}$ against a frozen $10^{-6}$ gate. Mean coherent-energy
    shares are 67.7 percent vision, 19.2 percent robot state, 7.9 percent action query, and 5.1
    percent instruction. These shares are descriptive rather than causal.
-6. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
+7. All 36 primary block-head tests favor the rank-128 exact weight-derived attention subspace over
    equal-rank random controls. The median fidelity ratio is 2.44.
-7. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
+8. On corrected-projector holdout tasks 8 and 9, learned rank-96 visual projectors retain $259/272$ and
    $267/272$ baseline successes. Three equal-rank random projectors retain $37/272$, $9/272$, and
    $22/272$. A standard-library verifier recomputes all 12 raw files and paired intervals.
-8. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
+9. Across 544,542,720 normalization rows, every deployed rational denominator is finite and
    positive, and action NRMSE from recomputing only the RationalNorm scales in float64 is at most
    $2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
-9. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
+10. The real deployed graph passes a mechanical operator audit. Learned operations are bilinear,
    linear, or rational, rather than hidden incompatible nonlinear blocks.
-10. Standard-library artifact verifiers check the immutable capability and structural files,
+11. Standard-library artifact verifiers check the immutable capability and structural files,
    recompute all success totals, and independently recompute all five structural certificate
    decisions. The structural package binds fifteen raw JSONs, five summaries, and two exact source
    snapshots through an immutable SHA-256 manifest. The separate instruction package binds fifteen
@@ -148,19 +166,21 @@ excluded from every workshop paper. The corrected code now reads pinned LeRobot 
 dataset identifiers to official identifiers before splitting, and pairs every cached frame with
 its dataset-indexed instruction.
 
-This correction lowers the temporary acceptance estimates because the earlier policy-level causal
-evidence no longer counts. It is an infrastructure audit correction, not a negative scientific
-outcome. Corrected replacement experiments are already queued under new result names.
+This correction removed the earlier policy-level causal evidence. It was an infrastructure audit
+correction, not a negative scientific outcome. All evidence retained in the workshop papers now
+uses corrected mappings or simulator-native official task identifiers.
 
 ## Remaining rejection risks
 
-1. **One validated specialist suite.** The current main capability evidence is LIBERO-Object. The
-   papers must not claim broad robot generalization until corrected non-Object results finish.
-2. **Per-block rather than end-to-end exactness.** Attention, FFN, and complete-block identities
-   now pass independently. The complete-block audit is input-conditioned and per-block on the
-   convolutional family. It is not yet one sequential contraction of the capable ViT policy.
-3. **Single-suite capability.** The capability artifact is now complete and immutable, but all
-   current closed-loop results still come from LIBERO-Object.
+1. **Familiar-task scope.** The validated breadth now spans all four LIBERO suites, but every task
+   appeared in training. The papers must not claim unseen-task, zero-shot, or physical-robot
+   generalization.
+2. **Input-conditioned rather than symbolic whole-policy exactness.** Attention, FFN, complete
+   blocks, and a sequential learned-forward replay now pass. The $48$-input replay is still not one
+   compact input-general tensor contraction of the capable ViT policy.
+3. **Small matched-control difference.** The three-seed joint-policy mean is $1.23$ points above
+   the conventional mean. This supports near-zero observed cost under the fixed recipe, not a
+   statistical superiority claim.
 4. **No unique ranking mechanism.** The corrected intervention supports a structured low-dimensional
    visual bottleneck relative to random projectors. It does not show that action-Jacobian ranking is
    superior to a matched activation-energy basis.
@@ -168,11 +188,10 @@ outcome. Corrected replacement experiments are already queued under new result n
    instructions and the original task goal. It does not establish counterfactual goal following,
    paraphrase robustness, unseen-object composition, or zero-shot language use.
 6. **Ensemble cost.** The strongest recorded capability number uses three forward passes.
-7. **Artifact readiness.** The anonymous package now verifies the structural certificates,
-   capability protocol, $2{,}000$ capability episode rows, corrected visual-bottleneck episode
-   matrix, and all $900$ instruction-control rollouts. It recomputes the instruction totals, exact
-   paired tests, clustered sensitivity intervals, structural decisions, and immutable hashes. The
-   remaining artifact work is the venue-specific evidence as frozen runs finish.
+7. **Artifact usability.** The anonymous package verifies the structural certificates, capability
+   protocol, $2{,}000$ Object episode rows, $12{,}000$ breadth outcomes, corrected visual-bottleneck
+   matrix, and instruction-control rollouts. The remaining risk is reviewer friction from the
+   package's breadth, not a missing claimed endpoint.
 
 ## Frozen acceptance-critical experiments
 
@@ -203,17 +222,21 @@ The following protocols were fixed before their corrected outcomes were observed
    instructions from identical physical starts. Correct success is 247/300, compared with 72/300
    and 78/300. All nine frozen gates pass. The endpoint shares canonical states with the failed
    local study but uses a new full-horizon original-goal outcome, so it is not a rescue reanalysis.
-7. **Conditional counterfactual goal following, running.** This protocol was designed after the
+7. **Conditional counterfactual goal following, not passed.** This protocol was designed after the
    local rank failure and before the instruction-necessity outcomes. It uses independent episodes
    20 to 29, all prespecified co-present target swaps, three frozen ViT checkpoints, paired original
-   and counterfactual goals, and full closed-loop success. It runs only because item 6 passed. It
-   does not revive item 5.
-8. **Corrected four-suite generalist.** Train chi and conventional policies jointly on Object,
+   and counterfactual goals, and full closed-loop success. Checkpoint $0$ reaches $49/500=9.8\%$,
+   below the frozen $20\%$ gate. The remaining checkpoints were stopped, and the endpoint supplies
+   no positive claim.
+8. **Corrected four-suite generalist, passed.** Train chi and conventional policies jointly on Object,
    Spatial, Goal, and LIBERO-10 for 160,000 updates across three seeds. The primary chi gate is at
    least 70 percent suite-macro success, every suite at least 50 percent, at least 32 of 40 tasks at
-   50 percent or better, and every chi seed at least 60 percent.
-9. **Specialist-retention control.** Train corrected seed-0 chi specialists for all four suites and
-   require generalist seed 0 to retain at least 85 percent of their four-suite task-macro success.
+   50 percent or better, and every chi seed at least 60 percent. The three seeds reach
+   $70.85\%$, $71.35\%$, and $68.85\%$. The mean is $70.35\%\pm1.32\%$, and the frozen
+   ensemble reaches $74.75\%$ with every suite above $50\%$.
+9. **Specialist-retention control, passed.** Train corrected seed-0 chi specialists for all four
+   suites and require generalist seed 0 to retain at least 85 percent of their four-suite
+   task-macro success. The retained fraction is $70.85/74.45=95.16\%$.
 10. **Pinned-cache provenance.** Compare cached task IDs, language joins, states, actions, and resized
    images against the pinned LeRobot revisions and record both cache and metadata hashes. This
    audit is complete: all 271,996 frames across the four suites match exactly with zero field
@@ -242,9 +265,9 @@ not a clean rank-selection holdout. They also appeared during policy training.
 ## Submission recommendation
 
 Submit Neural Network Artifacts first if workshop policies prohibit overlapping submissions. It
-has the clearest reviewer contract and is already in the highest current band. VLM4RWD now has a
-strong familiar-task instruction-necessity result, while a counterfactual goal-following pass would
-address its largest remaining behavioral objection. Robot Learning Workshop still needs the
-four-suite generalist and specialist-retention results to approach the requested 85 to 90 percent
-band. Before any submission, lock one evaluation environment, publish the anonymous artifact, and
-run a final claim-to-artifact and citation audit.
+has the clearest reviewer contract and is the only individual venue whose present subjective band
+is entirely above 90 percent. VLM4RWD is also credible, with matched multi-suite capability and a
+strong familiar-task instruction-necessity result, but its remaining grounding risk is real. The
+Robot Learning Workshop version now has the breadth and retention evidence it previously lacked,
+while its zero-shot theme remains a fit limitation. The final claim-to-artifact, citation, page-limit,
+and visual audits pass. No additional outcome-seeking experiment is justified before submission.
