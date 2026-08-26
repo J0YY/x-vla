@@ -17,6 +17,12 @@
   },
   "expected": {
     "ensemble": {
+      "frozen_gates": {
+        "every_suite_macro_at_least": 0.5,
+        "macro_task_success_at_least": 0.7,
+        "tasks_at_least_0p50_at_least": 32,
+        "uplift_over_member_mean_at_least": 0.0
+      },
       "macro_task_success": 0.7475,
       "member_mean_macro_success": 0.7035,
       "successes": 1495,

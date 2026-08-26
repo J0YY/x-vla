@@ -152,7 +152,11 @@ def verify_members(record: dict[str, Any], expected: dict[str, Any]) -> dict[str
     close("member mean", member_mean, expected["mean"])
     close("member sample standard deviation", member_sd, expected["sample_standard_deviation"])
     close("manifest member mean", record.get("member_mean_macro_success"), member_mean)
-    equal("manifest member macros", len(record.get("member_macro_successes", [])), 3)
+    recorded_macros = record.get("member_macro_successes")
+    require(isinstance(recorded_macros, list), "manifest member macros are absent")
+    equal("manifest member macro count", len(recorded_macros), 3)
+    for seed, (recorded, observed) in enumerate(zip(recorded_macros, observed_macros, strict=True)):
+        close(f"manifest member macro seed {seed}", recorded, observed)
 
     suite_seed_means = {suite: statistics.fmean(values) for suite, values in suite_seed_values.items()}
     for suite, wanted in expected["suite_seed_means"].items():
@@ -189,14 +193,19 @@ def verify_ensemble(record: dict[str, Any], manifest_record: dict[str, Any], exp
     close("ensemble member mean", record.get("member_mean_macro_success"), member_mean)
     close("ensemble uplift", record.get("uplift_over_member_mean"), uplift)
     close("ensemble expected uplift", uplift, expected["uplift_over_member_mean"])
-    gates = record.get("gates")
-    equal("ensemble gates", gates, {
-        "ensemble_capability_pass": True,
-        "every_suite_macro_at_least": True,
-        "macro_task_success_at_least": True,
-        "tasks_at_least_0p50_at_least": True,
-        "uplift_over_member_mean_at_least": True,
-    })
+    frozen_gates = manifest_record.get("frozen_gates")
+    equal("ensemble frozen gates", frozen_gates, expected["frozen_gates"])
+    computed_gates = {
+        "every_suite_macro_at_least": min(float(value) for value in suite_success.values())
+        >= frozen_gates["every_suite_macro_at_least"],
+        "macro_task_success_at_least": macro >= frozen_gates["macro_task_success_at_least"],
+        "tasks_at_least_0p50_at_least": threshold_count
+        >= frozen_gates["tasks_at_least_0p50_at_least"],
+        "uplift_over_member_mean_at_least": uplift
+        >= frozen_gates["uplift_over_member_mean_at_least"],
+    }
+    computed_gates["ensemble_capability_pass"] = all(computed_gates.values())
+    equal("ensemble gates", record.get("gates"), computed_gates)
     return {"macro": macro, "suite_success": suite_success, "tasks_at_least": threshold_count, "uplift": uplift}
 
 
