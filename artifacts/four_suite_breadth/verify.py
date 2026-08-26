@@ -98,6 +98,12 @@ def verify_evidence_identities(manifest: dict[str, Any]) -> dict[str, dict[str, 
             "ensemble_manifest",
             "ensemble_summary",
             "generalist_summary",
+            "metadata_chi_s0",
+            "metadata_chi_s1",
+            "metadata_chi_s2",
+            "metadata_conventional_s0",
+            "metadata_conventional_s1",
+            "metadata_conventional_s2",
             "retention_summary",
             "train_chi_s0",
             "train_chi_s1",
@@ -185,6 +191,7 @@ def verify_training_records(
     records: dict[str, dict[str, Any]],
     summary: dict[str, Any],
     expected: dict[str, Any],
+    evidence: dict[str, dict[str, Any]],
 ) -> dict[str, int]:
     identity = summary.get("identity")
     require(isinstance(identity, dict), "generalist summary identity is absent")
@@ -193,6 +200,19 @@ def verify_training_records(
         expected_parameters = expected[f"{architecture}_parameters"]
         for seed in SEEDS:
             record = records[f"train_{architecture}_s{seed}"]
+            metadata_name = f"metadata_{architecture}_s{seed}"
+            metadata = records[metadata_name]
+            summary_result = summary["by_architecture_and_seed"][architecture][str(seed)]
+            equal(
+                f"{architecture} seed {seed} metadata SHA-256",
+                summary_result.get("model_metadata_sha256"),
+                evidence[metadata_name]["sha256"],
+            )
+            equal(
+                f"{architecture} seed {seed} metadata format",
+                metadata.get("format"),
+                "xvla_multisuite_checkpoint_v1",
+            )
             equal(f"{architecture} seed {seed} architecture", record.get("architecture"), architecture)
             equal(f"{architecture} seed {seed} seed", record.get("seed"), seed)
             equal(f"{architecture} seed {seed} steps", record.get("steps"), 160000)
@@ -217,8 +237,34 @@ def verify_training_records(
             equal(
                 f"{architecture} seed {seed} checkpoint",
                 record.get("checkpoint_sha256"),
-                summary["by_architecture_and_seed"][architecture][str(seed)]["checkpoint_sha256"],
+                summary_result["checkpoint_sha256"],
             )
+            for field in (
+                "architecture",
+                "seed",
+                "steps",
+                "batch_size",
+                "suite_batch_size",
+                "lr",
+                "ema_decay",
+                "horizon",
+                "res",
+                "vision_encoder",
+                "training_suites",
+                "checkpoint_sha256",
+                "manifest_sha256",
+                "trainer_sha256",
+                "recipe_version",
+                "source_identity",
+            ):
+                equal(
+                    f"{architecture} seed {seed} training record versus metadata {field}",
+                    record.get(field),
+                    metadata.get(field),
+                )
+            equal(f"{architecture} seed {seed} metadata task count", metadata.get("task_count"), 40)
+            equal(f"{architecture} seed {seed} metadata state dimension", metadata.get("state_dim"), 8)
+            equal(f"{architecture} seed {seed} metadata action dimension", metadata.get("action_dim"), 7)
             equal(
                 f"{architecture} seed {seed} manifest",
                 record.get("manifest_sha256"),
@@ -265,6 +311,7 @@ def verify_matched_comparison(
     members: dict[str, Any],
     records: dict[str, dict[str, Any]],
     expected: dict[str, Any],
+    evidence: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     scope = record.get("scope")
     require(isinstance(scope, dict), "generalist comparison scope is absent")
@@ -290,7 +337,7 @@ def verify_matched_comparison(
         identity.get("summary_start_sha256"),
         file_sha256(safe_path("athena/summarize_multisuite_generalist.py")),
     )
-    parameters = verify_training_records(records, record, expected)
+    parameters = verify_training_records(records, record, expected, evidence)
 
     observed: dict[str, dict[str, Any]] = {}
     for architecture in ("chi", "conventional"):
@@ -488,6 +535,7 @@ def main() -> int:
             member_result["members"],
             records,
             expected["matched_comparison"],
+            artifact_manifest["evidence"],
         )
         ensemble_result = verify_ensemble(records["ensemble_summary"], records["ensemble_manifest"], expected["ensemble"])
         retention_result = verify_retention(records["retention_summary"], member_result["members"], expected["retention"])

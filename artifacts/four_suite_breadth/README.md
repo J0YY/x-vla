@@ -2,7 +2,7 @@
 
 This anonymous, CPU-only artifact verifies the recorded χ-VLA breadth results over the 40 familiar
 tasks in LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, and LIBERO-10. It uses only the Python standard
-library and ten committed JSON records. No checkpoint, dataset, GPU, network access, or package
+library and sixteen committed JSON records. No checkpoint, dataset, GPU, network access, or package
 installation is needed.
 
 From the repository root, run:
@@ -15,8 +15,9 @@ The verifier checks the immutable SHA-256 identity of the frozen ensemble manife
 ensemble summary, and the separate seed-0 specialist-retention summary. It then independently
 recomputes the three member macro scores, their mean and sample standard deviation, the matched
 conventional comparison, suite means, task-threshold counts, ensemble uplift and gates, and the
-generalist-to-specialist retention ratio. Six training records also verify that both architecture
-families used the same recipe and differed in parameter count by only 1,280 parameters, or 0.006%.
+generalist-to-specialist retention ratio. Six training records and their exact checkpoint metadata
+verify that both architecture families used the same recipe and differed in parameter count by only
+1,280 parameters, or 0.006%.
 
 The expected verified results are:
 

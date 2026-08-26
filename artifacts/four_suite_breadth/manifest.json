@@ -14,6 +14,30 @@
       "path": "athena/results/generalist_hardened_summary.json",
       "sha256": "d43d6c5604e455487e405be573c2b097dca964dbf6b70fbcc49649e6c6306150"
     },
+    "metadata_chi_s0": {
+      "path": "athena/results/ckpt_generalist_hardened_chi_s0.json",
+      "sha256": "90e326c2afe4490c31baf1c591136555c6f46cdc77b6f625176de2d51e846914"
+    },
+    "metadata_chi_s1": {
+      "path": "athena/results/ckpt_generalist_hardened_chi_s1.json",
+      "sha256": "67a41cb240e244ebcf14fe25e4df7c23adfdea91bee1178f1b23bb0081448696"
+    },
+    "metadata_chi_s2": {
+      "path": "athena/results/ckpt_generalist_hardened_chi_s2.json",
+      "sha256": "1c22b97825bdcb9fdc5bfae0053e1f501f6186abcd1504d6576285fc63b9d466"
+    },
+    "metadata_conventional_s0": {
+      "path": "athena/results/ckpt_generalist_hardened_conventional_s0.json",
+      "sha256": "76ebb7e189082f429b1054e651e8465da5a54ec95442f5dac1deb85a456c83ec"
+    },
+    "metadata_conventional_s1": {
+      "path": "athena/results/ckpt_generalist_hardened_conventional_s1.json",
+      "sha256": "ea1a034460bd0227ba6c40f2af2b25eae2fe69a364f7c301ad7e7fc8f27df398"
+    },
+    "metadata_conventional_s2": {
+      "path": "athena/results/ckpt_generalist_hardened_conventional_s2.json",
+      "sha256": "29a052bbd00abd74147ec3fbe42e155d5492d335a40a583827bb8a7f450f84d2"
+    },
     "retention_summary": {
       "path": "athena/results/specialist_retention_hardened_summary.json",
       "sha256": "869d5ef3f1ee5eeac31f1869e069f3431c2452a11d33befc398cb1d6d014ef77"
