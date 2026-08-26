@@ -10,9 +10,37 @@
       "path": "athena/results/multisuite_mean_ensemble_v1_summary.json",
       "sha256": "2909f8b0c692fe83795dfba532a127c19a0bd87802cfa49d6066926a2d182766"
     },
+    "generalist_summary": {
+      "path": "athena/results/generalist_hardened_summary.json",
+      "sha256": "d43d6c5604e455487e405be573c2b097dca964dbf6b70fbcc49649e6c6306150"
+    },
     "retention_summary": {
       "path": "athena/results/specialist_retention_hardened_summary.json",
       "sha256": "869d5ef3f1ee5eeac31f1869e069f3431c2452a11d33befc398cb1d6d014ef77"
+    },
+    "train_chi_s0": {
+      "path": "athena/results/train_generalist_hardened_chi_s0.json",
+      "sha256": "ec221e1a162cc7a2005baa4abde5982f4b5df5a8c0d88401091c9bf73e8e806f"
+    },
+    "train_chi_s1": {
+      "path": "athena/results/train_generalist_hardened_chi_s1.json",
+      "sha256": "99368c1b89943b4b3002d90a18a31d21c30435c2c2108ff78628d26d19f49eef"
+    },
+    "train_chi_s2": {
+      "path": "athena/results/train_generalist_hardened_chi_s2.json",
+      "sha256": "2c006589550513150fdfb6a0b1e3ef2e2b23431a77353660ffa3e8ade6cc5b9e"
+    },
+    "train_conventional_s0": {
+      "path": "athena/results/train_generalist_hardened_conventional_s0.json",
+      "sha256": "eac23fb0ee15c53620f25597d1d80c35fe0a35416fbe69013bc760324a1eabc4"
+    },
+    "train_conventional_s1": {
+      "path": "athena/results/train_generalist_hardened_conventional_s1.json",
+      "sha256": "331e9211e00b075db789f2ebff26d5bc358b88b52b888156cd5542a4d77f1726"
+    },
+    "train_conventional_s2": {
+      "path": "athena/results/train_generalist_hardened_conventional_s2.json",
+      "sha256": "76e55479e6e7649de24ec89b295d2e1fcd76ab644a6d09e4c7e1f1a1c57fa5fc"
     }
   },
   "expected": {
@@ -35,6 +63,22 @@
       "tasks_at_least_0p50": 34,
       "trials": 2000,
       "uplift_over_member_mean": 0.044
+    },
+    "matched_comparison": {
+      "chi_minus_conventional_macro": 0.012333333333333307,
+      "chi_parameters": 20154632,
+      "conventional_macro_successes": [0.718, 0.6755, 0.68],
+      "conventional_mean": 0.6911666666666667,
+      "conventional_parameters": 20155912,
+      "conventional_sample_standard_deviation": 0.023347019795539867,
+      "conventional_suite_seed_means": {
+        "libero_10": 0.3586666666666667,
+        "libero_goal": 0.844,
+        "libero_object": 0.7920000000000001,
+        "libero_spatial": 0.7700000000000001
+      },
+      "conventional_tasks_with_seed_mean_at_least_0p50": 32,
+      "maximum_allowed_chi_deficit": 0.05
     },
     "members": {
       "macro_successes": [0.7085, 0.7135, 0.6885],

@@ -53,7 +53,8 @@ rank-$128$ weight-derived subspace over fixed random controls. Across the same t
 checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
 per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. Across the three
 jointly trained checkpoints spanning $40$ familiar LIBERO tasks, task-macro success is
-$70.35\%\pm1.32\%$. Their frozen three-pass mean-prediction ensemble reaches $74.75\%$ with
+$70.35\%\pm1.32\%$, compared with $69.12\%\pm2.33\%$ for parameter-matched conventional
+controls under the same recipe. Their frozen three-pass mean-prediction ensemble reaches $74.75\%$ with
 every suite at or above $50\%$. At equal aggregate updates, a frozen seed-$0$ joint checkpoint
 retains $95.16\%$ of four suite specialists' pooled success. On the three LIBERO-Object
 checkpoints, a prospectively frozen paired test on $100$ unique familiar-task states finds
@@ -119,7 +120,8 @@ Our contributions are:
   \item We evaluate the same three ViT checkpoints on $1{,}500$ canonical LIBERO-Object trials.
         They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean ensemble reaches
         $467/500=93.4\%$. Three jointly trained checkpoints average
-        $70.35\%\pm1.32\%$ over $40$ familiar tasks, and their fixed ensemble reaches
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, $1.23$ points above matched
+        conventional controls. Their fixed ensemble reaches
         $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
 \end{enumerate}
 
@@ -469,15 +471,13 @@ coefficient-edit interface.
 \paragraph{Reproducibility.}
 The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
 behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
-verifiers independently recompute the capability totals, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals,
-and the attention, FFN, complete-block, modality-partition, full learned-forward, and RationalNorm
-certificate decisions. Historical Modal
-cache-backed analyses read dataset-native task metadata. The
-replacement Athena pipeline pins that metadata and maps dataset identifiers to official
-identifiers before defining task splits. A source-level audit compared all $271{,}996$ cached
-frames across Object, Spatial, Goal, and LIBERO-10 with their pinned LeRobot revisions. Task
-identifiers, language joins, states, actions, and resized images matched exactly for every frame.
-Canonical-state checks fail loudly when requested states are unavailable.
+verifiers independently recompute capability totals, the matched conventional comparison,
+four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and all
+structural-certificate decisions. Historical Modal analyses read dataset-native task metadata.
+The Athena replacement pins this metadata and maps dataset to official identifiers before task
+splits. A source audit matched task identifiers, language joins, states, actions, and resized images
+for all $271{,}996$ cached frames to their pinned LeRobot revisions. Canonical-state checks fail
+loudly when requested states are unavailable.
 
 % ============================================================================
 \clearpage

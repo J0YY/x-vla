@@ -46,7 +46,8 @@ Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Obje
 $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
 prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
 Separately, three jointly trained checkpoints spanning $40$ familiar LIBERO tasks reach
-$70.35\%\pm1.32\%$ task-macro success. Their frozen three-pass mean-prediction ensemble
+$70.35\%\pm1.32\%$ task-macro success, compared with $69.12\%\pm2.33\%$ for
+parameter-matched conventional controls under the same recipe. Their frozen three-pass mean-prediction ensemble
 reaches $74.75\%$ with every suite at or above $50\%$. At equal aggregate updates, a frozen
 seed-$0$ joint checkpoint retains $95.16\%$ of four suite specialists' pooled success.
 On the three LIBERO-Object checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
@@ -125,7 +126,8 @@ Our contributions are:
   \item We evaluate three fully rational $20.1$M ViT policies on $1{,}500$ canonical
         LIBERO-Object trials. They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean
         ensemble reaches $467/500=93.4\%$. Three jointly trained checkpoints average
-        $70.35\%\pm1.32\%$ over $40$ familiar tasks, and their fixed ensemble reaches
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, $1.23$ points above matched
+        conventional controls. Their fixed ensemble reaches
         $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
   \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
@@ -581,7 +583,7 @@ Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, langu
 actions, and resized images matched exactly for every frame. The anonymous artifact releases raw
 structural-certificate JSONs and all $2{,}000$ episode rows behind the ViT member and ensemble
 results. Immutable SHA-256 manifests and standard-library verifiers independently recompute the
-capability totals, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
+capability totals, matched conventional comparison, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
 modality-partition, full learned-forward, and RationalNorm certificate decisions. Preflight checks
 fail if canonical initial states cannot be loaded.
 

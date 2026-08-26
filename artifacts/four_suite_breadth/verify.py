@@ -91,7 +91,22 @@ def verify_evidence_identities(manifest: dict[str, Any]) -> dict[str, dict[str, 
     equal("artifact version", manifest.get("artifact_version"), 1)
     entries = manifest.get("evidence")
     require(isinstance(entries, dict), "artifact evidence map is absent")
-    equal("evidence keys", set(entries), {"ensemble_manifest", "ensemble_summary", "retention_summary"})
+    equal(
+        "evidence keys",
+        set(entries),
+        {
+            "ensemble_manifest",
+            "ensemble_summary",
+            "generalist_summary",
+            "retention_summary",
+            "train_chi_s0",
+            "train_chi_s1",
+            "train_chi_s2",
+            "train_conventional_s0",
+            "train_conventional_s1",
+            "train_conventional_s2",
+        },
+    )
     loaded: dict[str, dict[str, Any]] = {}
     for name, entry in entries.items():
         require(isinstance(entry, dict), f"{name}: evidence entry is not an object")
@@ -164,6 +179,219 @@ def verify_members(record: dict[str, Any], expected: dict[str, Any]) -> dict[str
     tasks_at_least = sum(statistics.fmean(values) >= 0.5 for values in task_seed_values.values())
     equal("member seed-mean task threshold count", tasks_at_least, expected["tasks_with_seed_mean_at_least_0p50"])
     return {"members": members, "mean": member_mean, "sample_sd": member_sd, "suite_means": suite_seed_means}
+
+
+def verify_training_records(
+    records: dict[str, dict[str, Any]],
+    summary: dict[str, Any],
+    expected: dict[str, Any],
+) -> dict[str, int]:
+    identity = summary.get("identity")
+    require(isinstance(identity, dict), "generalist summary identity is absent")
+    parameters: dict[str, int] = {}
+    for architecture in ("chi", "conventional"):
+        expected_parameters = expected[f"{architecture}_parameters"]
+        for seed in SEEDS:
+            record = records[f"train_{architecture}_s{seed}"]
+            equal(f"{architecture} seed {seed} architecture", record.get("architecture"), architecture)
+            equal(f"{architecture} seed {seed} seed", record.get("seed"), seed)
+            equal(f"{architecture} seed {seed} steps", record.get("steps"), 160000)
+            equal(f"{architecture} seed {seed} batch size", record.get("batch_size"), 256)
+            equal(f"{architecture} seed {seed} suite batch size", record.get("suite_batch_size"), 64)
+            close(f"{architecture} seed {seed} learning rate", record.get("lr"), 8e-4)
+            close(f"{architecture} seed {seed} EMA", record.get("ema_decay"), 0.999)
+            equal(f"{architecture} seed {seed} horizon", record.get("horizon"), 8)
+            equal(f"{architecture} seed {seed} resolution", record.get("res"), 64)
+            equal(f"{architecture} seed {seed} encoder", record.get("vision_encoder"), "vit")
+            equal(
+                f"{architecture} seed {seed} suites",
+                record.get("training_suites"),
+                list(SUITES),
+            )
+            equal(
+                f"{architecture} seed {seed} suite sampling",
+                record.get("sampling"),
+                "equal examples per suite per optimizer update",
+            )
+            equal(f"{architecture} seed {seed} parameters", record.get("parameters"), expected_parameters)
+            equal(
+                f"{architecture} seed {seed} checkpoint",
+                record.get("checkpoint_sha256"),
+                summary["by_architecture_and_seed"][architecture][str(seed)]["checkpoint_sha256"],
+            )
+            equal(
+                f"{architecture} seed {seed} manifest",
+                record.get("manifest_sha256"),
+                identity["manifest_start_sha256"],
+            )
+            equal(
+                f"{architecture} seed {seed} trainer",
+                record.get("trainer_sha256"),
+                identity["trainer_sha256"],
+            )
+            source = record.get("source_identity")
+            require(isinstance(source, dict), f"{architecture} seed {seed}: source identity is absent")
+            equal(
+                f"{architecture} seed {seed} trainer closure",
+                source.get("trainer_start_sha256"),
+                source.get("trainer_end_sha256"),
+            )
+            equal(
+                f"{architecture} seed {seed} imported-source closure",
+                source.get("imported_sources_start"),
+                source.get("imported_sources_end"),
+            )
+            equal(
+                f"{architecture} seed {seed} imported-bundle closure",
+                source.get("imported_bundle_start_sha256"),
+                source.get("imported_bundle_end_sha256"),
+            )
+            equal(
+                f"{architecture} seed {seed} manifest closure",
+                source.get("manifest_start_sha256"),
+                source.get("manifest_end_sha256"),
+            )
+            equal(
+                f"{architecture} seed {seed} cache closure",
+                source.get("source_cache_hashes_start"),
+                source.get("source_cache_hashes_end"),
+            )
+        parameters[architecture] = expected_parameters
+    return parameters
+
+
+def verify_matched_comparison(
+    record: dict[str, Any],
+    members: dict[str, Any],
+    records: dict[str, dict[str, Any]],
+    expected: dict[str, Any],
+) -> dict[str, Any]:
+    scope = record.get("scope")
+    require(isinstance(scope, dict), "generalist comparison scope is absent")
+    equal("generalist architectures", scope.get("architectures"), ["chi", "conventional"])
+    equal("generalist seeds", scope.get("seeds"), list(SEEDS))
+    equal("generalist suites", scope.get("suites"), list(SUITES))
+    equal("generalist tasks per suite", scope.get("tasks_per_suite"), 10)
+    equal("generalist episodes per task", scope.get("episodes_per_task"), 50)
+    equal("generalist total trials", scope.get("total_trials"), 12000)
+    equal(
+        "generalist claim boundary",
+        scope.get("claim_boundary"),
+        "In-domain capability of one jointly trained checkpoint per seed across all 40 tasks. "
+        "This is not zero-shot suite or task generalization.",
+    )
+
+    identity = record.get("identity")
+    require(isinstance(identity, dict), "generalist comparison identity is absent")
+    equal("generalist manifest closure", identity.get("manifest_start_sha256"), identity.get("manifest_end_sha256"))
+    equal("generalist summary closure", identity.get("summary_start_sha256"), identity.get("summary_end_sha256"))
+    equal(
+        "generalist summary source",
+        identity.get("summary_start_sha256"),
+        file_sha256(safe_path("athena/summarize_multisuite_generalist.py")),
+    )
+    parameters = verify_training_records(records, record, expected)
+
+    observed: dict[str, dict[str, Any]] = {}
+    for architecture in ("chi", "conventional"):
+        seed_macros: list[float] = []
+        suite_seed_values = {suite: [] for suite in SUITES}
+        task_seed_values = {f"{suite}:{task}": [] for suite in SUITES for task in range(10)}
+        for seed in SEEDS:
+            result = record["by_architecture_and_seed"][architecture][str(seed)]
+            equal(f"{architecture} seed {seed} trials", result.get("trials"), 2000)
+            source_files = result.get("source_files")
+            require(isinstance(source_files, list), f"{architecture} seed {seed}: sources are absent")
+            equal(f"{architecture} seed {seed} source count", len(source_files), 16)
+            equal(
+                f"{architecture} seed {seed} unique sources",
+                len({item["path"] for item in source_files}),
+                16,
+            )
+            task_success = result.get("task_success")
+            suite_success = result.get("suite_macro_success")
+            require(isinstance(task_success, dict) and len(task_success) == 40, f"{architecture} seed {seed}: task map is incomplete")
+            require(isinstance(suite_success, dict) and set(suite_success) == set(SUITES), f"{architecture} seed {seed}: suite map is incomplete")
+            macro = statistics.fmean(float(task_success[key]) for key in sorted(task_success))
+            close(f"{architecture} seed {seed} recorded macro", result.get("macro_task_success"), macro)
+            close(f"{architecture} seed {seed} successes", result.get("successes"), 2000 * macro)
+            threshold_count = sum(float(value) >= 0.5 for value in task_success.values())
+            equal(f"{architecture} seed {seed} threshold count", result.get("tasks_at_least_0p50"), threshold_count)
+            seed_macros.append(macro)
+            for suite in SUITES:
+                suite_macro = statistics.fmean(float(task_success[f"{suite}:{task}"]) for task in range(10))
+                close(f"{architecture} seed {seed} {suite} macro", suite_success[suite], suite_macro)
+                suite_seed_values[suite].append(suite_macro)
+                for task in range(10):
+                    task_seed_values[f"{suite}:{task}"].append(float(task_success[f"{suite}:{task}"]))
+            if architecture == "chi":
+                equal(f"chi seed {seed} task outcomes", task_success, members[str(seed)]["task_success"])
+
+        mean = statistics.fmean(seed_macros)
+        sample_sd = statistics.stdev(seed_macros)
+        suite_means = {suite: statistics.fmean(values) for suite, values in suite_seed_values.items()}
+        task_means = {key: statistics.fmean(values) for key, values in task_seed_values.items()}
+        tasks_at_least = sum(value >= 0.5 for value in task_means.values())
+        aggregate = record["aggregate"][architecture]
+        for seed, (actual, recorded) in enumerate(zip(seed_macros, aggregate["seed_macro_task_success"], strict=True)):
+            close(f"{architecture} aggregate seed {seed}", recorded, actual)
+        close(f"{architecture} aggregate mean", aggregate.get("seed_mean_macro_task_success"), mean)
+        close(f"{architecture} aggregate sample standard deviation", aggregate.get("seed_sample_std_macro_task_success"), sample_sd)
+        for suite in SUITES:
+            close(f"{architecture} aggregate {suite}", aggregate["suite_seed_mean_macro_success"][suite], suite_means[suite])
+        recorded_task_means = aggregate.get("task_seed_mean_success")
+        require(
+            isinstance(recorded_task_means, dict) and set(recorded_task_means) == set(task_means),
+            f"{architecture}: aggregate task means are incomplete",
+        )
+        for key, value in task_means.items():
+            close(f"{architecture} aggregate task mean {key}", recorded_task_means[key], value)
+        equal(f"{architecture} aggregate threshold count", aggregate.get("tasks_seed_mean_at_least_0p50"), tasks_at_least)
+        observed[architecture] = {
+            "macros": seed_macros,
+            "mean": mean,
+            "sample_sd": sample_sd,
+            "suite_means": suite_means,
+            "tasks_at_least": tasks_at_least,
+        }
+
+    conventional = observed["conventional"]
+    for seed, (actual, wanted) in enumerate(zip(conventional["macros"], expected["conventional_macro_successes"], strict=True)):
+        close(f"expected conventional seed {seed}", actual, wanted)
+    close("expected conventional mean", conventional["mean"], expected["conventional_mean"])
+    close(
+        "expected conventional sample standard deviation",
+        conventional["sample_sd"],
+        expected["conventional_sample_standard_deviation"],
+    )
+    for suite in SUITES:
+        close(
+            f"expected conventional {suite}",
+            conventional["suite_means"][suite],
+            expected["conventional_suite_seed_means"][suite],
+        )
+    equal(
+        "expected conventional task threshold count",
+        conventional["tasks_at_least"],
+        expected["conventional_tasks_with_seed_mean_at_least_0p50"],
+    )
+    delta = observed["chi"]["mean"] - conventional["mean"]
+    close("recorded chi minus conventional macro", record.get("chi_minus_conventional_macro"), delta)
+    close("expected chi minus conventional macro", delta, expected["chi_minus_conventional_macro"])
+    comparison_pass = delta >= -expected["maximum_allowed_chi_deficit"]
+    equal(
+        "matched comparison gate",
+        record.get("secondary_gates"),
+        {"chi_within_0p05_of_conventional": comparison_pass},
+    )
+    require(comparison_pass, "matched comparison gate did not pass")
+    return {
+        "chi_mean": observed["chi"]["mean"],
+        "conventional_mean": conventional["mean"],
+        "delta": delta,
+        "chi_parameters": parameters["chi"],
+        "conventional_parameters": parameters["conventional"],
+    }
 
 
 def verify_ensemble(record: dict[str, Any], manifest_record: dict[str, Any], expected: dict[str, Any]) -> dict[str, Any]:
@@ -255,6 +483,12 @@ def main() -> int:
         expected = artifact_manifest.get("expected")
         require(isinstance(expected, dict), "expected-result map is absent")
         member_result = verify_members(records["ensemble_manifest"], expected["members"])
+        comparison_result = verify_matched_comparison(
+            records["generalist_summary"],
+            member_result["members"],
+            records,
+            expected["matched_comparison"],
+        )
         ensemble_result = verify_ensemble(records["ensemble_summary"], records["ensemble_manifest"], expected["ensemble"])
         retention_result = verify_retention(records["retention_summary"], member_result["members"], expected["retention"])
     except VerificationError as exc:
@@ -266,6 +500,11 @@ def main() -> int:
         "members: "
         + ", ".join(f"{100 * value:.2f}%" for value in records["ensemble_manifest"]["member_macro_successes"])
         + f"; mean {100 * member_result['mean']:.2f}% ± {100 * member_result['sample_sd']:.2f}%"
+    )
+    print(
+        f"matched conventional comparison: {100 * comparison_result['chi_mean']:.2f}% vs "
+        f"{100 * comparison_result['conventional_mean']:.2f}%, "
+        f"{100 * comparison_result['delta']:+.2f} points"
     )
     print(
         f"ensemble: {100 * ensemble_result['macro']:.2f}%, "

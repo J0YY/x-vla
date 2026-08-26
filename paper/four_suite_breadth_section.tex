@@ -16,6 +16,7 @@ so each checkpoint receives $2{,}000$ closed-loop trials.
 Policy & Object & Spatial & Goal & LIBERO-10 & 40-task macro \\
 \midrule
 Joint \chivla, three-seed mean & $80.9\%$ & $73.1\%$ & $81.9\%$ & $45.5\%$ & $\mathbf{70.35\%\pm1.32\%}$ \\
+Matched conventional, three-seed mean & $79.2\%$ & $77.0\%$ & $84.4\%$ & $35.9\%$ & $69.12\%\pm2.33\%$ \\
 Fixed three-checkpoint mean ensemble & $88.6\%$ & $74.0\%$ & $85.6\%$ & $50.8\%$ & $\mathbf{74.75\%}$ \\
 Joint \chivla, seed $0$ & $83.6\%$ & $73.0\%$ & $82.0\%$ & $44.8\%$ & $70.85\%$ \\
 Four suite specialists, seed $0$ & $83.0\%$ & $80.0\%$ & $88.0\%$ & $46.8\%$ & $74.45\%$ \\
@@ -23,14 +24,19 @@ Four suite specialists, seed $0$ & $83.0\%$ & $80.0\%$ & $88.0\%$ & $46.8\%$ & $
 \end{tabular}
 \caption{\textbf{Closed-loop breadth over 40 familiar tasks.} The first row is the
 mean across three jointly trained checkpoints, with sample standard deviation across
-their 40-task macro scores. The ensemble averages their normalized action predictions
-and costs three forward passes. The final two rows form the separately frozen seed-$0$
-retention comparison.}
+their 40-task macro scores. The matched conventional row uses the same balanced recipe.
+The ensemble averages normalized \chivla\ action predictions and costs three forward
+passes. The final two rows form the separately frozen seed-$0$ retention comparison.}
 \label{tab:four-suite-breadth}
 \end{table}
 
 The three joint checkpoints score $70.85\%$, $71.35\%$, and $68.85\%$, and their
 seed-mean success is at least $50\%$ on $32/40$ tasks. In the separately frozen
+same-recipe comparison, three parameter-matched conventional checkpoints average
+$69.12\%\pm2.33\%$. The \chivla\ mean is $1.23$ percentage points higher and passes
+the fixed requirement of being within five points of the conventional mean. The model
+sizes differ by only $1{,}280$ parameters, or $0.006\%$.
+In the separately frozen
 mean-prediction ensemble, success rises from the $70.35\%$ member mean to $74.75\%$,
 with every suite at or above $50\%$ and $34/40$ tasks at or above $50\%$. Its protocol
 and gates were fixed after the member checkpoints were selected but before ensemble
