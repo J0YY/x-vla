@@ -25,7 +25,7 @@
 
 \title{\textbf{Toward Auditable Vision-Language Control}\\[0.15em]
 \textbf{A Fully Tensor-Decomposable VLA}\\[0.35em]
-\large Specialist capability and exact weight-level diagnostics}
+\large Single-suite strength, four-suite breadth, and exact weight-level diagnostics}
 \author{}
 \date{}
 
@@ -45,7 +45,11 @@ reproduce its deployed rational and bilinear branches near the float32 precision
 Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Object success is
 $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
 prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
-Across the three checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
+Separately, three jointly trained checkpoints spanning $40$ familiar LIBERO tasks reach
+$70.35\%\pm1.32\%$ task-macro success. Their frozen three-pass mean-prediction ensemble
+reaches $74.75\%$ with every suite at or above $50\%$. At equal aggregate updates, a frozen
+seed-$0$ joint checkpoint retains $95.16\%$ of four suite specialists' pooled success.
+On the three LIBERO-Object checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
 states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
 co-present control instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes,
 zeroing only the learned post-lookup token vectors drops success from $263/300=87.7\%$ to
@@ -62,10 +66,11 @@ worst relative error $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. In a
 ViT checkpoint, all $36$ primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
 median fidelity ratio $2.44$. Separately, prospectively fixed rank-$96$ visual projectors retain
 $95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
-random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong specialist capability together
+random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong single-suite and
+four-suite familiar-task capability together
 with exact, checkpoint-native access to learned attention structure and bounded familiar-task
 instruction necessity. Such access is relevant when deployment failures may involve visual
-shortcuts or weak language use. The present results do not establish broad robotic generalization,
+shortcuts or weak language use. The present results do not establish unseen-task generalization,
 counterfactual goal following, selective behavioral editing, or an input-general compact symbolic
 decomposition of the full policy.
 \end{abstract}
@@ -103,7 +108,7 @@ model. Exact structural access is useful only if the restricted policy still con
 We therefore study a prerequisite for deployment-oriented diagnostics:
 
 \begin{quote}
-\emph{Can a specialist VLA retain strong closed-loop capability when every deployed learned
+\emph{Can a compact VLA retain strong closed-loop capability when every deployed learned
 operation is polynomial or rational, while exposing exact layerwise structure from its weights?}
 \end{quote}
 
@@ -120,7 +125,9 @@ Our contributions are:
         supplies input-specific scaling without leaving the rational function class.
   \item We evaluate three fully rational $20.1$M ViT policies on $1{,}500$ canonical
         LIBERO-Object trials. They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean
-        ensemble reaches $467/500=93.4\%$.
+        ensemble reaches $467/500=93.4\%$. Three jointly trained checkpoints average
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, and their fixed ensemble reaches
+        $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
   \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
@@ -345,6 +352,8 @@ The result shows that the rational architecture supports high closed-loop specia
 capability. It is an existence claim for a compact tensor-decomposable
 policy, not a claim of broad robotic generalization or state of the art.
 
+\input{four_suite_breadth_compact}
+
 \input{instruction_necessity_section}
 
 For the VLM4RWD setting, this separates familiar-task language use from deployment-grade grounding.
@@ -381,36 +390,20 @@ identity is input-general. The one-input-per-checkpoint records provide a layerw
 replay audit, not an exact end-to-end policy decomposition.
 
 We separately certify three convolutional checkpoints from the same rational architecture family.
-Their vision stacks contain no attention, so we independently rebuild all eight joint modules and
-all twelve heads per module from the saved weights. Sixteen deterministically selected cache
-inputs per checkpoint yield $4{,}608$ head-input cases. Every output is finite and the worst
-relative $\ell_2$ error is $6.36\times10^{-16}$, below the frozen $10^{-6}$ gate. On the same
-inputs, independent CP-factor evaluation covers all $384$ joint-FFN module-input cases at worst
-relative error $1.3871\times10^{-15}$ against a $10^{-10}$ gate. Independent complete-block
-equations cover all $384$ block-input cases at worst relative error $1.5024\times10^{-7}$ against
-a $10^{-4}$ gate. The complete-block comparison crosses a deployed PyTorch float32 block call and
-a NumPy float64 reconstruction. It is input-conditioned and per-block, not a sequential
-end-to-end reconstruction of the joint transformer or policy.
+Independent reconstruction covers $4{,}608$ joint-attention head-input cases, $384$ joint-FFN
+module-input cases, and $384$ complete joint-block input cases. Their respective worst relative
+errors are $6.36\times10^{-16}$, $1.3871\times10^{-15}$, and $1.5024\times10^{-7}$, all below
+their frozen gates. These are input-conditioned layer and block certificates.
 
-A separately frozen ViT audit partitions joint attention into vision, instruction, robot-state,
-and action-query source tokens. Across $128$ deterministic, official-task-balanced inputs for each
-of the three capability checkpoints, all $36{,}864$ head-input cases and $147{,}456$ source-group evaluations
-are finite, with worst reconstruction error $5.0741\times10^{-7}$ against a $10^{-6}$ gate.
-Across the $3{,}072$ projected module-input cases, mean coherent-energy shares are $67.7\%$ vision,
-$19.2\%$ robot state, $7.9\%$ action query, and $5.1\%$ instruction. These input-conditioned
-magnitudes are descriptive rather than causal importance. Familiar-prompt permutations are also
-descriptive and do not establish grounding or closed-loop success.
+A separately frozen ViT audit partitions $36{,}864$ joint-attention head-input cases into vision,
+instruction, robot-state, and action-query sources. Worst reconstruction error is
+$5.0741\times10^{-7}$, while mean coherent-energy shares are $67.7\%$, $5.1\%$, $19.2\%$,
+and $7.9\%$. The shares are descriptive rather than causal importance or grounding.
 
-Finally, a prospectively frozen sequential replay reaches the learned action output on the same
-three capable ViT checkpoints. For $16$ deterministic, official-task-balanced corrected inputs per
-checkpoint, an independent NumPy float64 evaluation starts from the exact prepared model tensors
-and rebuilds the learned patch projection, four vision blocks, multimodal embeddings and
-projections, eight joint blocks, final RationalNorm, and linear action head. Across $48$ inputs and
-$816$ recorded stage evaluations, the worst final-action relative $\ell_2$ error is
-$3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. Every manual PyTorch traversal is bitwise
-identical to an unmodified full model call. This is an input-conditioned full learned-forward
-numerical certificate, not one compact symbolic contraction or an input-general proof. It excludes
-preprocessing, fixed action unnormalization, chunk execution, simulator dynamics, and success.
+Finally, a prospectively frozen sequential replay rebuilds the learned path from prepared tensors
+through all $12$ transformer blocks to the linear head. Across $48$ inputs and $816$ stages, worst
+final-action relative error is $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. This
+fixed-input numerical certificate is not a compact symbolic or input-general proof.
 
 Naively materializing the real width-$384$ coefficient tensor would require approximately
 $3.2\times10^{15}$ values. We instead contract the CP factors into an $O(d^2)$ reduced Gram.
@@ -460,15 +453,17 @@ and tensor networks provide our multilinear foundation \cite{koldabader,stoudenm
 Bilinear models expose low-rank circuits from trained weights \cite{pearce,chinets}. Policy analysis
 and causal activation studies make our distinction empirical \cite{bimpala,haonsteering,sparsecircuits,causalreduction}.
 Because LIBERO success can coexist with weak robustness and language use
-\cite{liberopro,liberocf,liberopara}, the claim remains specialist.
+\cite{liberopro,liberocf,liberopara}, the claim remains bounded to familiar tasks from the
+training suites.
 
 % ============================================================================
 \section{Limitations and conclusion}
 % ============================================================================
 
-\chivla\ shows that strong specialist control can coexist with exact access to trained structure.
+\chivla\ shows that strong single-suite control and substantial four-suite familiar-task breadth
+can coexist with exact access to trained structure.
 The paired controls establish familiar-task instruction necessity, not counterfactual goal following,
-broad task generalization, or physical transfer. The learned path is replayed on fixed inputs, not
+unseen-task generalization, or physical transfer. The learned path is replayed on fixed inputs, not
 given as one compact symbolic contraction or input-general proof, and the strongest ensemble costs
 three passes. We present \chivla\ as diagnostic infrastructure, not a deployment-ready or robustly
 grounded policy. Common ViT checkpoints connect capability, exact attention, and reduced-Gram
@@ -577,7 +572,7 @@ Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, langu
 actions, and resized images matched exactly for every frame. The anonymous artifact releases raw
 structural-certificate JSONs and all $2{,}000$ episode rows behind the ViT member and ensemble
 results. Immutable SHA-256 manifests and standard-library verifiers independently recompute the
-capability totals, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
+capability totals, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
 modality-partition, full learned-forward, and RationalNorm certificate decisions. Preflight checks
 fail if canonical initial states cannot be loaded.
 

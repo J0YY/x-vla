@@ -1,0 +1,53 @@
+{
+  "artifact_version": 1,
+  "description": "Immutable identities and expected arithmetic for the anonymous four-suite breadth artifact.",
+  "evidence": {
+    "ensemble_manifest": {
+      "path": "athena/results/multisuite_mean_ensemble_v1_manifest.json",
+      "sha256": "4fc948e6e56f803efba757c14bd3b04fa6edf087289c77af6b556042ecf0a185"
+    },
+    "ensemble_summary": {
+      "path": "athena/results/multisuite_mean_ensemble_v1_summary.json",
+      "sha256": "2909f8b0c692fe83795dfba532a127c19a0bd87802cfa49d6066926a2d182766"
+    },
+    "retention_summary": {
+      "path": "athena/results/specialist_retention_hardened_summary.json",
+      "sha256": "869d5ef3f1ee5eeac31f1869e069f3431c2452a11d33befc398cb1d6d014ef77"
+    }
+  },
+  "expected": {
+    "ensemble": {
+      "macro_task_success": 0.7475,
+      "member_mean_macro_success": 0.7035,
+      "successes": 1495,
+      "suite_macro_success": {
+        "libero_10": 0.508,
+        "libero_goal": 0.856,
+        "libero_object": 0.886,
+        "libero_spatial": 0.74
+      },
+      "tasks_at_least_0p50": 34,
+      "trials": 2000,
+      "uplift_over_member_mean": 0.044
+    },
+    "members": {
+      "macro_successes": [0.7085, 0.7135, 0.6885],
+      "mean": 0.7035,
+      "sample_standard_deviation": 0.013228756555322921,
+      "suite_seed_means": {
+        "libero_10": 0.4546666666666666,
+        "libero_goal": 0.8193333333333334,
+        "libero_object": 0.8093333333333333,
+        "libero_spatial": 0.7306666666666667
+      },
+      "tasks_with_seed_mean_at_least_0p50": 32
+    },
+    "retention": {
+      "generalist_four_suite_task_macro": 0.7085,
+      "generalist_to_specialist_ratio": 0.9516453995970452,
+      "specialist_four_suite_task_macro": 0.7445,
+      "threshold": 0.85
+    }
+  },
+  "schema": "anonymous-four-suite-breadth-artifact-v1"
+}

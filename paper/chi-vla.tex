@@ -45,7 +45,11 @@ reproduce its deployed rational and bilinear branches near the float32 precision
 Across three independently trained $20.1$M ViT policies, closed-loop LIBERO-Object success is
 $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint. A preregistered elementwise
 prediction-mean ensemble reaches $467/500=93.4\%$ at the cost of three forward passes.
-Across the three checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
+Separately, three jointly trained checkpoints spanning $40$ familiar LIBERO tasks reach
+$70.35\%\pm1.32\%$ task-macro success. Their frozen three-pass mean-prediction ensemble
+reaches $74.75\%$ with every suite at or above $50\%$. At equal aggregate updates, a frozen
+seed-$0$ joint checkpoint retains $95.16\%$ of four suite specialists' pooled success.
+On the three LIBERO-Object checkpoints, a prospectively frozen paired test on $100$ unique familiar-task
 states finds $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a
 co-present control instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes,
 zeroing only the learned post-lookup token vectors drops success from $263/300=87.7\%$ to
@@ -62,9 +66,10 @@ worst relative error $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. In a
 ViT checkpoint, all $36$ primary block-head tests favor its rank-$128$ subspace over equal-rank random controls, with
 median fidelity ratio $2.44$. Separately, prospectively fixed rank-$96$ visual projectors retain
 $95.2$--$98.2\%$ of baseline successes on tasks absent from corrected projector construction, while three equal-rank
-random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong specialist capability and exact
+random projectors retain only $3.3$--$13.6\%$. The evidence establishes strong single-suite and
+four-suite familiar-task capability and exact
 layerwise access to trained attention coefficients, together with bounded familiar-task instruction
-necessity. It does not establish broad robotic generalization, counterfactual goal following, or an
+necessity. It does not establish unseen-task generalization, counterfactual goal following, or an
 input-general compact symbolic decomposition of the full policy.
 \end{abstract}
 
@@ -103,7 +108,7 @@ control.
 We study the narrower but testable question:
 
 \begin{quote}
-\emph{Can a specialist VLA retain strong closed-loop capability when every deployed learned
+\emph{Can a compact VLA retain strong closed-loop capability when every deployed learned
 operation is polynomial or rational, while supporting exact weight analysis?}
 \end{quote}
 
@@ -119,7 +124,9 @@ Our contributions are:
         supplies input-specific scaling without leaving the rational function class.
   \item We evaluate three fully rational $20.1$M ViT policies on $1{,}500$ canonical
         LIBERO-Object trials. They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean
-        ensemble reaches $467/500=93.4\%$.
+        ensemble reaches $467/500=93.4\%$. Three jointly trained checkpoints average
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, and their fixed ensemble reaches
+        $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
   \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
         rational and bilinear branches from their weights.
   \item We extend exact weight-derived decomposition through individual attention layers with a
@@ -326,6 +333,8 @@ The result shows that the rational architecture supports high closed-loop specia
 capability. It is an existence claim for a compact tensor-decomposable
 policy, not a claim of broad robotic generalization or state of the art.
 
+\input{four_suite_breadth_section}
+
 \input{instruction_necessity_section}
 
 Within its stated boundary, this closes the possibility that the policy's familiar-task success is
@@ -446,7 +455,8 @@ Appendix~\ref{app:visual-bottleneck} reports the paired controls and stability i
 
 \paragraph{Capability, mechanisms, and robustness.}
 OpenVLA and OpenVLA-OFT establish pretrained VLA and continuous-control baselines
-\cite{openvla,openvlaoft}, while \chivla\ studies a compact algebraically restricted specialist.
+\cite{openvla,openvlaoft}, while \chivla\ studies a compact algebraically restricted policy on
+familiar single-suite and jointly trained four-suite tasks.
 Polynomial and tensor networks provide the multilinear foundation
 \cite{koldabader,stoudenmire,chrysos}. Bilinear MLPs and $\chi$-nets expose low-rank features and
 compositional circuits from trained weights \cite{pearce,chinets}. We extend that setting to
@@ -454,15 +464,16 @@ closed-loop control and exact reduced softmax-free attention. Bilinear policy an
 activation, circuit, and rollout studies make our distinction empirical rather than universal
 \cite{bimpala,haonsteering,sparsecircuits,causalreduction}. Because LIBERO success can coexist with
 weak robustness and language use \cite{liberopro,liberocf,liberopara}, our claims remain bounded
-to the specialist setting.
+to familiar tasks from the training suites.
 
 % ============================================================================
 \section{Limitations and conclusion}
 % ============================================================================
 
-\chivla\ shows that strong specialist control can coexist with exact access to trained structure.
+\chivla\ shows that strong single-suite control and substantial four-suite familiar-task breadth
+can coexist with exact access to trained structure.
 The paired controls establish familiar-task instruction necessity, not counterfactual goal following,
-broad generalization, or physical transfer. The learned path is replayed on fixed inputs, not given
+unseen-task generalization, or physical transfer. The learned path is replayed on fixed inputs, not given
 as one compact symbolic contraction or input-general proof, and the strongest ensemble costs three
 passes. Common ViT checkpoints connect capability, exact attention, and reduced-Gram analysis,
 while separate convolutional files replicate the attention equation certificate. We do not claim a
@@ -570,7 +581,7 @@ Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, langu
 actions, and resized images matched exactly for every frame. The anonymous artifact releases raw
 structural-certificate JSONs and all $2{,}000$ episode rows behind the ViT member and ensemble
 results. Immutable SHA-256 manifests and standard-library verifiers independently recompute the
-capability totals, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
+capability totals, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
 modality-partition, full learned-forward, and RationalNorm certificate decisions. Preflight checks
 fail if canonical initial states cannot be loaded.
 

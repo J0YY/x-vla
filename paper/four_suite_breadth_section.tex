@@ -1,0 +1,43 @@
+\subsection{One policy across four familiar suites}
+\label{sec:four-suite-breadth}
+
+We next train one $20.1$M \chivla\ checkpoint jointly on the ten tasks from each of
+LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, and LIBERO-10. The balanced recipe uses
+$160{,}000$ updates, equal to the aggregate $4\times40{,}000$ updates used by four
+separately trained suite specialists. Evaluation uses $50$ canonical trials per task,
+so each checkpoint receives $2{,}000$ closed-loop trials.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Policy & Object & Spatial & Goal & LIBERO-10 & 40-task macro \\
+\midrule
+Joint \chivla, three-seed mean & $80.9\%$ & $73.1\%$ & $81.9\%$ & $45.5\%$ & $\mathbf{70.35\%\pm1.32\%}$ \\
+Fixed three-checkpoint mean ensemble & $88.6\%$ & $74.0\%$ & $85.6\%$ & $50.8\%$ & $\mathbf{74.75\%}$ \\
+Joint \chivla, seed $0$ & $83.6\%$ & $73.0\%$ & $82.0\%$ & $44.8\%$ & $70.85\%$ \\
+Four suite specialists, seed $0$ & $83.0\%$ & $80.0\%$ & $88.0\%$ & $46.8\%$ & $74.45\%$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Closed-loop breadth over 40 familiar tasks.} The first row is the
+mean across three jointly trained checkpoints, with sample standard deviation across
+their 40-task macro scores. The ensemble averages their normalized action predictions
+and costs three forward passes. The final two rows form the separately frozen seed-$0$
+retention comparison.}
+\label{tab:four-suite-breadth}
+\end{table}
+
+The three joint checkpoints score $70.85\%$, $71.35\%$, and $68.85\%$, and their
+seed-mean success is at least $50\%$ on $32/40$ tasks. In the separately frozen
+mean-prediction ensemble, success rises from the $70.35\%$ member mean to $74.75\%$,
+with every suite at or above $50\%$ and $34/40$ tasks at or above $50\%$. Its protocol
+and gates were fixed after the member checkpoints were selected but before ensemble
+evaluation. In the separately frozen
+seed-$0$ comparison, the single joint checkpoint retains
+$70.85/74.45=95.16\%$ of the four specialists' pooled task-macro success, above the
+fixed $85\%$ retention threshold. The suite ratios are $100.7\%$, $91.3\%$,
+$93.2\%$, and $95.7\%$ for Object, Spatial, Goal, and LIBERO-10. This certificate
+compares familiar tasks seen during training. It establishes multi-suite capacity and
+parameter sharing, not transfer to an unseen task, instruction, embodiment, or domain.

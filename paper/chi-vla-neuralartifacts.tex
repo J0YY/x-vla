@@ -52,6 +52,10 @@ coefficient tensor. In a seed-$0$ ViT checkpoint, all $36$ primary block-head te
 rank-$128$ weight-derived subspace over fixed random controls. Across the same three ViT
 checkpoints, closed-loop LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials
 per checkpoint, and a fixed prediction-mean ensemble reaches $467/500=93.4\%$. Across the three
+jointly trained checkpoints spanning $40$ familiar LIBERO tasks, task-macro success is
+$70.35\%\pm1.32\%$. Their frozen three-pass mean-prediction ensemble reaches $74.75\%$ with
+every suite at or above $50\%$. At equal aggregate updates, a frozen seed-$0$ joint checkpoint
+retains $95.16\%$ of four suite specialists' pooled success. On the three LIBERO-Object
 checkpoints, a prospectively frozen paired test on $100$ unique familiar-task states finds
 $247/300=82.3\%$ correct-instruction success, versus $72/300=24.0\%$ with a co-present control
 instruction and $78/300=26.0\%$ with an empty instruction. On disjoint episodes, zeroing only the
@@ -61,7 +65,8 @@ audits reconstruct $4{,}608$ attention-head cases, $384$ joint-FFN module-input 
 complete joint-block input cases, with worst relative errors $6.36\times10^{-16}$,
 $1.39\times10^{-15}$, and $1.5024\times10^{-7}$. Learned rank-$96$ visual projectors retain
 $95.2$--$98.2\%$ of baseline successes, versus $3.3$--$13.6\%$ for random projectors. We therefore
-establish a capable model family with exact layerwise structure derived from trained coefficients
+establish a capable single-suite and four-suite familiar-task model family with exact layerwise
+structure derived from trained coefficients
 and bounded familiar-task instruction necessity. We do not provide counterfactual goal-following
 evidence or an input-general compact symbolic decomposition of the complete policy.
 \end{abstract}
@@ -95,7 +100,7 @@ Bilinear language and vision models suggest that changing the primitives can rec
 We study two linked questions:
 
 \begin{quote}
-\emph{Can the learned weights of a specialist VLA specify an explicit rational tensor program,
+\emph{Can the learned weights of a compact VLA specify an explicit rational tensor program,
 and can exact weight analysis coexist with strong closed-loop control?}
 \end{quote}
 
@@ -113,7 +118,9 @@ Our contributions are:
         checkpoint.
   \item We evaluate the same three ViT checkpoints on $1{,}500$ canonical LIBERO-Object trials.
         They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean ensemble reaches
-        $467/500=93.4\%$.
+        $467/500=93.4\%$. Three jointly trained checkpoints average
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, and their fixed ensemble reaches
+        $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
 \end{enumerate}
 
 \begin{table}[H]
@@ -293,6 +300,8 @@ The result shows that the rational architecture supports high closed-loop specia
 It is an existence claim for a compact tensor-decomposable policy, not a
 claim of broad robotic generalization or state of the art.
 
+\input{four_suite_breadth_section}
+
 \input{instruction_necessity_section}
 
 For Neural Artifacts, this adds a prospectively specified behavioral audit to the algebraic
@@ -445,21 +454,22 @@ that standard LIBERO success can coexist with weak language use
 \cite{liberopro,liberocf,liberopara}.
 
 \paragraph{Limitations and conclusion.}
-The benchmark is one specialist suite, so it does not establish broad robotic generalization.
+The breadth benchmark covers $40$ familiar training tasks across four suites, so it does not
+establish unseen-task generalization.
 Exact layer equations are certified directly, and the learned forward path is independently
 replayed sequentially on fixed inputs. This does not yet produce one compact symbolic contraction
 or an input-general proof of the full policy. The ViT records connect capability, exact attention, and the
 reduced-Gram screen through common checkpoint basenames. Separate convolutional files replicate the joint-attention equation
 certificate across another visual encoder. A paired familiar-task audit establishes instruction
 necessity for the original goal, but not counterfactual goal following, zero-shot language use, or
-broad grounding. Within that scope, rational restrictions support
-strong LIBERO-Object control and exact trained-weight certificates. We do not claim a direct
+broad grounding. Within that scope, rational restrictions support strong LIBERO-Object control,
+substantial multi-suite familiar-task breadth, and exact trained-weight certificates. We do not claim a direct
 coefficient-edit interface.
 
 \paragraph{Reproducibility.}
 The anonymous artifact releases raw structural-certificate JSONs and all $2{,}000$ episode rows
 behind the ViT member and ensemble results. Immutable SHA-256 manifests and standard-library
-verifiers independently recompute the capability totals, visual-bottleneck counts and intervals,
+verifiers independently recompute the capability totals, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals,
 and the attention, FFN, complete-block, modality-partition, full learned-forward, and RationalNorm
 certificate decisions. Historical Modal
 cache-backed analyses read dataset-native task metadata. The

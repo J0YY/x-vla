@@ -1,0 +1,217 @@
+{
+  "frozen_gates": {
+    "every_suite_macro_at_least": 0.5,
+    "macro_task_success_at_least": 0.7,
+    "tasks_at_least_0p50_at_least": 32,
+    "uplift_over_member_mean_at_least": 0.0
+  },
+  "gates": {
+    "ensemble_capability_pass": true,
+    "every_suite_macro_at_least": true,
+    "macro_task_success_at_least": true,
+    "tasks_at_least_0p50_at_least": true,
+    "uplift_over_member_mean_at_least": true
+  },
+  "identity": {
+    "cache_provenance": {
+      "libero_10": {
+        "cache_sha256": "571691dac732f9aa6c0837dbd3505e497b8dd18ea247b35ae10038c476eb44d0",
+        "result_sha256": "56637d9ed74a947922b0102fb7c4a0488b4b1e978b59a97bb8e7d56e72e08800",
+        "verified": true
+      },
+      "libero_goal": {
+        "cache_sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550",
+        "result_sha256": "2fdb5c7fe0f5e8de272ad23f6e182c027ada0b97280aaeddac284074f479f430",
+        "verified": true
+      },
+      "libero_object": {
+        "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+        "result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+        "verified": true
+      },
+      "libero_spatial": {
+        "cache_sha256": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb",
+        "result_sha256": "fd38dc27518206a5b105f9909133947f4b36e5f2cc8e843f67e1db7898a52e6f",
+        "verified": true
+      }
+    },
+    "manifest_source_bundle_sha256": "36ec16c00327dd8838702a996bf069e2be7d05e4206710dd3683c08c776ba4f7",
+    "manifest_source_files": {
+      "athena/build_multisuite_ensemble_manifest.py": "f8df1944d3c24e75fd0498766a75a4e47dc10116a01cc27d28be289cd31e64a4",
+      "athena/launch_multisuite_ensemble.sh": "f588f53379af111e78403d14f971e90fe1d46bc1371985f2c0acabc54d939a2e",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/slurm_eval_multisuite_ensemble.sbatch": "8b306572bbcb5a18b0a04bb617e831e6bcd62aee1fbb0959bdbb55d1245cf6ac",
+      "athena/slurm_summarize_multisuite_ensemble.sbatch": "5a613f8ced9cb5182515cbf4e5064a6a0883c67b3de977dde82dde80cfb8a4a7",
+      "athena/summarize_multisuite_ensemble.py": "4ea87fedbf11527b45e4891edc8285597c29854de675b1a752d36e1f52b5ee9e",
+      "athena/summarize_multisuite_generalist.py": "cd87e66f267472d9b5c934804958f802e176b17618fca7f3be463db4a441a865"
+    },
+    "member_artifacts": {
+      "0": {
+        "checkpoint_archive_index_sha256": "8d5445e7afc9c3927e15ea6fce932b480f969516722f4aba6c146e2c27e33c9b",
+        "checkpoint_path": "artifacts/ckpt_generalist_hardened_chi_s0.pt",
+        "checkpoint_sha256": "56a1ca50809c7b791eebd0b19efb19886d55bff68dfceef8710663eebc0f5a8b",
+        "metadata_path": "artifacts/ckpt_generalist_hardened_chi_s0.json",
+        "metadata_sha256": "90e326c2afe4490c31baf1c591136555c6f46cdc77b6f625176de2d51e846914"
+      },
+      "1": {
+        "checkpoint_archive_index_sha256": "5156c910251e5b848780adbab03430440460bf086d815b193b4384971619a6de",
+        "checkpoint_path": "artifacts/ckpt_generalist_hardened_chi_s1.pt",
+        "checkpoint_sha256": "c52f70e8207b4de9833e675b8c2594c622a464b719dac17925c1f62feb3cdec9",
+        "metadata_path": "artifacts/ckpt_generalist_hardened_chi_s1.json",
+        "metadata_sha256": "67a41cb240e244ebcf14fe25e4df7c23adfdea91bee1178f1b23bb0081448696"
+      },
+      "2": {
+        "checkpoint_archive_index_sha256": "89549b421899fcec3ce2589bfe90109020c826d8c0f81188f5a5bdd5d6e0b977",
+        "checkpoint_path": "artifacts/ckpt_generalist_hardened_chi_s2.pt",
+        "checkpoint_sha256": "9354a6c4d3e640eebcebd3e7e87fc6c230a1259e602da54aebbe3ca90557530c",
+        "metadata_path": "artifacts/ckpt_generalist_hardened_chi_s2.json",
+        "metadata_sha256": "1c22b97825bdcb9fdc5bfae0053e1f501f6186abcd1504d6576285fc63b9d466"
+      }
+    }
+  },
+  "macro_task_success": 0.7474999999999998,
+  "manifest": {
+    "path": "artifacts/multisuite_mean_ensemble_v1_manifest.json",
+    "sha256": "4fc948e6e56f803efba757c14bd3b04fa6edf087289c77af6b556042ecf0a185"
+  },
+  "member_mean_macro_success": 0.7035,
+  "scope": {
+    "architecture": "chi",
+    "claim_boundary": "In-domain evaluation of one fixed three-checkpoint mean-prediction ensemble over the same 40 familiar tasks. This is not zero-shot generalization and does not alter the preregistered individual-checkpoint capability gates.",
+    "ensemble_reduction": "elementwise_mean_of_normalized_action_chunks",
+    "ensemble_trials": 2000,
+    "episodes_per_task": 50,
+    "inference_cost": "three policy forward passes per query",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "suites": [
+      "libero_object",
+      "libero_spatial",
+      "libero_goal",
+      "libero_10"
+    ],
+    "tasks_per_suite": 10,
+    "vision_encoder": "vit"
+  },
+  "source_files": [
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_object_t0_3.json",
+      "sha256": "0a4d749aa9e64d97008825a90ec64e387662f1603bf4808262ab29515cccfe74"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_object_t3_6.json",
+      "sha256": "5748f107903b3b2974309096da6ebb9ff8febcf02f37d4abb49bdefc8b5c24d5"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_object_t6_8.json",
+      "sha256": "3e390c7bd2f2a2cc461be3333eefb625f92845b76e1a9dd27190ac7fd8a90d65"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_object_t8_10.json",
+      "sha256": "f2fa0a160d0c48222451fc57cbb8efc08c608c4aab8e4376b644d3ed66946a4c"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_spatial_t0_3.json",
+      "sha256": "4c9433279b6b60d1d2d403d9038c3b40813945fa8a59d55bb07414836d10eda0"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_spatial_t3_6.json",
+      "sha256": "49eea68ad95ff4b2ddbbac7ea41e9b4708c0517f8332e249309c60c891a54d21"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_spatial_t6_8.json",
+      "sha256": "f4e5a65d242ffc351ed0a272beb67d4c6b5f312c49bd21bd9193cae7230ec9e5"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_spatial_t8_10.json",
+      "sha256": "550072d4fb0ac2aec75b35257becba20f4c064b36ac1ce0f246085c7b4011b67"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_goal_t0_3.json",
+      "sha256": "4500aa9aff7bcf887e574dd7730f0b973ec3dc7acfe93eb77d12d8f7f48cd7e1"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_goal_t3_6.json",
+      "sha256": "45c7f71cfda47655de088eeff4e17651d168c147821351b082ec5a1f7c0aede6"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_goal_t6_8.json",
+      "sha256": "c649b772c4467fa99a5e9b32c88492a9fff05e40850b800f5659d6863b373508"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_goal_t8_10.json",
+      "sha256": "17ecc733432ce3fba49b0b067dc56f1cf157aaf1e5886ac75d6eebd22d524dbd"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_10_t0_3.json",
+      "sha256": "d30268607131a85588e68ad75de5ce5313c40fc9deae893a275e9d148d5a89d7"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_10_t3_6.json",
+      "sha256": "d262e90e867b3cac7a04c77909bd69ae1f18d90df94919aebb0d17392ad60433"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_10_t6_8.json",
+      "sha256": "5520efab767c05adb7a6be500ef4b4c67054d4f5ddfc4e71ea07692838e3e6ac"
+    },
+    {
+      "path": "results/multisuite_mean_ensemble_v1_libero_10_t8_10.json",
+      "sha256": "e99f15c6117598cf9f9894a572703e2122862ed9ff074ad2756423a8bb2a3bff"
+    }
+  ],
+  "successes": 1495,
+  "suite_macro_success": {
+    "libero_10": 0.508,
+    "libero_goal": 0.8560000000000001,
+    "libero_object": 0.8859999999999999,
+    "libero_spatial": 0.74
+  },
+  "task_success": {
+    "libero_10:0": 0.24,
+    "libero_10:1": 0.5,
+    "libero_10:2": 0.86,
+    "libero_10:3": 0.84,
+    "libero_10:4": 0.56,
+    "libero_10:5": 0.9,
+    "libero_10:6": 0.34,
+    "libero_10:7": 0.36,
+    "libero_10:8": 0.0,
+    "libero_10:9": 0.48,
+    "libero_goal:0": 0.82,
+    "libero_goal:1": 0.98,
+    "libero_goal:2": 0.86,
+    "libero_goal:3": 0.62,
+    "libero_goal:4": 0.88,
+    "libero_goal:5": 0.84,
+    "libero_goal:6": 0.72,
+    "libero_goal:7": 1.0,
+    "libero_goal:8": 0.96,
+    "libero_goal:9": 0.88,
+    "libero_object:0": 0.8,
+    "libero_object:1": 0.78,
+    "libero_object:2": 0.96,
+    "libero_object:3": 0.58,
+    "libero_object:4": 1.0,
+    "libero_object:5": 0.82,
+    "libero_object:6": 1.0,
+    "libero_object:7": 0.92,
+    "libero_object:8": 1.0,
+    "libero_object:9": 1.0,
+    "libero_spatial:0": 0.82,
+    "libero_spatial:1": 0.92,
+    "libero_spatial:2": 0.88,
+    "libero_spatial:3": 0.9,
+    "libero_spatial:4": 0.7,
+    "libero_spatial:5": 0.04,
+    "libero_spatial:6": 1.0,
+    "libero_spatial:7": 0.64,
+    "libero_spatial:8": 0.8,
+    "libero_spatial:9": 0.7
+  },
+  "tasks_at_least_0p50": 34,
+  "trials": 2000,
+  "uplift_over_member_mean": 0.04399999999999982
+}
