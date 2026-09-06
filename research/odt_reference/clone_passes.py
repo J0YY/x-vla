@@ -87,12 +87,18 @@ def occurrence_environments(canonical):
         if not np.isfinite(environment).all():
             raise ValueError("nonfinite downstream clone environment")
         result[node.path] = (node.origin, environment)
+        if not node.children:
+            return
+        # Independent two-stage contraction: attach this occurrence's actual
+        # downstream environment before closing the QR-certified sibling leg.
+        shape = node.core.shape
+        attached = (environment @ node.core.reshape(shape[0], -1)).reshape(shape)
         if len(node.children) == 1:
-            child = np.einsum("ai,ab,bj->ij", node.core, environment, node.core)
+            child = np.einsum("ai,aj->ij", node.core, attached, optimize=True)
             descend(node.children[0], child)
         elif len(node.children) == 2:
-            left = np.einsum("aik,ab,bjk->ij", node.core, environment, node.core)
-            right = np.einsum("aki,ab,bkj->ij", node.core, environment, node.core)
+            left = np.einsum("aik,ajk->ij", node.core, attached, optimize=True)
+            right = np.einsum("aki,akj->ij", node.core, attached, optimize=True)
             descend(node.children[0], left)
             descend(node.children[1], right)
     descend(canonical.tree.root, np.einsum("oi,oj->ij", head, head))

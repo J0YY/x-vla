@@ -178,12 +178,17 @@ def occurrence_environment_sums(graph):
     result[-1] = np.einsum("oa,ob->ab", graph.head, graph.head)
     for index in reversed(range(len(graph.nodes))):
         node, environment = graph.nodes[index], result[index]
+        if not node.children:
+            continue
+        # Contract the actual downstream environment first, once for both roles.
+        # This avoids the four-index work of an unplanned three-operand einsum.
+        downstream = np.tensordot(environment, node.core, axes=(1, 0))
         if len(node.children) == 1:
-            message = np.einsum("oa,op,pb->ab", node.core, environment, node.core)
+            message = np.einsum("oa,ob->ab", node.core, downstream, optimize=True)
             result[node.children[0]] += message
         elif len(node.children) == 2:
-            left = np.einsum("oaj,op,pbj->ab", node.core, environment, node.core)
-            right = np.einsum("oia,op,pib->ab", node.core, environment, node.core)
+            left = np.einsum("oaj,obj->ab", node.core, downstream, optimize=True)
+            right = np.einsum("oia,oib->ab", node.core, downstream, optimize=True)
             result[node.children[0]] += left
             result[node.children[1]] += right
     return tuple(result)

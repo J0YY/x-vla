@@ -25,8 +25,13 @@ SUITES = {
               "block.py", "block_oracle.py", "test_block_oracle.py", "test_block.py", "test_shared_dag.py"),
     "checkpoint": ("checkpoint.py", "test_checkpoint.py"),
     "guard": ("test_guard.py",),
+    "contractions": ("dooms.py", "shared_dag.py", "clone_oracle.py", "clone_passes.py", "test_contractions.py"),
+    "curve": ("dooms.py", "shared_dag.py", "curve.py", "test_curve.py"),
+    "campaign": ("run_curve.py", "test_run_curve.py", "checkpoint.py", "block.py", "block_oracle.py",
+                 "weights.py", "dooms.py", "shared_dag.py", "clone_oracle.py", "clone_passes.py", "curve.py"),
 }
-BOUNDARY_FILES = {"checkpoint.py", "test_checkpoint.py", "run_checkpoint_gate.py", "run_tests.py"}
+BOUNDARY_FILES = {"checkpoint.py", "test_checkpoint.py", "run_checkpoint_gate.py", "run_tests.py",
+                  "run_curve.py", "test_run_curve.py"}
 
 
 def audit(files):
@@ -53,6 +58,8 @@ def audit(files):
                 allowed = {"numpy", "itertools", "unittest", "dataclasses", "copy", "math"}
                 if path.name in BOUNDARY_FILES:
                     allowed |= {"io", "pickle", "pickletools", "zipfile", "argparse", "ast", "hashlib", "json"}
+                if path.name in {"run_curve.py", "test_run_curve.py"}:
+                    allowed |= {"time", "tempfile"}
                 if any(x.name.split(".")[0] not in allowed for x in node.names):
                     raise RuntimeError(f"unreviewed dependency: {path.name}:{node.lineno}")
             if isinstance(node, ast.ImportFrom) and not (node.module or "").startswith(
