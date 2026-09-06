@@ -228,7 +228,12 @@ def _execute_policy(removal: int, run_name: str, artifact_manifest_sha256: str =
         "checkpoint_sha256": "b1c0dfce86ee90b45e30367603a7cc4d88c02f9056e836b19656179bf74ea3ee",
         "source_bundle_sha256": SOURCE_BUNDLE_SHA256, "protocol_sha256": bundle["files"]["protocol.json"],
         "controller": controller, "versions": versions, "smoke": smoke,
+        "runner_sha256": sha256(Path(__file__).resolve()),
+        "physical_tensor_network_executed": removal != 0,
+        "source_model_objects_created": 1 if removal == 0 else 0,
         "historical_baseline_is_not_the_paired_comparator": True}
+    if removal == 0:
+        identity["actual_internal_dimension_removal"] = 0.0
     try:
         with contextlib.ExitStack() as stack:
             model = None
