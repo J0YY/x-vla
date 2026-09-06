@@ -7,6 +7,34 @@ The current implementation applies ODT to the complete shared tensor graph. It u
 updates every use of a shared bond, builds downstream environments by explicit contraction, and
 checks every stage against a separately unfolded reference implementation.
 
+## What we're aiming for
+
+We want a robot policy that performs well and whose computation can be decomposed directly from
+its weights. ODT orders internal directions by their influence on the final output. The next step
+is to remove less useful directions while preserving the robot's ability to complete tasks,
+without retraining. Longer term, we want to use those directions to understand and edit behavior.
+
+The immediate target is a curve of **dimensions removed versus closed-loop task success**.
+A useful improvement preserves more success at the same removal level, or removes more dimensions
+at the same success rate.
+
+## Strongest results so far
+
+- **Capable policy:** the checkpoint used for the completed decomposition achieved **85.2% success
+  on LIBERO-Object (426/500 episodes)**. A separate checkpoint in the current compression lane has
+  a fresh **83.8% result (419/500)**. These are evaluations before compression.
+- **Full-policy decomposition:** ODT completed on a **20.1-million-parameter policy**, spanning
+  **3.96 million tensor nodes**, in about **15 hours 22 minutes**. The transformed action map
+  matched the source with **4.805 × 10⁻¹⁴ relative error**.
+- **Truncation:** controlled graphs verify that directions can be physically removed and that
+  keeping leading directions outperforms matched trailing controls. We do not yet have a verified
+  compression-versus-success curve for the capable policy, or a demonstrated set of human-readable
+  features.
+
+These results motivate the next experiment: measure how much of the capable policy we can remove
+before its task success falls. The historical success rates above provide context; each new
+compression comparison needs a baseline evaluated on the same episode panel and simulator setup.
+
 ## Start here
 
 Read these files in order:
