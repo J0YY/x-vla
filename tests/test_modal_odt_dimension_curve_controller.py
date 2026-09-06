@@ -45,6 +45,29 @@ def test_coupled_mass_and_jacobian_satisfy_original_constraint_equations():
     assert np.max(np.abs(jacobian @ nullspace)) < 1e-12
 
 
+def test_direct_factors_handle_multiscale_known_solution_without_alternate_factorization():
+    matrix = np.array([[1., 1., 1.], [1., 1.000001, 1.], [1., 1., 1.000002]], dtype=np.float64)
+    expected = np.array([[2., -1.], [-3., 0.5], [1., 2.]], dtype=np.float64)
+    actual = _direct_qr_square_solve(matrix, matrix @ expected)
+    assert np.max(np.abs(matrix @ actual - matrix @ expected)) < 1e-12
+
+
+def test_guard_blocks_all_known_rank_condition_and_basis_shortcuts(monkeypatch):
+    import scipy.linalg
+    import torch
+    from modal_odt_dimension_curve_controller import install_prohibited_route_guards
+    for namespace in (np.linalg, np.linalg.linalg, np, scipy.linalg, torch, torch.linalg, torch.Tensor):
+        for name in ("svd", "svdvals", "svd_lowrank", "pca_lowrank", "pinv", "pinvh", "pinverse", "lstsq", "polar", "cov", "matrix_rank", "cond", "orth", "null_space", "norm", "matrix_norm"):
+            if hasattr(namespace, name):
+                monkeypatch.setattr(namespace, name, getattr(namespace, name))
+    receipt = install_prohibited_route_guards()
+    expected = {"numpy.linalg.matrix_rank", "numpy.linalg.cond", "torch.linalg.matrix_rank", "torch.linalg.cond", "scipy.linalg.orth", "scipy.linalg.null_space"}
+    assert expected <= set(receipt["blocked_entrypoints"])
+    # Inspect wrappers without invoking a prohibited entrypoint in this test.
+    assert np.linalg.matrix_rank.__name__ == "reject"
+    assert scipy.linalg.null_space.__name__ == "reject"
+
+
 @pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
 def test_nonfinite_equation_rejected(bad):
     matrix = np.eye(2, dtype=np.float64)

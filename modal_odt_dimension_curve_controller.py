@@ -24,8 +24,8 @@ def install_prohibited_route_guards() -> dict:
     def reject(*_args, **_kwargs):
         receipt["prohibited_calls"] += 1
         raise RuntimeError("prohibited numerical route entered the Modal ODT process")
-    names = ("svd", "svdvals", "svd_lowrank", "pca_lowrank", "pinv", "pinvh", "pinverse", "lstsq", "polar", "cov")
-    for label, namespace in (("numpy.linalg", np.linalg), ("numpy", np),
+    names = ("svd", "svdvals", "svd_lowrank", "pca_lowrank", "pinv", "pinvh", "pinverse", "lstsq", "polar", "cov", "matrix_rank", "cond", "orth", "null_space")
+    for label, namespace in (("numpy.linalg", np.linalg), ("numpy.linalg.linalg", np.linalg.linalg), ("numpy", np),
                              ("scipy.linalg", scipy.linalg), ("torch", torch),
                              ("torch.linalg", torch.linalg), ("torch.Tensor", torch.Tensor)):
         for name in names:
@@ -50,6 +50,18 @@ def install_prohibited_route_guards() -> dict:
     return receipt
 
 
+def _back_substitute(r: np.ndarray, projected: np.ndarray) -> np.ndarray:
+    solution = np.empty_like(projected)
+    for row in range(r.shape[0] - 1, -1, -1):
+        if r[row, row] == 0.0:
+            raise RuntimeError("controller direct QR has a singular triangular equation")
+        value = projected[row].copy()
+        if row + 1 < r.shape[0]:
+            value -= r[row, row + 1:] @ solution[row + 1:]
+        solution[row] = value / r[row, row]
+    return solution
+
+
 def _direct_qr_square_solve(matrix: np.ndarray, rhs: np.ndarray) -> np.ndarray:
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or rhs.shape[0] != matrix.shape[0]:
         raise ValueError("controller QR system has incompatible dimensions")
@@ -61,17 +73,19 @@ def _direct_qr_square_solve(matrix: np.ndarray, rhs: np.ndarray) -> np.ndarray:
     if float(np.max(np.abs(reconstruction - matrix))) > 1e-11 * scale:
         raise RuntimeError("controller direct QR reconstruction failed")
     projected = q.T @ rhs
-    solution = np.empty_like(projected)
-    for row in range(matrix.shape[0] - 1, -1, -1):
-        if r[row, row] == 0.0:
-            raise RuntimeError("controller direct QR has a singular triangular equation")
-        value = projected[row].copy()
-        if row + 1 < matrix.shape[0]:
-            value -= r[row, row + 1:] @ solution[row + 1:]
-        solution[row] = value / r[row, row]
+    solution = _back_substitute(r, projected)
+    # Two unconditional refinement steps reuse exactly the same direct factors.
+    # Extended-precision residual arithmetic avoids cancellation in the tiny
+    # constrained dynamics system.  There is no alternate factorization route.
+    extended_matrix = matrix.astype(np.longdouble)
+    extended_rhs = rhs.astype(np.longdouble)
+    for _ in range(2):
+        residual = extended_rhs - extended_matrix @ solution.astype(np.longdouble)
+        correction = _back_substitute(r, q.T @ residual.astype(np.float64))
+        solution += correction
     if not np.isfinite(solution).all():
         raise RuntimeError("controller direct QR solution is nonfinite")
-    error = float(np.max(np.abs(matrix @ solution - rhs)))
+    error = float(np.max(np.abs(extended_matrix @ solution.astype(np.longdouble) - extended_rhs)))
     relative = error / max(float(np.max(np.abs(rhs))), np.finfo(np.float64).tiny)
     if relative > 1e-9:
         raise RuntimeError(f"controller constrained dynamics residual too large: {relative}")
@@ -114,6 +128,7 @@ def install_controller() -> dict:
     return {
         "schema": "xvla_modal_direct_qr_constrained_dynamics_controller_v1",
         "method": "direct_householder_qr_of_mass_jacobian_saddle_system",
+        "unconditional_same_factor_refinement_steps": 2,
         "singular_policy": "fail_closed_no_fallback",
         "historical_controller_equivalence": "same_constrained_equations_on_nonsingular_systems_only",
     }

@@ -71,7 +71,8 @@ def configure() -> None:
     np.random.seed(0)
     torch.manual_seed(0)
     torch.set_num_threads(16)
-    torch.set_num_interop_threads(1)
+    if torch.get_num_interop_threads() != 1:
+        torch.set_num_interop_threads(1)
     torch.set_float32_matmul_precision("highest")
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = True

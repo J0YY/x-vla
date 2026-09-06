@@ -163,10 +163,10 @@ def test_controller() -> None:
     print(controller_tests.remote())
 
 
-SOURCE_BUNDLE_DIRECTORY = "tmp/odt_modal_curve_v1/source_v2"
-SOURCE_BUNDLE_SHA256 = "a3180fcaf5dae2cab031d755c1f2e5a43b1218b283d93b7b0c3e92afc1d2c348"
+SOURCE_BUNDLE_DIRECTORY = "tmp/odt_modal_curve_v1/source_v3"
+SOURCE_BUNDLE_SHA256 = "f541f6fd9a784fec0cd00d428a9cd6d80084a5246393ea5cdc777158bdae6602"
 worker_image = image.add_local_dir(SOURCE_BUNDLE_DIRECTORY, "/root/odt")
-worker_test_image = worker_image.add_local_file("tests/test_modal_odt_dimension_curve_worker.py", "/root/odt/tests/test_modal_odt_dimension_curve_worker.py")
+worker_test_image = worker_image.add_local_file("tests/test_modal_odt_dimension_curve_worker.py", "/root/odt/tests/test_modal_odt_dimension_curve_worker.py").add_local_file("tests/test_modal_odt_dimension_curve_reduced.py", "/root/odt/tests/test_modal_odt_dimension_curve_reduced.py")
 
 
 def _execute_policy(removal: int, run_name: str, artifact_manifest_sha256: str = "", receipt_sha256: str = "", smoke: bool = False) -> dict:
@@ -190,6 +190,8 @@ def _execute_policy(removal: int, run_name: str, artifact_manifest_sha256: str =
         if hashlib.sha256((source / relative).read_bytes()).hexdigest() != expected:
             raise RuntimeError(f"source byte identity differs: {relative}")
     from modal_odt_dimension_curve_controller import install_controller, install_prohibited_route_guards, COUNTS
+    for key in COUNTS:
+        COUNTS[key] = 0.0 if key == "largest_relative_residual" else 0
     guards = install_prohibited_route_guards()
     from modal_odt_dimension_curve_worker import configure, load_source, load_training, read_json, run_panel, sha256
 
@@ -256,7 +258,11 @@ def _execute_policy(removal: int, run_name: str, artifact_manifest_sha256: str =
                 identity["segmented_bytes_per_evaluation"] = mapped.segmented_bytes_per_evaluation
                 identity["source_model_objects_created"] = 0
             publish("started.json", identity)
-            rows = run_panel(model, mapped, training, protocol, progress, smoke=smoke)
+            if removal == 0:
+                rows = run_panel(model, mapped, training, protocol, progress, smoke=smoke)
+            else:
+                from modal_odt_dimension_curve_reduced import run_reduced_panel
+                rows = run_reduced_panel(mapped, training, protocol, progress, smoke=smoke)
         if guards["prohibited_calls"] or guards["matrix_spectral_norm_calls"]:
             raise RuntimeError("a prohibited numerical route was attempted")
         result = {**identity, "completed": True, "episodes": rows, "successes": sum(row["success"] for row in rows),
@@ -284,7 +290,7 @@ def reduced(removal: int, run_name: str, artifact_manifest_sha256: str, receipt_
 @app.function(image=worker_test_image, cpu=(2.0, 2.0), memory=(8192, 8192), timeout=300, max_containers=1)
 def worker_tests() -> dict:
     import subprocess
-    result = subprocess.run(["python", "-m", "pytest", "-q", "/root/odt/tests/test_modal_odt_dimension_curve_worker.py"], capture_output=True, text=True, timeout=240)
+    result = subprocess.run(["python", "-m", "pytest", "-q", "/root/odt/tests/test_modal_odt_dimension_curve_worker.py", "/root/odt/tests/test_modal_odt_dimension_curve_reduced.py"], capture_output=True, text=True, timeout=240)
     if result.returncode:
         raise RuntimeError(result.stdout + result.stderr)
     return {"passed": True, "stdout": result.stdout, "stderr": result.stderr}
@@ -297,7 +303,7 @@ def test_worker() -> None:
 
 @app.local_entrypoint()
 def baseline_smoke() -> None:
-    print(baseline.remote("baseline_smoke_v1", smoke=True))
+    print(baseline.remote("baseline_smoke_v2", smoke=True))
 
 
 @app.local_entrypoint()

@@ -71,3 +71,51 @@ The PR-facing contract is deliberately small:
 The number to hill climb is closed-loop success rate. A higher number is accepted only when the
 candidate result is complete, internally consistent, checkpoint-bound, source-bound, and all
 direct-only numerical guards remain clean.
+
+## September 6, 2026, 06:15 UTC: physical six-rung curve launched
+
+Latest user request explicitly authorizes concurrent Modal and Athena work for
+30/40/50/60/70/80 percent dimensions removed versus real LIBERO success, aiming
+for a first curve by approximately 17:50 UTC. This is new action authority,
+not the preceding read-only heartbeat. Full protocol and exact source identities
+are in `athena/ODT_DIMENSION_CURVE_V1_PROTOCOL.md`, local planning material.
+
+Three agents built and cross-reviewed the physical ladder, mapped executor and
+Modal rollout path. The review found a genuine legacy export bug: a truncated
+network correctly clears full-rank flags, but the old serializer rejects those
+flags. The new distinct prefix schema fixes that without re-certification or
+changing the canonical serializer. The ladder uses one graph, exact aggregate
+dimension budgets, every producer/consumer occurrence, and immediate per-rung
+publication. The denominator is fixed original nonleaf/nonroot bond dimensions.
+
+Combined test835571 passed96 tests with one Python-version skip, including all
+21 ladder tests and all-six physical/mapped-versus-original-mask comparisons.
+All runtime guards remained intact, zero forbidden attempts. Independent review
+approved launch. Benchmark835572 supported eight threads over sixteen on direct
+RQ and genuine contracted-environment/EVD motifs, not a guaranteed full-job ETA.
+
+Full export job835574 is RUNNING, eight CPUs and545GiB on c2-g8-07, started around
+06:10 UTC. Source root /work/joy/x-vla-odt-dimension-curve-v2 has ledger
+b778a620444f72258b1170f6ee34d9e46771de2e54f3f693c83904e16a9dd666.
+It imports the unchanged frozen b1c canonical source/checkpoint. Launch receipt
+is published under the frozen base's athena/results/odt_dimension_curve_v2,
+stderr empty. No full-rank or prefix artifact exists from this job yet.
+
+Modal admitted336GiB plusL4, insufficient for full ODT but usable for reduced
+execution. The initial paired panel is20 episodes at every point. The stock
+simulator controller used pinv, so an isolated direct-QR constrained-dynamics
+adapter was tested. Initial tests and real smoke passed, but baseline20 app
+ap-IruXa7zkS0zqxH0EWqaVpS subsequently failed closed at controller residual
+1.0665e-9 against1e-9. That baseline is incomplete. Same-factor fixed-count
+iterative refinement is being tested, with no numerical fallback. All points
+must share the final controller, and historical outcomes remain a separate
+protocol. Synthetic mapped dispatch extrapolates to about5.35h per full panel
+before real matrix costs, motivating independently validated native dispatch.
+
+Preserved advanced835546 for full-rank/action-replay evidence. Its old physical
+export is known-broken. Canceled duplicate835565 and835566–835567, obsolete
+rollouts835547–835553, and superseded A30 baseline835409 and835411–835415.
+No results or frozen sources were removed. A direct-upload cloud broker and
+Athena resident watcher are being built to avoid dependence on an awake laptop.
+No compressed success, no-accuracy-drop result, or guaranteed12h completion is
+claimed.
