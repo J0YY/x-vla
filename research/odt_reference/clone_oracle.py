@@ -53,20 +53,18 @@ def clone_canonical_step(tree, origin):
                 scale = max(float(np.max(np.abs(original))), np.finfo(float).tiny)
                 if width != original.shape[2] or np.max(np.abs(original - original.swapaxes(1, 2))) > 1e-12 * scale:
                     raise ValueError("oracle needs the same explicitly symmetric lift")
-                columns = []
-                for i in range(width):
-                    for j in range(i, width):
-                        average = original[:, i, j] / 2 + original[:, j, i] / 2
-                        columns.append(average * (1 if i == j else np.sqrt(2.)))
-                packed = np.stack(columns, axis=1)
+                # Same row-major upper-triangle coordinates as the literal
+                # loops, independently indexed here. No numerical factor or
+                # core is shared between occurrences, and each still gets QR.
+                labels = np.arange(width)
+                i, j = np.nonzero(labels[:, None] <= labels[None, :])
+                weights = np.where(i == j, 1., np.sqrt(2.))
+                packed = (original[:, i, j] / 2 + original[:, j, i] / 2) * weights
                 columns_q, upper = np.linalg.qr(packed.T, mode="reduced")
                 rows = columns_q.T
                 q = np.zeros((rows.shape[0], width, width))
-                cursor = 0
-                for i in range(width):
-                    for j in range(i, width):
-                        q[:, i, j] = q[:, j, i] = rows[:, cursor] / (1 if i == j else np.sqrt(2.))
-                        cursor += 1
+                q[:, i, j] = rows / weights
+                q[:, j, i] = rows / weights
             else:
                 columns_q, upper = np.linalg.qr(original.reshape(original.shape[0], -1).T, mode="reduced")
                 q = columns_q.T.reshape((columns_q.shape[1],) + original.shape[1:])

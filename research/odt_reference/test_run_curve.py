@@ -64,6 +64,17 @@ class CampaignTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 close(actual, np.array([1.]), 1e-10, "corrupted")
 
+    def test_exact_comparison_preserves_finite_gate_and_global_scaling(self):
+        for value in (np.array([np.nan]), np.array([np.inf]), np.array([-np.inf])):
+            with self.assertRaises(ValueError):
+                close(value, value.copy(), 1e-10, "identical nonfinite")
+        expected = np.zeros(131073)
+        expected[0] = 1e8
+        actual = expected.copy()
+        self.assertEqual(close(actual, expected, 1e-10, "identical finite"), 0.)
+        actual[-1] = 1e-4
+        self.assertAlmostEqual(close(actual, expected, 1e-10, "global scaling"), 1e-12)
+
 
 if __name__ == "__main__":
     unittest.main()

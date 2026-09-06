@@ -9,7 +9,10 @@ from research.odt_reference.shared_dag import (
 from research.odt_reference.clone_passes import (
     canonicalize_clones, occurrence_environments, aggregate_environments,
 )
-from research.odt_reference.clone_oracle import clone_occurrence_environments
+from research.odt_reference.clone_oracle import (
+    clone_occurrence_environments, clone_canonical_step, unfold_no_memo, walk_clones,
+)
+from research.odt_reference.run_tests import COUNTS
 
 
 def fixtures():
@@ -89,3 +92,53 @@ class DownstreamContractionTests(unittest.TestCase):
         clones.tree.head[0, 0] = np.nan
         with self.assertRaisesRegex(ValueError, "nonfinite downstream"):
             occurrence_environments(clones)
+
+    def test_independent_vectorized_coordinates_match_literal_loops(self):
+        rng = np.random.default_rng(27)
+        for width, out in ((1, 2), (2, 5), (25, 2), (193, 2)):
+            raw = rng.normal(size=(out, width, width))
+            symmetric = raw / 2 + raw.swapaxes(1, 2) / 2
+            for kind in ("full", "deficient", "zero", "large"):
+                core = symmetric.copy()
+                if kind == "deficient":
+                    core[1:] = 0.
+                elif kind == "zero":
+                    core[:] = 0.
+                elif kind == "large":
+                    core *= 1e100
+                # Frozen pre-vectorization coordinate loops: independent oracle
+                # for both input packing and deficient/rectangular Q completion.
+                columns = []
+                for i in range(width):
+                    for j in range(i, width):
+                        average = core[:, i, j] / 2 + core[:, j, i] / 2
+                        columns.append(average * (1 if i == j else np.sqrt(2.)))
+                packed = np.stack(columns, axis=1)
+                columns_q, upper = np.linalg.qr(packed.T, mode="reduced")
+                rows = columns_q.T
+                wanted_q = np.zeros((rows.shape[0], width, width))
+                cursor = 0
+                for i in range(width):
+                    for j in range(i, width):
+                        wanted_q[:, i, j] = wanted_q[:, j, i] = rows[:, cursor] / (1 if i == j else np.sqrt(2.))
+                        cursor += 1
+                parent = rng.normal(size=(2, out, out))
+                graph = Graph([Node("input", np.eye(width), source="x"),
+                               Node("tied", core, (0, 0)),
+                               Node("parent", parent, (1, 1))], np.eye(2))
+                tree = unfold_no_memo(graph)
+                before = COUNTS["qr"]
+                clone_canonical_step(tree, 1)
+                self.assertEqual(COUNTS["qr"] - before, 2)
+                wanted_parent = np.einsum("oij,ia,jb->oab", parent, upper.T, upper.T)
+                for node in walk_clones(tree):
+                    wanted = wanted_q if node.origin == 1 else (wanted_parent if node.origin == 2 else np.eye(width))
+                    np.testing.assert_allclose(node.core, wanted, rtol=3e-12, atol=3e-12)
+                np.testing.assert_array_equal(tree.head, graph.head)
+
+    def test_vectorized_coordinates_still_reject_nonsymmetric_input(self):
+        core = np.ones((2, 3, 3))
+        core[0, 0, 1] = 2.
+        graph = Graph([Node("input", np.eye(3), source="x"), Node("bad", core, (0, 0))], np.eye(2))
+        with self.assertRaisesRegex(ValueError, "explicitly symmetric"):
+            clone_canonical_step(unfold_no_memo(graph), 1)

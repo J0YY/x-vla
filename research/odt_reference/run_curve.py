@@ -51,6 +51,12 @@ def close(actual, expected, tolerance, label):
     """Finite, global-max-scaled error, chunked to bound comparison workspace."""
     if actual.shape != expected.shape:
         raise ValueError(f"{label}: shape mismatch")
+    # Compare every entry even in the common bitwise-identical clone case.
+    # Infinities can compare equal, so exact equality still requires finiteness.
+    if np.array_equal(actual, expected):
+        if not np.isfinite(actual).all():
+            raise ValueError(f"{label}: nonfinite comparison")
+        return 0.
     a, b, error, scale = actual.reshape(-1), expected.reshape(-1), 0., 0.
     for offset in range(0, a.size, 131072):
         x, y = a[offset:offset + 131072], b[offset:offset + 131072]

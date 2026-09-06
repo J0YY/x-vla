@@ -1,7 +1,7 @@
 #!/bin/bash
 # One independent-clone producer, then a six-task array (external %3 cap).
 set -euo pipefail
-campaign_root=/work/joy/x-vla-odt-deadline-curve-v3
+campaign_root="${ODT_CAMPAIGN_ROOT:?explicit isolated campaign root required}"
 cd "$campaign_root"
 export PYTHONPATH="$campaign_root"
 export PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1
