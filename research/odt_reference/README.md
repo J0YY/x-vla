@@ -1,7 +1,7 @@
 # A small, auditable ODT reference
 
-Current complete-block results and cleanup: `BLOCK_VALIDATION.md`. The combined
-suite now has 48 tests. `VALIDATION.md` and `validation.json` preserve the initial
+Historical complete-block results and cleanup: `BLOCK_VALIDATION.md`. The guarded
+runner prints the current test count and exact source hashes. `VALIDATION.md` and `validation.json` preserve the initial
 31-test reference checkpoint, not an attestation of subsequent source changes.
 
 This directory is deliberately independent of `xvla`, the production compiler,
@@ -117,15 +117,58 @@ No printed global truncation theorem or behavioral-accuracy bound is claimed.
   no-memo tree after each canonicalization step. Its objective and exclusions
   are derived in `SHARED_DAG.md`.
 
+## Exact global scale is part of the tensor
+
+Deep Padé lifts can have ordinary rational outputs while their complete ordered
+coefficient tensor has a magnitude smaller than float64 can represent. Direct
+QR concentrates that magnitude downstream. Losing it to underflow is not an
+alternative tensor representation, even if two implementations agree on zero.
+
+The campaign therefore stores a graph of mantissas and one Python-integer binary
+exponent `G`, with the explicit contract `T_original = 2**G * T_stored`.
+Let `m_v` be the number of occurrences of core `v` in the unfolded ordered tree.
+The complete tensor is homogeneous of degree `m_v` in that core. Consequently,
+
+```text
+C_v <- 2**(-s) * C_v
+G   <- G + m_v * s
+```
+
+preserves the complete tensor. `scaled_shared_step` in `run_curve.py` performs
+this exact scaling immediately before the existing direct QR step. Every
+triangular factor is still absorbed into every consumer occurrence. For example,
+`A(2**s * Lq, 2**s * Lq) = 2**(2*s) * A(Lq,Lq)`: the scalar has two occurrences.
+The head's final balancing shift contributes once.
+
+`balanced` in `scaled.py` requires finite values and exact elementwise round-trip
+under power-of-two scaling. Its clone pass computes shifts independently for each
+literal occurrence, without shared multiplicities or reused factors. The two
+integer ledgers and every core/head are compared after each QR origin, then after
+head balancing. `test_scaled.py` also restores tiny complete tensors and rejects
+incorrect occurrence counts and lossy scaling. Replay cannot detect a wrong `G`.
+
+Canonical cores remain the actual QR `Q`. Every original occurrence environment
+is `2**(2*G)` times its stored environment. This common positive factor preserves
+individual and aggregate eigenvector rankings. It is not permission to normalize
+occurrence messages independently. Both exponents are authenticated in artifacts.
+Rational decoding cancels the common scalar, but absolute coefficient losses and
+environment eigenvalues must include their recorded exponents.
+
+This repairs global magnitude range, not cancellation or arbitrary within-core
+dynamic range. All replay, environment, subspace and physical-mask gates remain.
+
 ## Before returning to the VLA
 
 The typed symmetric block export now includes attention/residual sharing and
 the fixed Padé representation. Small joint-output blocks pass the independent
-ODT gate. The unchanged trained vision block passes export replay, but its
-explicit-clone ODT run exceeds the oracle's memory bound. A streaming
-implementation is not yet accepted. Symmetrizing an FFN can be represented
+ODT gate. A bounded unchanged-width two-token trained vision block completed
+all independent clone QR comparisons, but its unscaled float64 head underflowed
+to zero and the full-rank replay gate rejected the run. The global-scale repair
+must pass a fresh complete acceptance run before claiming trained-block ODT.
+A full-policy streaming implementation is not yet accepted. Symmetrizing an FFN can be represented
 by pairing CP terms, without changing policy weights or retraining. That does
 not by itself validate every other compiler primitive or a full-policy ranking.
 
-This directory does not resume jobs, deployment, Git pushes, or the previous
-truncation-curve deadline.
+The separately guarded `run_curve.py` campaign handles authenticated artifacts
+and experiment execution. It is not part of the small mathematical core, and its
+two-token block curve is not full-policy LIBERO success.

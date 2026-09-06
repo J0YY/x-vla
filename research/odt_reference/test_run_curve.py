@@ -8,7 +8,7 @@ import numpy as np
 
 from research.odt_reference.run_curve import (
     SOURCES, CHECKPOINT_SHA, TOLERANCES, close, digest, write_json, save_graph,
-    load_graph, homogeneous, checked_chart, clone_gate, evaluate,
+    load_graph, homogeneous, checked_chart, clone_gate, evaluate, shared_preflight,
 )
 from research.odt_reference.run_tests import audit
 from research.odt_reference.shared_dag import Graph, Node
@@ -30,13 +30,16 @@ class CampaignTests(unittest.TestCase):
         expected = checked_chart(graph, homogeneous(raw)).decoded
         progress = []
         canonical, bases, schedule, gates = clone_gate(graph, raw, expected, progress.append)
+        preflight_exponent, _ = shared_preflight(graph, homogeneous(raw), expected)
+        self.assertEqual(preflight_exponent, gates["global_binary_exponent"])
         self.assertEqual(sum(p["phase"] == "every_qr_step" for p in progress), 3)
         self.assertEqual(sum(p["phase"] == "every_gauge_step" for p in progress), 3)
         self.assertLess(gates["maximum_errors"]["environment"], 1e-12)
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
-            hashes = save_graph(output / "canonical", canonical, bases)
-            reloaded, reloaded_bases = load_graph(output / "canonical", hashes)
+            exponent = gates["global_binary_exponent"]
+            hashes = save_graph(output / "canonical", canonical, bases, global_exponent=exponent)
+            reloaded, reloaded_bases = load_graph(output / "canonical", hashes, global_exponent=exponent)
             self.assertTrue(reloaded.canonical)
             np.testing.assert_array_equal(reloaded.nodes[1].core, canonical.nodes[1].core)
             np.testing.assert_array_equal(reloaded_bases[1], bases[1])
@@ -45,6 +48,7 @@ class CampaignTests(unittest.TestCase):
             write_json(output / "accepted.json", {"accepted": True, "source_sha256": sources,
                        "checkpoint_sha256": CHECKPOINT_SHA, "tolerances": TOLERANCES,
                        "numpy": np.__version__, "panel_sha256": digest(output / "panel.npz"),
+                       "global_binary_exponent": exponent, "environment_binary_exponent": 2 * exponent,
                        "canonical_hashes": hashes, "raw_internal_dimensions": schedule.raw_internal_dimensions})
             for percent in (30, 40, 50, 60, 70, 80):
                 evaluate(output, percent, sources)
@@ -57,7 +61,7 @@ class CampaignTests(unittest.TestCase):
             with (output / "canonical" / "arrays.npz").open("ab") as stream:
                 stream.write(b"corruption")
             with self.assertRaisesRegex(ValueError, "identity mismatch"):
-                load_graph(output / "canonical", hashes)
+                load_graph(output / "canonical", hashes, global_exponent=exponent)
 
     def test_finite_large_error_and_nonfinite_rejected(self):
         for actual in (np.array([2.]), np.array([np.nan]), np.array([np.inf])):

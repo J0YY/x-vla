@@ -28,7 +28,9 @@ SUITES = {
     "contractions": ("dooms.py", "shared_dag.py", "clone_oracle.py", "clone_passes.py", "test_contractions.py"),
     "curve": ("dooms.py", "shared_dag.py", "curve.py", "test_curve.py"),
     "campaign": ("run_curve.py", "test_run_curve.py", "checkpoint.py", "block.py", "block_oracle.py",
-                 "weights.py", "dooms.py", "shared_dag.py", "clone_oracle.py", "clone_passes.py", "curve.py"),
+                 "weights.py", "dooms.py", "shared_dag.py", "clone_oracle.py", "clone_passes.py", "curve.py", "scaled.py"),
+    "scaled": ("scaled.py", "test_scaled.py", "dooms.py", "shared_dag.py", "clone_oracle.py", "clone_passes.py",
+               "curve.py", "test_shared_dag.py"),
 }
 BOUNDARY_FILES = {"checkpoint.py", "test_checkpoint.py", "run_checkpoint_gate.py", "run_tests.py",
                   "run_curve.py", "test_run_curve.py"}
