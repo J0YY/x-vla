@@ -12,7 +12,6 @@ from research.odt_reference.clone_passes import (
 from research.odt_reference.clone_oracle import (
     clone_occurrence_environments, clone_canonical_step, unfold_no_memo, walk_clones,
 )
-from research.odt_reference.run_tests import COUNTS
 
 
 def fixtures():
@@ -127,9 +126,18 @@ class DownstreamContractionTests(unittest.TestCase):
                                Node("tied", core, (0, 0)),
                                Node("parent", parent, (1, 1))], np.eye(2))
                 tree = unfold_no_memo(graph)
-                before = COUNTS["qr"]
-                clone_canonical_step(tree, 1)
-                self.assertEqual(COUNTS["qr"] - before, 2)
+                # Count locally while preserving the already-installed guard.
+                # A -m runner's __main__ counters are not the imported module's.
+                guarded_qr, calls = np.linalg.qr, []
+                def observed_qr(*args, **kwargs):
+                    calls.append(1)
+                    return guarded_qr(*args, **kwargs)
+                np.linalg.qr = observed_qr
+                try:
+                    clone_canonical_step(tree, 1)
+                finally:
+                    np.linalg.qr = guarded_qr
+                self.assertEqual(len(calls), 2)
                 wanted_parent = np.einsum("oij,ia,jb->oab", parent, upper.T, upper.T)
                 for node in walk_clones(tree):
                     wanted = wanted_q if node.origin == 1 else (wanted_parent if node.origin == 2 else np.eye(width))
