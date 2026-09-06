@@ -718,8 +718,15 @@ def run():
 # is by definition exact and does not require the core-tensor machinery at all; the core tensor is
 # only the device for getting an EXACT WEIGHT-ONLY GRAM, and that's what Sec 7 makes tractable.
 # =================================================================================================
-def build_gram_reduced_head(Wq1, bq1, Wk1, bk1, Wq2, bq2, Wk2, bk2, Wv, bv, Wo):
-    """Closed-form O(dim^2) Gram for ONE (possibly rectangular) attention head. Wq1,Wk1,Wq2,Wk2,Wv:
+def build_gram_and_support_reduced_head(
+    Wq1, bq1, Wk1, bk1, Wq2, bq2, Wk2, bk2, Wv, bv, Wo
+):
+    """Closed-form Gram and an exact structural factor spanning its exposed-leg support.
+
+    The factor has columns ``T3[1:, :]`` and ``Hvo.T[1:, :]``. Every column of
+    the dehomogenized r-mode unfolding lies in this span. Equality with the Gram
+    range is verified by rank equality and containment in the surgery audit.
+    Wq1,Wk1,Wq2,Wk2,Wv:
     (head_dim, dim_full); Wo: (dim_full, head_dim). NOTE: bo is intentionally excluded -- a single
     head's contribution has no bias of its own (bias belongs to the sum over all heads' outputs
     plus bo, added once, not attributable to any one head)."""
@@ -735,7 +742,16 @@ def build_gram_reduced_head(Wq1, bq1, Wk1, bk1, Wq2, bq2, Wk2, bk2, Wv, bv, Wo):
     c2 = float(np.sum(T3 * T3))                    # = trace(T3 @ T3) = ||T3||_F^2
     T3sq = T3 @ T3
     G_full = (2 * c1 * T3sq + c2 * P + 2 * (T3 @ P @ T3) + 2 * (T3sq @ P + P @ T3sq)) / 9.0
-    return G_full[1:, 1:]
+    support_factor = np.concatenate((T3[1:, :], Hvo.T[1:, :]), axis=1)
+    return G_full[1:, 1:], support_factor
+
+
+def build_gram_reduced_head(Wq1, bq1, Wk1, bk1, Wq2, bq2, Wk2, bk2, Wv, bv, Wo):
+    """Closed-form O(dim^2) Gram for one possibly rectangular attention head."""
+    gram, _ = build_gram_and_support_reduced_head(
+        Wq1, bq1, Wk1, bk1, Wq2, bq2, Wk2, bk2, Wv, bv, Wo
+    )
+    return gram
 
 
 def direct_forward_head(X, Wq1, bq1, Wk1, bk1, Wq2, bq2, Wk2, bk2, Wv, bv, Wo, causal=True,

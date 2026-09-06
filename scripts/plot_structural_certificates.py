@@ -54,7 +54,13 @@ def main() -> None:
     ffn = load("conv_joint_ffn_certificate_v1_summary.json")
     block = load("conv_joint_block_certificate_v1_summary.json")
     modality = load("vit_modality_contribution_v1_summary.json")
-    full_forward = load("vit_full_learned_forward_v1_summary.json")
+    full_forward_v2 = RESULTS / "vit_full_learned_forward_v2_expanded_summary.json"
+    if not full_forward_v2.is_file():
+        raise FileNotFoundError(
+            "The figure requires the expanded v2 learned-forward summary and must not "
+            "silently fall back to the smaller v1 study."
+        )
+    full_forward = load(full_forward_v2.name)
     normalizer = load("rational_norm_safety_v1_summary.json")
     seeds = np.arange(3)
 
@@ -80,11 +86,15 @@ def main() -> None:
     rational_action_ratios = np.array(
         [row["action_nrmse"] / 1e-3 for row in normalizer["checkpoints"]]
     )
+    full_forward_rows = full_forward.get("results", full_forward.get("checkpoints"))
+    full_forward_gate = full_forward["aggregate"].get(
+        "gate",
+        full_forward["aggregate"].get("end_to_end_action_relative_l2_gate"),
+    )
     full_forward_ratios = np.array(
         [
-            row["max_action_relative_l2_error"]
-            / full_forward["aggregate"]["end_to_end_action_relative_l2_gate"]
-            for row in full_forward["checkpoints"]
+            row["max_action_relative_l2_error"] / full_forward_gate
+            for row in full_forward_rows
         ]
     )
     gate_normalized_errors = np.vstack(

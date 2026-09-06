@@ -64,26 +64,6 @@ class BilinearFFN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.down(self.left(x) * self.right(x))
 
-    @torch.no_grad()
-    def spectral_clip(self, budget: float) -> float:
-        """Cap the degree-2 gain by bounding ‖D‖₂·‖L_lin‖₂·‖R_lin‖₂ ≤ budget.
-
-        Operates only on the *weight* matrices (the parts that multiply x), not on
-        the biases — the affine/constant channel is left free (the linear vs.
-        quadratic decoupling). Rescaling weights is foldable: at inference the
-        clipped weights are just matrices. Returns the pre-clip product.
-        """
-        sL = torch.linalg.matrix_norm(self.left.weight, ord=2)
-        sR = torch.linalg.matrix_norm(self.right.weight, ord=2)
-        sD = torch.linalg.matrix_norm(self.down.weight, ord=2)
-        prod = (sL * sR * sD).item()
-        if prod > budget:
-            s = (budget / prod) ** (1.0 / 3.0)
-            self.left.weight.mul_(s)
-            self.right.weight.mul_(s)
-            self.down.weight.mul_(s)
-        return prod
-
     # -- tensor-network export ------------------------------------------------
     @torch.no_grad()
     def dense_core(self) -> torch.Tensor:

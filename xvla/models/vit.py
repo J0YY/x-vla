@@ -38,6 +38,10 @@ class ViTConfig:
     norm: str = "per_token"           # "per_token" | "scalar_rbn" | "homotopy"
     qk_norm: str = "per_token"
     attn: str = "bilinear"            # "bilinear" (χ) | "softmax" (matched baseline)
+                                      #   | "fixedmix" | "butterfly" (separator-friendly
+                                      #   mixers, see xvla/nn/tree_mixing.py)
+    mix_width: int = 64               # bond width for attn="butterfly"
+    residual: bool = True             # False = strict funnel (ODT-separable)
     ffn: str = "bilinear"             # "bilinear" (χ) | "swiglu" (matched baseline)
     pool: str = "mean"                # "mean" | "cls"
     rbn_momentum: float = 0.99
@@ -68,19 +72,30 @@ class ChiViT(nn.Module):
             cfg.dim, cfg.n_layers, cfg.n_heads, ffn_rank=cfg.ffn_rank,
             causal=False, norm=cfg.norm, qk_norm=cfg.qk_norm, attn=cfg.attn,
             ffn=cfg.ffn,
-            rbn_momentum=cfg.rbn_momentum)
+            rbn_momentum=cfg.rbn_momentum,
+            max_tokens=n + (1 if self.use_cls else 0), mix_width=cfg.mix_width,
+            residual=cfg.residual)
         self.norm_out = make_norm(cfg.norm, momentum=cfg.rbn_momentum)
         self.head = nn.Linear(cfg.dim, cfg.num_classes)
 
-    def features(self, imgs: torch.Tensor) -> torch.Tensor:
-        """Return per-token features (B, N[, +1 cls], dim) — the pure tensor part."""
+    def features(self, imgs: torch.Tensor, apply_final_norm: bool = False) -> torch.Tensor:
+        """Return per-token features (B, N[, +1 cls], dim) — the pure tensor part.
+
+        ``apply_final_norm`` is OFF by default (the trained-with behavior, unchanged) — the
+        model was trained end-to-end assuming ``.features()`` returns the raw post-block
+        residual stream, with ``norm_out`` applied later (by the caller, e.g. ChiVLA, or in
+        ``.forward()``'s classifier path). Only flip it on for a diagnostic probe that wants an
+        apples-to-apples bond against ``ChiConvEncoder.features()``, which DOES apply a final
+        per-token norm before returning (see its ``return_pre_norm`` flag) — never for training
+        or deployment, since it changes what the downstream network actually sees."""
         x = self.patch(imgs)                       # (B, dim, g, g)
         B, D, H, W = x.shape
         x = x.flatten(2).transpose(1, 2)           # (B, N, dim)
         x = x + self.pos_emb
         if self.use_cls:
             x = torch.cat([self.cls.expand(B, -1, -1), x], dim=1)
-        return self.blocks(x)
+        x = self.blocks(x)
+        return self.norm_out(x) if apply_final_norm else x
 
     def forward(self, imgs: torch.Tensor, targets: torch.Tensor | None = None):
         x = self.features(imgs)
@@ -136,15 +151,22 @@ class ChiConvEncoder(nn.Module):
         # apply a (last-dim) norm over the CHANNEL axis of a (B,C,H,W) feature map
         return n(h.permute(0, 2, 3, 1)).permute(0, 3, 1, 2).contiguous()
 
-    def features(self, imgs: torch.Tensor) -> torch.Tensor:
-        """Pixels (B,3,H,W) -> spatial token features (B, grid*grid, dim)."""
+    def features(self, imgs: torch.Tensor, return_pre_norm: bool = False) -> torch.Tensor:
+        """Pixels (B,3,H,W) -> spatial token features (B, grid*grid, dim).
+
+        ``return_pre_norm`` is OFF by default (the trained-with behavior, unchanged) — the
+        model was trained end-to-end assuming ``.features()`` includes the final per-token
+        ``norm_out`` call below, so the downstream transformer/head always sees normalized
+        tokens. Only flip it on for a diagnostic probe (skips just that last norm call) — never
+        for training or deployment, since it changes what the downstream network actually sees."""
         h = imgs
         for lL, lR, n in zip(self.convL, self.convR, self.norms):
             h = lL(h) * lR(h)                       # bilinear conv (downsamples by 2)
             h = self._norm_c(n, h)                  # foldable norm over channels
         if h.shape[-1] != self.grid:
             h = F.adaptive_avg_pool2d(h, self.grid)
-        h = self._norm_c(self.norm_out, h)
+        if not return_pre_norm:
+            h = self._norm_c(self.norm_out, h)
         tok = h.flatten(2).transpose(1, 2)          # (B, grid*grid, dim)
         return tok + self.pos_emb
 

@@ -161,6 +161,41 @@ class ProductRoutingHead(nn.Module):
         return loss, best
 
     @torch.no_grad()
+    def sample_signs(self, h: torch.Tensor, temp: float = 1.0):
+        """AWR EXPLORATION rollout op (training-only, out-of-graph — same category as
+        `decode()`'s sign(gate) and the loss's straight-through Gumbel routing, just used
+        for on-policy sampling instead of a training gradient path). Draws one routing
+        sign per factor from Bernoulli(sigmoid(gate_logits/temp)) via the exact logistic
+        (binary-concrete) noise mechanism `loss(straight_through=True)` already uses, so
+        rollout exploration and training-time exploration share one mechanism. Returns
+        (a_sampled: (B,m), b_sampled: (B,G) in {-1,+1}) — the actually-EXECUTED vertex, so
+        the later AWR update needs no oracle argmin: the routing that produced the reward
+        is already known exactly."""
+        c0, cs, gs = self._parts(h)
+        u = torch.rand_like(gs).clamp_(1e-6, 1 - 1e-6)
+        gl = gs / temp + torch.log(u) - torch.log1p(-u)      # logistic noise (binary-concrete)
+        b_sampled = torch.where(gl > 0, 1.0, -1.0).to(h.dtype)
+        a_sampled = self.action_for_signs(c0, cs, b_sampled)
+        return a_sampled, b_sampled
+
+    def loss_awr(self, h: torch.Tensor, a_sampled: torch.Tensor, b_sampled: torch.Tensor,
+                 weight: torch.Tensor):
+        """Advantage-weighted regression update (Nair et al. 2020, AWAC) per independent
+        routing factor. `a_sampled`/`b_sampled` are the EXECUTED rollout outcome from
+        `sample_signs` (no argmin needed — the vertex that produced the observed reward is
+        already known), `weight = exp(clip(A, -cap, cap)/lam)` is computed by the caller
+        from the value head's advantage estimate. Recomputes (c0, cs, gs) WITH grad (unlike
+        `sample_signs`) so this actually updates the experts/gates toward the
+        reward-reweighted executed action — a direct discrete AWR loss, no reconstruction
+        of `loss()`'s oracle-argmin/curriculum machinery needed."""
+        c0, cs, gs = self._parts(h)
+        a_pred = self.action_for_signs(c0, cs, b_sampled)              # (B, m)
+        mse = ((a_pred - a_sampled) ** 2).mean(-1)                     # (B,)
+        b_target = (b_sampled > 0).to(gs.dtype)                        # (B, G)
+        bce = F.binary_cross_entropy_with_logits(gs, b_target, reduction="none").mean(-1)
+        return (weight * (mse + bce)).mean()
+
+    @torch.no_grad()
     def decode(self, h: torch.Tensor) -> torch.Tensor:
         """OUT-OF-GRAPH greedy routing: b_g = sign(g_g(h)), then Eq. P. (B,dim)→(B,H,d_a)."""
         c0, cs, gs = self._parts(h)

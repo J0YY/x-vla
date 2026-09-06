@@ -653,7 +653,7 @@ def main_exact_attention_odt() -> None:
     ax.set_xlabel("Transformer block")
     ax.set_ylabel("Faithfulness ratio at rank 128")
     ax.grid(axis="y", which="major", color=COLORS["grid"], linewidth=0.8)
-    ax.set_title("Exact real-weight structure by depth")
+    ax.set_title("Polynomial-core structure by depth")
     ax.legend(frameon=False, fontsize=7.5, ncol=2, loc="upper left")
     ax.annotate(
         f"Block 6 mean {means[1]:.2f}×",
@@ -673,12 +673,12 @@ def main_exact_attention_odt() -> None:
     )
     panel_label(ax, "b")
 
-    fig.suptitle("Exact weight-only decomposition exposes learned attention structure", fontsize=12, fontweight="bold", y=1.03)
+    fig.suptitle("Weight-derived polynomial cores expose learned attention structure", fontsize=12, fontweight="bold", y=1.03)
     fig.text(
         0.01,
         -0.015,
         "Real trained weights and real LIBERO activations. Each point in panel b is one attention head. "
-        "Ratios above 1 favor the exact weight-derived subspace over a random subspace of the same rank.",
+        "Ratios above 1 favor the core-derived subspace over a random subspace of the same rank.",
         fontsize=7.5,
         color=COLORS["muted"],
     )
@@ -706,7 +706,7 @@ def appendix_decomposability_audit() -> None:
     ax.text(
         0.98,
         0.05,
-        "Forbidden normalization: 0\nSoftmax / GELU / ReLU: 0\nAUDIT PASS",
+        "Forbidden normalization 0\nSoftmax / GELU / ReLU 0\nAUDIT PASS",
         transform=ax.transAxes,
         ha="right",
         va="bottom",
@@ -861,14 +861,14 @@ def appendix_surgery_sweep() -> None:
         colorbar.set_label("Success advantage (points)")
 
     fig.suptitle(
-        "No coefficient-surgery configuration passes both 15-point gates",
+        "No coefficient-surgery configuration passes both pre-specified gates",
         fontsize=12,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.025,
-        "Positive is favorable in both panels. The best minimum margin is +10 points at block 0, rank 128.",
+        "Positive is favorable in both panels. Each cell uses 20 paired task-episode states per condition.",
         ha="center",
         fontsize=7.5,
         color=COLORS["muted"],

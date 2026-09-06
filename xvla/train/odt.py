@@ -1,4 +1,4 @@
-"""Exact orthogonalize / diagonalize / truncate (ODT) for the χ-MLP chain (M5).
+"""Legacy raw-gauge χ-MLP comparison utilities, not canonical ODT.
 
 The χ-MLP (after folding its scalar norms) is a chain of symmetric bilinear cores:
 
@@ -7,16 +7,15 @@ The χ-MLP (after folding its scalar norms) is a chain of symmetric bilinear cor
     z_i = [1; a_i]
     logits = W_head a_L + b_head
 
-This module: (1) folds + exports the cores and checks the unrolled tensor network
-reproduces the module forward (exact reconstruction, spec §14/§19); (2) builds the
-weight-based GLOBAL downstream Gram at a bond — contracting the *entire* downstream
-sub-network (all layers below the bond) with itself over the output and environment
-legs — vs the LOCAL Gram (adjacent core only); (3) truncates the bond onto the top
-directions of each and measures accuracy, so global ODT can be compared to local SVD
-at matched rank (spec §16.2 / §18).
+This module folds and exports cores exactly, then builds a downstream Gram directly
+in the trained hidden coordinates for a few fixed-depth comparisons. It omits the
+bottom-up RQ sweep that defines Dooms et al.'s ODT, so its spectra are not invariant
+under nonorthogonal hidden gauges. Use ``xvla.train.canonical_odt`` for the published
+tree ODT algorithm. This module remains only to reproduce and label historical
+noncanonical baselines.
 
-Only feedforward chains are handled — exact global ODT on the attention/residual
-transformer is Level-C / open (spec §16.1).
+Only feedforward chains are handled. Exact global ODT on the attention/residual
+transformer is Level-C and open (spec §16.1).
 """
 
 from __future__ import annotations
