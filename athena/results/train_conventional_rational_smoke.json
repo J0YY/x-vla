@@ -1,0 +1,18 @@
+{
+  "architecture": "conventional_rational",
+  "suite": "libero_object",
+  "seed": 0,
+  "steps": 10,
+  "batch_size": 64,
+  "samples": 63352,
+  "parameters": 20138632,
+  "elapsed_s": 1.5405838838778436,
+  "steps_per_s": 6.491045443646172,
+  "examples_per_s": 415.426908393355,
+  "peak_allocated_gb": 4.874313216,
+  "peak_reserved_gb": 5.16947968,
+  "last_loss": 0.9423196315765381,
+  "gpu": "NVIDIA A30",
+  "checkpoint": "artifacts/ckpt_conventional_rational_smoke.pt",
+  "ema_decay": 0.999
+}

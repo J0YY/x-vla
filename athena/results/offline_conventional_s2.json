@@ -1,0 +1,247 @@
+{
+  "mode": "offline_diagnostic",
+  "architecture": "conventional",
+  "suite": "libero_object",
+  "checkpoint": "artifacts/ckpt_linear_conventional_vit_s2.pt",
+  "cache": "artifacts/libero_frames_100000_64.pkl",
+  "seed": 2,
+  "vocab_size": 26,
+  "cache_stats": {
+    "frame_count": 66984,
+    "sample_count": 63352,
+    "action_mean": [
+      0.0689610093832016,
+      0.14728403091430664,
+      -0.05295417085289955,
+      0.0016317926347255707,
+      0.006103633902966976,
+      -0.014664511196315289,
+      0.1320992261171341
+    ],
+    "action_std": [
+      0.2726696729660034,
+      0.4459349811077118,
+      0.4579801559448242,
+      0.024709034711122513,
+      0.04944734275341034,
+      0.0426940843462944,
+      0.9903656244277954
+    ],
+    "state_mean": [
+      -0.03134441003203392,
+      -0.023217646405100822,
+      0.20341111719608307,
+      3.1097357273101807,
+      -0.20446741580963135,
+      -0.10824166983366013,
+      0.029097234830260277,
+      -0.030324405059218407
+    ],
+    "state_std": [
+      0.06831111013889313,
+      0.16870158910751343,
+      0.07987862080335617,
+      0.08342526108026505,
+      0.3292630910873413,
+      0.20355737209320068,
+      0.009620374999940395,
+      0.009267615154385567
+    ],
+    "state_dim": 8,
+    "action_dim": 7
+  },
+  "profile": {
+    "parameters": 20138632,
+    "parameters_millions": 20.138632,
+    "latency_ms_batch1": 7.3178915749304,
+    "peak_allocated_gb": 0.09359616,
+    "peak_reserved_gb": 0.17825792,
+    "profile_iterations": 200,
+    "gpu": "NVIDIA A30"
+  },
+  "prediction_shape": [
+    1,
+    8,
+    7
+  ],
+  "prediction_finite": true,
+  "prediction_sample": [
+    [
+      -0.6594204306602478,
+      -0.2479548156261444,
+      -0.02363887056708336,
+      -0.6626518368721008,
+      -0.5738379955291748,
+      -0.4946216344833374,
+      -1.144941806793213
+    ],
+    [
+      -0.6446222066879272,
+      -0.2799414396286011,
+      -0.016466502100229263,
+      -0.6947349905967712,
+      -0.4406444728374481,
+      -0.5198273062705994,
+      -1.1477138996124268
+    ],
+    [
+      -0.5608193278312683,
+      -0.30787137150764465,
+      0.008115533739328384,
+      -0.7488932609558105,
+      -0.2353201061487198,
+      -0.48440924286842346,
+      -1.1492129564285278
+    ],
+    [
+      -0.38679149746894836,
+      -0.31483566761016846,
+      0.02080409601330757,
+      -1.069256067276001,
+      -0.16227424144744873,
+      -0.4484614431858063,
+      -1.148331642150879
+    ],
+    [
+      -0.049042947590351105,
+      -0.3150351047515869,
+      0.06873497366905212,
+      -1.7695987224578857,
+      -0.2069404423236847,
+      -0.3966921865940094,
+      -1.1378542184829712
+    ],
+    [
+      0.6088617444038391,
+      -0.36301136016845703,
+      0.08639499545097351,
+      -2.1196720600128174,
+      -0.21920715272426605,
+      -0.44600504636764526,
+      -1.128749132156372
+    ],
+    [
+      1.2551264762878418,
+      -0.6644881367683411,
+      0.10800613462924957,
+      -1.4931118488311768,
+      -0.19149228930473328,
+      -0.5548888444900513,
+      -1.1391088962554932
+    ],
+    [
+      1.8064906597137451,
+      -0.913804292678833,
+      0.12011145055294037,
+      -1.0373036861419678,
+      -0.13219599425792694,
+      -0.7161598801612854,
+      -1.1390942335128784
+    ]
+  ],
+  "evaluation_scope": "In-domain LIBERO-Object evaluation",
+  "offline_diagnostic": {
+    "sample_count": 4096,
+    "sample_seed": 20260821,
+    "overall": {
+      "normalized_mse": 0.0011895224917766178,
+      "arm_mae": 0.004233222046394758,
+      "gripper_mae": 0.006527064770125435,
+      "gripper_sign_accuracy": 0.999786376953125,
+      "prediction_arm_std": 0.2514422863623622
+    },
+    "per_task": {
+      "0": {
+        "language": "pick up the alphabet soup and place it in the basket",
+        "samples": 347,
+        "normalized_mse": 0.0010840459456890406,
+        "arm_mae": 0.004039886446135597,
+        "gripper_mae": 0.007779395374166175,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.25400663167238235
+      },
+      "1": {
+        "language": "pick up the cream cheese and place it in the basket",
+        "samples": 434,
+        "normalized_mse": 0.000858643353189746,
+        "arm_mae": 0.00391675535512204,
+        "gripper_mae": 0.0056098450473102005,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.24386362976948237
+      },
+      "2": {
+        "language": "pick up the salad dressing and place it in the basket",
+        "samples": 420,
+        "normalized_mse": 0.0026799861256828687,
+        "arm_mae": 0.0049492802986476035,
+        "gripper_mae": 0.010034224586117836,
+        "gripper_sign_accuracy": 0.9985119047619048,
+        "prediction_arm_std": 0.24290368805329005
+      },
+      "3": {
+        "language": "pick up the bbq sauce and place it in the basket",
+        "samples": 415,
+        "normalized_mse": 0.0011039949132687782,
+        "arm_mae": 0.004256587681719607,
+        "gripper_mae": 0.007022878060857934,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.22917807402021914
+      },
+      "4": {
+        "language": "pick up the ketchup and place it in the basket",
+        "samples": 425,
+        "normalized_mse": 0.001096284673352356,
+        "arm_mae": 0.004347137501189376,
+        "gripper_mae": 0.0058646042907939235,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.25747277990860096
+      },
+      "5": {
+        "language": "pick up the tomato sauce and place it in the basket",
+        "samples": 398,
+        "normalized_mse": 0.0008109164753011499,
+        "arm_mae": 0.003930965228469565,
+        "gripper_mae": 0.005125952351033388,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.2542343675603519
+      },
+      "6": {
+        "language": "pick up the butter and place it in the basket",
+        "samples": 387,
+        "normalized_mse": 0.0007922660763932269,
+        "arm_mae": 0.004011760310881148,
+        "gripper_mae": 0.005344823869161828,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.25726798062696477
+      },
+      "7": {
+        "language": "pick up the milk and place it in the basket",
+        "samples": 428,
+        "normalized_mse": 0.0010487760471767054,
+        "arm_mae": 0.004096609414620412,
+        "gripper_mae": 0.005585216716906735,
+        "gripper_sign_accuracy": 1.0,
+        "prediction_arm_std": 0.2682892082119796
+      },
+      "8": {
+        "language": "pick up the chocolate pudding and place it in the basket",
+        "samples": 383,
+        "normalized_mse": 0.0013453298088469524,
+        "arm_mae": 0.004632566353080031,
+        "gripper_mae": 0.007282897246413069,
+        "gripper_sign_accuracy": 0.9996736292428199,
+        "prediction_arm_std": 0.24120955731885085
+      },
+      "9": {
+        "language": "pick up the orange juice and place it in the basket",
+        "samples": 459,
+        "normalized_mse": 0.0010464198827808966,
+        "arm_mae": 0.004139766635774982,
+        "gripper_mae": 0.005862768049593325,
+        "gripper_sign_accuracy": 0.9997276688453159,
+        "prediction_arm_std": 0.2645252263802459
+      }
+    },
+    "scope": "This diagnostic samples the training cache and is not a held-out generalization estimate. It tests checkpoint integrity and whether closed-loop collapse coexists with low behavior-cloning error."
+  }
+}

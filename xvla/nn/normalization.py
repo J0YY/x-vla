@@ -20,6 +20,23 @@ import torch
 import torch.nn as nn
 
 
+# Checked directly against all 74 Padé numerator/denominator buffer pairs in
+# ``ckpt_linear_rat_vit_s0_v2.pt`` (SHA-256
+# 96f11093701d6b52deefb50b7921b46e2c987e5b9dbce947997882f7c59da6c9).
+# Keeping the rounded float32 values here preserves the checkpoint's exact IEEE
+# bit patterns while ensuring model construction performs no numerical fit.
+_DEFAULT_PADE_NUMERATOR = (
+    5.3299665451049805,
+    7.535519123077393,
+    0.32727372646331787,
+)
+_DEFAULT_PADE_DENOMINATOR = (
+    1.0,
+    9.648269653320312,
+    2.606637477874756,
+)
+
+
 class RmsBatchNorm(nn.Module):
     """Scalar running-RMS normalization that folds into adjacent weights.
 
@@ -241,10 +258,13 @@ class RationalNorm(nn.Module):
 
     def __init__(self, variant: str = "pade", nr_steps: int = 2,
                  momentum: float = 0.99, eps: float = 1e-6,
-                 v_lo: float = 0.1, v_hi: float = 10.0, deg: int = 2):
+                 v_lo: float = 0.1, v_hi: float = 10.0, deg: int = 2,
+                 pade_numerator=None, pade_denominator=None):
         super().__init__()
         if variant not in ("nr_rsqrt", "meansq", "pade"):
             raise ValueError(f"RationalNorm variant must be 'pade', 'nr_rsqrt' or 'meansq', got {variant!r}")
+        if not isinstance(deg, int) or isinstance(deg, bool) or deg < 0:
+            raise ValueError(f"Padé degree must be a nonnegative integer, got {deg!r}")
         self.variant = variant
         self.nr_steps = nr_steps
         self.momentum = momentum
@@ -254,25 +274,41 @@ class RationalNorm(nn.Module):
         self.register_buffer("initialized", torch.zeros((), dtype=torch.bool))
         self.frozen = False
         if variant == "pade":
-            # Fit a FIXED [deg/deg] rational r(v)=P(v)/Q(v) ≈ v^{-1/2} on a log-grid over the
-            # operating range [v_lo,v_hi] (v = ms/s₀). Coefficients are constants → the forward
-            # is rational in x → folds to a rational tensor network P(x)/Q(x) (DEVLOG cont.31).
-            # Accurate across the whole range (unlike nr_rsqrt's frozen-init Newton basin) and
-            # bounded (unlike meansq's magnitude inversion): behaves like RMSNorm's 1/√.
-            import numpy as _np
-            v = _np.exp(_np.linspace(_np.log(v_lo), _np.log(v_hi), 400))
-            t = v ** -0.5
-            # rows: [1,v,...,v^deg,  -t·v,...,-t·v^deg] · [a_0..a_deg, b_1..b_deg] = t   (b_0≡1)
-            cols = [v ** k for k in range(deg + 1)] + [-t * v ** k for k in range(1, deg + 1)]
-            A = _np.stack(cols, axis=1)
-            coef, *_ = _np.linalg.lstsq(A, t, rcond=None)
-            a = coef[:deg + 1]
-            b = _np.concatenate([[1.0], coef[deg + 1:]])
-            self.register_buffer("pa", torch.tensor(a, dtype=torch.float32))   # numerator coeffs
-            self.register_buffer("pb", torch.tensor(b, dtype=torch.float32))   # denominator coeffs (b0=1)
+            supplied = pade_numerator is not None or pade_denominator is not None
+            if supplied and (pade_numerator is None or pade_denominator is None):
+                raise ValueError(
+                    "custom Padé coefficients require both numerator and denominator"
+                )
+            if supplied:
+                numerator = torch.as_tensor(pade_numerator, dtype=torch.float32)
+                denominator = torch.as_tensor(pade_denominator, dtype=torch.float32)
+            elif deg == 2 and float(v_lo) == 0.1 and float(v_hi) == 10.0:
+                numerator = torch.tensor(_DEFAULT_PADE_NUMERATOR, dtype=torch.float32)
+                denominator = torch.tensor(_DEFAULT_PADE_DENOMINATOR, dtype=torch.float32)
+            else:
+                raise ValueError(
+                    "no checked-in Padé coefficients exist for this configuration; "
+                    "supply explicit pade_numerator and pade_denominator values"
+                )
+            expected = deg + 1
+            if numerator.ndim != 1 or denominator.ndim != 1:
+                raise ValueError("Padé coefficients must be one-dimensional")
+            if numerator.numel() != expected or denominator.numel() != expected:
+                raise ValueError(f"degree-{deg} Padé coefficients must have {expected} entries")
+            if not bool(torch.isfinite(numerator).all() and torch.isfinite(denominator).all()):
+                raise ValueError("Padé coefficients must be finite")
+            if float(denominator[0]) == 0.0:
+                raise ValueError("Padé denominator constant coefficient must be nonzero")
+            self.register_buffer("pa", numerator.clone())
+            self.register_buffer("pb", denominator.clone())
+        elif pade_numerator is not None or pade_denominator is not None:
+            raise ValueError("Padé coefficients require variant='pade'")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        xf = x.float()
+        # Preserve float64 for algebraic reference/certification runs while
+        # retaining the historical float32 compute path for deployed fp32 and
+        # lower-precision inputs.
+        xf = x if x.dtype in (torch.float32, torch.float64) else x.float()
         ms = xf.pow(2).mean(dim=-1, keepdim=True) + self.eps          # (..., 1) per-token mean-square
         if self.variant == "meansq":
             return (xf / ms).to(x.dtype)

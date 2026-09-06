@@ -1,87 +1,86 @@
-# χ-VLA — a fully tensor-decomposable Vision-Language-Action model
+# χ-ODT
 
-Implementation of a VLA whose entire
-*learned* pixel-to-action map is a structured polynomial (linear/affine maps,
-tensor contractions, element-wise products, residual sums, fixed masks, learned
-constants, foldable scalar rescalings) — **no softmax, GELU/ReLU/SiLU,
-LayerNorm/RMSNorm, or input-dependent division** survives in the exported
-inference graph. The whole thing unfolds into one tensor network for ODT-style
-interpretability (Dooms et al.).
+This repository tests whether Orthogonalisation, Diagonalisation, and Truncation (ODT) can run on a
+capable vision-language-action policy, not just a small classifier.
 
-Design references (in repo): `chi nets.pdf` (Dooms et al., foldable norm + ODT)
-and the LessWrong tensor-transformer PDF / Logan Riggs'
-[`modded-nanogpt`](https://github.com/loganriggs/modded-nanogpt) (bilinear FFN +
-softmax-free bilinear attention).
+The current implementation applies ODT to the complete shared tensor graph. It uses direct QR/RQ,
+updates every use of a shared bond, builds downstream environments by explicit contraction, and
+checks every stage against a separately unfolded reference implementation.
 
-## Status — Milestone 1: tensor-transformer core (spec §21)
+## Start here
 
-Implemented and validated:
+Read these files in order:
 
-| Primitive | File | Spec |
-|---|---|---|
-| Homogeneous coordinate (bias→constant col) | `xvla/nn/homogeneous.py` | §3 |
-| Foldable RmsBatchNorm (scalar, foldable) | `xvla/nn/normalization.py` | §7 |
-| Bilinear FFN (CP-factorized `D[(Lx̄)⊙(Rx̄)]`) | `xvla/nn/bilinear.py` | §5 |
-| Bilinear attention — explicit / Khatri-Rao / causal-scan | `xvla/nn/attention.py` | §6 |
-| Optional scalar per-Q/K/V RBN (foldable QK-norm) | `xvla/nn/attention.py` | §7.4 |
-| χ-transformer block + stack | `xvla/nn/block.py` | §4.4, §10 |
-| χ-language model + 4-way ablation | `xvla/models/lm.py` | §14 |
-| CP factor balancing | `xvla/train/balance.py` | §13.2 |
-| Stage-1 training loop | `xvla/train/train_lm.py` | §13.3, §14 |
+1. `paper/odt.tex` for the claim and experiment.
+2. `DEVLOG.md` for the short history of the current implementation.
+3. `xvla/train/implicit_sparse_projective_odt.py` for the production ODT path.
+4. `xvla/train/direct_odt_clone_reference.py` for the independent correctness oracle.
+5. `scripts/odt_direct_only_compliance.py` for the prohibited-route checks.
+6. `modal_odt_dimension_curve.py` for the pinned closed-loop evaluation.
 
-Stage-0 operator validation (`tests/`, spec §14 Stage 0 / §19): BFFN vs dense CP
-core, explicit vs Khatri-Rao vs causal-scan attention, RBN fold equivalence
-(linear, bilinear FFN, QK/V branches, and **end-to-end LM**), bias→homogeneous,
-residual constant preservation, BF16/FP32 stability. **14/14 pass.**
+Older papers, experiments, plots, and result bundles are under `prev/`. They are not part of the
+current ODT source closure.
 
-## Strict, fully-foldable model — the central claim (verified ✅)
+## Review the implementation
 
-The working per-token model uses input-dependent norm (not tensor-pure). The
-*strict* model uses scalar `RmsBatchNorm` everywhere; once calibrated + frozen,
-every norm is a fixed scalar rescaling (spec §1) — no input-dependent division
-(§19). It's distilled from the per-token teacher (`xvla/train/distill.py`),
-calibrated (`xvla/train/calibrate.py`), and folded to a normalization-free graph
-(`xvla/train/fold.py`).
-
-Result (tiny-shakespeare): the strict scalar-norm LM trains stably to **val 5.68**
-and **folds to a pure tensor network with max |pre−post| = 7.6e-6 < 1e-5**. The
-key enabler is **near-identity learned residual gains** (init 0.01, spec §10):
-they keep the stack near-linear so the degree-2 FFN's per-instance magnitude
-amplification — which diverges with the default `1/√2L` gains — never compounds.
-See `DEVLOG.md` for the full arc (the fixed-gain strict model diverges; this is
-spec risk §20 #1 characterized and resolved).
-
-## Running (compute on Modal)
-
-Local Python is 3.14 (no torch wheels); all execution is on Modal GPUs.
+Run the focused local gate:
 
 ```bash
-modal run modal_app.py::validate               # operator + fold tests (GPU)
-modal run modal_app.py::prepare_data           # tokenize tiny-shakespeare into the volume
-modal run modal_app.py::smoke_ablation         # fast 4-way ablation
-modal run modal_app.py::run_ablation           # larger 4-way ablation
-modal run modal_app.py::distill_strict_model   # strict scalar-norm model: distill→calibrate→fold→§19 gate
+python3 scripts/run_direct_odt_dimension_ladder_tests.py
 ```
 
-## Full-stack results (M2–M6)
+This checks the direct-only source closure, runtime guards, mapped artifacts, the clone oracle, and
+the dimension-ladder machinery. It requires the project test dependencies, including PyTorch and
+pytest.
 
-All on shared tensor primitives; small models / consumer GPUs (no A100).
+The canonical path must never call SVD, pseudoinverse, least-squares, Gram, polar, covariance, or
+normal-equation routines. Rank deficiency does not relax this rule.
 
-| # | Milestone | Result |
-|---|---|---|
-| M2 | softmax-free **χ-ViT** on SVHN | 0.917 vs 0.928 softmax baseline = **98.8%** (>90% gate) |
-| M3 | **cross-bilinear projector** (conjunction task) | **0.971** vs 0.160 concat+linear (**+81 pts**); zeroing interaction → 0.161 |
-| M4a | synthetic **χ-VLA** (pixels+lang+state→action) | 22× better than language-blind; shuffled instruction → **13× worse** (grounding) |
-| M4b | **LIBERO-Object** real-robot offline BC | action-MSE **0.021**; shuffled instruction **9× worse**; zeroing image → >1.0 (uses vision, not just state); rollout deferred |
-| M5 | **exact global ODT** (χ-MLP, flagship) | reconstruction 5e-12; **62% dims removable @≤1%**; global ODT > local SVD (+9 pts @ rank 6) |
-| M6 | χ-VLA-450M reference config | params compute to **448.2M** (≈ spec 447M); training deferred (no A100) |
+## Produce the number to improve
 
-Modal entrypoints: `train_chi_vit`, `m3_projector`, `train_vla_synth`,
-`train_vla_libero`, `odt_experiment`, `attention_latency_crossover`, `pretest_tail`.
+The optimization metric is closed-loop success rate. Exact replay, source identity, and numerical
+compliance are required gates, not metrics that can be traded away.
 
-Write-up: `paper/chi-vla.tex` (8 pp). Full narrative in `DEVLOG.md`.
+Run a paired baseline and candidate in the pinned Modal environment:
 
-## Deferred (compute-bound)
+```bash
+modal run modal_odt_dimension_curve.py::evaluate \
+  --removal 0 \
+  --run-name baseline_review
 
-M6 χ-VLA-450M *training* (needs A100/multi-GPU + OpenX-scale data) · M7 exact global
-ODT on the attention+residual transformer (Level-C, open problem — spec §16.1).
+modal run modal_odt_dimension_curve.py::evaluate \
+  --removal 30 \
+  --run-name candidate_review \
+  --artifact-manifest-sha256 <manifest-sha256> \
+  --receipt-sha256 <receipt-sha256>
+```
+
+The reduced-policy hashes come from the authenticated dimension-ladder receipt. The evaluator
+rejects unsupported removal levels, mismatched checkpoints, changed source bundles, incomplete
+episodes, and prohibited numerical calls.
+
+After copying the two emitted `result.json` files locally, validate and compare them:
+
+```bash
+python3 scripts/odt_hill_climb.py score baseline.json
+python3 scripts/odt_hill_climb.py compare baseline.json candidate.json
+```
+
+The comparison prints baseline success, candidate success, and their difference. That is the small,
+repeatable loop to use when changing truncation or rank allocation.
+
+## Where to go next
+
+The full-rank decomposition is complete. The open problem is useful physical truncation of the
+capable checkpoint.
+
+A good next change should:
+
+- modify one clearly stated truncation or rank-allocation choice,
+- keep the checkpoint, episode panel, source bundle, and protocol fixed,
+- pass every direct-only and exact-replay gate,
+- improve paired closed-loop success, and
+- include the two result files or their immutable receipts in the PR description.
+
+Do not treat an unpaired historical run as the baseline. Do not claim compression from exact
+full-rank replay alone.

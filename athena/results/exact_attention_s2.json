@@ -1,0 +1,188 @@
+{
+  "mode": "exact_attention",
+  "architecture": "chi",
+  "checkpoint": "artifacts/ckpt_linear_rat_vit_s2.pt",
+  "cache": "artifacts/libero_frames_100000_64.pkl",
+  "seed": 2,
+  "vocab_size": 26,
+  "cache_stats": {
+    "frame_count": 66984,
+    "sample_count": 63352,
+    "action_mean": [
+      0.0689610093832016,
+      0.14728403091430664,
+      -0.05295417085289955,
+      0.0016317926347255707,
+      0.006103633902966976,
+      -0.014664511196315289,
+      0.1320992261171341
+    ],
+    "action_std": [
+      0.2726696729660034,
+      0.4459349811077118,
+      0.4579801559448242,
+      0.024709034711122513,
+      0.04944734275341034,
+      0.0426940843462944,
+      0.9903656244277954
+    ],
+    "state_mean": [
+      -0.03134441003203392,
+      -0.023217646405100822,
+      0.20341111719608307,
+      3.1097357273101807,
+      -0.20446741580963135,
+      -0.10824166983366013,
+      0.029097234830260277,
+      -0.030324405059218407
+    ],
+    "state_std": [
+      0.06831111013889313,
+      0.16870158910751343,
+      0.07987862080335617,
+      0.08342526108026505,
+      0.3292630910873413,
+      0.20355737209320068,
+      0.009620374999940395,
+      0.009267615154385567
+    ],
+    "state_dim": 8,
+    "action_dim": 7
+  },
+  "profile": {
+    "parameters": 20137352,
+    "parameters_millions": 20.137352,
+    "latency_ms_batch1": 38.403445361182094,
+    "peak_allocated_gb": 0.093832704,
+    "peak_reserved_gb": 0.18874368,
+    "profile_iterations": 50,
+    "gpu": "NVIDIA RTX A6000"
+  },
+  "prediction_shape": [
+    1,
+    8,
+    7
+  ],
+  "prediction_finite": true,
+  "exact_attention": {
+    "modules_audited": 12,
+    "heads_audited": 128,
+    "vision_modules": 4,
+    "joint_modules": 8,
+    "max_abs_error": 2.2333674138508286e-05,
+    "max_relative_l2_error": 1.88074655559472e-07,
+    "all_modules_below_1e_minus_5": false,
+    "all_modules_below_2e_minus_5": false,
+    "rows": [
+      {
+        "stack": "vision",
+        "block_index": 0,
+        "heads": 8,
+        "dim": 192,
+        "sequence_length": 64,
+        "max_abs_error": 2.9956218540461155e-08,
+        "relative_l2_error": 1.6083769260781572e-07
+      },
+      {
+        "stack": "vision",
+        "block_index": 1,
+        "heads": 8,
+        "dim": 192,
+        "sequence_length": 64,
+        "max_abs_error": 2.420616245224494e-07,
+        "relative_l2_error": 1.507512729912909e-07
+      },
+      {
+        "stack": "vision",
+        "block_index": 2,
+        "heads": 8,
+        "dim": 192,
+        "sequence_length": 64,
+        "max_abs_error": 3.502266274768573e-07,
+        "relative_l2_error": 1.847709100731092e-07
+      },
+      {
+        "stack": "vision",
+        "block_index": 3,
+        "heads": 8,
+        "dim": 192,
+        "sequence_length": 64,
+        "max_abs_error": 3.0850485321920473e-07,
+        "relative_l2_error": 1.3725452224763692e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 0,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 4.5253167302305997e-07,
+        "relative_l2_error": 1.3677633752840725e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 1,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 7.933823504835402e-07,
+        "relative_l2_error": 1.7843708859608583e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 2,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 6.962604777172032e-07,
+        "relative_l2_error": 1.535271376094327e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 3,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 1.929761145547104e-06,
+        "relative_l2_error": 1.88074655559472e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 4,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 1.972762150082019e-06,
+        "relative_l2_error": 1.4862169313825123e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 5,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 5.261135328282762e-06,
+        "relative_l2_error": 1.7998282364136514e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 6,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 2.7038249332811404e-06,
+        "relative_l2_error": 1.2895199966354038e-07
+      },
+      {
+        "stack": "joint",
+        "block_index": 7,
+        "heads": 12,
+        "dim": 384,
+        "sequence_length": 107,
+        "max_abs_error": 2.2333674138508286e-05,
+        "relative_l2_error": 9.127965493689688e-08
+      }
+    ],
+    "scope": "This validates exact learned-weight reconstruction for every individual attention module in the vision and joint stacks. It remains a layerwise audit and does not materialize one compact symbolic contraction for the complete policy."
+  }
+}

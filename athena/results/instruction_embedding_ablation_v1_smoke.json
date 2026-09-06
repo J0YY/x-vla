@@ -1,0 +1,2440 @@
+{
+  "checkpoint_state_pairs": [],
+  "claim_boundary": "This tests whether the learned lexical-embedding path is necessary for closed-loop success on familiar LIBERO-Object tasks, prompts, objects, scenes, and three fixed policies. It does not test semantic grounding, paraphrases, unseen objects, new compositions, cross-suite or physical transfer, or a benefit unique to tensor decomposability.",
+  "design_provenance": {
+    "declaration": "This is a prospective causal ablation of one learned input path on held-out canonical states. It is not a reanalysis of the earlier prompt-control trials.",
+    "design_time_local": "2026-08-21T12:45:00-07:00",
+    "designed_after_instruction_necessity_v1_outcomes": true,
+    "fresh_state_partition": {
+      "counterfactual_goal_following_v1": "canonical episodes 20 through 29",
+      "instruction_necessity_v1": "canonical episodes 40 through 49",
+      "this_study": "canonical episodes 30 through 39"
+    },
+    "frozen_before_any_endpoint_outcome": true,
+    "gate_rationale": "The 20-point paired gap, 70-percent pooled baseline, 60-percent per-checkpoint baseline, task consistency, exact paired test, and clustered bootstrap were declared prospectively for the fresh state partition.",
+    "outcome_informed_rationale": "The prompt-level instruction-necessity result motivated a more precise mechanism test. No episode-30-through-39 lexical-ablation outcome was inspected when this protocol, matrix, intervention, or gate was chosen."
+  },
+  "elapsed_s": 48.041010233107954,
+  "evaluation": {
+    "completed_checkpoint_state_pairs": 0,
+    "completed_rollouts": 0,
+    "episode_start": 30,
+    "eps_per_task": 1,
+    "expected_rollouts": 0,
+    "matmul_precision": "highest",
+    "smoke_states": 10,
+    "task_end": 10,
+    "task_start": 0
+  },
+  "frozen_gates": {
+    "all_three_checkpoints_must_pass": true,
+    "minimum_full_lexical_success_every_checkpoint": 0.6,
+    "minimum_full_lexical_success_pooled": 0.7,
+    "minimum_pooled_success_gap": 0.2,
+    "minimum_tasks_with_strictly_positive_gap": 8,
+    "negative_task_gaps_allowed": 0,
+    "one_sided_paired_exact_p_at_most": 0.01,
+    "state_cluster_retains_all_three_checkpoint_outcomes": true,
+    "success_gap_strictly_positive_every_checkpoint": true,
+    "task_stratified_state_cluster_bootstrap_draws": 20000,
+    "task_stratified_state_cluster_bootstrap_lower_strictly_above": 0.0,
+    "task_stratified_state_cluster_bootstrap_seed": 2026082701
+  },
+  "identity": {
+    "cache": "artifacts/libero_frames_100000_64.pkl",
+    "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+    "checkpoint": "artifacts/ckpt_linear_rat_vit_s0_v2.pt",
+    "checkpoint_seed": 0,
+    "checkpoint_sha256": "96f11093701d6b52deefb50b7921b46e2c987e5b9dbce947997882f7c59da6c9",
+    "manifest": "artifacts/instruction_embedding_ablation_v1_manifest.json",
+    "manifest_sha256": "c543af066251379f74ce4e2a09cba16da6181dad74fc3dca67e03b534dc727d0",
+    "model_state_sha256_end": "133c0b52fce829aaa9506788929a5e1170bc35aa04457b5cd69ad2c56e6b42ef",
+    "model_state_sha256_start": "133c0b52fce829aaa9506788929a5e1170bc35aa04457b5cd69ad2c56e6b42ef",
+    "protected_component_sha256_end": {
+      "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+      "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+      "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+      "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+      "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+      "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+      "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+    },
+    "protected_component_sha256_start": {
+      "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+      "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+      "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+      "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+      "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+      "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+      "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+    },
+    "provenance_job_id": "830988",
+    "provenance_result": "results/cache_provenance_libero_object.json",
+    "provenance_result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    "source_sha256_end": {
+      "athena/INSTRUCTION_EMBEDDING_ABLATION_V1_PROTOCOL.md": "f4c7ae93561bfbb56bb42e4b648d88f95eef76b0931a13cb998547cbe2009669",
+      "athena/counterfactual_target_swap_common.py": "26d185f15f787ac292a3457cb66b9773cd4281f3ee4050fc9971a6dd4d817b81",
+      "athena/instruction_embedding_ablation_v1_common.py": "8a8992f3fc5cdbbc92db2bfbf69c09e03f2d23d313a4155ab209d4a067c62865",
+      "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+      "athena/preflight_counterfactual_target_swap.py": "06bc40b323e741d229bf54c19a288fd71537b9fd756140b9408a394d49e7c19e",
+      "athena/preflight_instruction_embedding_ablation_v1.py": "6f40ae57097bb5287092f2f605d85085f2fb9762d6f1dd83fc81dd8b8eb9f85c",
+      "athena/run_counterfactual_target_swap.py": "298a4b2bef1501c10e00d4818fc73b69cbc1f9e6aaa26e580ef8f290938f233a",
+      "athena/run_instruction_embedding_ablation_v1.py": "ef645a3175e6659d199ae9716ee2e98f56568371bea1781a04193e7822a76ff7",
+      "athena/run_local_instruction_specificity.py": "9ded0920d955e3f502379b77c5782fa232ff20c0978298ec190041980ba93d93",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/slurm_instruction_embedding_ablation_v1.sbatch": "18c359fc67bc958f56418c3d2c141f6abe80550a375220d7867b7363c4c4eb97",
+      "athena/slurm_preflight_instruction_embedding_ablation_v1.sbatch": "4cc800f31b43763cd5eaa2294f1648a6a597ddc04747268b95054f0b528b4f3d",
+      "athena/slurm_summarize_instruction_embedding_ablation_v1.sbatch": "b3438c337a902f3f77b061650f415aad8304e6ac2e523a0307e3a223564c9e5c",
+      "athena/summarize_instruction_embedding_ablation_v1.py": "f633b8d54bc94b4ce7f593d216245195445d38e5e6ba945bf60ac657f24f8d78",
+      "athena/summarize_local_instruction_specificity.py": "d61cde37abedb6296791316b23be53eea841a8ad6289e2ab3b3d8188ac3c8ec7",
+      "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+      "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+      "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+      "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+      "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+      "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+      "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+      "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+      "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+      "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+      "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+      "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+      "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+      "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+      "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+      "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e"
+    },
+    "source_sha256_start": {
+      "athena/INSTRUCTION_EMBEDDING_ABLATION_V1_PROTOCOL.md": "f4c7ae93561bfbb56bb42e4b648d88f95eef76b0931a13cb998547cbe2009669",
+      "athena/counterfactual_target_swap_common.py": "26d185f15f787ac292a3457cb66b9773cd4281f3ee4050fc9971a6dd4d817b81",
+      "athena/instruction_embedding_ablation_v1_common.py": "8a8992f3fc5cdbbc92db2bfbf69c09e03f2d23d313a4155ab209d4a067c62865",
+      "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+      "athena/preflight_counterfactual_target_swap.py": "06bc40b323e741d229bf54c19a288fd71537b9fd756140b9408a394d49e7c19e",
+      "athena/preflight_instruction_embedding_ablation_v1.py": "6f40ae57097bb5287092f2f605d85085f2fb9762d6f1dd83fc81dd8b8eb9f85c",
+      "athena/run_counterfactual_target_swap.py": "298a4b2bef1501c10e00d4818fc73b69cbc1f9e6aaa26e580ef8f290938f233a",
+      "athena/run_instruction_embedding_ablation_v1.py": "ef645a3175e6659d199ae9716ee2e98f56568371bea1781a04193e7822a76ff7",
+      "athena/run_local_instruction_specificity.py": "9ded0920d955e3f502379b77c5782fa232ff20c0978298ec190041980ba93d93",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/slurm_instruction_embedding_ablation_v1.sbatch": "18c359fc67bc958f56418c3d2c141f6abe80550a375220d7867b7363c4c4eb97",
+      "athena/slurm_preflight_instruction_embedding_ablation_v1.sbatch": "4cc800f31b43763cd5eaa2294f1648a6a597ddc04747268b95054f0b528b4f3d",
+      "athena/slurm_summarize_instruction_embedding_ablation_v1.sbatch": "b3438c337a902f3f77b061650f415aad8304e6ac2e523a0307e3a223564c9e5c",
+      "athena/summarize_instruction_embedding_ablation_v1.py": "f633b8d54bc94b4ce7f593d216245195445d38e5e6ba945bf60ac657f24f8d78",
+      "athena/summarize_local_instruction_specificity.py": "d61cde37abedb6296791316b23be53eea841a8ad6289e2ab3b3d8188ac3c8ec7",
+      "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+      "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+      "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+      "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+      "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+      "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+      "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+      "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+      "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+      "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+      "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+      "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+      "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9",
+      "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+      "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+      "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e"
+    }
+  },
+  "mode": "strict_smoke",
+  "protocol": {
+    "action_horizon": 8,
+    "canonical_episode_end_exclusive": 40,
+    "canonical_episode_start": 30,
+    "checkpoint_seeds": [
+      0,
+      1,
+      2
+    ],
+    "checkpoint_state_pairs_per_checkpoint": 100,
+    "condition_order": "one of two permutations selected by SHA-256 of instruction-embedding-ablation-v1-order|checkpoint|task|episode",
+    "conditions": [
+      "full_lexical_embeddings",
+      "zeroed_lexical_embeddings"
+    ],
+    "cublas_workspace_config": ":4096:8",
+    "cudnn_benchmark": false,
+    "deterministic_algorithms": true,
+    "execution_horizon": 8,
+    "gpu_compute_capability": [
+      8,
+      6
+    ],
+    "gpu_family": "a6000",
+    "gpu_name": "NVIDIA RTX A6000",
+    "instruction_token_count": 32,
+    "intervention": "A scoped PyTorch forward hook replaces the complete (B,32,d) output of model.tok_emb with torch.zeros_like(output) after the embedding lookup. The correct instruction IDs, sequence length, token positions, vision input, robot-state input, embodiment token, learned model BOS, joint positions, and action queries are otherwise unchanged.",
+    "learned_common_bos_semantics": "model.bos is a separate learned token prepended after visual tokens and before the 32 instruction positions. It is outside model.tok_emb and is not ablated.",
+    "matmul_precision": "highest",
+    "max_steps": 280,
+    "resolution": 64,
+    "rollouts_per_checkpoint": 200,
+    "runtime_versions": {
+      "cuda": "12.6",
+      "mujoco": "3.5.0",
+      "numpy": "1.26.4",
+      "pillow": "12.1.1",
+      "python": "3.10.19",
+      "robosuite": "1.4.1",
+      "torch": "2.7.1",
+      "torch_build": "2.7.1+cu126"
+    },
+    "settle_steps": 10,
+    "suite": "libero_object",
+    "summary_cuda_visible_devices": "",
+    "summary_python_executable": "/anonymous/cluster/home/miniconda3/envs/safesae-openvla/bin/python",
+    "task_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "task_shards": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        8,
+        10
+      ]
+    ],
+    "total_checkpoint_state_pairs": 300,
+    "total_rollouts": 600,
+    "unique_paired_states": 100
+  },
+  "runtime": {
+    "cuda": "12.6",
+    "cudnn_benchmark": false,
+    "deterministic_algorithms": true,
+    "environment": {
+      "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+      "CUDA_VISIBLE_DEVICES": "0",
+      "MUJOCO_GL": "egl",
+      "PYOPENGL_PLATFORM": "egl",
+      "SLURM_JOB_ID": "831470",
+      "XVLA_FROZEN_EVALUATION_GPU_FAMILY": "a6000"
+    },
+    "gpu": "NVIDIA RTX A6000",
+    "gpu_capability": [
+      8,
+      6
+    ],
+    "libero_source_end": {
+      "git_commit": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
+      "git_status_porcelain": "?? libero/__init__.py\n",
+      "package_root": "/anonymous/cluster/home/LIBERO/libero",
+      "python_file_count": 83,
+      "python_tree_sha256": "b11dfeed8e4430a392a38a2dcc5c21ac186fb0345d7de2979cd53e4af9fb0b55",
+      "repository_root": "/anonymous/cluster/home/LIBERO"
+    },
+    "libero_source_start": {
+      "git_commit": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
+      "git_status_porcelain": "?? libero/__init__.py\n",
+      "package_root": "/anonymous/cluster/home/LIBERO/libero",
+      "python_file_count": 83,
+      "python_tree_sha256": "b11dfeed8e4430a392a38a2dcc5c21ac186fb0345d7de2979cd53e4af9fb0b55",
+      "repository_root": "/anonymous/cluster/home/LIBERO"
+    },
+    "mujoco": "3.5.0",
+    "numpy": "1.26.4",
+    "pillow": "12.1.1",
+    "python": "3.10.19",
+    "robosuite": "1.4.1",
+    "torch": "2.7.1",
+    "torch_build": "2.7.1+cu126"
+  },
+  "schema": "xvla-instruction-embedding-ablation-run-v1",
+  "smoke_rows": [
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/09JlT3ZPhM+Jf5rPZeWn7tW61g8WOknu2pCLL9cv1w90BGPPL4rnD26GZy77gz9PHNbKLwDQmi/qM7oO8KNXz3khzI8GvhYO9xHlTx4Rq06sk1Kv+eG2T24ViC+55onPWxNxbtYEwc94FPYOXexdr8F36c9lL27vm490TxgSEW6PDzGPMAIZrtJhXG/RG8dPt/jEL+ck689Vj8cPNiV3Dwn9Me87Vtlv6+NWj6yVO++yqrGPQmJsDrC1eM8LClovM9uab/aSEQ+qgEOv/bXnD10cl87yaMMPWJHwrs3l2a/zNJsdw==",
+            "dtype": "<f4",
+            "sha256": "76e573ba78ac9619ecc6562c6aed3c4b9f8724e4b2f3ac638df5113a3e0b11ee",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "9da4fd921a97a862ec003cc2667acd680e49f8b7b4ef76ed62503e1d679cf969",
+            "model_image_sha256": "0ff0dc363a568917475a036844e3383fb28e3125ac10891173ff055707a8d707",
+            "model_robot_state_sha256": "a6d72dca0d1d1c6862f1989af0649dffafb3b158ed775412c53789da084d58c2",
+            "physical_input_sha256": "3eb0f5adfeb66bb2521f6cd53b42e2ba75c074eb6d9b40e1ba6133a069ddb7ca",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            2,
+            22,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 0,
+          "prompt_text": "pick up the alphabet soup and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "9da4fd921a97a862ec003cc2667acd680e49f8b7b4ef76ed62503e1d679cf969",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.3358456492424011,
+                "pre_ablation_output_sha256": "8794bdb4f12b61b72639e0586d5b40a75eba5c7b3d11fc5ac200ebbaf747d980",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/4qF3D1w6xa9Rc0MPa6u0LsoSKk8rGaMvFlRYr+Uz9w9kDdBvQSodDzocIu7PeAHPcouWLy/pmS/Fu3DPZqEgb2FWMy8OHt8unzkJDzP+uO7NXFgv6SpDD7U2uG9NDIdvb74/Luupio8DE1JvN91Yb+uNyo+CAeGvgDSCjn0JdY5V4fuOyCd5LlRdGy/kZZpPgKb7L6O2K09M9zcO5zpwTzEZfm8mGBdv64Zij4++eC+tIjVPWJ5IzvG+as8LoCfvCHkY7+EEqg+tO/9vtZJhz2KSsM78HCfPKylvrx9GFy/3Yt1Kw==",
+            "dtype": "<f4",
+            "sha256": "47c0c752962738a02da6a3b3cd3954664e59b258fe2a95d0c69e06ac81044228",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "9da4fd921a97a862ec003cc2667acd680e49f8b7b4ef76ed62503e1d679cf969",
+            "model_image_sha256": "0ff0dc363a568917475a036844e3383fb28e3125ac10891173ff055707a8d707",
+            "model_robot_state_sha256": "a6d72dca0d1d1c6862f1989af0649dffafb3b158ed775412c53789da084d58c2",
+            "physical_input_sha256": "3eb0f5adfeb66bb2521f6cd53b42e2ba75c074eb6d9b40e1ba6133a069ddb7ca",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            2,
+            22,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 0,
+          "prompt_text": "pick up the alphabet soup and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "3eb0f5adfeb66bb2521f6cd53b42e2ba75c074eb6d9b40e1ba6133a069ddb7ca",
+      "task_index": 0
+    },
+    {
+      "condition_order": [
+        "full_lexical_embeddings",
+        "zeroed_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/wYxkb1g5R0/DmdbPniUhLmicSE75hiyO0+qcj+pBqg90HnXvLdibT3Y1Kq7DA6PPCPODTx0xEC/fGoOPhhH7LyelKQ8Xj9Iu+TlNjwEcK6768l1vxhwDT4gyRy9jMuOvEBmXrrWiQk9jZGAvAG4dL8gXE4+fjC9vZGjAD34ECS6DhAoPcOKprwvXm+/LPauPnKcEb6RZXc9pMR8u1lBnjwhvT28U2Rzv9x/xj5uYo2+MB6MPcIriLom0ss8x8AdvDUKZL9Gbu0+ywuVvjDmHzuQwm26fs1DPMVpIbzdG2u/6cJoKw==",
+            "dtype": "<f4",
+            "sha256": "90f8e0d5253cdd92fd91c7e960c7706b9c6e0e937343124789c85e9a09c51aa4",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "ab12ea186efc54dc7e07324eaa0c4937708016a7bd889e67e0b719cadc3e4d42",
+            "model_image_sha256": "971b1558d21ec51dbeeb5d48fe2e464ff588bb18813755ac1f4273656b22eb23",
+            "model_robot_state_sha256": "9b25c6918dfafe4ca31202d59bb084bd3840a3e1b8b5c988533f397622b2eda8",
+            "physical_input_sha256": "099475060985878ef375dc7f4aee6fa332c8c89be278a5206d83fb03ce8a33d7",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            9,
+            7,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 1,
+          "prompt_text": "pick up the cream cheese and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "ab12ea186efc54dc7e07324eaa0c4937708016a7bd889e67e0b719cadc3e4d42",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.33165788650512695,
+                "pre_ablation_output_sha256": "0d403adeef93ad7c0db30856a3f920a2bd110b4c1dd3bb858651285ce2a06d36",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/4QJCDzlnSs/HTwQPXB+Tzuqmbi7mqGHO2MobT/K4jA+EIsUvbKj3r3ilAK7N2l+O27M47vhpUy/bS9UPQDUsTuy0fO9sGcVuwSHPDzI2466ZBtcvzxm0j1w2Wq94ZoUvhQljrqsFbg8d/uFvIYCRb9+g5g9Kvyvvfch4r0gGtq6woGgPD7Vw7w25Ve/d3FzPm4QL743ngm9OGkDu1yp1jxkUmi8oe9rvxBYkD4Bppy+zmKJPeYsMLvL+XA8ovdpvE3EYr9QVKY+MN+yvgpvjzw0Szw6xROKPL8wWrx3bWW/RJZskA==",
+            "dtype": "<f4",
+            "sha256": "bcee4a5bb610ebe45d5587f6972fe4a75d428cfd5202a1c8b5cc27db428260d4",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "ab12ea186efc54dc7e07324eaa0c4937708016a7bd889e67e0b719cadc3e4d42",
+            "model_image_sha256": "971b1558d21ec51dbeeb5d48fe2e464ff588bb18813755ac1f4273656b22eb23",
+            "model_robot_state_sha256": "9b25c6918dfafe4ca31202d59bb084bd3840a3e1b8b5c988533f397622b2eda8",
+            "physical_input_sha256": "099475060985878ef375dc7f4aee6fa332c8c89be278a5206d83fb03ce8a33d7",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            9,
+            7,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 1,
+          "prompt_text": "pick up the cream cheese and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "099475060985878ef375dc7f4aee6fa332c8c89be278a5206d83fb03ce8a33d7",
+      "task_index": 1
+    },
+    {
+      "condition_order": [
+        "full_lexical_embeddings",
+        "zeroed_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/9c6/j2A5568gsfmPLe1DLvGFUg7CalOvEfKcr/mIWo+oDcivdC17bsGQLm7LioGPCSAn7xt2Xu/5uykPsRde72+dqS8miSLu+FqUjtuAci81Qp3v0hIvj784NG9FdHcvKQG+Lv+6vo7vx6jvIF6eb8dVwY/KsFLvqz/Fb2OK9G7uYGdOwXd2bwBPHq/nsQcP1phfL53GYe9GM1EOZpMAryB9+a8a8dzv2X2Mj9XoZ++LXZxvd11p7siJ8O7FDL2vOhVgL9IYTY/Moykvm8pZb38BFu7Dpmru+MhCb2FDnq//Ex0WQ==",
+            "dtype": "<f4",
+            "sha256": "099fe2fc7eed1710f1583c1c4699ea6cf8da181aaf036ad45c3b0499e8c27d13",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "4b0f2a1cdc18214f06d0f29f96b32a2e79c4a1a3ecd72697ddf76766146aae20",
+            "model_image_sha256": "93e39f3fca1811c3cf6ded67c6ec60993e6a49b3256a4760debfacc7b7b38b48",
+            "model_robot_state_sha256": "264ef174d4cd781154d7ae9e19e1790d85f94833349e24e6293afa3b8fefb937",
+            "physical_input_sha256": "278c2da842feff9b7de52821cd243b5007a02f4e77e97aeefefb0b1b629183b3",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            20,
+            10,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 2,
+          "prompt_text": "pick up the salad dressing and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "4b0f2a1cdc18214f06d0f29f96b32a2e79c4a1a3ecd72697ddf76766146aae20",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.33165788650512695,
+                "pre_ablation_output_sha256": "b9a820f25ce73e1a3f6b17e90bd4208889d85e3f442db2c6aa591f65d7b33020",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/6ndDj4oSXO9RBgzvYCwgrtlCEM7jEkOvC2Qdr9LD28+6EnpvS43Kr2Qvoe7MRTDOzSmwbyr2me/4k1cPpRuAr7OiiS9IFhQu2oEczxqSpm8EYBwv/3lgj7AA0a+PDkLvWC50LmiN5I7RgnjvNWbcr+HAZU+/9KNvpyuNb0MgGC6oFl/uXLuDL3xT3C/6ECwPoGGoL40Epy96r6bumwTBzzkNQO9A/Fxv4jQ4D6UhOi+ikDUPABGALatsio7kkf1vMnNdr+W+cw+F+4Dv5SlYTxgKxM4+jm7u7AkEL0flWS/6nttmg==",
+            "dtype": "<f4",
+            "sha256": "e3c1664c24657104295798bba41e9ff7dd4d446814b893f902921bf1752a6d6b",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "4b0f2a1cdc18214f06d0f29f96b32a2e79c4a1a3ecd72697ddf76766146aae20",
+            "model_image_sha256": "93e39f3fca1811c3cf6ded67c6ec60993e6a49b3256a4760debfacc7b7b38b48",
+            "model_robot_state_sha256": "264ef174d4cd781154d7ae9e19e1790d85f94833349e24e6293afa3b8fefb937",
+            "physical_input_sha256": "278c2da842feff9b7de52821cd243b5007a02f4e77e97aeefefb0b1b629183b3",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            20,
+            10,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 2,
+          "prompt_text": "pick up the salad dressing and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "278c2da842feff9b7de52821cd243b5007a02f4e77e97aeefefb0b1b629183b3",
+      "task_index": 2
+    },
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/7xYYT0yJ3s+pWkdPhuM9DtQ+8C8yOT8OpE3Wb7kOzc+0ABDvECWYTsIlTO7xNwLPNgdAbypi3S/AAjGPYAqFjuEaRS8E++nuzE7JTxMjGO7cQF4v858Dj5I8P288By5vB682bsku6g6AKroOMlndr8qwVA+8CN1vQxZPjy3wBC8EBQOPBxcI7sfb3i/ShSgPpRUD75FDSi9pHTNOdnfDzz40Aa8yztwv+oZmz60x+K9K2YPPRpaervW/lc8Yfs2vM1Ceb8c+/A+6xqKvqCBl7qcAQe7j2hwPMx1YLwfVme/iqxnzA==",
+            "dtype": "<f4",
+            "sha256": "23fa6e90809dad98cebefec3a611465ac899dc25486efc458d526801248c3eb5",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "ebf52dd579dd5edbbdbdb080af6f34de5b83dc2971ca40fb8696858fbdeb89de",
+            "model_image_sha256": "269faf4355e5c9e95318bd5200ad9e7cc5172887c4c6fb471926eaed9af6bbb6",
+            "model_robot_state_sha256": "57b0de3715910ff18323cec75cc5ca17e3aebbd02ba759b2fc620e8fa55a3565",
+            "physical_input_sha256": "92e58e612b1e55f6124d09c19897dffd39328d1825303eacdff7c26e45c1a2e1",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            5,
+            21,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 3,
+          "prompt_text": "pick up the bbq sauce and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "ebf52dd579dd5edbbdbdb080af6f34de5b83dc2971ca40fb8696858fbdeb89de",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.39066383242607117,
+                "pre_ablation_output_sha256": "12395a7bd6b73788ab42cdf883c516871ac602986e59ce96d77c7d98bda64f27",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/3L5az1DCzc/INmJPeCWCjiFPQW8iN0Eu8wdhT9k+CY+sNxjPNymLL0by5y7/3ooPGWWSLyf5ke/bwW/PdZUSj5eNQa9FZWDOpGwEzw4+vu6pNT9vv+H1T1Nzaw9d/npvVBUgLosPiC7uABruwaIRr/KLDc+LBX6vUyaBr4ITly7VG0SPF1uRLzb1me/4nJvPmSFFr7M7Ry+ZPN5OtK4kDtwOWi7Welsv2TdXT68NNO9jmpMvWZAJ7vsWa08wqI2vAs7cL9cnaE+lE5jvnTilb2ggEC6wLHcO+WMZ7wn4la/TqVvNA==",
+            "dtype": "<f4",
+            "sha256": "3a5064035ac0ef418969d804180835cfd47860b0703b3522f9a4c98900e7fbfe",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "ebf52dd579dd5edbbdbdb080af6f34de5b83dc2971ca40fb8696858fbdeb89de",
+            "model_image_sha256": "269faf4355e5c9e95318bd5200ad9e7cc5172887c4c6fb471926eaed9af6bbb6",
+            "model_robot_state_sha256": "57b0de3715910ff18323cec75cc5ca17e3aebbd02ba759b2fc620e8fa55a3565",
+            "physical_input_sha256": "92e58e612b1e55f6124d09c19897dffd39328d1825303eacdff7c26e45c1a2e1",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            5,
+            21,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 3,
+          "prompt_text": "pick up the bbq sauce and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "92e58e612b1e55f6124d09c19897dffd39328d1825303eacdff7c26e45c1a2e1",
+      "task_index": 3
+    },
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/8hqR7whDoI9Ti0yvYjjKryw6585H0I+vCkEg7+oTI48xBE4vVbrMr0w0wO8xyq8O22BVjz1WYC/2MgQvAKujL1saZe8hGtSu6TxRTw2a6U7u995vy7G8jwAomu9NOwRvKZ4O7w+UYU8Nlh3vE8edr9ajZ49WJaWvSRndDxM5Mu7RofQPOiND7wHpnK/tMPJPTpCA75pLGI9FK1vvNKSxzzcLhm882R9v0ap6j2yiSC+2X0VPihjZLz0dfc8zBQfu+2Gdr8odwA+qO00vrhz6D3GOZu8tmbTPIDcgrxbUX2/CRNt9A==",
+            "dtype": "<f4",
+            "sha256": "132eda3164dcef9f18ba84eb88616ffaec2d4d960435603c240d8e567d481b7a",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "2140993f7f55a85eab085b09d7794dccc3416b6f1892f014a90920c6e40ae0f7",
+            "model_image_sha256": "7645a4fd24c7d6e4908759b84cc3f78843c13bbcbe27f7b15265901c268df98a",
+            "model_robot_state_sha256": "5d4f030950ebd7e9e0752aca275c53ba970061eed7559f34e2cf1c3bd10d677e",
+            "physical_input_sha256": "777eb84c26619860dbacf67d8524c86224ec3d53c5eaa4a75928eedd66457014",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            14,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 4,
+          "prompt_text": "pick up the ketchup and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "2140993f7f55a85eab085b09d7794dccc3416b6f1892f014a90920c6e40ae0f7",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.33165788650512695,
+                "pre_ablation_output_sha256": "b69850bc63d1235c2a27f0bc7c40e26ab1641a75e4ffe2cf7d7360c8986a179b",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/0ApjjzY6mI9iMfgvSzdrrrWYO+7GOoVvJXQgr++lwK9/O9YvVBVDr5iV227uFDguhnkKTwnAny/9tYZvaCf6bwtlKu9VBtFuuHq1Dt2/Kc7P0R+v5ik1TvY7Zi8eOiPvDiBTbv0MZw87YlTvE9Da79umEY9wBliPMAGfrse4+m7LECyPIyS1Lt9oWi/ag2CPYjW3rzggns7nXyCvIqFnzykRLa7zQZ3v9+AHz7+E6m9rMevPbJSBry2GAs9AKt6OCOfc78KgiE+2OsHvsHcMD2edxq81uCHPM4+drwRpnW/Sdd11Q==",
+            "dtype": "<f4",
+            "sha256": "78c0857ae68e7c772560156b0af1bc0b6e291b3ac45096ae36ab5147e9483301",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "2140993f7f55a85eab085b09d7794dccc3416b6f1892f014a90920c6e40ae0f7",
+            "model_image_sha256": "7645a4fd24c7d6e4908759b84cc3f78843c13bbcbe27f7b15265901c268df98a",
+            "model_robot_state_sha256": "5d4f030950ebd7e9e0752aca275c53ba970061eed7559f34e2cf1c3bd10d677e",
+            "physical_input_sha256": "777eb84c26619860dbacf67d8524c86224ec3d53c5eaa4a75928eedd66457014",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            14,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 4,
+          "prompt_text": "pick up the ketchup and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "777eb84c26619860dbacf67d8524c86224ec3d53c5eaa4a75928eedd66457014",
+      "task_index": 4
+    },
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/yYLbj1wW1O8oOSYukjqojrwRWk8VKeBvEdvfr/E7TY+iGOcvdtaTr3c2qM7Nhm+O/hPR7zBhXO/onE+PjDGELxuoQq9muFROz8XMTvejYS8M2p5v1Aliz6w6vW8ItVkvVAY3DkUsiI7xrvGvHXQfr+SQsg+uFHPvHxSir2D37q7Kqy8O2U1Dr25NYS/AecOP6BKy7zkq1+9p6YqvG4ABTxliVK9/dGDvw/dKT8Y2yS9rboqvd64P7zb2Rs8fbdmvfOEg7/0Q0Q/vm2ivavEi72U6A28x+JWPNddm711bYG/uyV0ZQ==",
+            "dtype": "<f4",
+            "sha256": "1ea04bdfdaa1eca8140349ea56cf9423537f00578d15e83bde40cf51ea521bf1",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "82d6be799b41e70f77351122d5d13cfa200db40feb73d63d3902c171b88ab4aa",
+            "model_image_sha256": "ffbf4aa7f8c802312fced8829aab97db108d7f79606df10486231fefed9a465a",
+            "model_robot_state_sha256": "5ce51d3e8cc30463cb08edf054f45467bc5da12ed654496de58003e7b567b61b",
+            "physical_input_sha256": "6eabc25d7bddf9eae831d403601151b17cce65fbce4642245be75e1a3b37a171",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            24,
+            21,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 5,
+          "prompt_text": "pick up the tomato sauce and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "82d6be799b41e70f77351122d5d13cfa200db40feb73d63d3902c171b88ab4aa",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.39066383242607117,
+                "pre_ablation_output_sha256": "21bb9665b4761f881098048de90ddc2c75edcf20f7dbe5c1404f31271fcbeb06",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/6l7hD34Hp28MNYjvQJEMjsVEYs72EaWvP9jeb/04q49rMCovQ7pvL0+JQA8oPK8u8KpNLz9mGu/9PDzPdQ8Sb1/h4y99dTsO31eC7yb/ji80/J1v9mFXD40bWe+7MwYvcM7nTu5jas8RC+gvIESfL8fEYg+PeuqvnKsJr0QxoE7olrOPIFZorzdNH2/xsi6PiWGqL7zZ+q8V3vVO86O4jxWTIS84cB8v5A95z7u1b6+mrw2vagT2zvKyfY85bCHvOOeeb/+8PI++EnfvsvVg719PPk73u/yPDmJCr2jt2u/1Pl+6w==",
+            "dtype": "<f4",
+            "sha256": "722a99a9a32af0fafb6007153d5c15211792f68eab1c25cc8a193187c425d107",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "82d6be799b41e70f77351122d5d13cfa200db40feb73d63d3902c171b88ab4aa",
+            "model_image_sha256": "ffbf4aa7f8c802312fced8829aab97db108d7f79606df10486231fefed9a465a",
+            "model_robot_state_sha256": "5ce51d3e8cc30463cb08edf054f45467bc5da12ed654496de58003e7b567b61b",
+            "physical_input_sha256": "6eabc25d7bddf9eae831d403601151b17cce65fbce4642245be75e1a3b37a171",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            24,
+            21,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 5,
+          "prompt_text": "pick up the tomato sauce and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "6eabc25d7bddf9eae831d403601151b17cce65fbce4642245be75e1a3b37a171",
+      "task_index": 5
+    },
+    {
+      "condition_order": [
+        "full_lexical_embeddings",
+        "zeroed_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/++Lrz3A3bo7SdIVPSDFSLrCjRI9+HC8uwr6U7/3BB0+0PdhPCeVBz1iBeS7UBFOPRuV/Lsf0Wq/atAwPiIFCr48f4g9RC7rumKDRT2o6bK7hxltv8nSSD5eXyG+3cZYPVEgALwLY4k9CtogvH3xY7+QUFw+5VWYvussCz3wwbW5RQVjPYU5Q7xrWW6/zo+DPqjs/r5yxok9HAMdO8F7YD1ggpi8Bw9tvx0gXD7isSC/jtXuPBmuAzslU2A9ODpJvFvveb9iHoI+MAckv9ilmbvccoA7uPS6PO1yybxfy26/AVJpXw==",
+            "dtype": "<f4",
+            "sha256": "1559a323ec826ae66878adf1af90625a1d981d19a1130f59d1c5df1301e2953a",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "ff242138852207070d3d6948b6b25dd9573b53708011513bcc7af281a181309e",
+            "model_image_sha256": "19bbcf78b38ff3eaaa11c0262357b3ae9fcf58c2be9d33c4f4c525dfcb6d8442",
+            "model_robot_state_sha256": "b1624a6b8b19938a0da01efc2dc94460bfa7993a3616748987afc38dbda04c1a",
+            "physical_input_sha256": "530e15685758e70c976d19f8b6829a1fbf7c0e9f50b239a44e7dd3c40c1262fa",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            6,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 6,
+          "prompt_text": "pick up the butter and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "ff242138852207070d3d6948b6b25dd9573b53708011513bcc7af281a181309e",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.3610807955265045,
+                "pre_ablation_output_sha256": "cc442686b259e9c8096747839aaba062d06a3043d9ac32fcb4af08443b057cb0",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/1rOaD3mgIQ9yPIFvaBoi7vcp3k8WIDEu5ZiUb88+BU+SAKmPKykxrzbTlu8Ir3HPG5oYrx9WmK/jVoWPogUA76lG+y8XNoOvNADFD2ImSy8D0Zqv0zEHT5CFbm9UgacPLfAhrxr1ws9CmkyvKmkR78X82o+9v7SvghwiTseJAu7SuLZPOAFpbz9nFy/3PtmPufVAr/kAEK8Gp/gOoYf1DxeLly8fONMv/3uez6iTAW/gqCZPObmkboPRgc9EgmkvG2+Zb9kLrY+Ag/ZvgouC72IEnS72YIBPPgtDb1xH16/77RrCg==",
+            "dtype": "<f4",
+            "sha256": "f51dbadf37f85107cff8e53689a094943059bd0d2eca0e67612d09d46bd5060d",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "ff242138852207070d3d6948b6b25dd9573b53708011513bcc7af281a181309e",
+            "model_image_sha256": "19bbcf78b38ff3eaaa11c0262357b3ae9fcf58c2be9d33c4f4c525dfcb6d8442",
+            "model_robot_state_sha256": "b1624a6b8b19938a0da01efc2dc94460bfa7993a3616748987afc38dbda04c1a",
+            "physical_input_sha256": "530e15685758e70c976d19f8b6829a1fbf7c0e9f50b239a44e7dd3c40c1262fa",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            6,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 6,
+          "prompt_text": "pick up the butter and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "530e15685758e70c976d19f8b6829a1fbf7c0e9f50b239a44e7dd3c40c1262fa",
+      "task_index": 6
+    },
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/3y99D1xla6+DqIJvZzOyzlMgKw8WHaSOs/PfL/pYwQ+QKfovmBz8joM/5Y7eyInPR7OwLuzHHi/thI6Pro9674AurC5dFQ2O57wyDwIb1K7b752v36UFT7OLRW/bKeavEhLKzuEkzo9dtopvEMNcL9ibj8+ufssv7Zdg7xmb4w7+WggPRRPnLw7hmO/JRttPpx0N7/EohW9mM1gPN6l3DxqpKC8v0Bxvxx2Wj5m4Vm/NWC4vPq13Ty+D/M8ABZ+vPFLeL/ic2k+6oVcv6E9Nb0AXRY9yoG8PEGPrbxF2HW/9X9tWA==",
+            "dtype": "<f4",
+            "sha256": "a1b3c607659fdcb3129d2ffb60073598d21b410f4fb12c05ee5823fec2003315",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "0974c1b07f045b087f531c1e984dd673ed0e91160c551761181e558c2e27bc5b",
+            "model_image_sha256": "d7af671c53972d0a69e63c860b57816db07385d4d8b23bf18197d368d7ff69f0",
+            "model_robot_state_sha256": "8ecd126a1665ecce800cb3df4886c017e7eea531f9586c7bb0dbc5b0adba151d",
+            "physical_input_sha256": "87fe4065feebfb6685308fe41a501d618928d05cf30ea67d9e1592615e679012",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            15,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 7,
+          "prompt_text": "pick up the milk and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "0974c1b07f045b087f531c1e984dd673ed0e91160c551761181e558c2e27bc5b",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.33165788650512695,
+                "pre_ablation_output_sha256": "861c9d912be93d8770df5e4db288c7eb2b9796620b3f8a4c814d21b337e7a818",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/xqc5T0cEIi+1J8rvRj9ljpO8fs7iK2kOlvMZ78H/+09rRysvizqDLww/0c7Ic+lPNi99bodVma/s4Y7Pv2Frr7vRMO8q63oOuozHjzwuZW6N6pnv2uzfD7ghOC+xtigPFAulLq86AU9nC9FvOfya7+Ur5s+6irsvlU+Dz0MZWK6lHvRPBFZPbxpcV6/t4GiPg3DHL/AZ0o7UgUNPD5CdTxBeQS8Xwpdv/IBrj6UETS/wIf+uil14jwDcdE7bsvquxc6ab/wHqU+Lakuv/T8fbwQ8q48DyVDvIhxA7wVFWa/vmtvHQ==",
+            "dtype": "<f4",
+            "sha256": "006c5272bcd036a2d89d03db2e4c149d7d9c2d8d4173e590f3534a8bd41e829d",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "0974c1b07f045b087f531c1e984dd673ed0e91160c551761181e558c2e27bc5b",
+            "model_image_sha256": "d7af671c53972d0a69e63c860b57816db07385d4d8b23bf18197d368d7ff69f0",
+            "model_robot_state_sha256": "8ecd126a1665ecce800cb3df4886c017e7eea531f9586c7bb0dbc5b0adba151d",
+            "physical_input_sha256": "87fe4065feebfb6685308fe41a501d618928d05cf30ea67d9e1592615e679012",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            15,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 7,
+          "prompt_text": "pick up the milk and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "87fe4065feebfb6685308fe41a501d618928d05cf30ea67d9e1592615e679012",
+      "task_index": 7
+    },
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/wbDhjwWbCs+As6JPWqV0Ls2J4O8xIYxvHT0Nr8EFJs8MM+hPCDQ0Lomc9+8a3UnvFC4Dry7M2G/oKVUu2ZWwz0CB/c8mraNuoCBzbripq4723dgv9T4mD3UDye9cGQMu5aL47v0i5Q6eKKBvDWZd7/aU6w9Tr+yvX6V2DziGLm7l70VPOiofryvuXW/aJUrPrBLqr5eAOg8kHqjuvOHPjx3GhO8l5p6v6LqOD42b7O+3U0pPd76B7w2kck8vlhovGHLeL/233g+NCXavjSBRjweEhm7sIgWu+ANvryACoC/kX9x2A==",
+            "dtype": "<f4",
+            "sha256": "4b6fac5c9d4bf463e4dd02f2c0f02bf3ae83c58ccadfe05bed73d1e46e117b09",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "95d68b20e594bf6e8fd843f3a395139353863303ceecb0d9f58ab7c3c582eb66",
+            "model_image_sha256": "c3e1c1156d53a76c39f7c7997067b77eac63f1c0eb438975a56789ce6878664a",
+            "model_robot_state_sha256": "fe7e61f43fd9d1babc6a825826277f7ab71e9bf4617bb2f36108de5d094fdc87",
+            "physical_input_sha256": "27593f06760c866111c9ff1ab1f7a59f1d9b1e33d6aed56b5d9f83013e156aa0",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            8,
+            19,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 8,
+          "prompt_text": "pick up the chocolate pudding and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "95d68b20e594bf6e8fd843f3a395139353863303ceecb0d9f58ab7c3c582eb66",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.35238340497016907,
+                "pre_ablation_output_sha256": "edcd8e10d7fcc189cfaaa8671dd602d2c494f58f451a02c32b8829221ca37706",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/wpazzxxke89EDgbO1fXHrwIEoI6DJc7vAKcTb8waPQ8VEErPY4opb1r2La8KhD/O1rNwTunc2i/GA+fPFoaUz0+SjS9uAGFu3MRPDt2Qo071Sprv6YGCD7AZQg7vvvCvBEHtrwYs2s71Ikouy2yZb9C/zI+ALkWO2hOTrxU1pm8+BhRPOjHAbuRCma/MZp0PiDh1b19+1K9k6Cwu2XqeTzUepi7Scl2vwqssj4oD+a9sKI6OzO+XLwGMpc8qlknvDn6d798K78+j+GDvuQQ+rzUxUa7LxdaO5BiJDq7X2W/h9tmQg==",
+            "dtype": "<f4",
+            "sha256": "0bcbbb5a9917952b6b3decb8c42c7dabaa1c3bc3144e5b375f11a0652bdad541",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "95d68b20e594bf6e8fd843f3a395139353863303ceecb0d9f58ab7c3c582eb66",
+            "model_image_sha256": "c3e1c1156d53a76c39f7c7997067b77eac63f1c0eb438975a56789ce6878664a",
+            "model_robot_state_sha256": "fe7e61f43fd9d1babc6a825826277f7ab71e9bf4617bb2f36108de5d094fdc87",
+            "physical_input_sha256": "27593f06760c866111c9ff1ab1f7a59f1d9b1e33d6aed56b5d9f83013e156aa0",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            8,
+            19,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 8,
+          "prompt_text": "pick up the chocolate pudding and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "27593f06760c866111c9ff1ab1f7a59f1d9b1e33d6aed56b5d9f83013e156aa0",
+      "task_index": 8
+    },
+    {
+      "condition_order": [
+        "zeroed_lexical_embeddings",
+        "full_lexical_embeddings"
+      ],
+      "conditions": {
+        "full_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": null,
+            "calls": [],
+            "enabled": false,
+            "hook_calls": 0,
+            "mechanism": "deployed_model_unmodified",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/6ByHLuc9gg9vhgBvRCDPLt0rd86wF8quRnSYL9gdaY7wOwmPBdCNb1Kaoe6KEeDu+w2TzvvQHK/ADlUvCdXIT7IYpy8ADeDttApgLzLlAg8you9viB6GTyAQ8+7ZuA1vRY1J7zONoY7BW4lvIN0eb9kK+g9wIj9PE9hvLxDBl68LNQ/PPl/nbwLv2u/Bu0cPni4Dj1A54y7zeimuxjWoDy5vVi8gPpbv1oKpT6oKt+9/CMovAq+9roiNeA8DGMqvNnrc7+Cxr4+zpNFvhBLr7tA8MM4YmyyPHA9lrxTw3a/4idsTA==",
+            "dtype": "<f4",
+            "sha256": "5842e4a510dffb5e7bb7dead372c10502c0a5b3d6d20b01bde2a44f2bbbc1287",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "aa7811556d9d6eef4e2e4952f99e7f9d6014aaa4d86b3716425f6e14d420ba24",
+            "model_image_sha256": "2e49817711839b10970c0b7bfbe889b2005be6adcd347ac42f633a191563a441",
+            "model_robot_state_sha256": "69f2667932e943a432cb39fc6ba726dae78d41186d156dc9227dc81c78b122e9",
+            "physical_input_sha256": "8ceb2f494fa9326fdf2f11d01a716db029167f55e7a823f6c2af557ce08c4bc8",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            16,
+            13,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 9,
+          "prompt_text": "pick up the orange juice and place it in the basket"
+        },
+        "zeroed_lexical_embeddings": {
+          "ablation_audit": {
+            "all_returned_outputs_exactly_zero": true,
+            "calls": [
+              {
+                "call_index": 0,
+                "input_ids_sha256": "aa7811556d9d6eef4e2e4952f99e7f9d6014aaa4d86b3716425f6e14d420ba24",
+                "input_ids_shape": [
+                  1,
+                  32
+                ],
+                "pre_ablation_output_dtype": "torch.float32",
+                "pre_ablation_output_max_abs": 0.33165788650512695,
+                "pre_ablation_output_sha256": "3f05e5d9126cb95b51b40cfca29043edb34a6356e842748aa7a49537d207ddb9",
+                "pre_ablation_output_shape": [
+                  1,
+                  32,
+                  384
+                ],
+                "returned_nonzero_elements": 0,
+                "returned_output_max_abs": 0.0,
+                "returned_output_sha256": "309575452b0ebda5b7cf9288f56e15ec5d3894b1c7faca010665ea58a6d29b24",
+                "zeroed_token_positions": 32
+              }
+            ],
+            "enabled": true,
+            "hook_calls": 1,
+            "instruction_token_positions_zeroed_per_call": 32,
+            "mechanism": "scoped_post_lookup_forward_hook_returning_torch_zeros_like",
+            "post_context_hook_count": 0,
+            "preexisting_hook_count": 0,
+            "protected_component_sha256_after": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            },
+            "protected_component_sha256_before": {
+              "action_queries": "893b50c4f3316759c3b797ff927ee930ce91d1373e258e6bd782794227130ff1",
+              "joint_position_embeddings": "5f394b795957da7b913cfa0060dd9466fd76297bc7a9b9619dad9fca5ef2bb9d",
+              "learned_common_bos": "c86116d4f26cd08ca70a6c5df1cdce1c5f52aaeca0d703df5a9712f595f035c2",
+              "state_projection_bias": "aeca98ba41e8e745702a81479cd74e3a3996eb3d58eca7c8cc3bfb798a181a4c",
+              "state_projection_weight": "2c27161ce2d97f8cb61aa7122a08b08de9c82b6a46c623d925700fae56ce02fe",
+              "token_embedding_weights": "22cbb9c2eb957a631e21a5b7ef8524313fa700b2927f58fc24e17bf4f7a70ded",
+              "vision_position_embeddings": "c1f18836c6f753f5cdd145ee9ac0ab95dceec9b0c8d8a9fd63d87045e9d92ea1"
+            }
+          },
+          "action_chunk": {
+            "codec": "zlib+base64",
+            "data": "eNoB4AAf/5CScbyMzTY9AIEWuvSb0buI9le6mv6rO+0iT79wGpO7gLFOu/5Nab18XaC6PAkNu1aA1TsZPG2/uFtnvCvcwz5+poW92tBWO2h4lLyZ/Bc85CASP2CRBbsAxcU60eqOvYSKdLySfK88AF8uuGW/W79OZiY9husCPWq3KL3n7li8OgKZPJap2rwgvkq/ZoVLPlRlsb0v7uK8cjSzutzGtTy4rw+8YalYvyaphT7cS5K+gdY4vSB4EzhxqF88mPRku2P3a7/yu7A+j2ScvpqaGb0GdSw7Hl0EPJOmZrwqiFu/aglxAA==",
+            "dtype": "<f4",
+            "sha256": "625b1fcf3dd3dff557d430065a4072bef414e6c6df2edd7508b3bec5b1ae4416",
+            "shape": [
+              8,
+              7
+            ]
+          },
+          "input_contract": {
+            "action_queries_preserved": true,
+            "common_learned_bos_preserved": true,
+            "embodiment_path_preserved": true,
+            "instruction_id_shape": [
+              1,
+              32
+            ],
+            "instruction_ids_sha256": "aa7811556d9d6eef4e2e4952f99e7f9d6014aaa4d86b3716425f6e14d420ba24",
+            "model_image_sha256": "2e49817711839b10970c0b7bfbe889b2005be6adcd347ac42f633a191563a441",
+            "model_robot_state_sha256": "69f2667932e943a432cb39fc6ba726dae78d41186d156dc9227dc81c78b122e9",
+            "physical_input_sha256": "8ceb2f494fa9326fdf2f11d01a716db029167f55e7a823f6c2af557ce08c4bc8",
+            "positions_preserved": true,
+            "sequence_length_preserved": true,
+            "state_path_preserved": true,
+            "vision_path_preserved": true
+          },
+          "instruction_ids": [
+            1,
+            17,
+            25,
+            23,
+            16,
+            13,
+            3,
+            18,
+            12,
+            11,
+            23,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "prompt_id": 9,
+          "prompt_text": "pick up the orange juice and place it in the basket"
+        }
+      },
+      "episode": 30,
+      "physical_input_sha256": "8ceb2f494fa9326fdf2f11d01a716db029167f55e7a823f6c2af557ce08c4bc8",
+      "task_index": 9
+    }
+  ]
+}

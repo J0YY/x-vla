@@ -1,0 +1,36 @@
+{
+  "gpu": "NVIDIA A30",
+  "batch_size": 128,
+  "warmup_steps": 10,
+  "profile_steps": 100,
+  "fixed_batch_seed": 2026,
+  "conventional": {
+    "architecture": "conventional",
+    "parameters": 20138632,
+    "elapsed_s": 6.60642381478101,
+    "steps": 100,
+    "steps_per_s": 15.136782441396367,
+    "examples_per_s": 1937.508152498735,
+    "ms_per_step": 66.0642381478101,
+    "peak_allocated_gb": 2.954330624,
+    "peak_reserved_gb": 3.353346048,
+    "loss_first": 0.01621878147125244,
+    "loss_last": 0.00010893611033679917
+  },
+  "chi": {
+    "architecture": "chi",
+    "parameters": 20137352,
+    "elapsed_s": 20.604568468872458,
+    "steps": 100,
+    "steps_per_s": 4.8532926157163185,
+    "examples_per_s": 621.2214548116888,
+    "ms_per_step": 206.04568468872458,
+    "peak_allocated_gb": 4.801561088,
+    "peak_reserved_gb": 5.517606912,
+    "loss_first": 0.0045408629812300205,
+    "loss_last": 0.00025013857521116734
+  },
+  "chi_to_conventional_ms_per_step_ratio": 3.1188687021217785,
+  "chi_to_conventional_peak_allocated_ratio": 1.6252619287068664,
+  "scope": "Steady-state forward, backward, gradient clipping, and AdamW update cost on the same fixed batch and physical GPU. This is not a time-to-convergence comparison."
+}

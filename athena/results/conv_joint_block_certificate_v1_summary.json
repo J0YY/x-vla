@@ -1,0 +1,170 @@
+{
+  "aggregate": {
+    "all_finite": true,
+    "all_three_checkpoints_pass": true,
+    "checkpoints_audited": 3,
+    "complete_block_evaluations": 384,
+    "inputs_audited": 48,
+    "max_absolute_error": 1.8939537824280706e-05,
+    "max_relative_l2_error": 1.5024030294689195e-07,
+    "relative_l2_gate": 0.0001,
+    "scalar_outputs": 15777792,
+    "token_rows": 41088,
+    "unique_checkpoint_blocks": 24
+  },
+  "boundaries": [
+    "This is an input-conditioned numerical composition certificate, not a dense symbolic contraction or proof for every possible input.",
+    "The comparison intentionally crosses the deployed float32 implementation and a float64 reconstruction, so the frozen threshold allows float32 reduction error.",
+    "The certificate covers the eight complete joint blocks but not the convolutional vision stem, input embeddings, final action head, or out-of-graph action decoding.",
+    "The selected inputs come from the provenance-verified Object training cache and do not establish cross-suite behavior or human-nameable mechanisms."
+  ],
+  "checkpoints": [
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s0.pt",
+      "checkpoint_sha256": "4f9f3eef4bd661934b7c66af117995f02bdfc777368f52464f03d229ccb3e72d",
+      "complete_block_evaluations": 128,
+      "inputs_audited": 16,
+      "max_absolute_error": 1.359633317576936e-05,
+      "max_relative_l2_error": 1.2631867376346575e-07,
+      "passed": true,
+      "scalar_outputs": 5259264,
+      "seed": 0,
+      "source_file": "results/conv_joint_block_certificate_v1_s0.json",
+      "source_file_sha256": "7ecf53e2e63093c4f77ac94eb1a692a928ca7c822d0756cba9234bf6e7f4e0b8",
+      "token_rows": 13696,
+      "unique_blocks": 8
+    },
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s1_matched.pt",
+      "checkpoint_sha256": "9d8df0c30583222490536b21aac040b47c5f89556aa23c08265605f7c2bc8cb6",
+      "complete_block_evaluations": 128,
+      "inputs_audited": 16,
+      "max_absolute_error": 1.4015816731216546e-05,
+      "max_relative_l2_error": 1.3846014951817873e-07,
+      "passed": true,
+      "scalar_outputs": 5259264,
+      "seed": 1,
+      "source_file": "results/conv_joint_block_certificate_v1_s1.json",
+      "source_file_sha256": "c78695846a31adcd1f42b9ad4db5303bc5c703fbf5ba86c08a285a7eb9dddedd",
+      "token_rows": 13696,
+      "unique_blocks": 8
+    },
+    {
+      "all_finite": true,
+      "checkpoint_basename": "ckpt_linear_rat_conv_s2_matched.pt",
+      "checkpoint_sha256": "fc2e0bfa1a2ea2737ed0af13b168cd2562e4b0e36b159d0f98f3c5038131ace5",
+      "complete_block_evaluations": 128,
+      "inputs_audited": 16,
+      "max_absolute_error": 1.8939537824280706e-05,
+      "max_relative_l2_error": 1.5024030294689195e-07,
+      "passed": true,
+      "scalar_outputs": 5259264,
+      "seed": 2,
+      "source_file": "results/conv_joint_block_certificate_v1_s2.json",
+      "source_file_sha256": "4b6e134caca65be7b18cca369aeba62f56703c42dbc4647895c435f597bd5861",
+      "token_rows": 13696,
+      "unique_blocks": 8
+    }
+  ],
+  "claim_if_passed": "On the same 16 deterministic checkpoint-conditioned inputs used by the frozen attention and FFN certificates, an independent NumPy float64 equation reproduces all eight complete joint blocks of each of three convolutional \u03c7-VLA checkpoints against single-call deployed PyTorch float32 outputs with maximum relative L2 error at most 1e-4.",
+  "identity": {
+    "cache_basename": "libero_frames_100000_64.pkl",
+    "cache_frames": 66984,
+    "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+    "companion_certificates": {
+      "attention": {
+        "basename": "conv_joint_attention_certificate_v1_summary.json",
+        "path": "results/conv_joint_attention_certificate_v1_summary.json",
+        "schema": "xvla-conv-joint-attention-certificate-summary-v1",
+        "sha256": "3c380a899e5621d312cc45d62aff99ce883dd8dd029de56078e1cdc67838613f"
+      },
+      "ffn_protocol": {
+        "cp_rank": 1152,
+        "input_dim": 384,
+        "output_dim": 384,
+        "relative_l2_gate": 1e-10,
+        "schema": "xvla-conv-joint-ffn-certificate-v1"
+      },
+      "ffn_summary": {
+        "basename": "conv_joint_ffn_certificate_v1_summary.json",
+        "path": "results/conv_joint_ffn_certificate_v1_summary.json",
+        "schema": "xvla-conv-joint-ffn-certificate-summary-v1",
+        "sha256": "cb4c0c941f7111c5abdf7c55d522bcf74623f269473114bff58c8d8addb525eb"
+      },
+      "rational_norm": {
+        "basename": "rational_norm_safety_v1_summary.json",
+        "path": "results/rational_norm_safety_v1_summary.json",
+        "schema": "xvla-rational-norm-safety-summary-v1",
+        "sha256": "25c9dd61bfc805c321b12ba1b6575e4463fb76c1369de3b7a317dbdb524b17a8"
+      }
+    },
+    "dataset_metadata": {
+      "dataset_to_official_task": {
+        "0": 9,
+        "1": 4,
+        "2": 1,
+        "3": 3,
+        "4": 0,
+        "5": 7,
+        "6": 2,
+        "7": 6,
+        "8": 5,
+        "9": 8
+      },
+      "language_set_matches_official": true,
+      "metadata_file": "meta/tasks.parquet",
+      "metadata_sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42",
+      "ordering_matches_official": false,
+      "repository": "lerobot/libero_object_image",
+      "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f"
+    },
+    "provenance_canonical_content_sha256": "01bc724b9bf8c158b983e34b82bbb40dce9dba2cb86dd9be2a5bf8910be341c7",
+    "provenance_job_id": "830988",
+    "provenance_result": "results/cache_provenance_libero_object.json",
+    "provenance_result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    "source_sha256": {
+      "athena/launch_conv_joint_block_certificate.sh": "9f81a3951a0d43f4df31ce0de82caceddaff67254d357845afd594c69517492c",
+      "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+      "athena/run_conv_joint_attention_certificate.py": "1e838bfb61cb16a946a48f9c75ed0291008d9c1a87eb953444f949998a688325",
+      "athena/run_conv_joint_block_certificate.py": "0ac1550a97a6667485211bd5de52237b3a877087e8014ab79c8b900891096699",
+      "athena/run_conv_joint_ffn_certificate.py": "d7e78469e87146e5edaf56b6e91857cd6ea8e1dfcfdde736cc10ce0774be5df4",
+      "athena/run_rational_norm_safety.py": "f7d055c8fbcd8ddf5e27ac3e600aef0c070fab8236a493eb1c77da951733a204",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/slurm_conv_joint_block_certificate.sbatch": "eb953917c8a50c3a2b0f6085a02440f9e2c97926ff94c78effc7733e21a60139",
+      "athena/slurm_summarize_conv_joint_block_certificate.sbatch": "96a645f67425c39110afab44a50d4c677e29f020d49610a255615c16a329fcf0",
+      "athena/summarize_conv_joint_block_certificate.py": "0456536feec595c3f1a1628b5ce48a15516842c8f51516adf23d12f24106c651",
+      "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+      "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+      "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+      "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+      "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+      "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9"
+    }
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "architecture": "chi",
+    "attention_head_dim": 32,
+    "attention_heads": 12,
+    "comparison": "deployed float32 output cast to float64 versus the NumPy float64 reconstruction",
+    "complete_block_relative_l2_gate": 0.0001,
+    "ffn_cp_rank": 1152,
+    "full_inputs_per_checkpoint": 16,
+    "gate_rationale": "The comparison crosses float32 CUDA and float64 CPU implementations and composes multiple width-384, rank-1152, and length-107 reductions. A 1e-4 relative-L2 threshold is a strict numerical-equivalence gate while allowing normal float32 accumulation and operation-order error.",
+    "input_identity_source": "xvla-conv-joint-attention-certificate-v1",
+    "input_selection": "lexicographically smallest SHA256(protocol_id || checkpoint_sha256 || canonical_cache_record_sha256) over every record in the frozen cache",
+    "joint_blocks_per_input": 8,
+    "matmul_precision": "highest",
+    "model_width": 384,
+    "reconstruction": "independent NumPy float64 RationalNorm, bilinear-attention, residual-gain, bilinear-FFN, and second-residual equations from saved tensors",
+    "reference": "one unmodified deployed PyTorch float32 ChiTransformerBlock call with the explicit attention path",
+    "resolution": 64,
+    "sequence_length": 107,
+    "smoke_inputs": 1,
+    "suite": "libero_object",
+    "vision_encoder": "conv"
+  },
+  "schema": "xvla-conv-joint-block-certificate-summary-v1"
+}

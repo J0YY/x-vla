@@ -1,0 +1,212 @@
+{
+  "additional_claim_if_secondary_passed": "At every deployed site, at least 99 percent of observed normalizer rows fall inside v in [0.1,10], and at least 99 percent have local RMS-scale relative error at or below 3.4 percent.",
+  "aggregate": {
+    "checkpoints": 3,
+    "maximum_checkpoint_action_nrmse": 2.413580932271016e-06,
+    "maximum_local_scale_relative_error_p99": 0.6560572183132116,
+    "minimum_fraction_rows_local_scale_error_at_or_below_threshold": 0.600220867406542,
+    "minimum_fraction_rows_v_in_0p1_10": 0.600177515332944,
+    "minimum_observed_denominator": 1.0016059599589928,
+    "normalization_rows": 544542720,
+    "observed_v_max": 17.16506332993318,
+    "observed_v_min": 0.00016644308298125216,
+    "pooled_normalized_action_nrmse": 2.3302985060336287e-06,
+    "pooled_physical_action_nrmse": 1.7133638590100118e-06,
+    "rational_sites_per_checkpoint": 53,
+    "selected_samples": 12288
+  },
+  "checkpoints": [
+    {
+      "action_max_absolute_difference": 0.0002143393505988911,
+      "action_nrmse": 2.413580932271016e-06,
+      "checkpoint": {
+        "basename": "ckpt_linear_rat_conv_s0.pt",
+        "path": "artifacts/ckpt_linear_rat_conv_s0.pt",
+        "seed": 0,
+        "sha256": "4f9f3eef4bd661934b7c66af117995f02bdfc777368f52464f03d229ccb3e72d"
+      },
+      "fraction_rows_local_scale_error_at_or_below_threshold": 0.7874795663414617,
+      "fraction_rows_v_in_0p1_10": 0.7869002949851207,
+      "gates": {
+        "primary_action_nrmse_pass": true,
+        "primary_denominator_certificate_pass": true,
+        "primary_pass": true,
+        "secondary_local_scale_error_pass": false,
+        "secondary_pass": false,
+        "secondary_range_pass": false
+      },
+      "local_scale_relative_error_max": 0.931330680847168,
+      "local_scale_relative_error_p99": 0.6560572183132116,
+      "minimum_site_fraction_rows_local_scale_error_at_or_below_threshold": 0.6013913733936916,
+      "minimum_site_fraction_rows_v_in_0p1_10": 0.6013617114485982,
+      "model_parameters": 19217671,
+      "normalization_rows": 181514240,
+      "normalized_action_nrmse": 2.413580932271016e-06,
+      "normalized_action_squared_difference_sum": 1.2997435551108903e-06,
+      "normalized_action_squared_reference_sum": 223117.65679449946,
+      "observed_denominator_min": 1.0016059599589928,
+      "observed_v_max": 15.251629591375155,
+      "observed_v_min": 0.00016644308298125216,
+      "physical_action_nrmse": 2.2365398119974734e-06,
+      "physical_action_squared_difference_sum": 2.441884097400098e-07,
+      "physical_action_squared_reference_sum": 48817.07791285237,
+      "seed": 0,
+      "selection": {
+        "rank_order_sha256": "12d0533d2f36b87b8163d6ac150032472df06832e934bfa93693a213579d5c2e",
+        "selected_count": 4096,
+        "selected_inputs_sha256": "f26676bb95287132efeba327704dc47462d95759802ee24b4314415766822ec1",
+        "selected_offsets_sha256": "013fe8f251bebb032a281dd74bd3c64117a293a36745c49b16d43a3530aaab00"
+      }
+    },
+    {
+      "action_max_absolute_difference": 0.00014863852514679365,
+      "action_nrmse": 2.2471627870435096e-06,
+      "checkpoint": {
+        "basename": "ckpt_linear_rat_conv_s1_matched.pt",
+        "path": "artifacts/ckpt_linear_rat_conv_s1_matched.pt",
+        "seed": 1,
+        "sha256": "9d8df0c30583222490536b21aac040b47c5f89556aa23c08265605f7c2bc8cb6"
+      },
+      "fraction_rows_local_scale_error_at_or_below_threshold": 0.8724847097395775,
+      "fraction_rows_v_in_0p1_10": 0.8715757672786444,
+      "gates": {
+        "primary_action_nrmse_pass": true,
+        "primary_denominator_certificate_pass": true,
+        "primary_pass": true,
+        "secondary_local_scale_error_pass": false,
+        "secondary_pass": false,
+        "secondary_range_pass": false
+      },
+      "local_scale_relative_error_max": 0.8696035742759705,
+      "local_scale_relative_error_p99": 0.44680625855922607,
+      "minimum_site_fraction_rows_local_scale_error_at_or_below_threshold": 0.600220867406542,
+      "minimum_site_fraction_rows_v_in_0p1_10": 0.600177515332944,
+      "model_parameters": 19217671,
+      "normalization_rows": 181514240,
+      "normalized_action_nrmse": 2.2471627870435096e-06,
+      "normalized_action_squared_difference_sum": 1.1382938104739716e-06,
+      "normalized_action_squared_reference_sum": 225416.29413520006,
+      "observed_denominator_min": 1.0058332769482294,
+      "observed_v_max": 17.16506332993318,
+      "observed_v_min": 0.0006044943453589726,
+      "physical_action_nrmse": 1.3908212208109013e-06,
+      "physical_action_squared_difference_sum": 9.50963699609266e-08,
+      "physical_action_squared_reference_sum": 49161.069503119215,
+      "seed": 1,
+      "selection": {
+        "rank_order_sha256": "add04b7b9340f903f20780356786a8684ecddaeebdda9b9816de71579a75981a",
+        "selected_count": 4096,
+        "selected_inputs_sha256": "9ea61020e341d62c8b4397e69b3468441f65f6484c0438093e7c0f0318e5b4dc",
+        "selected_offsets_sha256": "a90d320d9a9f631bd697a382332692052971337a41ef35eab6b6cb9faa1e1efc"
+      }
+    },
+    {
+      "action_max_absolute_difference": 8.078309041437137e-05,
+      "action_nrmse": 2.3280186006421925e-06,
+      "checkpoint": {
+        "basename": "ckpt_linear_rat_conv_s2_matched.pt",
+        "path": "artifacts/ckpt_linear_rat_conv_s2_matched.pt",
+        "seed": 2,
+        "sha256": "fc2e0bfa1a2ea2737ed0af13b168cd2562e4b0e36b159d0f98f3c5038131ace5"
+      },
+      "fraction_rows_local_scale_error_at_or_below_threshold": 0.8511251844483386,
+      "fraction_rows_v_in_0p1_10": 0.8502318495783031,
+      "gates": {
+        "primary_action_nrmse_pass": true,
+        "primary_denominator_certificate_pass": true,
+        "primary_pass": true,
+        "secondary_local_scale_error_pass": false,
+        "secondary_pass": false,
+        "secondary_range_pass": false
+      },
+      "local_scale_relative_error_max": 0.8703455328941345,
+      "local_scale_relative_error_p99": 0.4562862813472748,
+      "minimum_site_fraction_rows_local_scale_error_at_or_below_threshold": 0.6010080497955608,
+      "minimum_site_fraction_rows_v_in_0p1_10": 0.6009783878504673,
+      "model_parameters": 19217671,
+      "normalization_rows": 181514240,
+      "normalized_action_nrmse": 2.3280186006421925e-06,
+      "normalized_action_squared_difference_sum": 1.2081043727319801e-06,
+      "normalized_action_squared_reference_sum": 222911.0329383642,
+      "observed_denominator_min": 1.0057664208945696,
+      "observed_v_max": 16.2157467007295,
+      "observed_v_min": 0.0005975672640098584,
+      "physical_action_nrmse": 1.368471244705961e-06,
+      "physical_action_squared_difference_sum": 9.101660109887596e-08,
+      "physical_action_squared_reference_sum": 48601.453872188446,
+      "seed": 2,
+      "selection": {
+        "rank_order_sha256": "6e253b6eafa38e9aa6f1a15179a330f3bdc25b9bb4a86e8db173bcf3017b3935",
+        "selected_count": 4096,
+        "selected_inputs_sha256": "ab3d4fcf1dfe7ebe7bee1a3cc134d3e8a7631ee75260dc2c33a0ff13a201b4f3",
+        "selected_offsets_sha256": "bfb90de79a00898985aabf747b934b522836a77bd344371bcfddfe147ca94335"
+      }
+    }
+  ],
+  "claim_if_primary_passed": "Across three frozen capable convolutional checkpoints and 4,096 deterministically selected Object cache inputs per checkpoint, all 53 deployed rational-normalizer sites have positive denominators by a coefficient and root certificate, and replacing only their arithmetic with a float64 rational reference changes physical action outputs by at most the preregistered 1e-3 NRMSE gate.",
+  "elapsed_s": 16.860630911774933,
+  "frozen_gates": {
+    "all_three_checkpoints_must_pass": true,
+    "primary_action_nrmse_at_most": 0.001,
+    "primary_all_denominator_certificates_pass": true,
+    "secondary_each_site_fraction_local_scale_error_at_or_below_threshold_at_least": 0.99,
+    "secondary_each_site_fraction_rows_v_in_0p1_10_at_least": 0.99,
+    "secondary_local_scale_relative_error_threshold": 0.034
+  },
+  "gates": {
+    "all_three_primary_pass": true,
+    "all_three_secondary_pass": false
+  },
+  "inputs": {
+    "cache": "artifacts/libero_frames_100000_64.pkl",
+    "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+    "expected_provenance_job_id": "830988",
+    "provenance_result": "results/cache_provenance_libero_object.json",
+    "provenance_result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+    "result_files": [
+      "results/rational_norm_safety_v1_s0.json",
+      "results/rational_norm_safety_v1_s1.json",
+      "results/rational_norm_safety_v1_s2.json"
+    ],
+    "result_sha256": {
+      "results/rational_norm_safety_v1_s0.json": "681d60627eac0eb6e8e65e75896f85375eae98d68c9bb2f2788bf5b13e0b9693",
+      "results/rational_norm_safety_v1_s1.json": "ac89373a2309403adb9ade624357760b06c3720fc4dc5366ad4e37ebea88f00d",
+      "results/rational_norm_safety_v1_s2.json": "b0711074948293dbc309564a49398b26e6198be4ee13a450bf0aa5f740cfc8fb"
+    },
+    "source_sha256": {
+      "athena/launch_rational_norm_safety.sh": "bca2a297954eccc1aed9317a8d910b792c053cb76f53245abf3d93da4f711367",
+      "athena/libero_dataset_metadata.py": "3e14b117ee72b010939c0fdd2c20417778b89a8691156553a0bfb2ad2d0b4edb",
+      "athena/run_rational_norm_safety.py": "f7d055c8fbcd8ddf5e27ac3e600aef0c070fab8236a493eb1c77da951733a204",
+      "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+      "athena/slurm_rational_norm_safety.sbatch": "a3432bee95b071f7053ab2619e31bbd697d7f2141ffba85eccd1af202dfb82d7",
+      "athena/slurm_summarize_rational_norm_safety.sbatch": "c6395354e5f6ec5e7a067a0c2ea2073f1d61fbc929985bbead68154b70a6acb4",
+      "athena/summarize_rational_norm_safety.py": "847c9357c7ac4e1faec586685bfce0b161f2dadafc13e806ea3d931ed12b15e0",
+      "xvla/models/vit.py": "111049ad4c24179e294da8cccb732e3a416223f77b42a08ed56291febe4ddf87",
+      "xvla/models/vla.py": "bc276b0328b53cf1f54b42bcd75137df5785cb8625f51d2b09671081d7c4275f",
+      "xvla/nn/attention.py": "4f8e49d9dc25ee292b34daf60687f80f38a8f85548ef2905b3217e66dc8c27ec",
+      "xvla/nn/bilinear.py": "162929529750fe719c6b4199ae316ddb45f72f52de7bbbd07d329dfb5f8287c8",
+      "xvla/nn/block.py": "7555c0b7b11c2592c97bf90ec7eeca6ecd0b76f58960df78eefa984386eea969",
+      "xvla/nn/normalization.py": "67406ca22083c28223023ce1efcfc448470654da8477a535bf4a5284cf7338a9"
+    },
+    "source_unchanged_during_summary": true
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "architecture": "chi",
+    "batch_size": 32,
+    "full_samples_per_checkpoint": 4096,
+    "matmul_precision": "highest",
+    "primary_action_metric": "maximum of normalized-model-output NRMSE and denormalized physical-action NRMSE",
+    "reference": "Every RationalNorm scale is recomputed from the same float32 input values with float64 mean-square, polynomial, division, and root operations. The reference output is cast back to float32, and all other model operations remain unchanged.",
+    "resolution": 64,
+    "smoke_samples": 32,
+    "suite": "libero_object",
+    "v_certificate_interval": [
+      0.1,
+      10.0
+    ],
+    "vision_encoder": "conv"
+  },
+  "schema": "xvla-rational-norm-safety-summary-v1",
+  "scope": "The certificate is bounded to the pinned LIBERO-Object cache, three fixed convolutional checkpoints, and the observed normalizer inputs. The positive-coefficient denominator result holds for every v>=0, while approximation and end-to-end error measurements are empirical."
+}

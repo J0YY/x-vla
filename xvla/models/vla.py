@@ -55,6 +55,30 @@ class VLAConfig:
     n_layers: int = 8
     n_heads: int = 12
     ffn_rank: int | None = None
+    vit_ffn_rank: int | None = None
+    attn: str = "bilinear"             # joint-backbone token mixer.
+                                       #   "bilinear" | "softmax" = all-to-all,
+                                       #     input-dependent, no narrow ODT separator
+                                       #     (asymmetric multi-occurrence of x_i).
+                                       #   "fixedmix"  = learned constant token mixing,
+                                       #     all-to-all but no content routing.
+                                       #   "butterfly" = fixed-routing hierarchical
+                                       #     bilinear merging at bond `mix_width`,
+                                       #     the tree design's merge primitive.
+    mix_width: int = 64                # bond width for attn="butterfly"
+    vit_attn: str | None = None        # vision-encoder token mixer. None = inherit `attn`
+                                       # (unchanged legacy behavior). Set explicitly to hold
+                                       # vision fixed while varying the joint backbone, which
+                                       # is what isolates the vision-language binding step.
+    vit_mix_width: int | None = None   # None = inherit `mix_width`
+    residual: bool = True              # joint-backbone residual stream. False = strict
+                                       # funnel, which is what makes a narrow ODT
+                                       # separator possible at all: a token-wise
+                                       # residual routes the full N*d state around any
+                                       # bottleneck, and it is also what grows the
+                                       # attention core's Kronecker rank as 2^S.
+    vit_residual: bool | None = None   # None = inherit `residual`
+    ffn: str = "bilinear"              # "bilinear" | "swiglu"
     norm: str = "per_token"
     qk_norm: str = "per_token"
     # action
@@ -110,11 +134,22 @@ class VLAConfig:
     # OUT-OF-GRAPH controller op (spec §11): the forward graph only emits linear
     # phase LOGITS; no softmax/argmax lives in the exported tensor network.
     n_phases: int = 0
+    # ---- AWR/RL fine-tuning (training-only, NEXT_PHASE_PLAN.md Part 2). Twin of
+    # `distill_teacher`/`teacher_head`: a loss-only auxiliary head, never read by
+    # forward()'s deployed path (`decode()`/`action_for_signs()` are unaffected
+    # whether or not this flag is set — see `check_value_head_foldability`). ----
+    value_head: bool = False           # train an auxiliary V(h) critic for AWR advantage.
 
     def vit_config(self):
         return ViTConfig(image_size=self.image_size, patch_size=self.patch_size,
                          dim=self.vit_dim, n_layers=self.vit_layers, n_heads=self.vit_heads,
-                         norm=self.norm, qk_norm=self.qk_norm, num_classes=1)
+                         ffn_rank=self.vit_ffn_rank, norm=self.norm, qk_norm=self.qk_norm,
+                         attn=(self.attn if self.vit_attn is None else self.vit_attn),
+                         ffn=self.ffn,
+                         mix_width=(self.mix_width if self.vit_mix_width is None
+                                    else self.vit_mix_width),
+                         residual=(self.residual if self.vit_residual is None
+                                   else self.vit_residual), num_classes=1)
 
 
 class ChiVLA(nn.Module):
@@ -172,7 +207,10 @@ class ChiVLA(nn.Module):
 
         self.backbone = ChiTransformer(cfg.dim, cfg.n_layers, cfg.n_heads,
                                        ffn_rank=cfg.ffn_rank, causal=True,
-                                       norm=cfg.norm, qk_norm=cfg.qk_norm)
+                                       norm=cfg.norm, qk_norm=cfg.qk_norm,
+                                       attn=cfg.attn, ffn=cfg.ffn,
+                                       max_tokens=seq_len, mix_width=cfg.mix_width,
+                                       residual=cfg.residual)
         self.norm_out = make_norm(cfg.norm)
         if cfg.action_head == "flow":
             self.flow_head = FlowMatchingActionHead(
@@ -195,6 +233,13 @@ class ChiVLA(nn.Module):
         if cfg.distill_teacher and cfg.action_head in ("flow", "product"):
             self.teacher_head = nn.Linear(cfg.dim, cfg.action_dim)
 
+        # AWR value head V(h): a throwaway linear critic, architecturally the exact
+        # twin of `teacher_head` above — instantiated only when requested, read only
+        # by the (external, training-only) AWR loop via `self.value(h)`, never by
+        # `forward()` or `decode()`.
+        if cfg.value_head:
+            self.value_head = nn.Linear(cfg.dim, 1)
+
     def _visual_tokens(self, img, img2=None):
         s = self.vision.features(img)                     # (B, Nv, vit_dim)
         if not self.cfg.dual_vision:
@@ -204,21 +249,12 @@ class ChiVLA(nn.Module):
             return self.projector(s, m)
         return self.vis_proj(torch.cat([s, m], dim=-1))
 
-    def forward(self, img, instr_ids, state, embodiment_id, img2=None,
-                target_actions=None, phase_id=None, phase_labels=None,
-                phase_weight=1.0, return_phase=False, progress=0.0):
-        """Latent-variable action head:  p(a|obs) = Σ_z p(z|obs) p(a|obs,z).
-
-        - `phase_head` emits LINEAR logits for p(z|obs) (read from a causal query
-          token that sees only obs). The choice ẑ = argmax_z p(z|obs) is done
-          OUT-OF-GRAPH by the caller (a controller op, spec §11), then passed back
-          in as `phase_id` — nothing nonlinear enters the exported graph.
-        - `phase_id` (the chosen/true z) is embedded into ONE conditioning token
-          the action queries attend to, so p(a|obs,z) is a linear+MSE head that only
-          has to fit the (near-)unimodal conditional mean.
-        Training: teacher-force `phase_id`=`phase_labels` (from the demo gripper
-        signal), add cross-entropy on the phase logits (softmax lives in the LOSS
-        only, never the forward graph)."""
+    def _encode(self, img, instr_ids, state, embodiment_id, img2=None, phase_id=None):
+        """Pure extraction of forward()'s obs→aq_out encode path (pixels+instruction+state
+        → causal joint χ-transformer → per-action-query output states). No behavior change
+        vs. the original inline code — forward() below calls this and proceeds identically;
+        it exists so `pooled_features()` (an AWR-only helper) can share the EXACT same path
+        instead of a hand-duplicated copy that could silently drift out of sync."""
         B = img.shape[0]
         vis = self._visual_tokens(img, img2)              # (B, Nv, d)
         bos = self.bos.expand(B, -1, -1)
@@ -240,6 +276,40 @@ class ChiVLA(nn.Module):
         x = self.backbone(x, mask=mask)
         x = self.norm_out(x)
         aq_out = x[:, -self.cfg.action_horizon:]          # (B, H, d)
+        return x, aq_out
+
+    def pooled_features(self, img, instr_ids, state, embodiment_id, img2=None, phase_id=None):
+        """AWR-only helper: obs → pooled conditioning bond h = aq_out.mean(1), the SAME
+        quantity `forward()` computes internally for the flow/product multimodal heads
+        (identical call to `_encode`, so this is the same h forward() would use — not an
+        approximation). Used by the (external, training-only) rollout/AWR loop to get h
+        for `ProductRoutingHead.sample_signs`/`.loss_awr` and `self.value(h)` without
+        touching `forward()`'s return contract at all."""
+        _, aq_out = self._encode(img, instr_ids, state, embodiment_id, img2=img2, phase_id=phase_id)
+        return aq_out.mean(1)
+
+    def value(self, h):
+        """AWR critic V(h): training-only, twin of `teacher_head`. Never called by
+        `forward()`/`decode()` — see `check_value_head_foldability` below for the
+        explicit, checked guarantee (not assumed)."""
+        return self.value_head(h).squeeze(-1)
+
+    def forward(self, img, instr_ids, state, embodiment_id, img2=None,
+                target_actions=None, phase_id=None, phase_labels=None,
+                phase_weight=1.0, return_phase=False, progress=0.0):
+        """Latent-variable action head:  p(a|obs) = Σ_z p(z|obs) p(a|obs,z).
+
+        - `phase_head` emits LINEAR logits for p(z|obs) (read from a causal query
+          token that sees only obs). The choice ẑ = argmax_z p(z|obs) is done
+          OUT-OF-GRAPH by the caller (a controller op, spec §11), then passed back
+          in as `phase_id` — nothing nonlinear enters the exported graph.
+        - `phase_id` (the chosen/true z) is embedded into ONE conditioning token
+          the action queries attend to, so p(a|obs,z) is a linear+MSE head that only
+          has to fit the (near-)unimodal conditional mean.
+        Training: teacher-force `phase_id`=`phase_labels` (from the demo gripper
+        signal), add cross-entropy on the phase logits (softmax lives in the LOSS
+        only, never the forward graph)."""
+        x, aq_out = self._encode(img, instr_ids, state, embodiment_id, img2=img2, phase_id=phase_id)
         # Multimodal heads model the WHOLE chunk from one pooled conditioning bond h
         # (whole-chunk decode avoids per-step mode-flipping). The linear head keeps
         # the original per-token map.

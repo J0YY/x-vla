@@ -1,0 +1,637 @@
+\documentclass{article}
+
+% ==========================================================================
+% chi-VLA, NeurIPS 2026 VLM4RWD workshop submission
+% Compile: pdflatex -interaction=nonstopmode chi-vla.tex  (twice)
+% ==========================================================================
+
+\PassOptionsToPackage{numbers,sort&compress}{natbib}
+\usepackage[dblblindworkshop]{neurips_2026}
+\workshoptitle{Grounded and Faithful Vision-Language Models for Real-World Deployment (VLM4RWD)}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue,hypertexnames=false]{hyperref}
+\usepackage{url}
+\usepackage{float}
+\usepackage{microtype}
+\newcommand{\chivla}{$\chi$-VLA}
+\newcommand{\R}{\mathbb{R}}
+
+\title{\textbf{Toward Auditable Vision-Language Control}\\[0.15em]
+\textbf{A Fully Tensor-Decomposable VLA}\\[0.35em]
+\large Single-suite strength, four-suite breadth, and exact weight-level diagnostics}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Reliable vision-language control requires both closed-loop capability and evidence about which
+learned paths support an action. Conventional policy checkpoints make exact weight-level analysis
+difficult because softmax, ordinary activations, and square-root normalization interrupt the
+required algebraic form. We introduce \chivla, a compact policy built only from linear, bilinear,
+and rational learned operations. A runtime audit of its seed-$0$ $20.1$M ViT checkpoint finds no
+incompatible learned operation, and independent reconstructions reproduce deployed branches near
+the float32 precision floor. Three policies reach $85.3\%\pm4.6\%$ closed-loop success on
+LIBERO-Object, while a fixed three-pass ensemble reaches $93.4\%$. In a separate same-recipe
+experiment over $40$ familiar tasks, three joint checkpoints reach $70.35\%\pm1.32\%$ task-macro
+success versus $69.12\%\pm2.33\%$ for conventional controls differing by only $0.006\%$ in
+parameter count. Their frozen ensemble reaches $74.75\%$. Prospectively frozen paired audits then
+test whether success depends on language. Correct instructions succeed on $82.3\%$ of
+checkpoint-state pairs versus $24.0\%$ for a co-present control, while zeroing only post-lookup
+token vectors reduces success from $87.7\%$ to $21.0\%$ on disjoint episodes. Exact coefficient
+reconstructions extend through learned attention, and an independent $48$-input sequential replay
+reaches the action output with worst relative error $3.9822\times10^{-7}$. The result is a capable
+familiar-task VLA family with checkpoint-native diagnostics for learned structure and language-path
+necessity. It does not establish unseen-task generalization, counterfactual goal following,
+validated behavioral editing, or deployment-grade grounding.
+\end{abstract}
+
+% ============================================================================
+\section{Introduction}
+% ============================================================================
+
+Deployable vision-language robot policies need more than aggregate success. When a policy fails,
+developers need to distinguish possible visual shortcuts, weak instruction use, state-estimation
+errors, and unstable action generation. Conventional checkpoints expose little of this structure
+directly. Post-hoc probes can identify correlated activations, but their conclusions depend on a
+chosen dataset and need not reveal how the deployed weights construct an action.
+
+Tensor decomposition offers a complementary, checkpoint-native analysis surface. A tensor is a
+multidimensional table, and a decomposition rewrites that table as a sum of simpler low-rank
+factors, much as a matrix factorization finds dominant directions in a matrix. If a network is
+built from additions, multiplications, and ratios of polynomials, its weights define an explicit
+table of input interactions. By \emph{fully tensor-decomposable}, we mean that every learned block
+preserves this algebraic form. This is an operator-closure claim, not a claim that we materialize
+one compact end-to-end coefficient tensor. Its degree and representation size grow rapidly with
+depth. For example, one coefficient can connect an image coordinate, an instruction coordinate,
+and an action coordinate. Factoring the coefficient table ranks high-energy cross-modal
+interactions directly from the checkpoint without first fitting an activation probe. Those
+factors are candidate structure, not automatically human-readable concepts or causal
+explanations. This structure does not certify semantic grounding by itself. It provides a direct
+weight-level surface for subsequent grounding and failure analyses.
+
+Robot control makes this goal useful and difficult. Visual shortcuts can produce high benchmark
+success while ignoring the instruction, and small action errors compound in closed loop. Standard
+softmax, nonlinear activations, and square-root normalization break the explicit polynomial form.
+Continuous actions also cannot rely on the external categorical sampling used by a language
+model. Exact structural access is useful only if the restricted policy still controls reliably.
+
+We therefore study a prerequisite for deployment-oriented diagnostics:
+
+\begin{quote}
+\emph{Can a compact VLA retain strong closed-loop capability when every deployed learned
+operation is polynomial or rational, while exposing exact layerwise structure from its weights?}
+\end{quote}
+
+We test capability and structural access in two fully rational encoder instantiations. The same
+three ViT checkpoints establish closed-loop capability and support the exact attention audit. A
+separate convolutional instantiation tests whether structural certificates transfer across visual
+encoders. These experiments test whether a useful diagnostic surface can coexist
+with control, not whether that surface already certifies grounding or supports a validated edit.
+
+Our contributions are:
+
+\begin{enumerate}
+  \item We construct a complete VLA from tensor-compatible primitives. A rational normalization
+        supplies input-specific scaling without leaving the rational function class.
+  \item We evaluate three fully rational $20.1$M ViT policies on $1{,}500$ canonical
+        LIBERO-Object trials. They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean
+        ensemble reaches $467/500=93.4\%$. Three jointly trained checkpoints average
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, $1.23$ points above matched
+        conventional controls. Their fixed ensemble reaches
+        $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
+  \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
+        rational and bilinear branches from their weights.
+  \item We extend exact weight-derived decomposition through individual attention layers with a
+        reduced-Gram calculation that avoids materializing the full high-order tensor. In a
+        separate closed-loop audit, learned rank-$96$ visual projectors retain $95.2$--$98.2\%$ of
+        baseline successes, versus $3.3$--$13.6\%$ for random projectors.
+\end{enumerate}
+
+This paper does not claim current state of the art. It also does not claim that comparable
+mechanisms are impossible to obtain from conventional policies. Our narrower result is that an
+algebraic VLA can make exact layerwise weight structure directly accessible without giving up
+strong specialist control.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}p{0.43\textwidth}p{0.43\textwidth}@{}}
+\toprule
+Certified by the current evidence & Not certified by the current evidence \\
+\midrule
+Operator membership in the audited ViT checkpoint & Semantic instruction grounding \\
+Exact coefficients for individual bilinear attention layers & Causal visual-shortcut attribution \\
+Weight-derived attention subspaces and numerical replay & Safe coefficient editing and physical robustness \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Deployment diagnostic contract.} Exact checkpoint access narrows what can be
+inspected, but it is not itself a grounding or deployment certificate.}
+\label{tab:diagnostic-contract}
+\end{table}
+
+% ============================================================================
+\section{A rational tensor robot policy}
+\label{sec:model}
+% ============================================================================
+
+\subsection{Tensor-compatible primitives}
+
+Each primitive below replaces a familiar transformer component while keeping an explicit
+coefficient description. Linear maps contribute first-order terms. Multiplying learned linear
+projections creates higher-order interactions whose coefficients remain functions of the
+weights, rather than an unstructured nonlinear black box.
+
+\paragraph{Homogeneous coordinate.}
+We write $\bar x=[1;x]$. The constant coordinate allows a multiplicative layer to represent
+bias, linear, and quadratic terms in one contraction.
+
+\paragraph{Bilinear feed-forward block.}
+For $L,R\in\R^{r\times(d+1)}$ and $D\in\R^{d\times r}$,
+\begin{equation}
+\mathrm{BFFN}(x)
+=D\left[(L\bar x)\odot(R\bar x)\right],
+\qquad
+y_o=\sum_{i,j}\left(\sum_{\rho}D_{o\rho}L_{\rho i}R_{\rho j}\right)\bar x_i\bar x_j .
+\label{eq:bffn}
+\end{equation}
+The inner sum is an order-three table indexed by output coordinate and two input coordinates.
+The three matrices give its CP factorization, the tensor analogue of a low-rank matrix
+factorization, without materializing every table entry.
+
+\paragraph{Softmax-free bilinear attention.}
+Each head forms two query-key systems and one value stream:
+\begin{equation}
+Y=C\left[M\odot(Q_1K_1^\top)\odot(Q_2K_2^\top)/s\right]V .
+\label{eq:attention}
+\end{equation}
+Here $M$ is a fixed causal mask, $C$ is fixed row scaling, and $s$ is fixed. All learned
+query, key, value, and output maps are linear. Equation~\ref{eq:attention} is therefore a
+polynomial in its input activations. Unlike softmax attention, every multiplicative interaction
+can be expanded into coefficients determined by the trained weights.
+
+\paragraph{Rational per-instance normalization.}
+RMS normalization contains an input-dependent square root. Let
+$m(x)=d^{-1}\sum_{j=1}^{d}x_j^2+\epsilon$, and let $s_0>0$ be the frozen running mean-square
+scale. We deploy a fixed rational approximation $r(v)=P(v)/Q(v)$ to $v^{-1/2}$ over
+$v\in[0.1,10]$:
+\begin{equation}
+v=\frac{m(x)}{s_0}, \qquad
+\mathrm{RNorm}(x)=\frac{x}{\sqrt{s_0}}\,r(v).
+\label{eq:rnorm}
+\end{equation}
+Here \emph{rational} means a ratio of two polynomials. Projective coordinates carry each
+activation as a numerator-denominator pair $(N,D)$ representing $N/D$. Linear, bilinear,
+residual, and normalization operations update this pair. The model therefore keeps
+input-specific rescaling while remaining exactly representable as a rational tensor network.
+Training and deployment use $r$ itself. The exactness claims below therefore concern faithful
+evaluation of the deployed rational computation, not uniform agreement with RMSNorm.
+Appendix~\ref{app:rational-scope} certifies pole-free denominators and deployed arithmetic
+fidelity while retaining that boundary.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw,rounded corners,align=center,minimum height=7mm,inner sep=3pt},
+  inp/.style={box,fill=gray!12},
+  prim/.style={box,fill=green!12},
+  output/.style={box,fill=blue!10},
+  arr/.style={-{Latex[length=1.8mm]},thick,gray!65!black},
+  node distance=6mm and 7mm,
+]
+\node[inp] (img) {RGB image};
+\node[inp, below=of img] (txt) {instruction};
+\node[inp, below=of txt] (state) {robot state};
+\node[prim, right=of img] (vision) {rational $\chi$ vision encoder\\bilinear attention and FFN};
+\node[prim, right=of txt] (embed) {linear embeddings};
+\node[prim, right=9mm of vision, minimum width=34mm] (joint) {rational joint transformer\\eight bilinear blocks};
+\node[output, right=of joint] (action) {linear action queries\\$8\times7$ action chunk};
+\draw[arr] (img) -- (vision);
+\draw[arr] (txt) -- (embed);
+\draw[arr] (state) -- (embed);
+\draw[arr] (vision) -- (joint);
+\draw[arr] (embed) -- (joint);
+\draw[arr] (joint) -- (action);
+\begin{scope}[on background layer]
+\node[draw=green!50!black,dashed,rounded corners,fit=(vision)(embed)(joint)(action),
+      inner sep=4mm,label={[green!40!black,font=\scriptsize\bfseries]above:one deployed rational tensor program}] {};
+\end{scope}
+\end{tikzpicture}}
+\caption{\textbf{Deployed \chivla\ map.} The strongest checkpoints use one vision stream and a
+linear continuous-action head. Every learned component inside the dashed boundary is linear,
+bilinear, or rational.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Architecture and training}
+
+Both encoder variants follow the high-level VLA sequence of visual encoding, language and state
+embedding, joint processing, and action decoding \cite{openvla}. They use a $64\times64$
+agent-view image, an eight-dimensional robot state, a 26-token task vocabulary, and eight
+action-query tokens. Both share a width-$384$, eight-block, twelve-head joint backbone and a
+linear head that maps each action-query state to seven continuous action dimensions. The
+$20.1$M ViT uses four bilinear-attention vision blocks and has $20{,}137{,}352$ learned
+parameters. It supplies the closed-loop capability, runtime operator census, exact-attention,
+and reduced-Gram results. The $19.2$M convolutional variant instead uses three stride-$2$
+bilinear convolution stages that produce an $8\times8$ token grid. Three separate convolutional
+files receive the joint-attention and rational-normalizer certificates reported in
+Appendix~\ref{app:rational-scope}.
+
+Training uses $66{,}984$ demonstration frames, $40{,}000$ AdamW updates, batch size $256$,
+cosine decay, bfloat16 arithmetic, and an exponential moving average. Closed-loop evaluation
+uses a $180^\circ$ camera rotation to match the demonstration convention, canonical LIBERO
+initial states, and fail-loud checks that verify every requested state was loaded.
+
+\subsection{Mechanical certificate on the seed-0 20.1M ViT checkpoint}
+
+Architecture definitions can differ from deployed code. We therefore audit the deployed seed-$0$
+20.1M ViT checkpoint at runtime and reconstruct representative operations from saved weights.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{../paper_figures/appendix_decomposability_audit.pdf}
+\caption{\textbf{Mechanical audit of the seed-0 20.1M ViT rational checkpoint.} The runtime path invokes
+$112$ linear maps, $74$ rational normalizers, two embeddings, and one linear patch projection.
+No softmax, standard activation, or ordinary normalization is present. Reconstruction errors
+are measured over $54{,}784$ real activation rows.}
+\label{fig:audit}
+\end{figure}
+
+The normalization reconstruction has maximum absolute error $1.64\times10^{-6}$. A bilinear
+FFN reconstruction has median relative error $1.40\times10^{-7}$. These residuals are bounded
+by the deployed module's float32 statistic. The audit certifies operator membership and local
+reconstruction. It does not materialize one compact polynomial for the full eight-layer
+transformer.
+
+% ============================================================================
+\section{Protocol-aligned closed-loop capability}
+\label{sec:capability}
+% ============================================================================
+
+\subsection{Evaluation protocol}
+
+We evaluate all ten LIBERO-Object tasks with the following fixed protocol:
+
+\begin{itemize}
+  \item $50$ canonical trials per task
+  \item a $280$-step cap
+  \item three independently trained ViT checkpoints
+  \item $500$ rollouts per checkpoint and $1{,}500$ rollouts in total
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/vit_capability_verified.pdf}
+\caption{\textbf{Verified ViT capability.} Left: three independently trained checkpoints and
+their fixed elementwise prediction-mean ensemble. Right: per-task three-checkpoint mean and
+ensemble success. The ensemble uses three forward passes.}
+\label{fig:vit-capability}
+\end{figure}
+
+\subsection{Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & Parameters & Inference & Success \\
+\midrule
+\chivla, rational ViT & $20.1$M & $1$ pass & $\mathbf{85.3\%\pm4.6\%}$ \\
+\chivla, prediction-mean ensemble & $3\times20.1$M & $3$ passes & $\mathbf{93.4\%}$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Closed-loop LIBERO-Object success.} Each ViT checkpoint receives $500$
+canonical trials. The single-model row is the mean $\pm$ sample standard deviation across three
+checkpoints. The ensemble is one fixed composite evaluated on the same $500$ states.}
+\label{tab:capability}
+\end{table}
+
+The three checkpoints reach $426/500=85.2\%$, $404/500=80.8\%$, and $450/500=90.0\%$.
+Elementwise averaging of their predicted action chunks reaches $467/500=93.4\%$. This is $8.1$
+points above the member mean and $3.4$ points above the strongest member. The ensemble requires
+three complete forward passes and is not one $20.1$M-parameter policy. Every episode-level record,
+task index, and protocol field is retained. The artifact manifest binds each immutable result file
+and recorded checkpoint basename to a checkpoint hash verified separately. Member and ensemble
+shards span different recorded GPU families and predate explicit matrix-precision fields, so the
+arithmetic gaps are descriptive rather than a matched-hardware ensemble ablation.
+
+\subsection{What this result does and does not establish}
+
+The result shows that the rational architecture supports high closed-loop specialist
+capability. It is an existence claim for a compact tensor-decomposable
+policy, not a claim of broad robotic generalization or state of the art.
+
+\input{four_suite_breadth_compact}
+
+\input{instruction_necessity_section}
+
+For the VLM4RWD setting, this separates familiar-task language use from deployment-grade grounding.
+The control changes the instruction while holding the initial physical input fixed, but it does not
+test policy-unseen language or scenes.
+
+% ============================================================================
+\section{Exact weight-derived structure through attention}
+\label{sec:exactattention}
+% ============================================================================
+
+\subsection{Exact layerwise construction}
+
+Equation~\ref{eq:attention} contains two query-key products and one value stream. Expanding
+the linear maps gives a high-order coefficient table. Each entry says how strongly one
+combination of query, key, and value coordinates contributes to an output. It is
+\emph{weight-derived} because no examples or fitted probe are needed to construct it. On a
+tiny four-token, width-four, one-head layer, direct evaluation
+and an independent explicit polynomial agree to $2.00\times10^{-15}$. The internal core
+identity agrees to $1.24\times10^{-14}$.
+
+The deployed attention also normalizes each query and key with Equation~\ref{eq:rnorm}.
+Each normalization multiplies all channels of one token by the same scalar rational factor.
+Those factors can be pulled outside the bilinear dot products. The polynomial attention core
+is unchanged, while explicit numerator and denominator factors carry the normalization.
+The rational extension agrees to $3.61\times10^{-16}$. On one fixed corrected cached input per checkpoint,
+we numerically replay all four vision and eight joint attention modules in each of three records
+that name the same ViT checkpoint artifacts as the capability results. This covers $36$
+module-input cases and $384$ architectural heads. The worst relative $\ell_2$ error is
+$2.016119\times10^{-7}$ and the worst absolute difference
+is $2.44\times10^{-5}$. This residual comes from the deployed implementation's intentional
+float32 statistic, while the reconstruction itself uses the learned coefficients. The algebraic
+identity is input-general. The one-input-per-checkpoint records provide a layerwise numerical
+replay audit, not an exact end-to-end policy decomposition.
+
+We separately certify three convolutional checkpoints from the same rational architecture family.
+Independent reconstruction covers $4{,}608$ joint-attention head-input cases, $384$ joint-FFN
+module-input cases, and $384$ complete joint-block input cases. Their respective worst relative
+errors are $6.36\times10^{-16}$, $1.3871\times10^{-15}$, and $1.5024\times10^{-7}$, all below
+their frozen gates. These are input-conditioned layer and block certificates.
+
+A separately frozen ViT audit partitions $36{,}864$ joint-attention head-input cases into vision,
+instruction, robot-state, and action-query sources. Worst reconstruction error is
+$5.0741\times10^{-7}$, while mean coherent-energy shares are $67.7\%$, $5.1\%$, $19.2\%$,
+and $7.9\%$. The shares are descriptive rather than causal importance or grounding.
+
+Finally, a prospectively frozen sequential replay rebuilds the learned path from prepared tensors
+through all $12$ transformer blocks to the linear head. Across $48$ inputs and $816$ stages, worst
+final-action relative error is $3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. This
+fixed-input numerical certificate is not a compact symbolic or input-general proof.
+
+Naively materializing the real width-$384$ coefficient tensor would require approximately
+$3.2\times10^{15}$ values. We instead contract the CP factors into an $O(d^2)$ reduced Gram.
+This smaller matrix plays the role of a covariance matrix: its leading eigenvectors rank the
+directions that carry the most coefficient energy without constructing the full table. At toy
+multi-head scale, it matches brute-force materialization to $2.13\times10^{-14}$.
+
+\subsection{Trained policy result}
+
+The reconstruction certificate spans three checkpoints. A descriptive seed-$0$ analysis applies
+the exact weight-derived calculation to all twelve heads in blocks $0$, $6$, and $7$. Random
+projector banks are sampled once and reused. The weights choose the subspace, while cached
+activations only score how faithfully it preserves the computation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.70\textwidth]{../paper_figures/main_exact_attention_odt.pdf}
+\caption{\textbf{Exact weight-derived attention structure.} Ratios above one favor the exact
+weight-derived subspace over a random equal-rank subspace. Each point in the right panel is one
+trained attention head.}
+\label{fig:exactattention}
+\end{figure}
+
+At ranks $8$, $32$, and $128$, $80.6\%$, $91.7\%$, and $100\%$ of the $36$ block-head pairs favor
+the exact subspace, with median ratios $1.028$, $1.171$, and $2.441$. At rank $128$, the mean is
+$3.033$, the maximum is $10.135$, and block means are $3.08$, $3.45$, and $2.56$. These pairs are
+architectural units within one checkpoint, not independent model-level replicates.
+
+This extends exact weight-only construction through individual attention layers, not to a compact
+symbolic end-to-end policy decomposition. Composition still faces rapid degree and representation growth.
+
+A separate intervention tests behavioral sufficiency at the visual-to-joint interface. A rank-$96$
+action-Jacobian projector fixed from Object tasks $0$--$3$ retains $259/272$ successes on tasks
+$8$--$9$ across three checkpoints. Activation energy retains $267/272$, while equal-rank random
+projectors retain $37/272$, $9/272$, and $22/272$. All tasks appeared during policy training. This
+diagnoses structured visual dependence relative to random projectors, not grounding, unseen-task
+generalization, or unique action-Jacobian specificity. Appendix~\ref{app:visual-bottleneck} gives
+the paired controls and intervals.
+
+% ============================================================================
+\section{Related work}
+% ============================================================================
+
+\paragraph{Capability, mechanisms, and robustness.}
+OpenVLA and OpenVLA-OFT give pretrained VLA baselines \cite{openvla,openvlaoft}, while polynomial
+and tensor networks provide our multilinear foundation \cite{koldabader,stoudenmire,chrysos}.
+Bilinear models expose low-rank circuits from trained weights \cite{pearce,chinets}. Policy analysis
+and causal activation studies make our distinction empirical \cite{bimpala,haonsteering,sparsecircuits,causalreduction}.
+Because LIBERO success can coexist with weak robustness and language use
+\cite{liberopro,liberocf,liberopara}, the claim remains bounded to familiar tasks from the
+training suites.
+
+% ============================================================================
+\section{Limitations and conclusion}
+% ============================================================================
+
+\chivla\ shows that strong single-suite control and substantial four-suite familiar-task breadth
+can coexist with exact access to trained structure.
+The paired controls establish familiar-task instruction necessity, not counterfactual goal following,
+unseen-task generalization, or physical transfer. The learned path is replayed on fixed inputs, not
+given as one compact symbolic contraction or input-general proof, and the strongest ensemble costs
+three passes. We present \chivla\ as diagnostic infrastructure, not a deployment-ready or robustly
+grounded policy. Common ViT checkpoints connect capability, exact attention, and reduced-Gram
+analysis, while separate convolutional files replicate the attention equation certificate. We do
+not claim a coefficient-edit interface. The anonymous artifact and
+Appendix~\ref{app:reproducibility} provide full reproducibility details.
+
+% ============================================================================
+\begin{thebibliography}{99}
+
+\bibitem{openvla}
+M.~J. Kim et al.
+\newblock \emph{OpenVLA: An Open-Source Vision-Language-Action Model.}
+\newblock CoRL, 2024.
+
+\bibitem{openvlaoft}
+M.~J. Kim, C.~Finn, and P.~Liang.
+\newblock \emph{Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success.}
+\newblock 2025.
+
+\bibitem{pearce}
+A.~Rigg, T.~Dooms, M.~T. Pearce, J.~Oramas, and L.~Sharkey.
+\newblock \emph{Bilinear MLPs Enable Weight-Based Mechanistic Interpretability.}
+\newblock ICLR, 2025.
+
+\bibitem{chinets}
+T.~Dooms, W.~Gauderis, G.~A. Wiggins, and J.~Oramas.
+\newblock \emph{Compositionality Unlocks Deep Interpretable Models.}
+\newblock 2025.
+
+\bibitem{bimpala}
+F.~Oozeer, Y.~Erisken, A.~Rigg, J.~Oramas, and L.~Sharkey.
+\newblock \emph{Bilinear Convolution Decomposition for Causal RL Interpretability.}
+\newblock 2024.
+
+\bibitem{haonsteering}
+B.~H\"aon, K.~Stocking, I.~Chuang, and C.~Tomlin.
+\newblock \emph{Mechanistic Interpretability for Steering Vision-Language-Action Models.}
+\newblock 2025.
+
+\bibitem{sparsecircuits}
+S.~Marks et al.
+\newblock \emph{Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs
+in Language Models.}
+\newblock ICLR, 2025.
+
+\bibitem{causalreduction}
+M.~Keki\'c et al.
+\newblock \emph{Learning Nonlinear Causal Reductions to Explain Reinforcement Learning
+Policies.}
+\newblock ICLR, 2026.
+
+\bibitem{liberopro}
+X.~Zhou et al.
+\newblock \emph{LIBERO-PRO: Towards Robust and Fair Evaluation of Vision-Language-Action
+Models Beyond Memorization.}
+\newblock 2025.
+
+\bibitem{liberocf}
+Y.~Fang et al.
+\newblock \emph{When Vision Overrides Language: Evaluating and Mitigating Counterfactual
+Failures in VLAs.}
+\newblock 2026.
+
+\bibitem{liberopara}
+C.~Kim et al.
+\newblock \emph{LIBERO-Para: A Diagnostic Benchmark and Metrics for Paraphrase Robustness in
+VLA Models.}
+\newblock 2026.
+
+\bibitem{koldabader}
+T.~Kolda and B.~Bader.
+\newblock \emph{Tensor Decompositions and Applications.}
+\newblock SIAM Review, 2009.
+
+\bibitem{stoudenmire}
+E.~Stoudenmire and D.~Schwab.
+\newblock \emph{Supervised Learning with Tensor Networks.}
+\newblock NeurIPS, 2016.
+
+\bibitem{chrysos}
+G.~Chrysos et al.
+\newblock \emph{Deep Polynomial Neural Networks.}
+\newblock CVPR and TPAMI, 2020 to 2021.
+
+\end{thebibliography}
+
+% ============================================================================
+\appendix
+\renewcommand{\theHfigure}{A.\arabic{figure}}
+\raggedbottom
+\section{Supporting results and decisions}
+% ============================================================================
+
+\input{instruction_embedding_ablation_appendix}
+
+\subsection{Reproducibility details}
+\label{app:reproducibility}
+
+Training and evaluation use fixed task lists, explicit camera and action conventions,
+canonical-state manifests, checkpointed moving-average weights, and per-run result files.
+Historical Modal cache-backed analyses read dataset-native task metadata. The replacement Athena
+pipeline pins that metadata and maps dataset identifiers to official identifiers before defining
+task splits. A source-level audit compared all $271{,}996$ cached frames across Object, Spatial,
+Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, language joins, states,
+actions, and resized images matched exactly for every frame. The anonymous artifact releases raw
+structural-certificate JSONs and all $2{,}000$ episode rows behind the ViT member and ensemble
+results. Immutable SHA-256 manifests and standard-library verifiers independently recompute the
+capability totals, matched conventional comparison, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
+modality-partition, full learned-forward, and RationalNorm certificate decisions. Preflight checks
+fail if canonical initial states cannot be loaded.
+
+\subsection{Expanded attention screen}
+\label{app:expanded-mechanisms}
+
+Within the same seed-$0$ ViT checkpoint, the corrected fixed-control attention analysis covers
+all eight blocks and twelve heads. At
+rank $128$, $83/96$ block-head pairs favor the exact weight-derived subspace. The median ratio
+is $1.94$, the mean is $2.58$, and blocks $2$ and $3$ provide useful depth controls.
+At ranks $8$ and $32$, only $54/96$ and $60/96$ pairs favor the exact subspace. The effect is
+therefore depth-dependent and strongest at the wider tested rank.
+
+\subsection{Prospectively fixed-rank visual bottleneck}
+\label{app:visual-bottleneck}
+
+The behavioral intervention acts at the width-$384$ visual-to-joint interface and keeps rank
+$96$. Projector construction uses official Object tasks $0$--$3$. Rank $96$ was fixed before any
+corrected-basis outcome was observed, and the frozen evaluation uses tasks $8$--$9$. Across three checkpoints and $300$
+canonical episodes, the full policy succeeds on $272$ trials. The action-Jacobian projector
+retains $259/272=95.2\%$ of those successes, with a paired checkpoint-task-episode resampling
+interval of $91.2$--$98.6\%$. The activation-energy projector retains $267/272=98.2\%$, with an
+interval of $95.8$--$100.0\%$. Three fixed equal-rank random projectors retain $37/272=13.6\%$,
+$9/272=3.3\%$, and $22/272=8.1\%$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/visual_bottleneck_verified.pdf}
+\caption{\textbf{Corrected closed-loop visual bottleneck.} Both learned rank-$96$ projectors
+preserve nearly all baseline successes across three checkpoints, while equal-rank random
+projectors do not. Error bars in panel (a) are deterministic paired cluster-resampling intervals.
+Tasks $8$--$9$ are absent from corrected projector construction, but not from policy training.
+This is not a clean rank-selection-holdout result.}
+\label{fig:visual-bottleneck}
+\end{figure}
+
+The action-Jacobian basis does not outperform the matched activation-energy basis. The stronger
+action-specificity gate therefore does not pass. The supported claim is structured visual
+sufficiency relative to random projectors. It is not evidence of language grounding, and the
+data-derived intervention remains separate from the exact weight-only attention decomposition.
+
+\clearpage
+\subsection{Numerical scope of rational conversion}
+\label{app:rational-scope}
+
+The deployed degree-$[2/2]$ least-squares rational fit is exact as a rational computation even
+though it approximates RMS normalization. Its numerator has coefficients
+$(5.32997,7.53552,0.327274)$ and the denominator has coefficients
+$(1,9.64827,2.60664)$. Every denominator coefficient is positive, which certifies $Q(v)>0$ for
+all $v\geq0$. We instrument all $53$ RationalNorm module instances, each invoked once per forward
+pass, on $4{,}096$ deterministic inputs for each of three convolutional checkpoints.
+Across $544{,}542{,}720$ activation rows, the minimum observed denominator is $1.0016$ and no row
+is nonfinite. Comparing deployed float32 normalization with an otherwise identical pass that
+recomputes only RationalNorm scales in float64, the largest checkpoint-level primary metric,
+defined as the maximum of normalized- and physical-action NRMSE, is
+$2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
+This primary certificate concerns pole-free denominators and floating-point fidelity to the
+deployed rational operator. It does not claim uniform agreement with exact RMS scaling or measure
+matched alternative-normalizer runtime overhead.
+
+The reconstruction ladder extends from individual attention heads through FFNs and per-block
+replay to a separate sequential learned-forward certificate. That final record starts at exact
+prepared model tensors and reaches the linear action head on $48$ fixed inputs. It is numerical and
+input-conditioned, not a compact symbolic contraction or an input-general full-policy proof. The
+ViT source-partition audit remains layerwise and descriptive. Figure~\ref{fig:structural-certificates}
+reports the frozen numerical gates and the depth profile without assigning causal importance.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/appendix_structural_certificates.pdf}
+\caption{\textbf{Frozen reconstruction ladder and descriptive ViT source partition.}
+Panel (a) reports observed-to-gate ratios for independent Conv attention, joint-FFN, and complete
+joint-block reconstruction, the ViT source-partition identity, the sequential ViT learned-forward
+action replay, and primary RationalNorm action fidelity. All plotted primary numerical
+gates pass. Panel (b) shows descriptive mean coherent-energy shares after the attention output
+projection across $384$ checkpoint-input cases per joint block. The depth trend is not a causal
+importance or grounding result. The learned-forward replay excludes preprocessing, fixed action
+unnormalization, chunk execution, simulator dynamics, and success.}
+\label{fig:structural-certificates}
+\end{figure}
+
+\end{document}

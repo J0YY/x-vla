@@ -1,0 +1,32 @@
+{
+  "artifact_version": 1,
+  "description": "Immutable identities and expected arithmetic for the corrected rank-96 visual bottleneck.",
+  "summary": {
+    "path": "athena/results/visual_taskmap_blind_rank96_summary.json",
+    "sha256": "c107cf1514fc4aee42745f1cc60ffdc9ab9dcc7be22e20b94dfb2dc7e65094b6"
+  },
+  "raw_results": [
+    {"path": "athena/results/visual_taskmap_activation_s0_r96_t8.json", "sha256": "892b4411a0b2f62e95b029d889db0a85228e7d594657a1065476bad4c33ee2a1"},
+    {"path": "athena/results/visual_taskmap_activation_s0_r96_t9.json", "sha256": "170699547f50c8bf0c321896b087f3906c4f22f47060ea47ce8c5acc0df8fc8c"},
+    {"path": "athena/results/visual_taskmap_activation_s1_r96_t8.json", "sha256": "f2c1c9bd0c85640297f16d1b5095189a3f55e6cabe9f5eb938f5ff1767dde723"},
+    {"path": "athena/results/visual_taskmap_activation_s1_r96_t9.json", "sha256": "8fb993912180d866bb08e2cf93cf20e8dd9443f0ec8d9f18bb86d47566185e3e"},
+    {"path": "athena/results/visual_taskmap_activation_s2_r96_t8.json", "sha256": "43f926a2cb3d59fffa781f3a8b0bdfd3d360c3146f2abdaa89c3bfe4e2a24a7c"},
+    {"path": "athena/results/visual_taskmap_activation_s2_r96_t9.json", "sha256": "c91ce82aa46904509563502d28ea0ffe095f56c936105fb53673e2cd076f166b"},
+    {"path": "athena/results/visual_taskmap_vit_s0_r96_blind_t8.json", "sha256": "df7c1fdeca844d96a27ac3f9a6bf755da522a7527954893443a2081b8c239496"},
+    {"path": "athena/results/visual_taskmap_vit_s0_r96_blind_t9.json", "sha256": "8bb17e208ff616ff7aa0970455f8c4c925147a31c092f97d4dca86599a35ed67"},
+    {"path": "athena/results/visual_taskmap_vit_s1_r96_blind_t8.json", "sha256": "e076d61893e4f7d6251ab998d0cfcc3728afe61a2d206a0f5f4cef38cfda5d55"},
+    {"path": "athena/results/visual_taskmap_vit_s1_r96_blind_t9.json", "sha256": "09c3778ec19355af5036afa990fb8b8a2e2d28657be4c1276d4c5896cc8a330f"},
+    {"path": "athena/results/visual_taskmap_vit_s2_r96_blind_t8.json", "sha256": "acc8857993528f0491d4629b6ac1208a9b22386be1e4194629e18ea32153e56c"},
+    {"path": "athena/results/visual_taskmap_vit_s2_r96_blind_t9.json", "sha256": "28c693581ea8d91443d35042b72e01be837efb87f9e87a37dbc9ab01c55513fe"}
+  ],
+  "expected": {
+    "full_successes": 272,
+    "jacobian_retained": 259,
+    "activation_retained": 267,
+    "random_retained": [37, 9, 22],
+    "blind_selectivity_pass": true,
+    "action_specificity_pass": false,
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20260821
+  }
+}

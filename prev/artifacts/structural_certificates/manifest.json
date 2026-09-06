@@ -1,0 +1,232 @@
+{
+  "artifact_version": 2,
+  "certificates": {
+    "conv_joint_block": {
+      "expected_outcome": true,
+      "gate": {
+        "relative_l2_error_at_most": 0.0001
+      },
+      "raw_results": [
+        "athena/results/conv_joint_block_certificate_v1_s0.json",
+        "athena/results/conv_joint_block_certificate_v1_s1.json",
+        "athena/results/conv_joint_block_certificate_v1_s2.json"
+      ],
+      "raw_schema": "xvla-conv-joint-block-certificate-v1",
+      "summary": "athena/results/conv_joint_block_certificate_v1_summary.json",
+      "summary_schema": "xvla-conv-joint-block-certificate-summary-v1"
+    },
+    "conv_joint_ffn": {
+      "expected_outcome": true,
+      "gate": {
+        "relative_l2_error_at_most": 1e-10
+      },
+      "raw_results": [
+        "athena/results/conv_joint_ffn_certificate_v1_s0.json",
+        "athena/results/conv_joint_ffn_certificate_v1_s1.json",
+        "athena/results/conv_joint_ffn_certificate_v1_s2.json"
+      ],
+      "raw_schema": "xvla-conv-joint-ffn-certificate-v1",
+      "summary": "athena/results/conv_joint_ffn_certificate_v1_summary.json",
+      "summary_schema": "xvla-conv-joint-ffn-certificate-summary-v1"
+    },
+    "conv_joint_attention": {
+      "expected_outcome": true,
+      "gate": {
+        "relative_l2_error_at_most": 1e-06
+      },
+      "raw_results": [
+        "athena/results/conv_joint_attention_certificate_v1_s0.json",
+        "athena/results/conv_joint_attention_certificate_v1_s1.json",
+        "athena/results/conv_joint_attention_certificate_v1_s2.json"
+      ],
+      "raw_schema": "xvla-conv-joint-attention-certificate-v1",
+      "summary": "athena/results/conv_joint_attention_certificate_v1_summary.json",
+      "summary_schema": "xvla-conv-joint-attention-certificate-summary-v1"
+    },
+    "rational_norm": {
+      "expected_primary_outcome": true,
+      "expected_secondary_outcome": false,
+      "gates": {
+        "primary_action_nrmse_at_most": 0.001,
+        "secondary_each_site_fraction_local_scale_error_at_or_below_threshold_at_least": 0.99,
+        "secondary_each_site_fraction_rows_v_in_0p1_10_at_least": 0.99,
+        "secondary_local_scale_relative_error_threshold": 0.034
+      },
+      "raw_results": [
+        "athena/results/rational_norm_safety_v1_s0.json",
+        "athena/results/rational_norm_safety_v1_s1.json",
+        "athena/results/rational_norm_safety_v1_s2.json"
+      ],
+      "raw_schema": "xvla-rational-norm-safety-v1",
+      "summary": "athena/results/rational_norm_safety_v1_summary.json",
+      "summary_schema": "xvla-rational-norm-safety-summary-v1"
+    },
+    "vit_modality": {
+      "expected_outcome": true,
+      "gate": {
+        "relative_l2_error_at_most": 1e-06
+      },
+      "raw_results": [
+        "athena/results/vit_modality_contribution_v1_s0.json",
+        "athena/results/vit_modality_contribution_v1_s1.json",
+        "athena/results/vit_modality_contribution_v1_s2.json"
+      ],
+      "raw_schema": "xvla-vit-modality-contribution-audit-v1",
+      "summary": "athena/results/vit_modality_contribution_v1_summary.json",
+      "summary_schema": "xvla-vit-modality-contribution-audit-summary-v1"
+    },
+    "vit_full_learned_forward": {
+      "expected_outcome": true,
+      "gate": {
+        "end_to_end_action_relative_l2_error_at_most": 0.001
+      },
+      "raw_results": [
+        "athena/results/vit_full_learned_forward_v1_s0.json",
+        "athena/results/vit_full_learned_forward_v1_s1.json",
+        "athena/results/vit_full_learned_forward_v1_s2.json"
+      ],
+      "raw_schema": "xvla-vit-full-learned-forward-certificate-v1",
+      "summary": "athena/results/vit_full_learned_forward_v1_summary.json",
+      "summary_schema": "xvla-vit-full-learned-forward-certificate-summary-v1"
+    }
+  },
+  "description": "Immutable file identities and frozen outcomes for the anonymous structural-certificate artifact.",
+  "files": [
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "691c6b7de74f9bd5f763083e994d0c017ae98aa6a15d5634e7826b748e213f76"
+    },
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "2449d4dab33b954828ecee0f05f7218904f92a85d800f1f13fb73224419e3c13"
+    },
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "f4fe8fda1b4d5691cbf602f9cf6f2101779fc9cfe8fed3d9443a8705fea20d36"
+    },
+    {
+      "path": "athena/results/conv_joint_attention_certificate_v1_summary.json",
+      "role": "summary",
+      "sha256": "3c380a899e5621d312cc45d62aff99ce883dd8dd029de56078e1cdc67838613f"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "681d60627eac0eb6e8e65e75896f85375eae98d68c9bb2f2788bf5b13e0b9693"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "ac89373a2309403adb9ade624357760b06c3720fc4dc5366ad4e37ebea88f00d"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "b0711074948293dbc309564a49398b26e6198be4ee13a450bf0aa5f740cfc8fb"
+    },
+    {
+      "path": "athena/results/rational_norm_safety_v1_summary.json",
+      "role": "summary",
+      "sha256": "25c9dd61bfc805c321b12ba1b6575e4463fb76c1369de3b7a317dbdb524b17a8"
+    },
+    {
+      "path": "athena/results/conv_joint_ffn_certificate_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "fe2dc6c2c5db060d8164c127ab5b00e1d4b554e087879e929edf26a53853c433"
+    },
+    {
+      "path": "athena/results/conv_joint_ffn_certificate_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "866279d50d3ee2f7412452893e58ae1b46aadf3b6bbfd0289000e7c99594943e"
+    },
+    {
+      "path": "athena/results/conv_joint_ffn_certificate_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "6b261868a4cc60d11a0a4c894397e7664ffdebe38eb9e580e529c7cd539a3317"
+    },
+    {
+      "path": "athena/results/conv_joint_ffn_certificate_v1_summary.json",
+      "role": "summary",
+      "sha256": "cb4c0c941f7111c5abdf7c55d522bcf74623f269473114bff58c8d8addb525eb"
+    },
+    {
+      "path": "athena/results/conv_joint_block_certificate_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "7ecf53e2e63093c4f77ac94eb1a692a928ca7c822d0756cba9234bf6e7f4e0b8"
+    },
+    {
+      "path": "athena/results/conv_joint_block_certificate_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "c78695846a31adcd1f42b9ad4db5303bc5c703fbf5ba86c08a285a7eb9dddedd"
+    },
+    {
+      "path": "athena/results/conv_joint_block_certificate_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "4b6e134caca65be7b18cca369aeba62f56703c42dbc4647895c435f597bd5861"
+    },
+    {
+      "path": "athena/results/conv_joint_block_certificate_v1_summary.json",
+      "role": "summary",
+      "sha256": "28aa3fb16c64b9d5bc39c80ba1346669fbe386b776f0d6a90a131af389370319"
+    },
+    {
+      "path": "athena/results/vit_modality_contribution_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "2d182ee6cdc8b34d2b11d6df1e0b1f40d5ee5e27120fbe395c108819cde3b2c0"
+    },
+    {
+      "path": "athena/results/vit_modality_contribution_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "79462f88b24e6a75aa1be66c77d7de88a7a12faa6b148214409f31aeb0ca05a8"
+    },
+    {
+      "path": "athena/results/vit_modality_contribution_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "d89759ab34da2a1d4a5a67e5a7411fc201cacd33ff716141508bbafd06b5f4f3"
+    },
+    {
+      "path": "athena/results/vit_modality_contribution_v1_summary.json",
+      "role": "summary",
+      "sha256": "a893b6df2d05520c9ba125fbeb2e02ce7a4605660b08da8642375de4c58f1b16"
+    },
+    {
+      "path": "athena/results/exact_attention_frozen_sources/xvla_models_vla.py.b64",
+      "role": "source_snapshot",
+      "sha256": "b1f1309182bee516882962415d0bf358adb63a8f50e5a9fe2757f448b82527b6"
+    },
+    {
+      "path": "athena/results/exact_attention_frozen_sources/xvla_models_vit.py.b64",
+      "role": "source_snapshot",
+      "sha256": "1c3a6bc32d8580a13770ed1bcb273a20c03b747b58d60d05bd83696e5e1729c5"
+    },
+    {
+      "path": "athena/results/exact_attention_frozen_sources/xvla_nn_product_routing.py.b64",
+      "role": "source_snapshot",
+      "sha256": "e2cc8b13001a5f2cdcd79f6aa135cb50453d55da13024cd1dd0a22f0e820c6d3"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_s0.json",
+      "role": "raw_result",
+      "sha256": "fa776eef4b7fcdd015de65dd20e9e25cc027b745ac5f35604b5b3d0844acf34a"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_s1.json",
+      "role": "raw_result",
+      "sha256": "3cb4cd1d89cd47462ece9bd2e61cdd1326263690633766ab044ffb19a6d517ad"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_s2.json",
+      "role": "raw_result",
+      "sha256": "b345563d174bb84c48851e5d14e71b73e56d0b953dd2757fd4cd162ff94ba0c9"
+    },
+    {
+      "path": "athena/results/vit_full_learned_forward_v1_summary.json",
+      "role": "summary",
+      "sha256": "dbc2d229bda4a61cb7ca1c6d9a185bee7ce19f1fa8a55df9baabeb3ce2b8ec97"
+    }
+  ],
+  "schema": "anonymous-structural-certificate-artifact-v3"
+}

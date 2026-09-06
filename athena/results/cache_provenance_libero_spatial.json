@@ -1,0 +1,76 @@
+{
+  "cache": {
+    "canonical_content_sha256": "8755623bbaa9e7c691bc19c49b8fa62175d2495a1670b68b4813f36ddd58b186",
+    "frames": 52970,
+    "path": "artifacts/libero_spatial_frames_100000_64.pkl",
+    "resolution": 64,
+    "sha256": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb"
+  },
+  "comparison": {
+    "cached_frames_compared": 52970,
+    "max_abs_difference": {
+      "action": 0.0,
+      "resized_image": 0.0,
+      "state": 0.0
+    },
+    "mismatch_counts": {
+      "action": 0,
+      "episode_index": 0,
+      "frame_index": 0,
+      "language_join": 0,
+      "resized_image": 0,
+      "source_missing_frame": 0,
+      "state": 0,
+      "task_id": 0
+    },
+    "mismatch_examples": []
+  },
+  "elapsed_s": 1281.130166303832,
+  "implementation": {
+    "array_comparison": "exact dtype, shape, and contiguous bytes after cache casts",
+    "canonical_record_schema": "libero-cache-v1",
+    "datasets_version": "3.6.0",
+    "numpy_version": "1.26.4",
+    "pillow_version": "12.1.1",
+    "resize": "PIL.Image.resize((64, 64)) with library default resampling",
+    "source_feature_schema": "{'observation.images.image': Image(mode=None, decode=True, id=None), 'observation.state': Sequence(feature=Value(dtype='float32', id=None), length=8, id=None), 'action': Sequence(feature=Value(dtype='float32', id=None), length=7, id=None), 'episode_index': Value(dtype='int64', id=None), 'frame_index': Value(dtype='int64', id=None), 'task_index': Value(dtype='int64', id=None)}",
+    "verifier_source_sha256": "9dc1c6d643d318afa2069c5244079d198beb3b7a20eb049e28f9e7103f887894"
+  },
+  "limits": {
+    "expected_cache_frames": 52970,
+    "max_cache_frames": 100000,
+    "mismatch_example_limit": 20,
+    "source_extra_probe_records": 1,
+    "source_records_read_max": 52971
+  },
+  "metadata": {
+    "dataset_to_official_task": {
+      "0": 6,
+      "1": 4,
+      "2": 5,
+      "3": 7,
+      "4": 0,
+      "5": 3,
+      "6": 8,
+      "7": 1,
+      "8": 2,
+      "9": 9
+    },
+    "file": "meta/tasks.parquet",
+    "language_set_matches_official": true,
+    "repository": "lerobot/libero_spatial_image",
+    "revision": "d86c0b94922572b3b657e1d1a3d01f0952ddeb46",
+    "sha256": "90ef6a4278e2f2307d64f1649ecd4f84ee481cff5007f15d8683f1f9cc917af3"
+  },
+  "schema": "xvla-cache-provenance-v1",
+  "source": {
+    "canonical_content_sha256": "8755623bbaa9e7c691bc19c49b8fa62175d2495a1670b68b4813f36ddd58b186",
+    "content_hashes_match": true,
+    "has_additional_frame_after_cache": false,
+    "repository": "lerobot/libero_spatial_image",
+    "revision": "d86c0b94922572b3b657e1d1a3d01f0952ddeb46",
+    "split": "train"
+  },
+  "suite": "libero_spatial",
+  "verified": true
+}

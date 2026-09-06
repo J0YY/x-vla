@@ -1,1174 +1,651 @@
-\documentclass[11pt]{article}
+\documentclass{article}
 
 % ==========================================================================
-% chi-VLA: Fully Tensor-Decomposable Vision-Language-Action Models
-% Compile: pdflatex chi-vla.tex  (twice, for references)
+% chi-VLA, NeurIPS 2026 VLM4RWD workshop submission
+% Compile: pdflatex -interaction=nonstopmode chi-vla.tex  (twice)
 % ==========================================================================
 
-\usepackage[margin=1in]{geometry}
+\PassOptionsToPackage{numbers,sort&compress}{natbib}
+\usepackage[dblblindworkshop]{neurips_2026}
+\workshoptitle{Grounded and Faithful Vision-Language Models for Real-World Deployment (VLM4RWD)}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
-\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
-\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue,hypertexnames=false]{hyperref}
+\usepackage{url}
 \usepackage{float}
-
+\usepackage{microtype}
 \newcommand{\chivla}{$\chi$-VLA}
-\newcommand{\chivit}{$\chi$-ViT}
+\newcommand{\R}{\mathbb{R}}
 
-\title{\textbf{Convertibility Is Nearly Free:}\\[0.2em]
-\textbf{A Capable, Fully Tensor-Decomposable Vision-Language-Action Model}\\[0.4em]
-\large Convertibility is nearly free for language models, but not automatically for
-multimodal ones. We recover it: multimodal action decoding and rational per-instance
-normalization within the (rational) tensor-network class, with weight-based interpretability
-for free}
+\title{\textbf{A Capable, Fully Tensor-Decomposable}\\[0.15em]
+\textbf{Vision-Language-Action Policy}\\[0.35em]
+\large Exact rational conversion, protocol-aligned control, and weight-derived analysis}
 \author{}
-\date{\today}
+\date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-A line of work replaces every nonlinearity in a network with bilinear/polynomial
-operations, so the whole learned map is a single tensor network that can be decomposed, and interpreted, directly from its weights. The unspoken price is \emph{capability}: the
-operations a capable policy needs but a polynomial cannot express, multimodal action
-decoding, per-instance normalization, seem to force a softmax, a sampler, or an
-input-dependent division that leaves the tensor-network class. This tax was already shown to
-be small for \emph{language} models, whose sole output nonlinearity is a categorical softmax
-that lives outside the learned map as a decode, but it does \emph{not} transfer automatically
-to multimodal policies, whose output is a continuous, jointly multimodal action distribution
-rather than a categorical next-token pick. We show the tax is nonetheless largely recoverable,
-and build \chivla, a Vision-Language-Action policy (pixels $+$ instruction $\to$ robot actions)
-whose learned blocks admit a fully tensor-decomposable polynomial or rational configuration.
-\textbf{(1) Multimodal control without leaving the tensor network.} If the learned action
-\emph{distribution} is kept in-graph and polynomial and only the \emph{decode} is moved
-outside (a routing sign, exactly the status of OpenVLA's external argmax), a genuinely
-multimodal action head can be built \emph{only} from CP cores, addressing the fact that a
-linear-mean head is an invalid ``average of valid behaviours'' wherever the demonstrations
-are multimodal ($\sim$$40\%$ of states, which we measure). Such a head drives non-trivial
-end-to-end closed-loop control in the LIBERO-Object simulator. At our small, from-scratch
-scale we make \emph{no} claim that the multimodal head outperforms the linear-mean head
-because their seed ranges overlap under matched evaluation. The contribution is
-representational, that a multimodal action distribution can be carried and controlled
-entirely in-graph. \textbf{(2) Per-instance normalization in the rational tensor-network
-class.} Mean-square normalization folds \emph{exactly} in projective (numerator,
-denominator) coordinates into a ratio $P(x)/Q(x)$ of polynomial tensor networks, verified
-to $10^{-14}$. A fixed rational approximation to inverse square root gives an RMS-like
-per-token operator within the same rational class. Together (1)--(2) recede both inherently-nonlinear costs
-behind one principle: \emph{keep the learned object in-graph and polynomial/rational. Decode
-outside.} \textbf{(3) Interpretability comes for free, coherence is bought by topology.}
-The exact weight-derived orthogonalize--diagonalize--truncate (ODT) basis is causally faithful
-(matching PCA and integrated gradients, far exceeding random on deletion/insertion) and
-survives attention. Whether its atoms are \emph{human-coherent} is set by topology, not
-convertibility (spatial-locality-preserving models reach $\sim$$3.5\times$ random-baseline
-locality), confirming and, with interventions, matched capability, and a policy
-bond-placement principle, extending prior bilinear-interpretability work. Honest scope: the
-interpretability payoff is a causal, rankable, topology-tunable basis and a locality
-\emph{metric}, not yet a gallery of nameable features. Our strongest closed-loop checkpoint
-reaches $94.2\%\pm1.2\%$ on eight of ten LIBERO-Object tasks, using a $600$-step cap and
-per-token RMS normalization, its one remaining non-foldable operator. Replacing that operator
-with the rational per-instance norm and retraining from scratch makes every learned site a
-polynomial or rational tensor primitive by construction. This model reaches
-$\mathbf{94.5\%}$ ($189/200$) on all ten LIBERO-Object tasks in one seed. No capability loss
-is visible in this point estimate, although the per-token and rational evaluations differ in
-suite coverage and seed count. The OpenVLA study reports $88.4\%\pm0.8\%$ for OpenVLA and
-$92.5\%\pm0.7\%$ for Diffusion Policy over all ten tasks with a $280$-step cap
-\cite{openvla}. Our evaluation uses a looser $600$-step cap and fewer trials, so we make no
-state-of-the-art claim. A materialized whole-policy rational export also remains to be
-verified. The result establishes the narrower claim that rational tensor construction is
-compatible with competitive closed-loop control.
+Tensor decomposition can expose low-rank structure in a learned interaction table, but softmax,
+ordinary activations, and square-root normalization obstruct direct conversion of conventional
+robot policies. We introduce \chivla, a compact vision-language-action policy whose learned map
+uses only linear, bilinear, and rational operations. Its checkpoint therefore defines an explicit
+rational tensor program. A runtime audit of the seed-$0$ $20.1$M ViT checkpoint finds no
+incompatible learned operation, and weight-derived reconstructions reproduce deployed branches
+near the float32 precision floor. Across three independently trained policies, closed-loop
+LIBERO-Object success is $85.3\%\pm4.6\%$ over $500$ canonical trials per checkpoint, while a
+fixed three-pass prediction-mean ensemble reaches $93.4\%$. In a separate same-recipe experiment,
+three joint checkpoints spanning $40$ familiar LIBERO tasks reach $70.35\%\pm1.32\%$ task-macro
+success, compared with $69.12\%\pm2.33\%$ for conventional controls differing by only $0.006\%$
+in parameter count. Their frozen ensemble reaches $74.75\%$, and an equal-update seed-$0$ joint
+checkpoint retains $95.16\%$ of four suite specialists' pooled success. Prospectively frozen
+paired tests further show bounded familiar-task instruction necessity. Correct instructions
+succeed on $82.3\%$ of checkpoint-state pairs versus $24.0\%$ for a co-present control, and
+zeroing only post-lookup token vectors reduces success from $87.7\%$ to $21.0\%$ on disjoint
+episodes. Finally, exact layerwise coefficient reconstructions extend through learned attention,
+and an independent $48$-input sequential replay reaches the action output with worst relative
+error $3.9822\times10^{-7}$. These results establish capable familiar-task control and direct
+checkpoint-native structural access. They do not establish unseen-task generalization,
+counterfactual goal following, validated coefficient editing, or a compact input-general symbolic
+decomposition of the full policy.
 \end{abstract}
 
 % ============================================================================
 \section{Introduction}
 % ============================================================================
 
-Interpreting a large policy is hard largely because the network is not
-compositional. Nonlinear operations such as the softmax in attention, the smooth
-activation in an MLP, and layer normalization prevent us from rewriting the model
-as a single algebraic formula, so we are forced to study its behaviour on data
-rather than its weights directly.
+Modern robot policies can work well while remaining difficult to inspect. A checkpoint contains
+millions of learned numbers, but it does not directly reveal which combinations of image regions,
+instruction tokens, and robot state produce an action. Analysts therefore usually collect
+activations on a dataset and fit a separate probe. That can identify correlations, but it leaves
+open whether the same structure is present in the weights and whether it causes behavior.
 
-A recent line of work argues that this is a design choice, not a necessity. If
-every learned operation is kept polynomial in the activations, meaning it is built
-only from linear maps, element-wise multiplications, additions, fixed masks and
-permutations, learned constants, and fixed scalar or diagonal rescalings, then the
-model is a structured polynomial. Once token identities are written as one-hot
-vectors, that polynomial is a single multilinear object, commonly called a tensor
-network, and tensor networks can be decomposed, ranked, and truncated using tools
-from numerical linear algebra applied to the weights alone.
+Tensor decomposition offers a different analysis surface. A tensor is a multidimensional table,
+and a decomposition rewrites that table as a sum of simpler low-rank factors, much as a matrix
+factorization finds dominant directions in a matrix. If a network is built from additions,
+multiplications, and ratios of polynomials, its weights define an explicit table of input
+interactions. Decomposing that table can rank the combinations the model is constructed to use.
+By \emph{fully tensor-decomposable}, we mean that every learned block preserves this algebraic
+form. This is an operator-closure claim, not a claim that we materialize one compact end-to-end
+coefficient tensor. Its degree and representation size grow rapidly with depth. For example, one
+coefficient can connect an image coordinate, an instruction coordinate, and an action coordinate.
+Factoring the coefficient table ranks high-energy cross-modal interactions directly from the
+checkpoint without first fitting an activation probe. Those factors are candidate structure, not
+automatically human-readable concepts or causal explanations. The aim is not merely compression.
+It is a direct path from parameters to candidate mechanisms that can be tested by intervention
+\cite{pearce,chinets}.
 
-\paragraph{Why the multimodal case is the hard one.} Prior tensor-pure work established that
-convertibility is nearly free for \emph{language} models \cite{riggs,chinets}. A language
-model's only output nonlinearity is the categorical softmax, and that softmax is a
-\emph{decode}: linear logits go in, an $\arg\max$ or a sample comes out, and the pick already
-lives outside the learned map. Making the rest of the network polynomial therefore costs almost
-nothing, because the one hard operation was never in the tensor network to begin with. This
-does not transfer automatically to a multimodal action policy. Its output is not a categorical
-next-token pick but a \emph{continuous, jointly multimodal} distribution over an action chunk,
-and there the naive linear-plus-external-decode recipe degenerates to the conditional mean, an
-invalid average of valid behaviours (reach-left averaged with reach-right is a collision). Nor
-is per-instance normalization as benign as in a language stack, because it interacts with the
-degree-two multiplicative amplification of a perception-heavy policy. So the low cost of
-convertibility, demonstrated for language, is \emph{not} inherited by multimodal models. The
-point of this paper is that it can be recovered there too, by keeping the multimodal
-distribution itself in-graph and polynomial (or rational) and moving only the final selection
-out-of-graph.
+Robot control makes this goal useful and difficult. Visual shortcuts can produce high benchmark
+success while ignoring the instruction, and small action errors compound in closed loop.
+Standard softmax, nonlinear activations, and square-root normalization break the explicit
+polynomial form. Continuous actions also cannot rely on the external categorical sampling used
+by a language model. A practical design must recover these functions without losing precise
+control.
 
-This paper asks a sharper question than the line of work usually does: \emph{what does
-tensor-decomposability actually cost, and what does it buy?} The standing worry is that
-forcing every operation to be polynomial trades away real capability for the promise of
-interpretability. We find the trade is far cheaper than assumed: decomposability buys a
-\emph{causal} interpretable basis essentially for free. Its \emph{coherence} is a matter of
-topology, not convertibility, and, contrary to the assumed capability tax, the two
-inherently nonlinear operations a capable policy needs (multimodal action decoding and
-per-instance normalization) turn out to be \emph{recoverable} within the (rational)
-tensor-network class. Our contributions are four, established across substrates of increasing
-difficulty (image classifiers, a softmax-free vision transformer, a tensor-decomposable
-policy, and its closed-loop control):
+We study the narrower but testable question:
+
+\begin{quote}
+\emph{Can a compact VLA retain strong closed-loop capability when every deployed learned
+operation is polynomial or rational, while supporting exact weight analysis?}
+\end{quote}
+
+We test capability and structural analysis in two fully rational encoder instantiations. The same
+three ViT checkpoints establish closed-loop capability and support the exact attention audit. A
+separate convolutional instantiation tests whether the structural certificates transfer across
+visual encoders.
+
+Our contributions are:
 
 \begin{enumerate}
-  \item \textbf{Multimodal control without leaving the tensor network.} Keeping the learned
-        action \emph{distribution} in-graph and polynomial and moving only the \emph{decode}
-        outside, a genuinely multimodal action head can be built only from CP cores, since a
-        linear-mean head is invalid wherever the demonstrations are multimodal ($\sim$$40\%$
-        of states, measured). Such a head achieves non-trivial closed-loop success on the
-        LIBERO-Object simulator. At our small, from-scratch scale the product and linear
-        head seed ranges overlap, so we make no superiority claim. The contribution is that
-        a multimodal action distribution is representable and controllable entirely in-graph.
-  \item \textbf{Per-instance normalization in the rational tensor-network class.} Carried in
-        projective (numerator, denominator) coordinates, mean-square normalization folds
-        \emph{exactly} into $P(x)/Q(x)$ (both polynomial/CP), verified to $10^{-14}$. A fixed
-        rational inverse-square-root approximation gives an RMS-like operator without a
-        frozen scalar. Contributions 1--2 recede both inherently
-        nonlinear costs behind one principle: \emph{learned object in-graph. Decode outside}.
-  \item \textbf{Interpretability is free. Coherence is bought by topology.} The exact
-        weight-derived ODT basis is causally faithful by deletion/insertion (matching PCA and
-        integrated gradients, far exceeding random) and survives attention. Whether its atoms
-        are human-coherent is set by topology, not convertibility (spatial-locality-preserving
-        topology reaches $\sim$$3.5\times$ random-baseline locality, at no accuracy cost). We
-        add interventions, matched-capability controls, and depth-scaling to prior bilinear
-        interpretability, and are honest that this coherence is a \emph{metric}, not yet a
-        gallery of nameable features.
-  \item \textbf{For a policy, mechanisms live behind the attention.} The action-relevant
-        quantity is constructed by attention and readable only at a post-attention bond, and
-        decoding it there is not the same as controlling it.
+  \item We construct a complete VLA from tensor-compatible primitives. A rational normalization
+        supplies input-specific scaling without leaving the rational function class.
+  \item We evaluate three fully rational $20.1$M ViT policies on $1{,}500$ canonical
+        LIBERO-Object trials. They reach $85.3\%\pm4.6\%$, while a fixed prediction-mean
+        ensemble reaches $467/500=93.4\%$. Three jointly trained checkpoints average
+        $70.35\%\pm1.32\%$ over $40$ familiar tasks, $1.23$ points above matched
+        conventional controls. Their fixed ensemble reaches
+        $74.75\%$. A frozen seed-$0$ comparison retains $95.16\%$ of four suite specialists.
+  \item We mechanically audit the seed-$0$ $20.1$M ViT checkpoint and explicitly reconstruct deployed
+        rational and bilinear branches from their weights.
+  \item We extend exact weight-derived decomposition through individual attention layers with a
+        reduced-Gram calculation that avoids materializing the full high-order tensor. In a
+        separate closed-loop audit, learned rank-$96$ visual projectors retain $95.2$--$98.2\%$ of
+        baseline successes, versus $3.3$--$13.6\%$ for random projectors.
 \end{enumerate}
 
-\noindent\textbf{Relation to prior tensor-interpretability work.} Dooms et al.
-\cite{chinets} give tree-structured ODT as a \emph{compression} result. Pearce et al.\
-\cite{riggs} and D\'eh\'erand \cite{deherand} \emph{assert} that architecture affects
-the coherence of bilinear eigen-features on shallow convolutional models, without an
-intervention. Our delta is to (i) separate \emph{causal} from \emph{coherent} as an
-explicit, tested axis with interventions and standard faithfulness baselines, (ii)
-establish topology as the coherence lever at matched capability, with depth-scaling
-and cross-dataset de-risking, and (iii) introduce the \emph{bond-placement} principle
-for policies. The vehicle for the policy substrate is \chivla, a Vision-Language-Action
-model (mapping camera images and a language instruction to robot actions) that we
-build to be fully tensor-decomposable end to end, along the modular OpenVLA
-\cite{openvla} skeleton, whose four learned stages each have a published polynomial
-replacement:
-
-\begin{itemize}
-  \item \textbf{Bilinear feed-forward layer} (Riggs \cite{riggs}). Replace the
-        gated MLP $D(\mathrm{swish}(Lx)\otimes Rx)$ with the activation-free
-        $D[(L\bar x)\otimes(R\bar x)]$, where $\otimes$ is the element-wise
-        (Hadamard) product and $\bar x$ is defined below. This is exactly a
-        low-rank factorization (a CP, or canonical polyadic, factorization) of a
-        third-order weight tensor.
-  \item \textbf{Softmax-free bilinear attention} (Riggs \cite{riggs}). Replace the
-        softmax attention pattern with the element-wise product of two separate
-        learned query-key score matrices.
-  \item \textbf{Foldable normalization} (Dooms et al. \cite{chinets}). Normalize
-        during training by dividing by a running average magnitude (a single
-        scalar), then after training freeze that scalar and multiply it into the
-        next weight matrix, so the deployed model contains no division at all.
-  \item \textbf{Linear action head}. Replace the discretized action tokens and
-        language-model-style decoding with a direct linear map from learned
-        action-query states to a continuous action vector.
-\end{itemize}
-
-We assemble these along the OpenVLA skeleton, keeping only genuinely non-learned
-interfaces outside the tensor-network boundary (tokenization, camera decoding, safety
-clipping, motor communication), so that \chivla's learned map from pixels and token
-identities to a continuous action is one tensor network. Two of the four stages, however,
-are \emph{not} solved by the published replacements when the policy must be capable: the
-linear action head cannot represent multimodal behaviour, and the frozen-scalar norm only
-approximates per-instance normalization. Recovering both within the tensor-network class
-(contributions 1--2), and closing the loop in simulation, is where the architecture stops
-being a mere substrate and becomes part of the contribution.
+This paper does not claim current state of the art. It also does not claim that comparable
+mechanisms are impossible to obtain from conventional policies. The empirical question is
+whether the algebraic policy makes exact weight structure directly accessible.
 
 % ============================================================================
-\section{Background: the three polynomial primitives}
+\section{A rational tensor robot policy}
+\label{sec:model}
 % ============================================================================
 
-\paragraph{The homogeneous coordinate.} Throughout, we write $\bar x = [1;x]$ for
-the input with a constant $1$ prepended. This ``homogeneous coordinate'' lets a
-bilinear layer represent not only quadratic terms but also linear terms and
-constants (a bias becomes the weight on the constant coordinate). Without it, a
-stack of $L$ multiplicative layers would be forced to produce only degree-$2^L$
-terms. With it, the network can represent every degree up to $2^L$, including the
-near-linear functions that most of a real task needs.
+\subsection{Tensor-compatible primitives}
 
-\paragraph{Bilinear feed-forward layer (a CP-factorized cubic tensor).} With
-$L,R\in\mathbb{R}^{r\times(d+1)}$ and $D\in\mathbb{R}^{d\times r}$,
+Each primitive below replaces a familiar transformer component while keeping an explicit
+coefficient description. Linear maps contribute first-order terms. Multiplying learned linear
+projections creates higher-order interactions whose coefficients remain functions of the
+weights, rather than an unstructured nonlinear black box.
+
+\paragraph{Homogeneous coordinate.}
+We write $\bar x=[1;x]$. The constant coordinate allows a multiplicative layer to represent
+bias, linear, and quadratic terms in one contraction.
+
+\paragraph{Bilinear feed-forward block.}
+For $L,R\in\R^{r\times(d+1)}$ and $D\in\R^{d\times r}$,
 \begin{equation}
-\mathrm{BFFN}(x) = D\big[(L\bar x)\otimes(R\bar x)\big],
+\mathrm{BFFN}(x)
+=D\left[(L\bar x)\odot(R\bar x)\right],
 \qquad
-y_o = \sum_{i,j}\Big(\underbrace{\textstyle\sum_r D_{or}L_{ri}R_{rj}}_{T_{oij}}\Big)\bar x_i \bar x_j .
+y_o=\sum_{i,j}\left(\sum_{\rho}D_{o\rho}L_{\rho i}R_{\rho j}\right)\bar x_i\bar x_j .
+\label{eq:bffn}
 \end{equation}
-The middle expression makes the tensor structure explicit: the layer is exactly a
-third-order weight tensor $T\in\mathbb{R}^{d\times(d+1)\times(d+1)}$ contracted
-twice with the input. The factored form uses about $3dr$ parameters instead of the
-$d^3$ of the dense tensor, which is why it is called a CP factorization (a sum of
-$r$ rank-one terms).
+The inner sum is an order-three table indexed by output coordinate and two input coordinates.
+The three matrices give its CP factorization, the tensor analogue of a low-rank matrix
+factorization, without materializing every table entry.
 
-\paragraph{Softmax-free bilinear attention.} Each head forms two query-key systems
-$A_1=Q_1K_1^\top$ and $A_2=Q_2K_2^\top$ and one value matrix $V$. The attention
-pattern is their element-wise product, with no softmax:
+\paragraph{Softmax-free bilinear attention.}
+Each head forms two query-key systems and one value stream:
 \begin{equation}
-Y = C\big[M \otimes (A_1\otimes A_2)/s\big]V .
+Y=C\left[M\odot(Q_1K_1^\top)\odot(Q_2K_2^\top)/s\right]V .
+\label{eq:attention}
 \end{equation}
-Here $M$ is a fixed mask (for example, lower-triangular for causal models), $C$ is
-a fixed per-row rescaling $C_{ii}=1/\sqrt{n_i}$ with $n_i$ the number of visible
-keys, and $s$ is a fixed scale. Because there is no softmax, the whole operation
-is polynomial in the activations. It can be evaluated three mathematically
-identical ways: the explicit $N\times N$ pattern. A ``Khatri-Rao'' form that
-avoids the $N\times N$ matrix by building row-wise Kronecker features, and a
-causal prefix-scan. We verified all three agree to $10^{-5}$ in single precision.
+Here $M$ is a fixed causal mask, $C$ is fixed row scaling, and $s$ is fixed. All learned
+query, key, value, and output maps are linear. Equation~\ref{eq:attention} is therefore a
+polynomial in its input activations. Unlike softmax attention, every multiplicative interaction
+can be expanded into coefficients determined by the trained weights.
 
-\paragraph{Foldable normalization.} During training we divide activations by a
-single running scalar equal to their average root-mean-square magnitude. After
-training we re-estimate that scalar on a calibration set, freeze it, and multiply
-it into the following weight matrix ($W' = W/c$ before a linear map, or
-$L'=L/c,\,R'=R/c$ before a bilinear layer). A frozen scalar division is a fixed
-rescaling, so the deployed model has no operation whose divisor depends on the
-input. This is what we mean by ``fold'': the normalization module disappears into
-the weights.
+\paragraph{Rational per-instance normalization.}
+RMS normalization contains an input-dependent square root. Let
+$m(x)=d^{-1}\sum_{j=1}^{d}x_j^2+\epsilon$, and let $s_0>0$ be the frozen running mean-square
+scale. We deploy a fixed rational approximation $r(v)=P(v)/Q(v)$ to $v^{-1/2}$ over
+$v\in[0.1,10]$:
+\begin{equation}
+v=\frac{m(x)}{s_0}, \qquad
+\mathrm{RNorm}(x)=\frac{x}{\sqrt{s_0}}\,r(v).
+\label{eq:rnorm}
+\end{equation}
+Here \emph{rational} means a ratio of two polynomials. Projective coordinates carry each
+activation as a numerator-denominator pair $(N,D)$ representing $N/D$. Linear, bilinear,
+residual, and normalization operations update this pair. The model therefore keeps
+input-specific rescaling while remaining exactly representable as a rational tensor network.
+Training and deployment use $r$ itself. The exactness claims below therefore concern faithful
+evaluation of the deployed rational computation, not uniform agreement with RMSNorm.
+Appendix~\ref{app:rational-scope} certifies pole-free denominators and deployed arithmetic
+fidelity while retaining that boundary.
 
-% ============================================================================
-\section{From OpenVLA to $\chi$-VLA}
-% ============================================================================
-
-Figure~\ref{fig:arch} contrasts the two pipelines and Table~\ref{tab:swaps} lists
-the block-level replacements. The high-level flow is deliberately preserved, while
-every learned internal block is replaced by a polynomial one.
-
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.84\textwidth]{pipeline.png}
-\caption{OpenVLA (left) versus \chivla\ (right), stage by stage. Green boxes are
-the polynomial (tensorized) replacements. Blue boxes are the non-polynomial
-originals they replace. Grey boxes are kept unchanged or lie outside the
-tensor-network boundary. Patch embedding and the tokenizer are already linear and
-need no change. The softmax, smooth-activation, and layer-normalization blocks
-(the dual vision encoders, the MLP projector, and the Llama~2 backbone) and the
-discrete action decoder are each swapped for a polynomial equivalent with foldable
-normalization. Camera decoding, string tokenization, and safety clipping stay
-external.}
-\label{fig:arch}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\small
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}lll@{}}
-\toprule
-\textbf{Ordinary component} & \textbf{\chivla\ replacement} & \textbf{Algebraic form} \\
-\midrule
-Smooth activation (ReLU, GELU) & element-wise product of two linear maps & $(Lx)\otimes(Rx)$ \\
-Gated MLP & bilinear (CP) feed-forward & $D[(L\bar x)\otimes(R\bar x)]$ \\
-Softmax attention & product of two score matrices & $C[M\otimes(A_1\otimes A_2)/s]V$ \\
-Layer/RMS normalization & foldable scalar \emph{or} rational per-instance norm & $x/c$ (frozen scalar) \emph{or} $P(x)/Q(x)$ (rational, exact) \\
-MLP projector & cross-bilinear (CP) projector & $W_s s{+}W_m m{+}D_p[(L_s\bar s)\otimes(R_m\bar m)]$ \\
-DINOv2 / SigLIP encoders & two polynomial \chivit s & (all blocks bilinear) \\
-Llama~2 backbone & polynomial transformer & (all blocks bilinear) \\
-Discrete action tokens (unimodal) & linear continuous-action head & $\hat a_k = W_a h_k + b_a$ \\
-Discrete action tokens (multimodal) & product-routing mixture (CP cores) & $a = c_0(h){+}\sum_g \mathrm{sign}(g_g(h))\,c_g(h)$ \\
-Argmax / softmax / sampling decode & out-of-graph controller op & sign / argmax / threshold, applied outside \\
-Bias terms & constant (homogeneous) coordinate & $\bar x = [1;x]$ \\
-\bottomrule
-\end{tabular}
-}
-\caption{Component-level replacements. A bar denotes the homogeneous coordinate
-$\bar x=[1;x]$, $\otimes$ is the element-wise product.}
-\label{tab:swaps}
-\end{table}
-
-% ============================================================================
-\begin{figure}[t]
-\centering
-\resizebox{\textwidth}{!}{%
+\resizebox{0.96\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\footnotesize,
-  box/.style={draw, rounded corners, align=center, minimum height=6.5mm, inner sep=3pt},
-  inp/.style={box, fill=gray!12},
-  prim/.style={box, fill=green!12},
-  head/.style={box, fill=blue!10},
-  dec/.style={box, fill=orange!18},
-  arr/.style={-{Latex[length=1.8mm]}, thick, gray!60!black},
-  node distance=4mm and 8mm,
+  box/.style={draw,rounded corners,align=center,minimum height=7mm,inner sep=3pt},
+  inp/.style={box,fill=gray!12},
+  prim/.style={box,fill=green!12},
+  output/.style={box,fill=blue!10},
+  arr/.style={-{Latex[length=1.8mm]},thick,gray!65!black},
+  node distance=6mm and 7mm,
 ]
-% inputs (left)
-\node[inp] (img) {pixels ($\times 1$ or $\times 2$)};
-\node[inp, below=of img] (lang) {instruction / state / embodiment};
-\node[inp, below=of lang] (aq) {action queries};
-% encoders
-\node[prim, right=of img] (vit) {$\chi$-ViT $\times 1$ or $\times 2$\\{\scriptsize bilinear patch-embed,}\\{\scriptsize bilinear attn + FFN, norm}};
-\node[prim, right=of vit] (proj) {optional cross-bilinear\\CP projector};
-\node[prim, right=of lang] (emb) {linear / affine\\embeddings};
-% backbone (spanning)
-\node[prim, right=8mm of proj, minimum width=34mm] (bb) {joint $\chi$-transformer $\times N$\\{\scriptsize bilinear attention $\cdot$ bilinear FFN}\\{\scriptsize $\cdot$ foldable / rational norm}};
-% action-query states
-\node[box, fill=green!12, below=6mm of bb] (h) {action-query states $h_t$};
-% multimodal head
-\node[head, below=6mm of h] (mh) {multimodal action head\\{\scriptsize $a=c_0(h)+\sum_g \mathrm{sign}(g_g(h))\,c_g(h)$}\\{\scriptsize center + gated factors: all CP cores}};
-% decode (outside)
-\node[dec, below=6mm of mh] (dec) {\textbf{out-of-graph decode}\\{\scriptsize sign routing / argmax / threshold $\to$ action chunk}};
-% arrows
-\draw[arr] (img) -- (vit); \draw[arr] (vit) -- (proj); \draw[arr] (proj) -- (bb);
-\draw[arr] (lang) -- (emb); \draw[arr] (emb) -- (bb);
-\draw[arr] (aq.east) -- ++(3mm,0) |- (bb.west);
-\draw[arr] (bb) -- (h); \draw[arr] (h) -- (mh); \draw[arr] (mh) -- (dec);
-% in-graph shaded boundary around everything except the decode
+\node[inp] (img) {RGB image};
+\node[inp, below=of img] (txt) {instruction};
+\node[inp, below=of txt] (state) {robot state};
+\node[prim, right=of img] (vision) {rational $\chi$ vision encoder\\bilinear attention and FFN};
+\node[prim, right=of txt] (embed) {linear embeddings};
+\node[prim, right=9mm of vision, minimum width=34mm] (joint) {rational joint transformer\\eight bilinear blocks};
+\node[output, right=of joint] (action) {linear action queries\\$8\times7$ action chunk};
+\draw[arr] (img) -- (vision);
+\draw[arr] (txt) -- (embed);
+\draw[arr] (state) -- (embed);
+\draw[arr] (vision) -- (joint);
+\draw[arr] (embed) -- (joint);
+\draw[arr] (joint) -- (action);
 \begin{scope}[on background layer]
-\node[draw=green!50!black, dashed, rounded corners, fit=(vit)(proj)(emb)(bb)(h)(mh),
-      inner sep=4mm, label={[green!45!black,font=\scriptsize\bfseries]above:in-graph: one foldable, ODT-analyzable (rational) tensor network}] {};
+\node[draw=green!50!black,dashed,rounded corners,fit=(vision)(embed)(joint)(action),
+      inner sep=4mm,label={[green!40!black,font=\scriptsize\bfseries]above:one deployed rational tensor program}] {};
 \end{scope}
-\end{tikzpicture}
-}
-\caption{\textbf{$\chi$-VLA internal dataflow and the tensor-network boundary.} In the
-general two-view configuration, every learned block, both vision $\chi$-ViTs, the
-cross-bilinear CP fusion projector, the
-linear/affine embeddings, the joint $\chi$-transformer (bilinear attention $+$ bilinear FFN
-$+$ foldable-scalar or exact rational per-instance normalization), and the multimodal action
-head (a mixture of CP cores), is a polynomial or rational tensor primitive, so the whole
-map folds into a single ODT-analyzable tensor network (dashed box). Only the final
-\emph{decode} (sign routing for the mode, or an argmax/threshold) is a non-polynomial
-controller op, applied \emph{outside} the network, the same status OpenVLA gives its
-argmax. The learned action \emph{distribution} stays in-graph. Only the selection leaves it.
-The $94.2\%$ checkpoint uses the simpler single-view path, no fusion projector, and a linear
-action head, detailed in Table~\ref{tab:closedloop-config}.}
-\label{fig:arch-detail}
+\end{tikzpicture}}
+\caption{\textbf{Deployed \chivla\ map.} The strongest checkpoints use one vision stream and a
+linear continuous-action head. Every learned component inside the dashed boundary is linear,
+bilinear, or rational.}
+\label{fig:architecture}
 \end{figure}
 
-\paragraph{Foldability is achievable but requires care (details in
-Appendix~\ref{app:stability}).} Making the scalar (foldable) normalization stable inside a
-deep degree-two stack requires keeping residual branches near the identity (small learned
-gains, initialized at $0.01$) and distilling from a stable per-token teacher. The resulting
-student matches its teacher and folds to a normalization-free graph to $10^{-6}$ (fp32) /
-$10^{-12}$ (fp64). Per-instance normalization need not even be approximated by a frozen
-scalar: carried in projective (numerator, denominator) coordinates it folds \emph{exactly}
-as a rational tensor network $P(x)/Q(x)$ (both $P,Q$ polynomial/CP), verified to $10^{-14}$
-(\S\ref{sec:discussion}), so the substrate spans the rational, not merely polynomial,
-tensor-network class. This is an engineering prerequisite, orthogonal to the interpretability
-findings that follow.
+\subsection{Architecture and training}
+
+Both encoder variants follow the high-level VLA sequence of visual encoding, language and state
+embedding, joint processing, and action decoding \cite{openvla}. They use a $64\times64$
+agent-view image, an eight-dimensional robot state, a 26-token task vocabulary, and eight
+action-query tokens. Both share a width-$384$, eight-block, twelve-head joint backbone and a
+linear head that maps each action-query state to seven continuous action dimensions. The
+$20.1$M ViT uses four bilinear-attention vision blocks and has $20{,}137{,}352$ learned
+parameters. It supplies the closed-loop capability, runtime operator census, exact-attention,
+and reduced-Gram results. The $19.2$M convolutional variant instead uses three stride-$2$
+bilinear convolution stages that produce an $8\times8$ token grid. Three separate convolutional
+files receive the joint-attention and rational-normalizer certificates reported in
+Appendix~\ref{app:rational-scope}.
+
+Training uses $66{,}984$ demonstration frames, $40{,}000$ AdamW updates, batch size $256$,
+cosine decay, bfloat16 arithmetic, and an exponential moving average. Closed-loop evaluation
+uses a $180^\circ$ camera rotation to match the demonstration convention, canonical LIBERO
+initial states, and fail-loud checks that verify every requested state was loaded.
+
+\subsection{Mechanical certificate on the seed-0 20.1M ViT checkpoint}
+
+Architecture definitions can differ from deployed code. We therefore audit the deployed seed-$0$
+20.1M ViT checkpoint at runtime and reconstruct representative operations from saved weights.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{../paper_figures/appendix_decomposability_audit.pdf}
+\caption{\textbf{Mechanical audit of the seed-0 20.1M ViT rational checkpoint.} The runtime path invokes
+$112$ linear maps, $74$ rational normalizers, two embeddings, and one linear patch projection.
+No softmax, standard activation, or ordinary normalization is present. Reconstruction errors
+are measured over $54{,}784$ real activation rows.}
+\label{fig:audit}
+\end{figure}
+
+The normalization reconstruction has maximum absolute error $1.64\times10^{-6}$. A bilinear
+FFN reconstruction has median relative error $1.40\times10^{-7}$. These residuals are bounded
+by the deployed module's float32 statistic. The audit certifies operator membership and local
+reconstruction. It does not materialize one compact polynomial for the full eight-layer
+transformer.
 
 % ============================================================================
-\section{Recovering capability inside the tensor network}
+\section{Protocol-aligned closed-loop capability}
 \label{sec:capability}
 % ============================================================================
 
-Two operations a capable policy needs are inherently nonlinear, and a naive bilinear
-replacement either collapses (the action head) or only approximates (normalization). This
-section gives the constructions that recover both while keeping the learned map a single
-tensor network, with the mathematics of how each works. The organizing principle is a
-boundary. The learned \emph{distribution} stays in-graph and polynomial or rational, and only
-the final \emph{decode} (a selection) is a controller operation outside the network, exactly
-the status OpenVLA gives its argmax.
+\subsection{Evaluation protocol}
 
-\subsection{Why a linear action head collapses}
-The default head is a linear map $\hat a = W_a h + b_a$ of the post-attention action-query
-state $h$, trained by mean-squared error. For a fixed observation the minimizer of
-$\mathbb{E}\,\|a-\hat a\|^2$ is the conditional mean $\mathbb{E}[a\mid h]$. When the
-demonstrations are multimodal, meaning the same $h$ admits several valid actions, that mean is
-an average of valid behaviours and is usually itself invalid. The gripper command
-$\in\{-1,+1\}$ averages to $\approx 0$ (it never commits to a grasp), and two arm approaches
-average to a path between them. On LIBERO-Object about $40\%$ of near-identical-observation
-neighbourhoods are genuinely bimodal (Section~\ref{sec:discussion}), so this is the common
-case, not a corner case.
-
-\subsection{The product-routing multimodal head}
-Read the pooled action-query state $h\in\mathbb{R}^{d}$. Define one \emph{center} core, $G$
-\emph{factor} cores, and $G$ scalar \emph{gate} cores, each the bilinear (CP) primitive
-$\mathrm{BFFN}(x)=D[(L\bar x)\otimes(R\bar x)]$ of $h$:
-\begin{equation}
-c_0(h)\in\mathbb{R}^{m}, \qquad c_g(h)\in\mathbb{R}^{m}, \qquad g_g(h)\in\mathbb{R},
-\qquad g=1,\dots,G,
-\end{equation}
-where $m=H\,d_a$ is the flattened action chunk ($H$ steps of dimension $d_a$). A binary code
-$b\in\{0,1\}^{G}$ selects an action
-\begin{equation}
-a(h,b) = c_0(h) + \sum_{g=1}^{G}(2b_g-1)\,c_g(h).
-\label{eq:zonotope}
-\end{equation}
-As $b$ ranges over $\{0,1\}^{G}$, Eq.~\eqref{eq:zonotope} traces the $2^{G}$ vertices of a
-$G$-dimensional zonotope centered at $c_0(h)$ with edge vectors $\pm c_g(h)$. It is a mixture
-of $2^{G}$ modes built from only $2G+1$ CP cores, so the number of representable modes is
-exponential in the core count. Because every core is a $\mathrm{BFFN}$, the map
-$h\mapsto\{c_0,c_g,g_g\}$ folds into the tensor network exactly, with fold error
-$\sim 4\times 10^{-16}$.
-
-\paragraph{Decode (out-of-graph).} At inference the mode is chosen by the sign of each gate,
-\begin{equation}
-\hat b_g = \mathbf{1}[\,g_g(h)>0\,], \qquad \hat a = a(h,\hat b),
-\end{equation}
-a winner-take-all controller operation outside the network. A soft average
-$\sum_b \pi_b(h)\,a(h,b)$ would re-collapse to the conditional mean, the very failure being
-escaped, so the decode commits to one mode. This is the same category of external operation as
-OpenVLA's token argmax and our gripper threshold.
-
-\subsection{Training the head without losing precision}
-Assigning each demonstration only to its best mode is high-variance and, on the majority of
-states that are effectively unimodal, less precise than a plain mean regressor. We keep
-precision with two loss-only additions. For a demonstration $a^{*}$ the best code is
-\begin{equation}
-b^{*} = \arg\min_{b\in\{0,1\}^{G}} \|a(h,b)-a^{*}\|^2,
-\end{equation}
-found by enumeration for small $G$. The loss combines a temperature-annealed soft assignment,
-a gate cross-entropy, and a distillation anchor to an auxiliary linear teacher $\mu_T(h)$:
-\begin{equation}
-\mathcal{L} = \sum_{b} w_b(\tau)\,\|a(h,b)-a^{*}\|^2
-\;+\; \lambda_{\mathrm{gate}}\,\mathrm{BCE}\!\big(g(h),\,b^{*}\big)
-\;+\; \lambda_{\mathrm{distill}}\,\|c_0(h)-\mu_T(h)\|^2 ,
-\label{eq:headloss}
-\end{equation}
-with $w_b(\tau)=\mathrm{softmax}\big(-\|a(h,b)-a^{*}\|^2/\tau\big)$ and the temperature $\tau$
-annealed from soft (a re-averaging regime that fits the mean precisely, like the linear head)
-to hard (full commitment). The distillation term pulls the mixture center onto the precise
-conditional mean on unimodal states, so the head degrades gracefully to the linear head where
-there is no multimodality and branches only where there is. Every non-polynomial operation
-(the $\arg\min$, the softmax weights, the sign decode) is confined to the loss or the decode.
-The deployed forward map is a polynomial tensor network.
-
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[
-  font=\footnotesize,
-  box/.style={draw, rounded corners, align=center, minimum height=6.5mm, inner sep=3pt},
-  prim/.style={box, fill=green!12},
-  dec/.style={box, fill=orange!18},
-  sel/.style={box, fill=blue!10},
-  arr/.style={-{Latex[length=1.8mm]}, thick, gray!60!black},
-]
-\node[box, fill=green!12] (h) {post-attention token $h$};
-\node[prim, right=14mm of h, yshift=8mm] (c0) {center $c_0(h)$};
-\node[prim, below=3mm of c0] (cg) {factors $\pm c_g(h)$};
-\node[prim, below=3mm of cg] (gg) {gates $g_g(h)$};
-\node[dec, right=12mm of gg] (sign) {$\hat b_g=\mathbf{1}[g_g{>}0]$\\{\scriptsize out-of-graph}};
-\node[sel, right=12mm of c0] (mode) {mode\\$a=c_0+\sum_g(2\hat b_g{-}1)c_g$};
-\node[box, fill=green!12, right=10mm of mode] (out) {action chunk\\$\in\mathbb{R}^{H\cdot d_a}$};
-\draw[arr] (h) |- (c0); \draw[arr] (h) |- (cg); \draw[arr] (h) |- (gg);
-\draw[arr] (gg) -- (sign);
-\draw[arr] (c0) -- (mode); \draw[arr] (cg) -| (mode);
-\draw[arr] (sign) -| (mode);
-\draw[arr] (mode) -- (out);
-\begin{scope}[on background layer]
-\node[draw=green!50!black, dashed, rounded corners, fit=(c0)(cg)(gg)(mode),
-      inner sep=3mm, label={[green!45!black,font=\scriptsize\bfseries]above:in-graph (all CP cores)}] {};
-\end{scope}
-\end{tikzpicture}
-\caption{\textbf{The product-routing multimodal action head.} From the post-attention token
-$h$, a center core, $G$ factor cores, and $G$ scalar gate cores (all bilinear CP maps) define a
-mixture over $2^{G}$ zonotope-vertex modes (Eq.~\ref{eq:zonotope}). Everything inside the
-dashed box is polynomial and folds exactly. Only the gate \emph{sign} that picks the mode is a
-non-polynomial controller operation, applied outside the network.}
-\label{fig:head}
-\end{figure}
-
-With this head the policy commits to a mode instead of averaging. In the earlier
-short-training protocol the curriculum and distillation variant reached
-$44\%\pm30\%$ over five seeds, with individual seeds from $0\%$ to $82.5\%$, while the
-linear-mean head reached about $19\%\pm15\%$ over three seeds. The ranges overlap, so these
-results establish non-trivial closed-loop control but not a reliable advantage over the
-linear head.
-
-\subsection{Exact per-instance normalization as a rational tensor network}
-\label{subsec:rationalnorm}
-The remaining inherently nonlinear component is per-instance normalization. RMS normalization
-$n(x)=x/\sqrt{\mathbb{E}[x^2]+\epsilon}$ divides by a statistic of its own input, which the
-strict polynomial scheme approximates by a frozen scalar (Appendix~\ref{app:stability}). The
-approximation is avoidable. Carry each activation in projective coordinates $(N,D)$ standing
-for the value $N/D$. A linear map acts as $(N,D)\mapsto(WN,D)$ and a bilinear core as
-$(N,D)\mapsto\big((LN)\otimes(RN),\,D^{2}\big)$, so a per-instance normalization whose divisor
-is a \emph{polynomial} of the activation (for example the mean square $\mathbb{E}[x^2]+\epsilon$,
-which has no square root) never requires a mid-network division. The whole network becomes a
-ratio $P(x)/Q(x)$ of two polynomial (CP) tensor networks. Both fold and are ODT-analyzable,
-with $Q$ the activation-energy form. A bilinear stack with per-instance mean-square
-normalization reproduces its projective fold to $10^{-14}$. This exact result applies to
-division by mean square, not to true RMS normalization. The square root in RMS is algebraic
-rather than rational. We therefore implement either the exact mean-square variant or a fixed
-rational approximation of $1/\sqrt{\cdot}$. The latter is an approximation to RMSNorm, while
-its deployed map is exactly a rational function and can be represented by a rational tensor
-network. In operator tests it differs from per-token RMSNorm by less than $1\%$ over the
-measured activation range. Retraining the complete policy with this rational operator at every
-block and attention QK normalization site reaches $94.5\%$ ($189/200$) over all ten
-LIBERO-Object tasks in one seed (\S\ref{sec:substrate}).
-
-% ============================================================================
-\section{Exact global decomposition (ODT), in depth}
-\label{sec:odt}
-% ============================================================================
-
-This section is the payoff of the whole design and we treat it carefully. An
-ordinary softmax-and-normalization policy cannot be turned into a single algebraic
-object, so it cannot be globally diagonalized. A tensor network can.
-
-\subsection{What ODT is, and why it needs a tensor network}
-
-Suppose we want to compress a network by discarding directions in one of its
-hidden spaces, keeping only the ones that matter for the output. Call the hidden
-space we are analyzing a ``bond''. The naive approach is a local one: take the
-weight matrix that reads from that bond, run a singular value decomposition (SVD),
-and keep its top directions. This is greedy and per-layer. It only sees the one
-adjacent weight matrix, not what the rest of the network does with those
-directions downstream.
-
-Orthogonalize-Diagonalize-Truncate (ODT), introduced for tree-shaped bilinear
-networks by Dooms et al. \cite{chinets}, instead ranks bond directions by their
-\emph{global} importance, accounting for the entire rest of the network, which we
-call the ``environment'' of the bond. This is only possible if the whole model is
-one multilinear object, because only then can the environment be contracted into a
-single operator whose singular directions are the true global importances. The
-three steps are:
-
-\begin{enumerate}
-  \item \textbf{Orthogonalize.} Sweep through the network and replace each weight
-  core by an isometry (an orthonormal map) times a small triangular remainder,
-  using a reduced RQ decomposition of the matricized core, pushing the remainder
-  toward the output. After this sweep each bond has an orthonormal basis, so
-  importance can be read off directly as singular values rather than being tangled
-  up with the basis.
-  \item \textbf{Diagonalize.} At a bond, form the Gram matrix of the environment,
-  $G = Q^{*}Q$, where $Q$ is the downstream map from the bond to the output. Its
-  eigenvalues are the squared global importances of the bond directions and its
-  eigenvectors are those directions.
-  \item \textbf{Truncate.} Keep the top $k$ eigenvectors, insert the projector
-  $P_k = V_kV_k^{\top}$ at the bond, and absorb it into the adjacent cores. The
-  output error is bounded by the square root of the sum of the discarded
-  eigenvalues, so the spectrum tells you in advance how much you can remove.
-\end{enumerate}
-
-\subsection{How we compute it for a bilinear chain}
-
-Our exact-decomposition model is a feed-forward bilinear network we call a
-$\chi$-MLP, chosen because a chain with no attention and no residual connection is
-a clean tree, exactly the setting ODT was designed for. After folding, it is
-\begin{equation}
-z_0 = [1;\,Ex], \qquad a_i = C_i(z_{i-1},z_{i-1}), \qquad z_i = [1;\,a_i],
-\qquad \text{logits} = W_{\text{head}}\,a_L + b,
-\end{equation}
-where $E$ is a linear input embedding, each $C_i\in\mathbb{R}^{d\times(d+1)\times(d+1)}$
-is a symmetric bilinear core recovered from the folded layer, and $C_i(z,z)$ means
-contracting the core twice with the homogeneous activation $z$.
-
-To rank the directions of a bond $a_i$ by global importance we build the exact
-downstream map from $a_i$ to the output and contract it against itself over the
-output index and over every environment leg, leaving the bond leg open on both
-sides. For the deepest bond (the output of the first layer, whose downstream is two
-more bilinear layers) the downstream is a degree-four form in $z_i$. We construct
-it explicitly by composing the cores,
-\begin{equation}
-D[c,i,j,k,l] = \sum_{p,q} C^{\text{head}}_L[c,p,q]\; Z_2[p,i,j]\; Z_2[q,k,l],
-\qquad
-G[i,i'] = \sum_{c,j,k,l} D[c,i,j,k,l]\,D[c,i',j,k,l],
-\end{equation}
-where $Z_2$ expresses the second-layer homogeneous activation as a quadratic form
-in $z_i$ and $C^{\text{head}}_L$ folds the linear head into the last core. The
-$d\times d$ block of $G$ over the non-constant coordinates gives the global
-importances. The local baseline uses only the adjacent core (the layer that
-directly reads the bond), ignoring everything downstream. Truncation projects the
-activation onto the top $k$ eigenvectors and we measure the resulting accuracy.
-
-\subsection{Results on the $\chi$-MLP}
-
-We train a three-layer $\chi$-MLP (bond width $32$) on the SVHN digit dataset to
-$0.81$ accuracy and run the exact procedure.
+We evaluate all ten LIBERO-Object tasks with the following fixed protocol:
 
 \begin{itemize}
-  \item \textbf{Exact reconstruction.} The unrolled tensor network reproduces the
-  trained module to $5\times10^{-12}$ in double precision, confirming that the
-  exported cores are the model, not an approximation of it.
-  \item \textbf{Global low-rank structure.} Ranking the deepest bond by the global
-  Gram, $20$ of its $32$ hidden dimensions ($62\%$) can be removed with at most a
-  $1\%$ accuracy drop. Dooms et al. report about $70\%$ on their own SVHN network. We report our measured figure rather than assuming their number transfers.
-  \item \textbf{Global beats local.} At a matched number of kept directions, the
-  global ranking preserves accuracy better than the local per-layer SVD, most
-  clearly at the compression elbow.
+  \item $50$ canonical trials per task
+  \item a $280$-step cap
+  \item three independently trained ViT checkpoints
+  \item $500$ rollouts per checkpoint and $1{,}500$ rollouts in total
 \end{itemize}
 
-\begin{center}\small
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-retained directions $k$ & 4 & 6 & 8 & 12 & 16 \\ \midrule
-global ODT  & 0.571 & \textbf{0.777} & 0.797 & 0.809 & 0.811 \\
-local SVD   & 0.523 & 0.686 & 0.798 & 0.807 & 0.811 \\
-\bottomrule
-\end{tabular}\quad (full width $32$ gives $0.808$. Deepest bond)
-\end{center}
-
-The reason global wins is exactly the reason it needs a tensor network: at $k=6$
-the global ranking already knows which directions the two downstream layers will
-actually use, while the local ranking only sees the immediately following layer
-and keeps directions that later turn out not to matter.
-
-\subsection{From compression to interpretation: are the ranked modes real?}
-
-Removable-dimension counts show that low-rank structure \emph{exists}. They do not
-show that the surviving directions are human-interpretable, nor that the ranking is
-\emph{causal} rather than merely a good compressor. D\'eh\'erand \cite{deherand}
-takes the complementary step, extending the $\chi$-net idea to convolutional
-networks and reading each class output as a quadratic form whose eigenvectors,
-projected to pixels, are spatially coherent digit strokes. Two things are left
-open there: the interpretation is run only on a shallow single-bilinear layer, and
-visual coherence is never tied to an intervention. We close both on our own models.
-
-\paragraph{Output-conditioned atoms.} For a classifier with one bilinear layer, each
-class logit is \emph{exactly} a quadratic form in the homogeneous embedded input,
-$\ell_c(x)=z^\top Q_c\,z+b_c$ with $z=[1;Ex]$ and $Q_c=\sum_o W^{\text{head}}_{c,o}C_o$
-the head folded into the core (reconstruction against the trained module is
-$2.6\times10^{-13}$ on SVHN, $0.80$ accuracy). Eigendecomposing $Q_c=\sum_i\lambda_i
-v_iv_i^\top$ writes the logit as $\sum_i\lambda_i(v_i\!\cdot\! z)^2+b_c$: signed
-``atoms'' where $\lambda_i>0$ supports class $c$ and $\lambda_i<0$ suppresses it,
-each projected to a pixel sensitivity map through $E$.
-
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.62\textwidth]{odt_atoms_shallow.png}\\[4pt]
-\includegraphics[width=0.82\textwidth]{odt_atoms_deep.png}
-\caption{Extracted ODT eigen-atoms projected to pixels (brighter = higher
-sensitivity). \textbf{Top:} the single-bilinear $\chi$-classifier, one row per SVHN
-class. The three left atoms of each row \emph{support} the class ($\lambda>0$), the
-three right \emph{suppress} it ($\lambda<0$). \textbf{Bottom:} the six top global
-directions of the deep three-layer $\chi$-MLP. The atoms are causal and
-class-relevant. How \emph{localized} they are depends on architecture topology, which
-we quantify across dense/convolutional/locally-connected models in
-Section~\ref{sec:findings}.}
-\label{fig:atoms}
+\includegraphics[width=0.98\textwidth]{../paper_figures/vit_capability_verified.pdf}
+\caption{\textbf{Verified ViT capability.} Left: three independently trained checkpoints and
+their fixed elementwise prediction-mean ensemble. Right: per-task three-checkpoint mean and
+ensemble success. The ensemble uses three forward passes.}
+\label{fig:vit-capability}
 \end{figure}
 
-These atoms (Figure~\ref{fig:atoms}) are the object analyzed in
-Section~\ref{sec:findings}, where we ask the three questions this section motivates:
-is the ranking \emph{causal} (deletion/insertion faithfulness against integrated
-gradients and PCA), are the atoms \emph{coherent} (a function of topology, not
-convertibility), and, for a policy, at which \emph{bond} is the mechanism
-readable and controllable. We turn to those results next.
-
-\subsection{Does this survive attention and residual connections?}
-\label{subsec:attndepth}
-
-The $\chi$-MLP is feed-forward. A transformer adds attention (which mixes
-information across token positions) and residual connections. Extending exact,
-weight-only global ODT to a general attention network is an open problem, because
-the attention pattern is itself a learned degree-four function of the inputs, so
-the environment is no longer a fixed operator. We give the first empirical
-evidence that the structure is nonetheless there.
-
-We train a strict, foldable transformer language model (using the
-teacher-then-distill recipe so it is stable) and analyze the bond at the block
-input, whose downstream \emph{crosses} the attention layer (each token feeds the
-queries, keys, and values of every position), then the residual path, the
-feed-forward layer, and the head. Because the attention pattern is data-dependent
-here, we rank directions by a data-driven version of the global Gram, the average
-outer product of the output gradient at the bond, which measures how much each
-direction of the bond actually affects the loss through the full downstream
-including attention. The local baseline is the SVD of the adjacent input
-projections (the query, key, value, and feed-forward input weights).
-
-\begin{center}\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
- & retained $k$ & global (output-aware) & local (weight SVD) \\ \midrule
-\textbf{1 attention layer} (full-rank loss $5.23$) & 32 & \textbf{6.11} & 7.88 \\
-                                                    & 64 & \textbf{5.47} & 6.27 \\
-                                                    & 96 & \textbf{5.27} & 5.55 \\
-\midrule
-\textbf{2 attention layers} (full-rank loss $5.98$) & 32 & \textbf{6.18} & 7.78 \\
-                                                    & 64 & \textbf{6.02} & 6.52 \\
-                                                    & 96 & \textbf{5.99} & 6.18 \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The global ranking beats the local one at every retained width for both models,
-and the attention model still folds to an exact tensor network (double-precision
-fold error at machine precision). Notably the two-layer model is \emph{more}
-compressible ($64$ of $128$ directions, $50\%$, removable at under $0.05$ nats)
-than the one-layer model ($25\%$), which suggests deeper attention stacks have
-more, not less, global low-rank structure. Two honest caveats. First, this uses
-the data-driven global Gram. The fully weight-based, data-free contraction across
-an attention-crossing bond, and the transfer of the tree error bound, remain open.
-For bonds whose downstream is feed-forward (for example, the bond after the
-attention sub-layer), the exact weight-based procedure of the previous subsection
-applies directly. Second, the strict scalar-normalization model needs the
-distillation recipe to train stably beyond one layer.
-
-\subsection{Cost and limits}
-
-For the tree network the procedure costs about $O(Lh^4)$ time with $O(h^3)$ memory
-in the bond width $h$, which is why our exact-decomposition models use a small
-width. Unrolling a full attention transformer into one tensor over all token
-positions grows combinatorially, so exact whole-model contraction is only feasible
-at small scale. The practical path is to decompose one analysis bond at a time, as
-above.
-
-\section{What decomposability buys: causality, topology, and bonds}
-\label{sec:findings}
-
-The previous section established that the exported bilinear network can be exactly
-decomposed and that a global ODT ranking is meaningful. Here we ask the sharper question:
-\emph{how much of ``interpretability'' does that decomposability actually buy?} It buys a
-causal, rankable basis, but coherence and nameability are bought separately, by topology
-and by bond placement.
-
-\subsection{Causality is competitive with standard attribution, and (at feed-forward bonds) free}
-
-We compare the ODT direction ranking against real baselines, unsupervised PCA of
-activations, integrated gradients \cite{ig}, and random, using deletion/insertion
-faithfulness AUC (project the input/bond onto, or out of, the top-$k$ directions and measure
-accuracy). On the softmax-free \chivit\ (patch bond, downstream crossing all attention
-layers) and on an exact feed-forward classifier:
-
-\begin{center}\small
-\begin{tabular}{@{}llcc@{}}
-\toprule
-substrate & ranking & deletion AUC $\downarrow$ & insertion AUC $\uparrow$ \\ \midrule
-\chivit\ (attn) & ODT (ours) & 0.150 & 0.792 \\
-                & PCA        & 0.151 & 0.788 \\
-                & random     & 0.498 & 0.491 \\ \midrule
-classifier      & ODT (\textbf{data-free}) & 0.222 & 0.786 \\
-                & integrated gradients     & 0.191 & 0.784 \\
-                & PCA                      & 0.204 & 0.800 \\
-                & random                   & 0.548 & 0.530 \\
-\bottomrule
-\end{tabular}\quad(3 / 2 seeds. Std $\le 0.03$)
-\end{center}
-
-The ODT ranking is strongly faithful, it crushes random, and is \emph{competitive
-with}, not superior to, PCA and integrated gradients. Its distinctive properties are that it
-is \emph{weight-derived} (at feed-forward bonds it needs no data at all, unlike PCA and
-integrated gradients) and \emph{globally rankable} (integrated gradients is per-sample).
-Through attention we fall back to a data-driven output-sensitivity Gram, so the ``for free''
-claim is honest only at feed-forward bonds. The causal structure nonetheless survives
-attention (the \chivit\ bond above crosses four attention layers) and, in our small
-models, appears to grow \emph{more} compressible with depth
-(Section~\ref{subsec:attndepth}). Reassuringly, the two bases largely agree where both are
-computable: on the feed-forward classifier the exact weight-only basis and the data-driven
-Gram basis have top-$64$ subspace overlap $0.53$ (rising to $0.65$ at $256$) versus a random
-baseline of $0.02$--$0.08$, so the data-driven Gram used through attention is a faithful
-proxy for the weight-only method, not a different object.
-
-\subsection{Coherence is bought by topology, at no capability cost}
-\label{subsec:topology}
-
-Whether the causal directions are \emph{human-coherent} (localized, nameable) is not a
-property of convertibility, it is set by architecture topology. On single-bilinear
-classifiers whose class logit is exactly a quadratic form, we measure eigen-atom spatial
-locality (energy in the top $10\%$ of pixels, relative to random directions), across three
-seeds and two datasets:
-
-\begin{center}\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
- & \multicolumn{2}{c}{SVHN} & \multicolumn{2}{c}{CIFAR-10} \\
-architecture & acc & locality ($\times$rand) & acc & locality ($\times$rand) \\ \midrule
-dense                 & $0.747$ & $2.29$ & $0.354$ & $1.47$ \\
-conv (spatial readout)& $\mathbf{0.814}$ & $\mathbf{3.45}$ & $\mathbf{0.630}$ & $3.42$ \\
-locally-connected     & $0.800$ & $3.48$ & $0.584$ & $\mathbf{3.44}$ \\
-\bottomrule
-\end{tabular}\quad(mean over 3 seeds, std $\le 0.05$)
-\end{center}
-
-Spatial-locality-preserving topology reaches $\sim$$3.5\times$ random-baseline locality on
-both datasets, versus $2.29$ (SVHN) / $1.47$ (CIFAR) for dense, i.e.\ $\sim$$1.5$--$2.3\times$
-more localized than dense, and the gap is \emph{larger} on the harder dataset. The effect is
-not a capacity confound. A width sweep ($8\!\to\!128$) shows dense locality is
-\emph{capacity-independent}: growing the dense model raises accuracy ($0.70\!\to\!0.75$) but
-its atom locality stays flat at $\sim$$2.2$, never approaching the $\sim$$3.5$ of the
-structured topologies at any width, so coherence is set by topology, not parameters or
-accuracy (and the most coherent model is also the most accurate and parameter-efficient). A
-deep-network replication (data-driven input-space ranking, depth 1 vs 3) shows the gap
-survives depth and \emph{strengthens} with it (conv locality $2.05\!\to\!2.52$ on CIFAR while
-dense stays $\sim$$1.4$). It also holds \emph{beyond} $32\times32$: on STL-10 at $64\times64$,
-conv atoms remain more localized than dense ($1.88$ vs $1.41$) and conv is more accurate ($0.45$
-vs $0.32$), with the same causal global$\gg$random ranking. One honest subtlety: plain
-convolution with \emph{global} pooling
-underperforms, global pooling imposes translation-invariance that both starves capacity
-and delocalizes modes. The spatial readout recovers both.
-
-\subsection{For a policy, mechanisms live behind the attention}
-
-On \chivla\ (the synthetic reach task), the action-relevant quantity is which object the
-instruction names and where it is. This must be \emph{constructed} by attention (bind the
-named identity to a location), and indeed it is not linearly present at the network input but
-is at the post-attention action-query bond:
-
-\begin{center}\small
-\begin{tabular}{@{}lcc@{}}
-\toprule
-quantity (linear decodability) & input bond & post-attention bond \\ \midrule
-target position $x$/$y$ ($R^2$, 3 seeds) & $0.20{\scriptstyle\pm.01}$ & $\mathbf{0.92{\scriptstyle\pm.03}}$ \\
-gripper position (in the state token) & $0.99$ & $0.97$ \\
-named colour / shape (in the instruction) & $1.00$ & $0.94$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-Only the \emph{bound} quantity (target position) jumps across the attention. The raw
-ingredients are linear at both bonds. We then verify the mechanism is \emph{causal} with an
-intervention: rewriting the instruction to name a different present object (image and state
-fixed) makes the predicted action follow the new target, with $R^2 = 0.956\pm0.016$ and a
-$97.1\%$ switch-rate (3 seeds). Notably a purely \emph{correlational} handle fails, patching
-the linear target-position \emph{decode} direction does not steer the action (transfer $0.002$
-vs $0.012$ for random), an instance of the decode-is-not-control gap \cite{amnesic} that
-motivates causal over correlational interpretation.
-
-\subsection{Interpretability on the real, closed-loop-competitive policy}
-\label{subsec:realpolicyodt}
-
-The results above are on components (a classifier, a ViT, a synthetic reach policy). We close
-the loop on the actual object: the trained, rational-by-construction, closed-loop
-LIBERO-Object policy
-(rational per-instance norm throughout, \S\ref{subsec:rationalnorm}; capability numbers in
-\S\ref{sec:substrate}). We build a data-driven output-sensitivity Gram at the
-\emph{visual-patch} bond (downstream of the bond: the entire causal bilinear-attention backbone
-plus the linear action head) for each action group -- end-effector translation, rotation,
-gripper -- from $\sim$$2000$ held-out frames (no training, no simulation), then truncate the
-bond onto its top-$k$ \emph{global} eigendirections versus a random $k$-subspace and measure the
-offline action reconstruction error:
-
-\begin{center}\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-group ($k{=}64$ of $384$, $\sim$$17\%$) & global MSE & random MSE & ratio \\ \midrule
-end-effector translation & $0.058$ & $0.276$ & $4.8\times$ \\
-rotation & $0.121$ & $0.561$ & $4.6\times$ \\
-gripper & $0.007$ & $0.280$ & $\mathbf{42\times}$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The action-relevant computation is globally low-rank and causally rankable on the real,
-deployed policy, not just on a classifier or a synthetic task -- extending the
-convertibility-buys-causality claim to the artifact that actually matters. (Honest nuance: at
-very small $k$ ($4$--$8$) global and random are comparable or global is slightly worse for the
-translation/rotation groups, plausibly because the top eigendirections of a Gram aggregated
-over heterogeneous multi-task demonstrations mix across tasks; the causal ranking becomes
-decisive from $k{\approx}32$ upward, which is also the regime where the $4$--$42\times$ headline
-holds.) We separately measure \emph{coherence}: for each group's top causal direction, the
-fraction of energy concentrated in the most-activated $10\%$ of the $8{\times}8$ patch grid,
-against $30$ random directions. The result is modest, not dramatic ($1.08$--$1.41\times$
-random), consistent with the topology finding above (\S\ref{subsec:topology}): a
-\emph{dense}, from-scratch patch embedding gives causal-but-diffuse mechanisms, and spatial
-coherence would need a locality-preserving (e.g.\ convolutional) vision encoder -- a prediction
-for future work, not yet tested on this real policy.
-
-\section{The substrate is a genuine, competitive tensor network}
-\label{sec:substrate}
-% ============================================================================
-
-Under a hard compute limit (small models, modest data, a verified demonstration rather than a
-scale record), we confirm the interpretability findings are computed on a real substrate, not
-a degenerate one. The foldable \chivit\ reaches $98.8\%$ of a parameter-matched softmax
-baseline on SVHN ($0.917$ vs $0.928$). A cross-bilinear projector is worth $+81$ accuracy
-points over concatenation on a task whose label is, by construction, a product of two streams.
-Zeroing the product term erases that gain, evidence that the explicit multiplication does real
-work. An end-to-end \chivla\ policy uses language measurably, reaching $22\times$ the
-language-blind baseline on a synthetic reach task and a $\sim$$9\times$ shuffled-instruction
-grounding gap on real LIBERO-Object behaviour cloning.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{@{}p{0.23\textwidth}p{0.70\textwidth}@{}}
-\toprule
-\textbf{Part} & \textbf{Configuration of the $94.2\%$ and $94.5\%$ runs} \\
-\midrule
-Observation & One $64\times64$ agent-view RGB image, rotated $180^\circ$ into the training convention, plus an $8$-D robot state and one instruction \\
-Vision & One four-layer \chivit, $8\times8$ patches, $64$ visual tokens, width $192$, eight heads, bilinear attention and FFN rank $576$ \\
-Fusion & A single linear projection $192\to384$, with no second vision branch and no cross-bilinear projector \\
-Joint sequence & $64$ visual $+$ BOS $+$ $32$ instruction $+$ state $+$ embodiment $+$ eight action-query tokens, $107$ tokens total \\
-Backbone & Eight causal $\chi$-transformer layers, width $384$, twelve heads, bilinear attention, bilinear FFN rank $1152$, with per-token RMS normalization for the $94.2\%$ run and rational normalization for the $94.5\%$ run \\
-Action output & One shared linear map $384\to7$ on each of eight action-query states, producing an $8\times7$ continuous action chunk \\
-Size & $20{,}137{,}352$ learned parameters with a $26$-token instruction vocabulary \\
-Training & $66{,}984$ demonstration frames, $40{,}000$ steps, batch $256$, AdamW, peak learning rate $8\times10^{-4}$, $5\%$ warmup, cosine decay to $8\times10^{-5}$, weight decay $0.05$, gradient clipping $1.0$, bfloat16, and EMA $0.999$ \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Exact architecture and training recipe for the reported closed-loop
-checkpoints.} Both runs are simpler than the general architecture in
-Fig.~\ref{fig:arch-detail}. They use one vision branch and a linear action head. The
-$94.5\%$ run changes the block and attention QK normalization sites from per-token RMS to the
-fixed rational operator in \S\ref{subsec:rationalnorm}.}
-\label{tab:closedloop-config}
-\end{table}
-
-With this capability-first configuration, three independent seeds reach $95.0\%$, $92.5\%$,
-and $95.0\%$, or $\mathbf{94.2\%\pm1.2\%}$. The convolutional vision alternative reaches
-$90.8\%\pm0.3\%$. The corrected local evaluation uses canonical initial states, a settle
-wait, weight EMA, $20$ trials per task, and a $600$-step post-settle cap. It evaluates the
-first eight of the ten LIBERO-Object tasks.
-
-Earlier high-variance readings came from a weaker measurement and training recipe, including
-five trials per task, non-canonical resets, single-seed reporting, and only $6$k to $15$k
-training steps. The stronger linear-head result shows that the multimodal head was not the
-capability engine in this setting. It remains a representational contribution. The
-capability-first checkpoint above uses per-token RMS normalization, its one remaining
-non-foldable operation. \textbf{We then trained the same recipe with the rational per-instance
-norm throughout} (block norm and the attention QK norm both the fitted $[2/2]$ Pad\'e
-$1/\sqrt{\cdot}$ of \S\ref{subsec:rationalnorm}), making every learned site a polynomial or
-rational tensor primitive by construction. Trained from scratch, this model reaches, at $20$
-trials/task: $\mathbf{189/200 = 94.5\%}$ (soup $17/20$, cream cheese $19/20$, salad dressing
-$20/20$, bbq sauce $18/20$, ketchup $20/20$, tomato sauce $18/20$, butter $20/20$, milk
-$18/20$, chocolate pudding $20/20$, orange juice $19/20$). The first seven tasks completed
-before a six-hour function timeout. We resumed tasks eight through ten from the same saved
-checkpoint with task-indexed evaluation seeds, without retraining. This single-seed point
-estimate is consistent with the $3$-seed per-token mean ($94.2\%\pm1.2\%$), now over the full
-ten-task suite. Because suite coverage and seed count differ, it is not a matched estimate of
-the normalization cost. It nevertheless shows no visible capability loss from using rational
-normalization. Multi-seed replication and a materialized whole-policy rational export remain
-open.
+\subsection{Results}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{Method} & \textbf{Tasks} & \textbf{Step cap} & \textbf{Trials/task} & \textbf{Seeds} & \textbf{Success} \\
+Method & Parameters & Inference & Success \\
 \midrule
-\chivla\ linear, per-token RMS & $8/10$ & $600$ & $20$ & $3$ & $94.2\%\pm1.2\%$ \\
-\chivla\ linear, rational norm & $10/10$ & $600$ & $20$ & $1$ & $\mathbf{94.5\%}$ \\
-OpenVLA-7B \cite{openvla} & $10/10$ & $280$ & $50$ & $3$ & $88.4\%\pm0.8\%$ \\
-Diffusion Policy \cite{openvla} & $10/10$ & $280$ & $50$ & $3$ & $92.5\%\pm0.7\%$ \\
+\chivla, rational ViT & $20.1$M & $1$ pass & $\mathbf{85.3\%\pm4.6\%}$ \\
+\chivla, prediction-mean ensemble & $3\times20.1$M & $3$ passes & $\mathbf{93.4\%}$ \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Why the $\chi$-VLA results are not matched wins over the published
-references.} The $92.5\%$ number in the OpenVLA paper belongs to Diffusion Policy, not
-OpenVLA. The rational run covers the full suite and is numerically above both references, but
-it allows more than twice as many environment steps, uses fewer trials, and has one training
-seed. Both $\chi$-VLA rows therefore support capability in their measured settings, not a
-state-of-the-art claim.}
-\label{tab:closedloop-comparison}
+\caption{\textbf{Closed-loop LIBERO-Object success.} Each ViT checkpoint receives $500$
+canonical trials. The single-model row is the mean $\pm$ sample standard deviation across three
+checkpoints. The ensemble is one fixed composite evaluated on the same $500$ states.}
+\label{tab:capability}
 \end{table}
 
-The $450$M reference configuration is specified and its size verified ($448.2$M) but untrained,
-for lack of data-center hardware.
+The three checkpoints reach $426/500=85.2\%$, $404/500=80.8\%$, and $450/500=90.0\%$.
+Elementwise averaging of their predicted action chunks reaches $467/500=93.4\%$. This is $8.1$
+points above the member mean and $3.4$ points above the strongest member. The ensemble requires
+three complete forward passes and is not one $20.1$M-parameter policy. Every episode-level record,
+task index, and protocol field is retained. The artifact manifest binds each immutable result file
+and recorded checkpoint basename to a checkpoint hash verified separately. Member and ensemble
+shards span different recorded GPU families and predate explicit matrix-precision fields, so the
+arithmetic gaps are descriptive rather than a matched-hardware ensemble ablation.
+
+\subsection{What this result does and does not establish}
+
+The result shows that the rational architecture supports high closed-loop specialist
+capability. It is an existence claim for a compact tensor-decomposable
+policy, not a claim of broad robotic generalization or state of the art.
+
+\input{four_suite_breadth_section}
+
+\input{instruction_necessity_section}
+
+Within its stated boundary, this closes the possibility that the policy's familiar-task success is
+independent of its instruction. It does not turn the specialist benchmark into a general language
+grounding result.
+
+% ============================================================================
+\section{Exact weight-derived structure through attention}
+\label{sec:exactattention}
+% ============================================================================
+
+\subsection{Exact layerwise construction}
+
+Equation~\ref{eq:attention} contains two query-key products and one value stream. Expanding
+the linear maps gives a high-order coefficient table. Each entry says how strongly one
+combination of query, key, and value coordinates contributes to an output. It is
+\emph{weight-derived} because no examples or fitted probe are needed to construct it. On a
+tiny four-token, width-four, one-head layer, direct evaluation
+and an independent explicit polynomial agree to $2.00\times10^{-15}$. The internal core
+identity agrees to $1.24\times10^{-14}$.
+
+The deployed attention also normalizes each query and key with Equation~\ref{eq:rnorm}.
+Each normalization multiplies all channels of one token by the same scalar rational factor.
+Those factors can be pulled outside the bilinear dot products. The polynomial attention core
+is unchanged, while explicit numerator and denominator factors carry the normalization.
+The rational extension agrees to $3.61\times10^{-16}$. On one fixed corrected cached input per checkpoint,
+we numerically replay all four vision and eight joint attention modules in each of three records
+that name the same ViT checkpoint artifacts as the capability results. This covers $36$
+module-input cases and $384$ architectural heads. The worst relative $\ell_2$ error is
+$2.016119\times10^{-7}$ and the worst absolute difference
+is $2.44\times10^{-5}$. This residual comes from the deployed implementation's intentional
+float32 statistic, while the reconstruction itself uses the learned coefficients. The algebraic
+identity is input-general. The one-input-per-checkpoint records provide a layerwise numerical
+replay audit, not an exact end-to-end policy decomposition.
+
+We separately certify three convolutional checkpoints from the same rational architecture family.
+Their vision stacks contain no attention, so we independently rebuild all eight joint modules and
+all twelve heads per module from the saved weights. Sixteen deterministically selected cache
+inputs per checkpoint yield $4{,}608$ head-input cases. Every output is finite and the worst
+relative $\ell_2$ error is $6.36\times10^{-16}$, below the frozen $10^{-6}$ gate. On the same
+inputs, independent CP-factor evaluation covers all $384$ joint-FFN module-input cases at worst
+relative error $1.3871\times10^{-15}$ against a $10^{-10}$ gate. Independent complete-block
+equations cover all $384$ block-input cases at worst relative error $1.5024\times10^{-7}$ against
+a $10^{-4}$ gate. The complete-block comparison crosses a deployed PyTorch float32 block call and
+a NumPy float64 reconstruction. It is input-conditioned and per-block, not a sequential
+end-to-end reconstruction of the joint transformer or policy.
+
+A separately frozen ViT audit partitions joint attention into vision, instruction, robot-state,
+and action-query source tokens. Across $128$ deterministic, official-task-balanced inputs for each
+of the three capability checkpoints, all $36{,}864$ head-input cases and $147{,}456$ source-group evaluations
+are finite, with worst reconstruction error $5.0741\times10^{-7}$ against a $10^{-6}$ gate.
+Across the $3{,}072$ projected module-input cases, mean coherent-energy shares are $67.7\%$ vision,
+$19.2\%$ robot state, $7.9\%$ action query, and $5.1\%$ instruction. These input-conditioned
+magnitudes are descriptive rather than causal importance. Familiar-prompt permutations are also
+descriptive and do not establish grounding or closed-loop success.
+
+Finally, a prospectively frozen sequential replay reaches the learned action output on the same
+three capable ViT checkpoints. For $16$ deterministic, official-task-balanced corrected inputs per
+checkpoint, an independent NumPy float64 evaluation starts from the exact prepared model tensors
+and rebuilds the learned patch projection, four vision blocks, multimodal embeddings and
+projections, eight joint blocks, final RationalNorm, and linear action head. Across $48$ inputs and
+$816$ recorded stage evaluations, the worst final-action relative $\ell_2$ error is
+$3.9822\times10^{-7}$ against a frozen $10^{-3}$ gate. Every manual PyTorch traversal is bitwise
+identical to an unmodified full model call. This is an input-conditioned full learned-forward
+numerical certificate, not one compact symbolic contraction or an input-general proof. It excludes
+preprocessing, fixed action unnormalization, chunk execution, simulator dynamics, and success.
+
+Naively materializing the real width-$384$ coefficient tensor would require approximately
+$3.2\times10^{15}$ values. We instead contract the CP factors into an $O(d^2)$ reduced Gram.
+This smaller matrix plays the role of a covariance matrix: its leading eigenvectors rank the
+directions that carry the most coefficient energy without constructing the full table. At toy
+multi-head scale, it matches brute-force materialization to $2.13\times10^{-14}$.
+
+\subsection{Trained policy result}
+
+The reconstruction certificate above spans three ViT checkpoints. The following subspace-ranking
+experiment is a descriptive analysis of the seed-$0$ ViT checkpoint. We apply the exact
+weight-derived calculation to all twelve heads in early, middle-late, and
+final backbone blocks $0$, $6$, and $7$. Random projector banks are sampled once, then fixed
+and reused for all evaluation examples. The weights choose the subspace. Real cached
+activations are used only afterward to measure how faithfully that subspace preserves the
+layer's computation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{../paper_figures/main_exact_attention_odt.pdf}
+\caption{\textbf{Exact weight-derived attention structure.} Ratios above one favor the exact
+weight-derived subspace over a random equal-rank subspace. Each point in the right panel is one
+trained attention head.}
+\label{fig:exactattention}
+\end{figure}
+
+At ranks $8$, $32$, and $128$, respectively, $80.6\%$, $91.7\%$, and $100\%$ of the $36$
+block-head pairs favor the exact subspace. Their median ratios are $1.028$, $1.171$, and
+$2.441$. At rank $128$, the mean ratio is $3.033$ and the strongest head reaches $10.135$.
+The rank-$128$ block means are $3.08$, $3.45$, and $2.56$ for blocks $0$, $6$, and $7$.
+The $36$ block-head pairs are architectural units within one checkpoint, not independent
+model-level replicates.
+
+This extends exact weight-only construction through individual attention layers. It is not an
+exact compact symbolic end-to-end decomposition of the complete policy. Symbolic composition across all eight blocks
+still faces rapid degree and representation growth.
+
+A separate intervention tests behavioral sufficiency at the visual-to-joint interface rather
+than deriving a projector from the exact attention factors. An action-Jacobian projector estimated
+on official Object tasks $0$--$3$, with rank $96$ fixed before corrected outcomes, retains $259/272$ full-policy
+successes on tasks $8$--$9$ across three ViT checkpoints. These tasks are absent from corrected
+projector construction. An activation-energy
+projector retains $267/272$, while three equal-rank random projectors retain $37/272$, $9/272$, and
+$22/272$. All ten tasks appeared during policy training. This establishes a structured
+low-dimensional visual bottleneck relative to random projectors, not unseen-task generalization,
+unique action-Jacobian specificity, or a causal link to the exact weight factors.
+Appendix~\ref{app:visual-bottleneck} reports the paired controls and stability intervals.
 
 % ============================================================================
 \section{Related work}
-
-\textbf{Weight-based / tensor interpretability.} Our substrate is the bilinear/tensor
-line: bilinear MLPs enable weight-based mechanistic interpretability by reading a class
-output as a quadratic form whose eigenvectors are features \cite{pearce,riggs}. Dooms et
-al.\ \cite{chinets} give tree-structured orthogonalize--diagonalize--truncate (ODT) as a
-\emph{compression} result. D\'eh\'erand \cite{deherand} extends the eigen-feature analysis
-to convolutional models and observes that convolutional eigenvectors look more coherent.
-We depart from all three by separating \emph{causal} from \emph{coherent} as an explicit,
-intervention-tested axis, by isolating topology as the coherence lever at matched
-capability with depth-scaling, and by the bond-placement principle for policies.
-
-\textbf{Mechanistic interpretability, features, and dictionaries.} A large body studies
-features and circuits in trained networks \cite{olah,elhage_framework} and the
-superposition of features in polysemantic directions \cite{elhage_superposition}. The
-dominant current tool for extracting a feature basis is sparse dictionary learning over
-activations (sparse autoencoders) \cite{cunningham,bricken,templeton}. Those methods learn
-an \emph{over-complete, data-driven} dictionary. Our ODT basis is instead \emph{exact and
-weight-derived} (at feed-forward bonds, data-free) and \emph{globally rankable}, a
-complementary object, which we show is as faithful as an unsupervised variance basis.
-
-\textbf{Attribution, causal mediation, and probing.} We benchmark against integrated
-gradients \cite{ig} and compare our global ranking to activation-variance (PCA) bases, using
-the deletion/insertion faithfulness protocol \cite{rise,eraser}. Our causal claims connect
-to causal mediation / activation patching \cite{rome,ioi}. Our steering \emph{null} (a
-linear decode direction is not a control direction) is an instance of the known gap between
-probing and causation \cite{alain,amnesic}.
-
-\textbf{Tensor methods and polynomial networks.} Bilinear layers are CP/Tucker
-factorizations \cite{koldabader}. Tensor networks have a long history in ML
-\cite{stoudenmire}, and polynomial ($\Pi$-)networks show such models are competitive
-\cite{chrysos}. \textbf{Vision-language-action models.} Our policy substrate follows the
-modular VLA line \cite{openvla,rt2,octo}. VLA interpretability is nascent, and a causal,
-weight-derived action-mechanism basis is, to our knowledge, new.
-
-% ============================================================================
-\section{Discussion and limitations}\label{sec:discussion}
 % ============================================================================
 
-By construction the \chivla\ forward map is a tensor network, and we verify this
-end to end for the language backbone, a one-layer and a two-layer attention model,
-and the feed-forward decomposition model. The central new finding is that global
-low-rank structure, the property that makes ODT worthwhile, is present not only in
-feed-forward chains but also through attention and residual connections, and it
-grows rather than shrinks with depth in our small models.
-
-The honest boundaries are as follows. The exact, weight-only, data-free version of
-global ODT is established here only for feed-forward downstream bonds. For
-attention-crossing bonds we currently use a data-driven importance measure, and the
-transfer of Dooms et al.'s error bound to attention networks is not proven. The
-strict foldable model is stable and matches its non-strict teacher only in the
-small-residual-gain regime, which is a real constraint we did not need to pay any
-accuracy for at this scale but which may matter at larger scale. All experiments
-are small. The reference-scale model is specified and its size verified but not
-trained, for lack of data-center hardware. On the robot task we report both offline
-action error, language grounding, and closed-loop success. The per-token result has three
-seeds but covers only eight of ten tasks. The rational result covers all ten tasks but has one
-seed. Both use a $600$-step cap rather than the $280$-step reference protocol and only $20$
-trials per task rather than $50$. They are therefore capability evidence, not matched
-state-of-the-art comparisons. Every learned site in the rational model belongs to the
-polynomial or rational class by construction, but a materialized whole-policy rational export
-and numerical end-to-end fold check remain open.
-
-\paragraph{The cost boundary of convertibility, and how far it recedes.} Convertibility
-buys a causal, rankable basis, and (with the right topology) coherence. It is not free
-everywhere, but where we first suspected it cost \emph{capability}, that cost turns out to be
-largely \emph{recoverable}. The boundary is the set of \emph{inherently nonlinear} operations. The sharp case is multimodal action decoding.
-(i) \textbf{Multimodal action decoding.} A capable policy must represent a multimodal action
-distribution: the same observation admits several valid behaviours (reach left or right. Grasp
-now or approach further). OpenVLA \cite{openvla} handles this by discretizing actions and
-applying a softmax over tokens (inherently nonlinear). The naive tensor-pure substitute is a
-linear regression head with an MSE objective, which can only emit the conditional \emph{mean}, and the mean of two valid behaviours is an invalid middle (the gripper $\in\{-1,+1\}$ averages
-to $\approx 0$. Two arm approaches average to a collision). This is not a corner case: on
-LIBERO-Object we measure that $\sim$$40\%$ of near-identical-observation neighbourhoods have a
-genuinely bimodal arm-action distribution (well-separated, standardized gap $\approx 3.4$).
-
-The resolution is the cost-boundary reframe: keep the \emph{learned distribution} in-graph and
-polynomial, and move only the \emph{decode} out-of-graph. Crucially, our multimodal head is
-built \emph{entirely from the same bilinear (CP) cores as the rest of the network}, it is
-not a bolted-on softmax or MLP. Reading the post-attention action-query token $h$, a center
-core $c_0(h)$, $G$ factor cores $c_g(h)$, and $G$ scalar gate cores $g_g(h)$ (all
-\texttt{BilinearFFN}) define a mixture over $2^G$ modes,
-$a = c_0(h) + \sum_{g=1}^{G}\mathrm{sign}\!\big(g_g(h)\big)\,c_g(h)$ (the vertices of a
-$G$-dimensional zonotope). The whole $h\!\to\!\text{distribution}$ map is one polynomial tensor
-network that folds exactly (fold error $\sim$$4\times10^{-16}$). The \emph{only} non-polynomial
-step is the sign routing, an out-of-graph controller op in the same category as OpenVLA's
-external argmax and our gripper threshold. Trained with a precision-preserving, loss-only
-objective, distilling the mixture centre toward a linear-MSE teacher on (near-)unimodal
-states, plus a soft$\to$hard assignment curriculum, and after fixing a $180^\circ$
-observation-preprocessing bug that had pinned \emph{all} heads to $0\%$, this head achieves
-non-trivial closed-loop success on LIBERO-Object. Under the earlier matched head comparison,
-the fixed product head reaches $44\%\pm30\%$ over five seeds and the linear head reaches about
-$19\%\pm15\%$ over three seeds. The seed ranges overlap, so we do \emph{not} find a robust
-advantage of the multimodal head over the linear one. We therefore make no superiority claim,
-only that a multimodal action distribution can be represented and controlled entirely
-in-graph. For scale context, the OpenVLA study reports $88.4\%\pm0.8\%$ for OpenVLA and
-$92.5\%\pm0.7\%$ for Diffusion Policy over the full ten-task suite \cite{openvla}. Our
-$94.2\%\pm1.2\%$ per-token result uses eight tasks. Our $94.5\%$ rational result covers all
-ten tasks but has one seed. Both use a longer horizon, so neither establishes state of the
-art. The claim is narrower and, for this
-paper, more important: \emph{a tensor-pure multimodal head is not confined to the conditional
-mean, the apparent capability cost at multimodal decode is recovered within the
-tensor-network class, at no loss of decomposability} (every mode and gate core is a symmetric
-degree-2 object the same ODT machinery reads, folding to $\sim$$4\times10^{-16}$). One scope
-caveat, stated plainly: the reported product-head rollouts use the non-strict backbone with
-per-token RMS normalization. The product head itself is exactly foldable. The separate
-$94.5\%$ rational-normalized result uses a linear head and therefore establishes capability
-of the rational backbone, not superiority of the multimodal head.
-(ii) \textbf{Per-instance normalization} is an input-dependent division, so the strict
-\emph{polynomial} scheme approximates it with a frozen scalar. But this cost, too, largely
-recedes once the substrate is allowed to be \emph{rational} rather than merely polynomial:
-carried in projective (numerator, denominator) coordinates, a per-instance normalization folds
-\emph{exactly} into a ratio $P(x)/Q(x)$ of two polynomial (CP) tensor networks, we verify a
-per-instance-normed bilinear stack reproduces its projective fold to $10^{-14}$, and ODT
-applies to $P$ and $Q$ separately ($Q$ is the interpretable activation-energy form). The
-one genuine residue is the square root in RMS: $\div\sqrt{\cdot}$ is \emph{algebraic}. The
-exact $10^{-14}$ fold uses the $\div$mean-square variant, which is rational and has no root.
-Our RMS-like deployed operator uses a fixed rational approximation of
-$1/\sqrt{\cdot}$. It is approximate relative to RMSNorm but exact as a rational map. The
-full rational-normalized policy reaches $94.5\%$ over all ten tasks in one seed, with the
-protocol caveats above. This sharpens
-the thesis into a scoping rule: \emph{tensor-convertibility is free for unimodal or binary
-outputs and polynomial mixing, and at the inherently nonlinear operations it need not cost
-capability either, provided the learned distribution stays in-graph (as a polynomial or
-rational tensor network) and only the final selection is decoded outside}. We demonstrate this
-for both boundary cases: multimodal action decoding (a mixture of CP cores, decoded by
-out-of-graph routing) and per-instance normalization (exact rational fold).
-
-The interpretation results also point past the current architecture. Our atoms are
-causal but only mildly localized, and D\'eh\'erand's convolutional comparison
-\cite{deherand} shows why: the tensor-network \emph{topology} decides whether the
-spectral modes are human-coherent, not the mere fact of tensor-convertibility.
-This suggests the next \chivla\ should build coherence into its structure rather
-than hope to read it out afterwards, for instance local or multiscale bilinear
-vision cores in place of dense ones, fixed structural tensors that separate world
-and robot geometry from learned policy, symmetry-aware canonicalization that groups
-translated copies of a mechanism into one orbit, and an output-conditioned,
-modality- and degree-resolved decomposition of continuous actions (which signed
-mechanism drives ``move left'', and does it survive intervention). D\'eh\'erand
-also warns that a convertible network need not be tractably \emph{contractible}. Its unrolled tensor network can grow exponentially through fan-out, which argues for
-bounded-treewidth design (local attention, object-slot bottlenecks) from the start.
+\paragraph{Capability, mechanisms, and robustness.}
+OpenVLA and OpenVLA-OFT establish pretrained VLA and continuous-control baselines
+\cite{openvla,openvlaoft}, while \chivla\ studies a compact algebraically restricted policy on
+familiar single-suite and jointly trained four-suite tasks.
+Polynomial and tensor networks provide the multilinear foundation
+\cite{koldabader,stoudenmire,chrysos}. Bilinear MLPs and $\chi$-nets expose low-rank features and
+compositional circuits from trained weights \cite{pearce,chinets}. We extend that setting to
+closed-loop control and exact reduced softmax-free attention. Bilinear policy analysis and recent
+activation, circuit, and rollout studies make our distinction empirical rather than universal
+\cite{bimpala,haonsteering,sparsecircuits,causalreduction}. Because LIBERO success can coexist with
+weak robustness and language use \cite{liberopro,liberocf,liberopara}, our claims remain bounded
+to familiar tasks from the training suites.
 
 % ============================================================================
-\section{Conclusion}
+\section{Limitations and conclusion}
 % ============================================================================
 
-A fully tensor-decomposable policy need not be an incapable one. \chivla\ combines bilinear
-feed-forward blocks, softmax-free bilinear attention, a CP-core \emph{multimodal} action head,
-and rational per-instance normalization. Its multimodal head commits to a mode instead of
-averaging, though our matched seed results do not establish that it outperforms the linear
-head. Its exact mean-square normalizer and RMS-like rational approximation stay within the
-rational tensor-network class. The rational-normalized policy reaches $94.5\%$ over all ten
-LIBERO-Object tasks in one seed, while the per-token model reaches $94.2\%\pm1.2\%$ over eight
-tasks in three seeds. The settings are not matched closely enough to estimate a precise
-normalization cost, but no capability loss is visible. One principle drives both recoveries:
-keep the learned distribution in-graph and polynomial or rational, and decode outside.
-Exact global ODT is established at feed-forward bonds. Through attention, including on the
-closed-loop rational policy, our ranking remains data-driven. At the real policy's visual
-bond, its top $64$ directions reduce action reconstruction error by $4.6$--$42\times$ over
-random subspaces, while spatial coherence remains only $1.08$--$1.41\times$ random. Whether
-the resulting atoms are human-coherent is governed by topology, not by convertibility.
-Convertibility, we conclude, costs far less than
-assumed: interpretability comes for free, and the capability tax, multimodal decoding,
-per-instance normalization, largely recedes. What remains genuinely open is the exact
-weight-only ODT contraction across attention, human-nameable (not merely localized) atoms,
-a materialized whole-policy rational export, multi-seed rational replication, and matched
-closed-loop comparison at full scale.
+\chivla\ shows that strong single-suite control and substantial four-suite familiar-task breadth
+can coexist with exact access to trained structure.
+The paired controls establish familiar-task instruction necessity, not counterfactual goal following,
+unseen-task generalization, or physical transfer. The learned path is replayed on fixed inputs, not given
+as one compact symbolic contraction or input-general proof, and the strongest ensemble costs three
+passes. Common ViT checkpoints connect capability, exact attention, and reduced-Gram analysis,
+while separate convolutional files replicate the attention equation certificate. We do not claim a
+coefficient-edit interface. The anonymous artifact and Appendix~\ref{app:reproducibility} provide
+full reproducibility details.
 
-\appendix
-\section{Making the foldable model stable}
-\label{app:stability}
+% ============================================================================
+\begin{thebibliography}{99}
 
-Whether the model is a tensor network is settled by construction. The subtle question is
-whether the foldable (scalar) normalization is stable inside a deep stack. Per-token
-normalization keeps activations at unit scale on every input but its divisor is
-input-dependent, so it cannot be folded. A frozen scalar $c$ is foldable but cannot rescale
-an input that is larger or smaller than average. Because the bilinear layer is degree two,
-an input at twice the average scale produces an update about four times too large, and the
-error grows with depth. The resolution is to keep residual branches near the identity: a
-small learned gain per branch (initialized $0.01$) so the degree-two amplification never
-compounds, trained by distilling a stable per-token teacher into a scalar-normalization
-student. On a language model the student matches its teacher (val loss $5.04$ vs $5.0$) and
-folds to a normalization-free graph with error $\sim$$10^{-6}$ (fp32) / $10^{-12}$ (fp64).
-Empirically the largest per-token magnitude at any normalization site is only $\sim$$2.8\times$
-the average across $1.6$M tokens and does not grow with depth, so the fixed scalar is an
-accurate stand-in.
+\bibitem{openvla}
+M.~J. Kim et al.
+\newblock \emph{OpenVLA: An Open-Source Vision-Language-Action Model.}
+\newblock CoRL, 2024.
 
-\begin{thebibliography}{9}
-\bibitem{openvla} A.~Kim et al. \emph{OpenVLA: An Open-Source Vision-Language-Action Model.} arXiv:2406.09246, 2024.
-\bibitem{riggs} L.~Riggs. \emph{Tensor-Transformer Variants are Surprisingly Performant.} LessWrong, 2024. Code: \url{https://github.com/loganriggs/modded-nanogpt}.
-\bibitem{chinets} T.~Dooms et al. \emph{$\chi$-nets: CP-factorized bilinear networks with foldable normalization and ODT analysis.}
-\bibitem{deherand} A.~D\'eh\'erand. \emph{Convolutional Tensor Networks for Weight-Based Mechanistic Interpretability.} Master's thesis, Vrije Universiteit Brussel, 2025--2026.
-\bibitem{pearce} M.~Pearce, T.~Dooms, et al. \emph{Bilinear MLPs enable weight-based mechanistic interpretability.} 2025.
-\bibitem{olah} C.~Olah et al. \emph{Zoom In: An Introduction to Circuits.} Distill, 2020.
-\bibitem{elhage_framework} N.~Elhage et al. \emph{A Mathematical Framework for Transformer Circuits.} Anthropic, 2021.
-\bibitem{elhage_superposition} N.~Elhage et al. \emph{Toy Models of Superposition.} Anthropic, 2022.
-\bibitem{cunningham} H.~Cunningham et al. \emph{Sparse Autoencoders Find Highly Interpretable Features in Language Models.} ICLR, 2024.
-\bibitem{bricken} T.~Bricken et al. \emph{Towards Monosemanticity: Decomposing Language Models With Dictionary Learning.} Anthropic, 2023.
-\bibitem{templeton} A.~Templeton et al. \emph{Scaling Monosemanticity.} Anthropic, 2024.
-\bibitem{ig} M.~Sundararajan, A.~Taly, Q.~Yan. \emph{Axiomatic Attribution for Deep Networks.} ICML, 2017.
-\bibitem{rise} V.~Petsiuk, A.~Das, K.~Saenko. \emph{RISE: Randomized Input Sampling for Explanation.} BMVC, 2018.
-\bibitem{eraser} J.~DeYoung et al. \emph{ERASER: A Benchmark to Evaluate Rationalized NLP Models.} ACL, 2020.
-\bibitem{rome} K.~Meng et al. \emph{Locating and Editing Factual Associations in GPT.} NeurIPS, 2022.
-\bibitem{ioi} K.~Wang et al. \emph{Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small.} ICLR, 2023.
-\bibitem{alain} G.~Alain, Y.~Bengio. \emph{Understanding intermediate layers using linear classifier probes.} 2016.
-\bibitem{amnesic} Y.~Elazar et al. \emph{Amnesic Probing: Behavioral Explanation with Amnesic Counterfactuals.} TACL, 2021.
-\bibitem{koldabader} T.~Kolda, B.~Bader. \emph{Tensor Decompositions and Applications.} SIAM Review, 2009.
-\bibitem{stoudenmire} E.~Stoudenmire, D.~Schwab. \emph{Supervised Learning with Tensor Networks.} NeurIPS, 2016.
-\bibitem{chrysos} G.~Chrysos et al. \emph{Deep Polynomial Neural Networks ($\Pi$-nets).} CVPR/TPAMI, 2020--2021.
-\bibitem{rt2} A.~Brohan et al. \emph{RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control.} 2023.
-\bibitem{octo} Octo Model Team. \emph{Octo: An Open-Source Generalist Robot Policy.} 2024.
+\bibitem{openvlaoft}
+M.~J. Kim, C.~Finn, and P.~Liang.
+\newblock \emph{Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success.}
+\newblock 2025.
+
+\bibitem{pearce}
+A.~Rigg, T.~Dooms, M.~T. Pearce, J.~Oramas, and L.~Sharkey.
+\newblock \emph{Bilinear MLPs Enable Weight-Based Mechanistic Interpretability.}
+\newblock ICLR, 2025.
+
+\bibitem{chinets}
+T.~Dooms, W.~Gauderis, G.~A. Wiggins, and J.~Oramas.
+\newblock \emph{Compositionality Unlocks Deep Interpretable Models.}
+\newblock 2025.
+
+\bibitem{bimpala}
+F.~Oozeer, Y.~Erisken, A.~Rigg, J.~Oramas, and L.~Sharkey.
+\newblock \emph{Bilinear Convolution Decomposition for Causal RL Interpretability.}
+\newblock 2024.
+
+\bibitem{haonsteering}
+B.~H\"aon, K.~Stocking, I.~Chuang, and C.~Tomlin.
+\newblock \emph{Mechanistic Interpretability for Steering Vision-Language-Action Models.}
+\newblock 2025.
+
+\bibitem{sparsecircuits}
+S.~Marks et al.
+\newblock \emph{Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs
+in Language Models.}
+\newblock ICLR, 2025.
+
+\bibitem{causalreduction}
+M.~Keki\'c et al.
+\newblock \emph{Learning Nonlinear Causal Reductions to Explain Reinforcement Learning
+Policies.}
+\newblock ICLR, 2026.
+
+\bibitem{liberopro}
+X.~Zhou et al.
+\newblock \emph{LIBERO-PRO: Towards Robust and Fair Evaluation of Vision-Language-Action
+Models Beyond Memorization.}
+\newblock 2025.
+
+\bibitem{liberocf}
+Y.~Fang et al.
+\newblock \emph{When Vision Overrides Language: Evaluating and Mitigating Counterfactual
+Failures in VLAs.}
+\newblock 2026.
+
+\bibitem{liberopara}
+C.~Kim et al.
+\newblock \emph{LIBERO-Para: A Diagnostic Benchmark and Metrics for Paraphrase Robustness in
+VLA Models.}
+\newblock 2026.
+
+\bibitem{koldabader}
+T.~Kolda and B.~Bader.
+\newblock \emph{Tensor Decompositions and Applications.}
+\newblock SIAM Review, 2009.
+
+\bibitem{stoudenmire}
+E.~Stoudenmire and D.~Schwab.
+\newblock \emph{Supervised Learning with Tensor Networks.}
+\newblock NeurIPS, 2016.
+
+\bibitem{chrysos}
+G.~Chrysos et al.
+\newblock \emph{Deep Polynomial Neural Networks.}
+\newblock CVPR and TPAMI, 2020 to 2021.
+
 \end{thebibliography}
+
+% ============================================================================
+\appendix
+\renewcommand{\theHfigure}{A.\arabic{figure}}
+\raggedbottom
+\section{Supporting results and decisions}
+% ============================================================================
+
+\input{instruction_embedding_ablation_appendix}
+
+\subsection{Reproducibility details}
+\label{app:reproducibility}
+
+Training and evaluation use fixed task lists, explicit camera and action conventions,
+canonical-state manifests, checkpointed moving-average weights, and per-run result files.
+Historical Modal cache-backed analyses read dataset-native task metadata. The replacement Athena
+pipeline pins that metadata and maps dataset identifiers to official identifiers before defining
+task splits. A source-level audit compared all $271{,}996$ cached frames across Object, Spatial,
+Goal, and LIBERO-10 with their pinned LeRobot revisions. Task identifiers, language joins, states,
+actions, and resized images matched exactly for every frame. The anonymous artifact releases raw
+structural-certificate JSONs and all $2{,}000$ episode rows behind the ViT member and ensemble
+results. Immutable SHA-256 manifests and standard-library verifiers independently recompute the
+capability totals, matched conventional comparison, four-suite ensemble and retention arithmetic, visual-bottleneck counts and intervals, and the attention, FFN, complete-block,
+modality-partition, full learned-forward, and RationalNorm certificate decisions. Preflight checks
+fail if canonical initial states cannot be loaded.
+
+\subsection{Expanded attention screen}
+\label{app:expanded-mechanisms}
+
+Within the same seed-$0$ ViT checkpoint, the corrected fixed-control attention analysis covers
+all eight blocks and twelve heads. At
+rank $128$, $83/96$ block-head pairs favor the exact weight-derived subspace. The median ratio
+is $1.94$, the mean is $2.58$, and blocks $2$ and $3$ provide useful depth controls.
+At ranks $8$ and $32$, only $54/96$ and $60/96$ pairs favor the exact subspace. The effect is
+therefore depth-dependent and strongest at the wider tested rank.
+
+\subsection{Prospectively fixed-rank visual bottleneck}
+\label{app:visual-bottleneck}
+
+The behavioral intervention acts at the width-$384$ visual-to-joint interface and keeps rank
+$96$. Projector construction uses official Object tasks $0$--$3$. Rank $96$ was fixed before any
+corrected-basis outcome was observed, and the frozen evaluation uses tasks $8$--$9$. Across three checkpoints and $300$
+canonical episodes, the full policy succeeds on $272$ trials. The action-Jacobian projector
+retains $259/272=95.2\%$ of those successes, with a paired checkpoint-task-episode resampling
+interval of $91.2$--$98.6\%$. The activation-energy projector retains $267/272=98.2\%$, with an
+interval of $95.8$--$100.0\%$. Three fixed equal-rank random projectors retain $37/272=13.6\%$,
+$9/272=3.3\%$, and $22/272=8.1\%$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/visual_bottleneck_verified.pdf}
+\caption{\textbf{Corrected closed-loop visual bottleneck.} Both learned rank-$96$ projectors
+preserve nearly all baseline successes across three checkpoints, while equal-rank random
+projectors do not. Error bars in panel (a) are deterministic paired cluster-resampling intervals.
+Tasks $8$--$9$ are absent from corrected projector construction, but not from policy training.
+This is not a clean rank-selection-holdout result.}
+\label{fig:visual-bottleneck}
+\end{figure}
+
+The action-Jacobian basis does not outperform the matched activation-energy basis. The stronger
+action-specificity gate therefore does not pass. The supported claim is structured visual
+sufficiency relative to random projectors. This intervention is data-derived and remains separate
+from the exact weight-only attention decomposition.
+
+\clearpage
+\subsection{Numerical scope of rational conversion}
+\label{app:rational-scope}
+
+The deployed degree-$[2/2]$ least-squares rational fit is exact as a rational computation even
+though it approximates RMS normalization. Its numerator has coefficients
+$(5.32997,7.53552,0.327274)$ and the denominator has coefficients
+$(1,9.64827,2.60664)$. Every denominator coefficient is positive, which certifies $Q(v)>0$ for
+all $v\geq0$. We instrument all $53$ RationalNorm module instances, each invoked once per forward
+pass, on $4{,}096$ deterministic inputs for each of three convolutional checkpoints.
+Across $544{,}542{,}720$ activation rows, the minimum observed denominator is $1.0016$ and no row
+is nonfinite. Comparing deployed float32 normalization with an otherwise identical pass that
+recomputes only RationalNorm scales in float64, the largest checkpoint-level primary metric,
+defined as the maximum of normalized- and physical-action NRMSE, is
+$2.414\times10^{-6}$ against a frozen $10^{-3}$ gate.
+This primary certificate concerns pole-free denominators and floating-point fidelity to the
+deployed rational operator. It does not claim uniform agreement with exact RMS scaling or measure
+matched alternative-normalizer runtime overhead.
+
+The reconstruction ladder extends from individual attention heads through FFNs and per-block
+replay to a separate sequential learned-forward certificate. That final record starts at exact
+prepared model tensors and reaches the linear action head on $48$ fixed inputs. It is numerical and
+input-conditioned, not a compact symbolic contraction or an input-general full-policy proof. The
+ViT source-partition audit remains layerwise and descriptive. Figure~\ref{fig:structural-certificates}
+reports the frozen numerical gates and the depth profile without assigning causal importance.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{../paper_figures/appendix_structural_certificates.pdf}
+\caption{\textbf{Frozen reconstruction ladder and descriptive ViT source partition.}
+Panel (a) reports observed-to-gate ratios for independent Conv attention, joint-FFN, and complete
+joint-block reconstruction, the ViT source-partition identity, the sequential ViT learned-forward
+action replay, and primary RationalNorm action fidelity. All plotted primary numerical
+gates pass. Panel (b) shows descriptive mean coherent-energy shares after the attention output
+projection across $384$ checkpoint-input cases per joint block. The depth trend is not a causal
+importance or grounding result. The learned-forward replay excludes preprocessing, fixed action
+unnormalization, chunk execution, simulator dynamics, and success.}
+\label{fig:structural-certificates}
+\end{figure}
 
 \end{document}

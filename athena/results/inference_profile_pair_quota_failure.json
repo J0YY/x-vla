@@ -1,0 +1,26 @@
+{
+  "gpu": "NVIDIA A30",
+  "warmup_iters": 20,
+  "profile_iters": 200,
+  "conventional": {
+    "architecture": "conventional",
+    "parameters": 20138632,
+    "eager_latency_ms_batch1": 7.232413259334862,
+    "compiled_latency_ms_batch1": null,
+    "compiled_to_eager_ratio": null,
+    "compile_and_warmup_elapsed_s": 19.982100943103433,
+    "compile_error": "InductorError: OSError: [Errno 122] Disk quota exceeded: '/users/joy/.triton'\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n"
+  },
+  "chi": {
+    "architecture": "chi",
+    "parameters": 20137352,
+    "eager_latency_ms_batch1": 38.32198913907632,
+    "compiled_latency_ms_batch1": null,
+    "compiled_to_eager_ratio": null,
+    "compile_and_warmup_elapsed_s": 23.39452856965363,
+    "compile_error": "InductorError: OSError: [Errno 122] Disk quota exceeded: '/users/joy/.triton'\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n"
+  },
+  "eager_chi_to_conventional_latency_ratio": 5.298644831946543,
+  "compiled_chi_to_conventional_latency_ratio": null,
+  "scope": "Full image, instruction, state, backbone, and linear action-head forward pass at batch one on the same checkpoint pair and physical GPU."
+}

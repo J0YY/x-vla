@@ -1,0 +1,76 @@
+{
+  "cache": {
+    "canonical_content_sha256": "01bc724b9bf8c158b983e34b82bbb40dce9dba2cb86dd9be2a5bf8910be341c7",
+    "frames": 66984,
+    "path": "artifacts/libero_frames_100000_64.pkl",
+    "resolution": 64,
+    "sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662"
+  },
+  "comparison": {
+    "cached_frames_compared": 66984,
+    "max_abs_difference": {
+      "action": 0.0,
+      "resized_image": 0.0,
+      "state": 0.0
+    },
+    "mismatch_counts": {
+      "action": 0,
+      "episode_index": 0,
+      "frame_index": 0,
+      "language_join": 0,
+      "resized_image": 0,
+      "source_missing_frame": 0,
+      "state": 0,
+      "task_id": 0
+    },
+    "mismatch_examples": []
+  },
+  "elapsed_s": 5669.14955712622,
+  "implementation": {
+    "array_comparison": "exact dtype, shape, and contiguous bytes after cache casts",
+    "canonical_record_schema": "libero-cache-v1",
+    "datasets_version": "3.6.0",
+    "numpy_version": "1.26.4",
+    "pillow_version": "12.1.1",
+    "resize": "PIL.Image.resize((64, 64)) with library default resampling",
+    "source_feature_schema": "{'observation.images.image': Image(mode=None, decode=True, id=None), 'observation.state': Sequence(feature=Value(dtype='float32', id=None), length=8, id=None), 'action': Sequence(feature=Value(dtype='float32', id=None), length=7, id=None), 'episode_index': Value(dtype='int64', id=None), 'frame_index': Value(dtype='int64', id=None), 'task_index': Value(dtype='int64', id=None)}",
+    "verifier_source_sha256": "9dc1c6d643d318afa2069c5244079d198beb3b7a20eb049e28f9e7103f887894"
+  },
+  "limits": {
+    "expected_cache_frames": 66984,
+    "max_cache_frames": 100000,
+    "mismatch_example_limit": 20,
+    "source_extra_probe_records": 1,
+    "source_records_read_max": 66985
+  },
+  "metadata": {
+    "dataset_to_official_task": {
+      "0": 9,
+      "1": 4,
+      "2": 1,
+      "3": 3,
+      "4": 0,
+      "5": 7,
+      "6": 2,
+      "7": 6,
+      "8": 5,
+      "9": 8
+    },
+    "file": "meta/tasks.parquet",
+    "language_set_matches_official": true,
+    "repository": "lerobot/libero_object_image",
+    "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f",
+    "sha256": "34caee9641ae50bb4e077de306a7d0031753757882da8b1f117e7ea36a486b42"
+  },
+  "schema": "xvla-cache-provenance-v1",
+  "source": {
+    "canonical_content_sha256": "01bc724b9bf8c158b983e34b82bbb40dce9dba2cb86dd9be2a5bf8910be341c7",
+    "content_hashes_match": true,
+    "has_additional_frame_after_cache": false,
+    "repository": "lerobot/libero_object_image",
+    "revision": "e1e080d7df1d0a359dff5c86c222e047549f447f",
+    "split": "train"
+  },
+  "suite": "libero_object",
+  "verified": true
+}

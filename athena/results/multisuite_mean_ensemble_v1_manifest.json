@@ -1,0 +1,848 @@
+{
+  "artifacts": {
+    "0": {
+      "checkpoint_archive_index_sha256": "8d5445e7afc9c3927e15ea6fce932b480f969516722f4aba6c146e2c27e33c9b",
+      "checkpoint_path": "artifacts/ckpt_generalist_hardened_chi_s0.pt",
+      "checkpoint_sha256": "56a1ca50809c7b791eebd0b19efb19886d55bff68dfceef8710663eebc0f5a8b",
+      "metadata_path": "artifacts/ckpt_generalist_hardened_chi_s0.json",
+      "metadata_sha256": "90e326c2afe4490c31baf1c591136555c6f46cdc77b6f625176de2d51e846914"
+    },
+    "1": {
+      "checkpoint_archive_index_sha256": "5156c910251e5b848780adbab03430440460bf086d815b193b4384971619a6de",
+      "checkpoint_path": "artifacts/ckpt_generalist_hardened_chi_s1.pt",
+      "checkpoint_sha256": "c52f70e8207b4de9833e675b8c2594c622a464b719dac17925c1f62feb3cdec9",
+      "metadata_path": "artifacts/ckpt_generalist_hardened_chi_s1.json",
+      "metadata_sha256": "67a41cb240e244ebcf14fe25e4df7c23adfdea91bee1178f1b23bb0081448696"
+    },
+    "2": {
+      "checkpoint_archive_index_sha256": "89549b421899fcec3ce2589bfe90109020c826d8c0f81188f5a5bdd5d6e0b977",
+      "checkpoint_path": "artifacts/ckpt_generalist_hardened_chi_s2.pt",
+      "checkpoint_sha256": "9354a6c4d3e640eebcebd3e7e87fc6c230a1259e602da54aebbe3ca90557530c",
+      "metadata_path": "artifacts/ckpt_generalist_hardened_chi_s2.json",
+      "metadata_sha256": "1c22b97825bdcb9fdc5bfae0053e1f501f6186abcd1504d6576285fc63b9d466"
+    }
+  },
+  "cache_provenance": {
+    "libero_10": {
+      "cache_sha256": "571691dac732f9aa6c0837dbd3505e497b8dd18ea247b35ae10038c476eb44d0",
+      "result_sha256": "56637d9ed74a947922b0102fb7c4a0488b4b1e978b59a97bb8e7d56e72e08800",
+      "verified": true
+    },
+    "libero_goal": {
+      "cache_sha256": "f0d3ff502f797a0d6e2b611f5be806b2660afcb9d78c883610486f5138a50550",
+      "result_sha256": "2fdb5c7fe0f5e8de272ad23f6e182c027ada0b97280aaeddac284074f479f430",
+      "verified": true
+    },
+    "libero_object": {
+      "cache_sha256": "053cf7e392054c4bc1ac0ea280828c3baf7f02a43e2feee22f27734956575662",
+      "result_sha256": "1e3ed7eaeef317a221bb6649ea75ef68ff924b57797682e853b4bd90a138f4c4",
+      "verified": true
+    },
+    "libero_spatial": {
+      "cache_sha256": "662234d52afff37d55b4b36377cc89151208fc0392147197e2cbec38a49b3fcb",
+      "result_sha256": "fd38dc27518206a5b105f9909133947f4b36e5f2cc8e843f67e1db7898a52e6f",
+      "verified": true
+    }
+  },
+  "evaluation_environment": {
+    "cuda_matmul_allow_tf32": false,
+    "cuda_version": "12.6",
+    "cudnn_allow_tf32": true,
+    "libero_version": "0.1.0",
+    "mujoco_version": "3.5.0",
+    "robosuite_version": "1.4.1",
+    "torch_version": "2.7.1+cu126"
+  },
+  "evaluation_gpu": "NVIDIA RTX A6000",
+  "frozen_gates": {
+    "every_suite_macro_at_least": 0.5,
+    "macro_task_success_at_least": 0.7,
+    "tasks_at_least_0p50_at_least": 32,
+    "uplift_over_member_mean_at_least": 0.0
+  },
+  "generalist_manifest": {
+    "path": "artifacts/libero_all_manifest.json",
+    "sha256": "d0183b465c4d687a4b31f1fc2ca8c75a35786e164cd07f638ca47e347e21f4fd"
+  },
+  "member_macro_successes": [
+    0.7085000000000001,
+    0.7135,
+    0.6885
+  ],
+  "member_mean_macro_success": 0.7035,
+  "member_results": {
+    "0": {
+      "macro_task_success": 0.7085000000000001,
+      "source_files": [
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_object_t0_3.json",
+          "sha256": "97ea882a8961ed70c30f6762db33a7f61ce089fb2c02f405789a5afd95f3d19d"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_object_t3_6.json",
+          "sha256": "ce1e10b4d1c7149d1680564537ad735f92ba4163c743090e6ee04cdd7ac0c314"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_object_t6_8.json",
+          "sha256": "905a75da4bc999fbd5726f9d6564c765fc6a650e4d4621379780ddf75d710dfd"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_object_t8_10.json",
+          "sha256": "09fc4ec67ba0d970fa0eb15dfaa2307099a0ca769ebfac584f7fee1e472774b2"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_spatial_t0_3.json",
+          "sha256": "83520f3df45783b0e8f15232fe2ed646c58cf98e88ad1989fa9548b1cd9f70dc"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_spatial_t3_6.json",
+          "sha256": "8574b1eae80705715e1b2f182049efde5b4efcad61a1040e5f31e39292fec715"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_spatial_t6_8.json",
+          "sha256": "a2c93f2b8aed2d31dcd9371774868adc550beb96f89ea98cdebe45e336d253aa"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_spatial_t8_10.json",
+          "sha256": "8efabbf78b0845f03d4b686cac2a1767fd575a83b29982a56eaa62b97faec313"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_goal_t0_3.json",
+          "sha256": "eb3a865da4c9487dba86ec902c6e4bb7cd507fe8965dcd718ffc87d0659c7bb7"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_goal_t3_6.json",
+          "sha256": "6c6bc07b84bf3ac687f43f5f756faf7f0c739b24f56dc32a21dfb78e1fc993b8"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_goal_t6_8.json",
+          "sha256": "0e349d4e82465e72a4ee78423bda88409ab240a3cdf89c56982c6cf62c751a5c"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_goal_t8_10.json",
+          "sha256": "797bf8c0fbce75c54d81c383f1831d00bca22e2fd8b6cb9fbb9d79ca050bd644"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_10_t0_3.json",
+          "sha256": "0389cf2df314b17ced521e8fc7cd030a2378e32cd83b773c1e384e54f039ef46"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_10_t3_6.json",
+          "sha256": "5298539ca049c18fa851a407c17582ae1ef87c0d08c65b7d7587e1140da5447c"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_10_t6_8.json",
+          "sha256": "c9c13f2fcc61a8b66112e6fac6fabce7dd79b976088b35b4dc4e2545317d2ef6"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s0_libero_10_t8_10.json",
+          "sha256": "99bd05569410dc351d0d34752bf9d579773785407bd93009adca9bda276d7f91"
+        }
+      ],
+      "successes": 1417,
+      "suite_macro_success": {
+        "libero_10": 0.44799999999999995,
+        "libero_goal": 0.82,
+        "libero_object": 0.836,
+        "libero_spatial": 0.7300000000000001
+      },
+      "task_success": {
+        "libero_10:0": 0.12,
+        "libero_10:1": 0.36,
+        "libero_10:2": 0.82,
+        "libero_10:3": 0.84,
+        "libero_10:4": 0.42,
+        "libero_10:5": 0.86,
+        "libero_10:6": 0.4,
+        "libero_10:7": 0.4,
+        "libero_10:8": 0.0,
+        "libero_10:9": 0.26,
+        "libero_goal:0": 0.86,
+        "libero_goal:1": 0.96,
+        "libero_goal:2": 0.94,
+        "libero_goal:3": 0.56,
+        "libero_goal:4": 0.88,
+        "libero_goal:5": 0.72,
+        "libero_goal:6": 0.68,
+        "libero_goal:7": 0.98,
+        "libero_goal:8": 0.94,
+        "libero_goal:9": 0.68,
+        "libero_object:0": 0.8,
+        "libero_object:1": 0.64,
+        "libero_object:2": 0.98,
+        "libero_object:3": 0.4,
+        "libero_object:4": 0.92,
+        "libero_object:5": 0.82,
+        "libero_object:6": 1.0,
+        "libero_object:7": 0.84,
+        "libero_object:8": 0.96,
+        "libero_object:9": 1.0,
+        "libero_spatial:0": 0.78,
+        "libero_spatial:1": 0.86,
+        "libero_spatial:2": 0.94,
+        "libero_spatial:3": 0.86,
+        "libero_spatial:4": 0.68,
+        "libero_spatial:5": 0.04,
+        "libero_spatial:6": 0.98,
+        "libero_spatial:7": 0.64,
+        "libero_spatial:8": 0.78,
+        "libero_spatial:9": 0.74
+      },
+      "trials": 2000
+    },
+    "1": {
+      "macro_task_success": 0.7135,
+      "source_files": [
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_object_t0_3.json",
+          "sha256": "c5f833e7d5e83efab229f27e8d3827dd9c98a390e61d3848fea263233b4911d7"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_object_t3_6.json",
+          "sha256": "619b07aaff4bde2720e2500e8a1cea947f0e25dc1fa0a5f90ffd9e884b260fd2"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_object_t6_8.json",
+          "sha256": "4840b2a4cc9b3e9ecaa36f265f9d73529bbdcf317089519521f9122abce20f04"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_object_t8_10.json",
+          "sha256": "b1e5a616bcce6a7161b1f8f0c85b495ef1a45ef7d15a3ee46ff996e0f33155b0"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_spatial_t0_3.json",
+          "sha256": "2247f0f29716a8efc9f77b7c21ab34fb46d1aeb5eee25a2a26df787a2dd46b97"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_spatial_t3_6.json",
+          "sha256": "553ba8c33aaead9371dca9a7c328751bc5bd724fcbef4b6ad20fe197e5563ec1"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_spatial_t6_8.json",
+          "sha256": "5f4c67ccf189f7919a42d76cbf0ca611abc2874655bfcf3d1114301fd99694a9"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_spatial_t8_10.json",
+          "sha256": "a74e71c073ba3aa8ccb60c6518342cd4910963b5dbe93a84437b1f901cf9ec49"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_goal_t0_3.json",
+          "sha256": "8eb2b8248f0fb8cace86459bc90f26d4e52d6bb6114d7693ebc4eecaafea9b49"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_goal_t3_6.json",
+          "sha256": "dc7b9628064eecb308207cf19afd3b90759194895cc960a6bcbc96a9766e3c75"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_goal_t6_8.json",
+          "sha256": "867da9ffd8954cb9170cc5a13785ed0e2f7f0f7d61d53d07d43418b28ae2fcbe"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_goal_t8_10.json",
+          "sha256": "4e593524639455a3a4b7322e593c2aaaf474f453fa1594784033a3baddaee667"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_10_t0_3.json",
+          "sha256": "ed6d1eb0773f481294b01ba35005c0b1c998cf611b9b97580d018af72268f7bd"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_10_t3_6.json",
+          "sha256": "1097e8f0d21c25201b43460e362cc71c7debc45ef201dd1bb746ac9a739a249e"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_10_t6_8.json",
+          "sha256": "d7a3f39b21b516ffc8613011c75423cebadff278d9ea41f9e30d380d0a256090"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s1_libero_10_t8_10.json",
+          "sha256": "733897e7b5d29dd4808616482ac71bd36f6d1a7a66fb63cd2329353b54a30697"
+        }
+      ],
+      "successes": 1427,
+      "suite_macro_success": {
+        "libero_10": 0.472,
+        "libero_goal": 0.828,
+        "libero_object": 0.8240000000000001,
+        "libero_spatial": 0.7299999999999999
+      },
+      "task_success": {
+        "libero_10:0": 0.12,
+        "libero_10:1": 0.6,
+        "libero_10:2": 0.7,
+        "libero_10:3": 0.78,
+        "libero_10:4": 0.56,
+        "libero_10:5": 0.84,
+        "libero_10:6": 0.34,
+        "libero_10:7": 0.44,
+        "libero_10:8": 0.0,
+        "libero_10:9": 0.34,
+        "libero_goal:0": 0.76,
+        "libero_goal:1": 0.94,
+        "libero_goal:2": 0.88,
+        "libero_goal:3": 0.52,
+        "libero_goal:4": 0.86,
+        "libero_goal:5": 0.92,
+        "libero_goal:6": 0.68,
+        "libero_goal:7": 1.0,
+        "libero_goal:8": 0.98,
+        "libero_goal:9": 0.74,
+        "libero_object:0": 0.64,
+        "libero_object:1": 0.68,
+        "libero_object:2": 0.86,
+        "libero_object:3": 0.6,
+        "libero_object:4": 0.98,
+        "libero_object:5": 0.74,
+        "libero_object:6": 0.88,
+        "libero_object:7": 0.88,
+        "libero_object:8": 0.98,
+        "libero_object:9": 1.0,
+        "libero_spatial:0": 0.8,
+        "libero_spatial:1": 0.86,
+        "libero_spatial:2": 0.94,
+        "libero_spatial:3": 0.92,
+        "libero_spatial:4": 0.64,
+        "libero_spatial:5": 0.02,
+        "libero_spatial:6": 0.92,
+        "libero_spatial:7": 0.68,
+        "libero_spatial:8": 0.8,
+        "libero_spatial:9": 0.72
+      },
+      "trials": 2000
+    },
+    "2": {
+      "macro_task_success": 0.6885,
+      "source_files": [
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_object_t0_3.json",
+          "sha256": "8b55a3178f1db3472c991ca1cbcd5911e7c7843c876076ca1c014d28e4cfa11f"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_object_t3_6.json",
+          "sha256": "2ed7f77fb552fef31b611f080501f41abd88817bea73e96fd8d5d11bc4388026"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_object_t6_8.json",
+          "sha256": "0810debaa12d4dd2f7cedae3730afcb936d004367d76100f13c1e19870f4dc8e"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_object_t8_10.json",
+          "sha256": "65661755dbff11ad052ecd649ef81b92725bf37ef6cf98f5f8e615702ed71b2f"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_spatial_t0_3.json",
+          "sha256": "61f25f17601f094233a2b27922c79051fc58049969636ae71469e4f86c048cd1"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_spatial_t3_6.json",
+          "sha256": "46680cfb9ec06392254e17c9cd6b963b2309a038f70d85de148a88b377fd4fef"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_spatial_t6_8.json",
+          "sha256": "f74ebe4b90da37d19c72f96bd2a0ae5d1da8febcdcfc4cf308d7335f05c6989c"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_spatial_t8_10.json",
+          "sha256": "a13e4b775d7f47badb30840000e037043400006867a7ef2a8e45c9045e23217e"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_goal_t0_3.json",
+          "sha256": "fe05a82ba02ec0be5bd2971bc507edc3898066912ff3c460ec969e4c17050642"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_goal_t3_6.json",
+          "sha256": "991dd65b13e83a82a3a790f5817660913b1baaf10584a9ab33de935b7665c4d2"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_goal_t6_8.json",
+          "sha256": "69a5b57377ffcb8b11161249eddff1a22137a8e810dbe1acd5c12b9fd2f0e6ea"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_goal_t8_10.json",
+          "sha256": "f99821496b8841d88ee0056316c2c40d29af227810f83c3613bc5bf0a048bbca"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_10_t0_3.json",
+          "sha256": "90718a9e4e4c0156c8f2f3bd63ae533278de43bc4c8d1aa57a3607c48ea2337f"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_10_t3_6.json",
+          "sha256": "b8e5b7499b3114d387eef06cd6ad225ea5140af231f00160799d7a6ca8262686"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_10_t6_8.json",
+          "sha256": "8eb7d4a4bc890564cd2204bf45ed036686b3e8fd0928d282c93d0ac7652eef02"
+        },
+        {
+          "path": "results/generalist_hardened_chi_s2_libero_10_t8_10.json",
+          "sha256": "0eb9fa60f0cd76ba2619d13027258f31afca50cbad3ef4e0c38db3f89040a905"
+        }
+      ],
+      "successes": 1377,
+      "suite_macro_success": {
+        "libero_10": 0.44400000000000006,
+        "libero_goal": 0.8099999999999999,
+        "libero_object": 0.768,
+        "libero_spatial": 0.732
+      },
+      "task_success": {
+        "libero_10:0": 0.1,
+        "libero_10:1": 0.42,
+        "libero_10:2": 0.82,
+        "libero_10:3": 0.92,
+        "libero_10:4": 0.52,
+        "libero_10:5": 0.76,
+        "libero_10:6": 0.28,
+        "libero_10:7": 0.42,
+        "libero_10:8": 0.0,
+        "libero_10:9": 0.2,
+        "libero_goal:0": 0.86,
+        "libero_goal:1": 0.9,
+        "libero_goal:2": 0.84,
+        "libero_goal:3": 0.7,
+        "libero_goal:4": 0.86,
+        "libero_goal:5": 0.74,
+        "libero_goal:6": 0.62,
+        "libero_goal:7": 0.98,
+        "libero_goal:8": 0.9,
+        "libero_goal:9": 0.7,
+        "libero_object:0": 0.6,
+        "libero_object:1": 0.42,
+        "libero_object:2": 0.94,
+        "libero_object:3": 0.38,
+        "libero_object:4": 1.0,
+        "libero_object:5": 0.6,
+        "libero_object:6": 1.0,
+        "libero_object:7": 0.86,
+        "libero_object:8": 0.96,
+        "libero_object:9": 0.92,
+        "libero_spatial:0": 0.82,
+        "libero_spatial:1": 0.9,
+        "libero_spatial:2": 0.88,
+        "libero_spatial:3": 0.9,
+        "libero_spatial:4": 0.7,
+        "libero_spatial:5": 0.04,
+        "libero_spatial:6": 0.92,
+        "libero_spatial:7": 0.66,
+        "libero_spatial:8": 0.74,
+        "libero_spatial:9": 0.76
+      },
+      "trials": 2000
+    }
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "canonical_episodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "execution_horizon": 8,
+    "gpu": "NVIDIA RTX A6000",
+    "matmul_precision": "highest",
+    "max_steps": 280,
+    "resolution": 64,
+    "settle_steps": 10
+  },
+  "schema": "xvla_multisuite_mean_ensemble_manifest_v1",
+  "scope": {
+    "architecture": "chi",
+    "claim_boundary": "In-domain evaluation of one fixed three-checkpoint mean-prediction ensemble over the same 40 familiar tasks. This is not zero-shot generalization and does not alter the preregistered individual-checkpoint capability gates.",
+    "ensemble_reduction": "elementwise_mean_of_normalized_action_chunks",
+    "ensemble_trials": 2000,
+    "episodes_per_task": 50,
+    "inference_cost": "three policy forward passes per query",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "suites": [
+      "libero_object",
+      "libero_spatial",
+      "libero_goal",
+      "libero_10"
+    ],
+    "tasks_per_suite": 10,
+    "vision_encoder": "vit"
+  },
+  "source_bundle_sha256": "36ec16c00327dd8838702a996bf069e2be7d05e4206710dd3683c08c776ba4f7",
+  "source_files": {
+    "athena/build_multisuite_ensemble_manifest.py": "f8df1944d3c24e75fd0498766a75a4e47dc10116a01cc27d28be289cd31e64a4",
+    "athena/launch_multisuite_ensemble.sh": "f588f53379af111e78403d14f971e90fe1d46bc1371985f2c0acabc54d939a2e",
+    "athena/run_xvla_experiment.py": "91ae342892e32b0aa019a43ff06b5809dca2a49d4be20ce9a55fbad1b15cdbb3",
+    "athena/slurm_eval_multisuite_ensemble.sbatch": "8b306572bbcb5a18b0a04bb617e831e6bcd62aee1fbb0959bdbb55d1245cf6ac",
+    "athena/slurm_summarize_multisuite_ensemble.sbatch": "5a613f8ced9cb5182515cbf4e5064a6a0883c67b3de977dde82dde80cfb8a4a7",
+    "athena/summarize_multisuite_ensemble.py": "4ea87fedbf11527b45e4891edc8285597c29854de675b1a752d36e1f52b5ee9e",
+    "athena/summarize_multisuite_generalist.py": "cd87e66f267472d9b5c934804958f802e176b17618fca7f3be463db4a441a865"
+  },
+  "status": "frozen_after_member_evaluations_before_ensemble_outcomes",
+  "task_protocol": {
+    "libero_10:0": {
+      "bddl_file": "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket.bddl",
+      "bddl_sha256": "2e661058917f683a25bce480015197f0a2c1911bcbc2b9dd9d947199069c9618",
+      "init_state_count": 50,
+      "init_states_sha256": "32180b8ff575cc83da58d42f13ed4fc76cbd3defade0cce0566368ccf26f16da",
+      "language": "put both the alphabet soup and the tomato sauce in the basket",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:1": {
+      "bddl_file": "LIVING_ROOM_SCENE2_put_both_the_cream_cheese_box_and_the_butter_in_the_basket.bddl",
+      "bddl_sha256": "3f552805c7ab34c44debcf38a48b8131d6fee3011dd86c039650b84e0f77d058",
+      "init_state_count": 50,
+      "init_states_sha256": "88e9b7313639e9f46fff78bc96aa0bdcc21a9bfe9a88fc29f89c00fc7945e24d",
+      "language": "put both the cream cheese box and the butter in the basket",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:2": {
+      "bddl_file": "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl",
+      "bddl_sha256": "491835cc2eb6956f7ce3d1ee4e266377116168fe453e6529fe105e3b0333635d",
+      "init_state_count": 50,
+      "init_states_sha256": "9cdca50185ec6be2224b63157c4ec456b1af962737b885ecd3637a731c447a0c",
+      "language": "turn on the stove and put the moka pot on it",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:3": {
+      "bddl_file": "KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it.bddl",
+      "bddl_sha256": "5255fe54d7f25fad4dee8fa30a30033d8cb908f1708d953c91ab609264fb4fb8",
+      "init_state_count": 50,
+      "init_states_sha256": "b487a558874f5a03a09565f4059887d669762d72ff7fc9ed944c13f610731d7f",
+      "language": "put the black bowl in the bottom drawer of the cabinet and close it",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:4": {
+      "bddl_file": "LIVING_ROOM_SCENE5_put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate.bddl",
+      "bddl_sha256": "0c6749b920bff1e1efe47ffb0e0b801a3e6959a650e710f376dd2b812c74e865",
+      "init_state_count": 50,
+      "init_states_sha256": "05b5248dce6aeceea1cf04e76005e98ca27e9564f6618feaf86ca81005850dc5",
+      "language": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:5": {
+      "bddl_file": "STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy.bddl",
+      "bddl_sha256": "07ca32c940d70c065e870452ef9c63e6dfa1d8506e6a86cf9b3763f652ba2d9f",
+      "init_state_count": 50,
+      "init_states_sha256": "bb9b28473370130f552a32ddc9441ab7b1092b9af2a890218822839acd8ec61d",
+      "language": "pick up the book and place it in the back compartment of the caddy",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:6": {
+      "bddl_file": "LIVING_ROOM_SCENE6_put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate.bddl",
+      "bddl_sha256": "dbc9464b424cdc9b771b92d0b8a8c185b1b539f6a4133b323dc858bcf8f6a9c2",
+      "init_state_count": 50,
+      "init_states_sha256": "93367661989493fbbbfa490a7fa58849c16add09a8d1211127fd4f93759e5253",
+      "language": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:7": {
+      "bddl_file": "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket.bddl",
+      "bddl_sha256": "e27ab37f512fe42e35771d6130f531e6a9656929e7b4c60b348b81360cf5675d",
+      "init_state_count": 50,
+      "init_states_sha256": "61b0536dd7a4090444b7a7f8dbb9486b10d6097d93edb657f000df44e282000b",
+      "language": "put both the alphabet soup and the cream cheese box in the basket",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:8": {
+      "bddl_file": "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl",
+      "bddl_sha256": "ae1299a707d3e810096ad648948c517de40474bcdacca93a15e17d191e34454a",
+      "init_state_count": 50,
+      "init_states_sha256": "ee8deb101bf15c4d66def3ebe532abe37cc978d2fad3d18dff9caf716f0ed3ee",
+      "language": "put both moka pots on the stove",
+      "problem_folder": "libero_10"
+    },
+    "libero_10:9": {
+      "bddl_file": "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it.bddl",
+      "bddl_sha256": "456d145f92be049f445fc77673dc583d9d17ea7afe92f6ffcb2fd1fa5565d420",
+      "init_state_count": 50,
+      "init_states_sha256": "4ea264531e0905d1babc27f41448a8fd84ee48b478e9d9785c531d1826b63dd7",
+      "language": "put the yellow and white mug in the microwave and close it",
+      "problem_folder": "libero_10"
+    },
+    "libero_goal:0": {
+      "bddl_file": "open_the_middle_drawer_of_the_cabinet.bddl",
+      "bddl_sha256": "832ab48ec476807c767e8985666e295700f92d1f8daeae1c34eee1e75293769b",
+      "init_state_count": 50,
+      "init_states_sha256": "653debb7736fccabd69a0c3acc871fe77612b47ded1c14c68b024d762b19f253",
+      "language": "open the middle drawer of the cabinet",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:1": {
+      "bddl_file": "put_the_bowl_on_the_stove.bddl",
+      "bddl_sha256": "c6812d6c988be830412aa6fc4801af04d60f8c4565d2625763b6a0f2b843a87f",
+      "init_state_count": 50,
+      "init_states_sha256": "3bc912155f6e75ea6272e1a90ccbca7820370b9839047a5c646b09277eb6279e",
+      "language": "put the bowl on the stove",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:2": {
+      "bddl_file": "put_the_wine_bottle_on_top_of_the_cabinet.bddl",
+      "bddl_sha256": "2ef6f403a8451e216af44158c1a6c975cf8e5058ad02d78367ac0be443d096fe",
+      "init_state_count": 50,
+      "init_states_sha256": "bd1f63d56553241a828b5754e67a345dae67e53f8ee3932cd1a18046c50d5a78",
+      "language": "put the wine bottle on top of the cabinet",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:3": {
+      "bddl_file": "open_the_top_drawer_and_put_the_bowl_inside.bddl",
+      "bddl_sha256": "3056e4dc72ee590432cfb18c610fd077a572c8b8f256e45328031005dd0b6757",
+      "init_state_count": 50,
+      "init_states_sha256": "4cdaaa43909a5cce2bca8b10a2a7973cb48205f831c1a07f565c1b1511a3cdb1",
+      "language": "open the top drawer and put the bowl inside",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:4": {
+      "bddl_file": "put_the_bowl_on_top_of_the_cabinet.bddl",
+      "bddl_sha256": "2ffba859a154f50c3c99ffb3420743fa5aa65c70bf7d4cd26f5bc81d07be5713",
+      "init_state_count": 50,
+      "init_states_sha256": "0b7faf7f15231fc3d6626c423d9e775be0687bb74240b06a43baa74602f6a7bc",
+      "language": "put the bowl on top of the cabinet",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:5": {
+      "bddl_file": "push_the_plate_to_the_front_of_the_stove.bddl",
+      "bddl_sha256": "26f22f8ad39a4b2b344b049115c45661a877fa0b4821fb78246725e7e87d8c0b",
+      "init_state_count": 50,
+      "init_states_sha256": "e5605a52faf40e031d0f4733de33660fab5a842fc95e1527ab37bde6320520a3",
+      "language": "push the plate to the front of the stove",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:6": {
+      "bddl_file": "put_the_cream_cheese_in_the_bowl.bddl",
+      "bddl_sha256": "81c54eace32b92466598103b3b6e8435ce90f10996ef18cec4a35fe6c4d31a98",
+      "init_state_count": 50,
+      "init_states_sha256": "69c23da5c835a3a15a897e29fc329651522df8bfa3422bab5ff0e3eb30abe530",
+      "language": "put the cream cheese in the bowl",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:7": {
+      "bddl_file": "turn_on_the_stove.bddl",
+      "bddl_sha256": "cbd2a0514d53226c5d09e17af40b22935d4cb6ff8fdaff0d55f555de1adecc13",
+      "init_state_count": 50,
+      "init_states_sha256": "c2fa5581d4931c9541be4149884ec3f63f66fb0b352013a18e5d796e34a4f7be",
+      "language": "turn on the stove",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:8": {
+      "bddl_file": "put_the_bowl_on_the_plate.bddl",
+      "bddl_sha256": "358b7781437e412c67d6a7648c1c28796b6b1bf117a25e61316cb8dfeb940e5b",
+      "init_state_count": 50,
+      "init_states_sha256": "fbb54eb4eb24631e86f02e523a19f9ae202b60c38e2a6bf2efa80bf9ed0c983e",
+      "language": "put the bowl on the plate",
+      "problem_folder": "libero_goal"
+    },
+    "libero_goal:9": {
+      "bddl_file": "put_the_wine_bottle_on_the_rack.bddl",
+      "bddl_sha256": "3d3ee18139056aa3780572cde17b1c50dc20ae0d299403f65e514e8471ba0e8e",
+      "init_state_count": 50,
+      "init_states_sha256": "f245c6a1619b9d9bce17124e0842b65c588bd594ffae01fdfbbdb377212f471a",
+      "language": "put the wine bottle on the rack",
+      "problem_folder": "libero_goal"
+    },
+    "libero_object:0": {
+      "bddl_file": "pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "df088984da13131f8332ee0f13a7896c6a97afd02ee5007a42e8fc5e0893571e",
+      "init_state_count": 50,
+      "init_states_sha256": "91eed35ff60c2b791ba1d80996e359177a9202d81358e9fddb42ccafffa3f34e",
+      "language": "pick up the alphabet soup and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:1": {
+      "bddl_file": "pick_up_the_cream_cheese_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "7019f37ee158d67a21338a6df0c441dd8f84979b946b5e20bb49463ef0508ea2",
+      "init_state_count": 50,
+      "init_states_sha256": "6443945d386a843b9998caeee65f3093f50e4ab65e913e7102aa39eaee7edd59",
+      "language": "pick up the cream cheese and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:2": {
+      "bddl_file": "pick_up_the_salad_dressing_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "024978e9e8f43a49b49d0965f4f426d364ce056307f0fcf5733dc4682fac437a",
+      "init_state_count": 50,
+      "init_states_sha256": "7f365994bb15f09bed7e4611603d8b5e4a3576f7fccb827241f6ad60cb8b3e3f",
+      "language": "pick up the salad dressing and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:3": {
+      "bddl_file": "pick_up_the_bbq_sauce_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "8a7e37b76fce5621e649e260dbcfcec7ce2f9a055ca09a4f1ebaf5ca74a739c2",
+      "init_state_count": 50,
+      "init_states_sha256": "b186084cc72f9cf8c07ca98c18542f4f0269b23f53bf98ac8474d1cc5b642702",
+      "language": "pick up the bbq sauce and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:4": {
+      "bddl_file": "pick_up_the_ketchup_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "4a4e545483a3fe30cf0ef3dc05bfe5e6ad5e37c94b4376dfa73fe1b60e75b319",
+      "init_state_count": 50,
+      "init_states_sha256": "8a035ce260650b525cbdec044e777f2625e689aca72dd737983c4a61539d5ab8",
+      "language": "pick up the ketchup and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:5": {
+      "bddl_file": "pick_up_the_tomato_sauce_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "b1f4bb69d256a05f693838de46182bb0d3de0de68eec350df1b5b1e76f6c136d",
+      "init_state_count": 50,
+      "init_states_sha256": "2015e882bad1d77efd5b973a070fd6bd4cf524f35c36497f5060b1acc7b59dcb",
+      "language": "pick up the tomato sauce and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:6": {
+      "bddl_file": "pick_up_the_butter_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "5d8053b40ff33246fdbcc38548db84032c6bb647b4b88b6646d9cf6b73a5006c",
+      "init_state_count": 50,
+      "init_states_sha256": "981f9d28ca49331ad5faf46ff765233fe7d4fa39a3f35dd332104f900c8cc766",
+      "language": "pick up the butter and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:7": {
+      "bddl_file": "pick_up_the_milk_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "9910aabf6717e8ba3e24a3f8500d9bce9ee075346ea6961e8fd766f1257d2996",
+      "init_state_count": 50,
+      "init_states_sha256": "f78700be5769be90421173e1689e458b65f4d791855aedc3d2dedc63e3b7a0aa",
+      "language": "pick up the milk and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:8": {
+      "bddl_file": "pick_up_the_chocolate_pudding_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "674ceabc400b7b16d46e8eaf678709d4a633235c7e0a80233775044fe38b19b0",
+      "init_state_count": 50,
+      "init_states_sha256": "54593bb836dc12d321d9e7971e54034bbe01c02929cf0c09cb93b75038bedf5a",
+      "language": "pick up the chocolate pudding and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_object:9": {
+      "bddl_file": "pick_up_the_orange_juice_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "6298533e7bcfb83e40779a77fda39216e8cd53f22bf1af6388585dad0abb0b50",
+      "init_state_count": 50,
+      "init_states_sha256": "c198880f92818df55d0a8e53ab739bbfd36acfab236a276c7ac72a27a27baf0d",
+      "language": "pick up the orange juice and place it in the basket",
+      "problem_folder": "libero_object"
+    },
+    "libero_spatial:0": {
+      "bddl_file": "pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "9b59eb1287802868ad9bc78d58e6d36d4ba31134e679cfdbdf4b0feb660c959b",
+      "init_state_count": 50,
+      "init_states_sha256": "5650675212619ba045598bc6410091f9ba03b93abc1cea3642e4c79a588ed498",
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:1": {
+      "bddl_file": "pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "53a7516571412a2f46a27cbf8482d3b76dbad4221858c8f6b565d506c274e61d",
+      "init_state_count": 50,
+      "init_states_sha256": "91d05f4db7d334092bba682aebdc11af3810246455cd5fd7dcba07fa569c34c5",
+      "language": "pick up the black bowl next to the ramekin and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:2": {
+      "bddl_file": "pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "5e19880ebc844f86b89f63b172aab0b7a89f85b6e6955891f544f0ea7d0795d5",
+      "init_state_count": 50,
+      "init_states_sha256": "fa4e0e1a2ed29fe900271d8c7ebf676570e648adbf9325122dfd93b61950ca17",
+      "language": "pick up the black bowl from table center and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:3": {
+      "bddl_file": "pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "3d4ccf070c3d9883ae0676f2d888588f98c696ddad71b7694f47c379fc99ef36",
+      "init_state_count": 50,
+      "init_states_sha256": "2e780c415865b73433eea1f3d2a5517b9c96bbb4e021edba3dbe2eb5b16aa4c3",
+      "language": "pick up the black bowl on the cookie box and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:4": {
+      "bddl_file": "pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "4371189e11d9fd29bb548ab9a8adcd741bb0ce41bb66c612672d0e8cb29a52a9",
+      "init_state_count": 50,
+      "init_states_sha256": "e55f4421ec1e8942bd3b6eb19c211fcec6091f67dda67d1f1c152d0f7ddd5b97",
+      "language": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:5": {
+      "bddl_file": "pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "10239815a9d18ad53e09365d453a362ee54d29ca276e04eef411cf1db8d72940",
+      "init_state_count": 50,
+      "init_states_sha256": "3b5dc62b3bb3bb46705da3f6932d83b09d7bdcaf85e2878cc4ba41aa8dbd18e5",
+      "language": "pick up the black bowl on the ramekin and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:6": {
+      "bddl_file": "pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "566c65596f3472e752e6522817bff51bbf3ce5159d7bec1d3554e5ead46b1e55",
+      "init_state_count": 50,
+      "init_states_sha256": "6559da1ac1727fa5c60c5e3cb83a3f36e86d43925d306558c43bc81c89987cae",
+      "language": "pick up the black bowl next to the cookie box and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:7": {
+      "bddl_file": "pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "dd11837141a30d874ebbbfaae20e91ecc67ec85ab3872ceb4cff3abfcbef7cb0",
+      "init_state_count": 50,
+      "init_states_sha256": "9c6ed6406807d9bf7d6be733e1500088d8e64f07e29999e7a89670c34bd88085",
+      "language": "pick up the black bowl on the stove and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:8": {
+      "bddl_file": "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "c8fbb9effa27b947d04d26862d75273d93cac1806734e53836cd472a08aec1fe",
+      "init_state_count": 50,
+      "init_states_sha256": "f6e95e98761ee03ca400f5c0d389f18839d16ce8da4d01de118be5bab7ac65e9",
+      "language": "pick up the black bowl next to the plate and place it on the plate",
+      "problem_folder": "libero_spatial"
+    },
+    "libero_spatial:9": {
+      "bddl_file": "pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "5293e759381b477e126beaf83d738542bbd4d93f522a3eead1066e612bad4a8c",
+      "init_state_count": 50,
+      "init_states_sha256": "54e7ed4e2ee2d33c72541c48535ddad6f4cc44e9d334d318460002415a09191b",
+      "language": "pick up the black bowl on the wooden cabinet and place it on the plate",
+      "problem_folder": "libero_spatial"
+    }
+  }
+}

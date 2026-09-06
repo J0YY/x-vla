@@ -1,0 +1,17 @@
+{
+  "architecture": "conventional",
+  "seed": 1,
+  "steps": 40000,
+  "batch_size": 256,
+  "samples": 63352,
+  "parameters": 20138632,
+  "elapsed_s": 4738.667769656051,
+  "steps_per_s": 8.441191057144598,
+  "examples_per_s": 2160.944910629017,
+  "peak_allocated_gb": 8.817713664,
+  "peak_reserved_gb": 9.10163968,
+  "last_loss": 0.003598521463572979,
+  "gpu": "NVIDIA A30",
+  "checkpoint": "artifacts/ckpt_linear_conventional_vit_s1.pt",
+  "ema_decay": 0.999
+}

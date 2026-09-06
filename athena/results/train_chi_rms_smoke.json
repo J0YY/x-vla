@@ -1,0 +1,17 @@
+{
+  "architecture": "chi_rms",
+  "seed": 0,
+  "steps": 10,
+  "batch_size": 64,
+  "samples": 63352,
+  "parameters": 20137352,
+  "elapsed_s": 1.8035350861027837,
+  "steps_per_s": 5.544666182019649,
+  "examples_per_s": 354.8586356492575,
+  "peak_allocated_gb": 5.930914816,
+  "peak_reserved_gb": 6.52214272,
+  "last_loss": 0.9520441293716431,
+  "gpu": "NVIDIA A30",
+  "checkpoint": "artifacts/ckpt_chi_rms_smoke.pt",
+  "ema_decay": 0.999
+}

@@ -175,7 +175,14 @@ class BilinearAttention(nn.Module):
 
     def _resolve_mask(self, n: int, x: torch.Tensor, mask):
         if mask is not None:
-            return mask.to(device=x.device, dtype=x.dtype)
+            if mask.ndim != 2 or mask.shape != (n, n):
+                raise ValueError(f"mask must have shape ({n}, {n})")
+            if not bool(torch.isfinite(mask).all()):
+                raise ValueError("mask must contain only finite values")
+            converted = mask.to(device=x.device, dtype=x.dtype)
+            if not bool(((converted == 0) | (converted == 1)).all()):
+                raise ValueError("mask must be binary with values in {0, 1}")
+            return converted
         if self.causal:
             return causal_mask(n, device=x.device, dtype=x.dtype)
         return x.new_ones(n, n)
@@ -202,15 +209,23 @@ class BilinearAttention(nn.Module):
         return self.wo(y)
 
     def _khatri_rao(self, x, mask=None):
+        # A dense or causal mask destroys the global low-rank factorization in
+        # general. Use the true linear contraction only for an all-visible
+        # mask, the prefix scan for the implicit causal mask, and otherwise
+        # fall back to the exact explicit masked contraction.
+        if mask is None and self.causal:
+            return self._causal_scan(x)
         B, N, _ = x.shape
-        q1, k1, q2, k2, v = self._project(x)
         m = self._resolve_mask(N, x, mask)
+        if not bool((m == 1).all()):
+            return self._explicit(x, mask)
+        q1, k1, q2, k2, v = self._project(x)
         qt = _row_kron(q1, q2)                                # (B,H,N,d_h²)
         kt = _row_kron(k1, k2)
-        a = (qt @ kt.transpose(-1, -2)) / self._score_denom  # == (a1⊙a2) scaled
-        a = a * m
+        summary = kt.transpose(-1, -2) @ v                    # (B,H,d_h²,d_h)
+        y = (qt @ summary) / self._score_denom                # (B,H,N,d_h)
         c = self._row_scale_vec(m).view(1, 1, N, 1)
-        y = c * (a @ v)
+        y = c * y
         y = y.transpose(1, 2).reshape(B, N, self.dim)
         return self.wo(y)
 
@@ -251,5 +266,7 @@ class BilinearAttention(nn.Module):
         if method == "causal_scan":
             if mask is not None:
                 raise ValueError("causal_scan uses the implicit lower-triangular mask")
+            if not self.causal:
+                raise ValueError("causal_scan requires causal=True")
             return self._causal_scan(x)
         raise ValueError(f"unknown method {method!r}")

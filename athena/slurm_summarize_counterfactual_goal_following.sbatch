@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#SBATCH --partition=compute
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH --time=04:00:00
+#SBATCH --output=/work/joy/x-vla-workshop/logs/%x_%j.out
+#SBATCH --error=/work/joy/x-vla-workshop/logs/%x_%j.err
+
+set -euo pipefail
+
+source /athenahomes/joy/miniconda3/etc/profile.d/conda.sh
+conda activate safesae-openvla
+export PYTHONUNBUFFERED=1
+export HF_HOME=/work/joy/hf_cache
+export PYTHONPATH="/work/joy/x-vla-workshop:/athenahomes/joy/LIBERO:${PYTHONPATH:-}"
+
+cd /work/joy/x-vla-workshop
+readonly expected_common_sha="616201783cc07a42124f2ff3de3bb5f2b35cfd5a0cc855ffcbda102b046560f7"
+readonly expected_summary_sha="0e216eb07b6224d76af5202c57515466eebfaf6b5405682d9ebf84b3be309031"
+[[ "$(sha256sum athena/counterfactual_goal_following_common.py | cut -d' ' -f1)" == "$expected_common_sha" ]]
+[[ "$(sha256sum athena/summarize_counterfactual_goal_following.py | cut -d' ' -f1)" == "$expected_summary_sha" ]]
+python -u athena/summarize_counterfactual_goal_following.py "$@"

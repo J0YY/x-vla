@@ -1,0 +1,392 @@
+{
+  "bootstrap_scope": "Each draw resamples ten episode states within every task and retains all three checkpoint outcomes for each sampled state.",
+  "by_checkpoint": {
+    "0": {
+      "full_lexical_success_rate": 0.84,
+      "full_lexical_successes": 84,
+      "full_only": 78,
+      "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 100,
+      "paired_success_gap": 0.78,
+      "pooled_pair_mcnemar_one_sided_exact_p": 3.308722450212111e-24,
+      "zeroed_lexical_success_rate": 0.06,
+      "zeroed_lexical_successes": 6,
+      "zeroed_only": 0
+    },
+    "1": {
+      "full_lexical_success_rate": 0.87,
+      "full_lexical_successes": 87,
+      "full_only": 58,
+      "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 100,
+      "paired_success_gap": 0.57,
+      "pooled_pair_mcnemar_one_sided_exact_p": 1.0408340855860843e-16,
+      "zeroed_lexical_success_rate": 0.3,
+      "zeroed_lexical_successes": 30,
+      "zeroed_only": 1
+    },
+    "2": {
+      "full_lexical_success_rate": 0.92,
+      "full_lexical_successes": 92,
+      "full_only": 67,
+      "mcnemar_scope": "exact over 100 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 100,
+      "paired_success_gap": 0.65,
+      "pooled_pair_mcnemar_one_sided_exact_p": 4.092863201132779e-18,
+      "zeroed_lexical_success_rate": 0.27,
+      "zeroed_lexical_successes": 27,
+      "zeroed_only": 2
+    }
+  },
+  "by_task": {
+    "0": {
+      "full_lexical_success_rate": 0.9333333333333333,
+      "full_lexical_successes": 28,
+      "full_only": 12,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.3333333333333333,
+      "pooled_pair_mcnemar_one_sided_exact_p": 0.0064697265625,
+      "zeroed_lexical_success_rate": 0.6,
+      "zeroed_lexical_successes": 18,
+      "zeroed_only": 2
+    },
+    "1": {
+      "full_lexical_success_rate": 0.8666666666666667,
+      "full_lexical_successes": 26,
+      "full_only": 26,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.8666666666666667,
+      "pooled_pair_mcnemar_one_sided_exact_p": 1.4901161193847656e-08,
+      "zeroed_lexical_success_rate": 0.0,
+      "zeroed_lexical_successes": 0,
+      "zeroed_only": 0
+    },
+    "2": {
+      "full_lexical_success_rate": 0.9666666666666667,
+      "full_lexical_successes": 29,
+      "full_only": 22,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.7333333333333333,
+      "pooled_pair_mcnemar_one_sided_exact_p": 2.384185791015625e-07,
+      "zeroed_lexical_success_rate": 0.23333333333333334,
+      "zeroed_lexical_successes": 7,
+      "zeroed_only": 0
+    },
+    "3": {
+      "full_lexical_success_rate": 0.6666666666666666,
+      "full_lexical_successes": 20,
+      "full_only": 19,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.6333333333333333,
+      "pooled_pair_mcnemar_one_sided_exact_p": 1.9073486328125e-06,
+      "zeroed_lexical_success_rate": 0.03333333333333333,
+      "zeroed_lexical_successes": 1,
+      "zeroed_only": 0
+    },
+    "4": {
+      "full_lexical_success_rate": 0.9333333333333333,
+      "full_lexical_successes": 28,
+      "full_only": 22,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.7333333333333333,
+      "pooled_pair_mcnemar_one_sided_exact_p": 2.384185791015625e-07,
+      "zeroed_lexical_success_rate": 0.2,
+      "zeroed_lexical_successes": 6,
+      "zeroed_only": 0
+    },
+    "5": {
+      "full_lexical_success_rate": 0.7,
+      "full_lexical_successes": 21,
+      "full_only": 20,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.6666666666666666,
+      "pooled_pair_mcnemar_one_sided_exact_p": 9.5367431640625e-07,
+      "zeroed_lexical_success_rate": 0.03333333333333333,
+      "zeroed_lexical_successes": 1,
+      "zeroed_only": 0
+    },
+    "6": {
+      "full_lexical_success_rate": 1.0,
+      "full_lexical_successes": 30,
+      "full_only": 24,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.8,
+      "pooled_pair_mcnemar_one_sided_exact_p": 5.960464477539063e-08,
+      "zeroed_lexical_success_rate": 0.2,
+      "zeroed_lexical_successes": 6,
+      "zeroed_only": 0
+    },
+    "7": {
+      "full_lexical_success_rate": 0.8666666666666667,
+      "full_lexical_successes": 26,
+      "full_only": 20,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.6333333333333333,
+      "pooled_pair_mcnemar_one_sided_exact_p": 1.049041748046875e-05,
+      "zeroed_lexical_success_rate": 0.23333333333333334,
+      "zeroed_lexical_successes": 7,
+      "zeroed_only": 1
+    },
+    "8": {
+      "full_lexical_success_rate": 0.8666666666666667,
+      "full_lexical_successes": 26,
+      "full_only": 12,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.4,
+      "pooled_pair_mcnemar_one_sided_exact_p": 0.000244140625,
+      "zeroed_lexical_success_rate": 0.4666666666666667,
+      "zeroed_lexical_successes": 14,
+      "zeroed_only": 0
+    },
+    "9": {
+      "full_lexical_success_rate": 0.9666666666666667,
+      "full_lexical_successes": 29,
+      "full_only": 26,
+      "mcnemar_scope": "exact over 30 checkpoint-state pairs; not cluster-robust inference",
+      "paired_checkpoint_state_pairs": 30,
+      "paired_success_gap": 0.8666666666666667,
+      "pooled_pair_mcnemar_one_sided_exact_p": 1.4901161193847656e-08,
+      "zeroed_lexical_success_rate": 0.1,
+      "zeroed_lexical_successes": 3,
+      "zeroed_only": 0
+    }
+  },
+  "claim_boundaries": "This establishes necessity of the learned lexical-embedding path only for familiar LIBERO-Object tasks, prompts, objects, scenes, and the three fixed policies. It does not establish semantic grounding, paraphrase robustness, unseen-object or compositional generalization, cross-suite or physical transfer, or a benefit unique to tensor decomposability. The exact paired test is not cluster-robust inference.",
+  "claim_eligible": true,
+  "claim_if_passed": "Across three fixed chi-ViT policies and 300 paired checkpoint-state evaluations on 100 fresh canonical LIBERO-Object states, zeroing all 32 learned instruction-token embedding outputs after lookup reduces closed-loop success by at least 20 percentage points.",
+  "design_provenance": {
+    "declaration": "This is a prospective causal ablation of one learned input path on held-out canonical states. It is not a reanalysis of the earlier prompt-control trials.",
+    "design_time_local": "2026-08-21T12:45:00-07:00",
+    "designed_after_instruction_necessity_v1_outcomes": true,
+    "fresh_state_partition": {
+      "counterfactual_goal_following_v1": "canonical episodes 20 through 29",
+      "instruction_necessity_v1": "canonical episodes 40 through 49",
+      "this_study": "canonical episodes 30 through 39"
+    },
+    "frozen_before_any_endpoint_outcome": true,
+    "gate_rationale": "The 20-point paired gap, 70-percent pooled baseline, 60-percent per-checkpoint baseline, task consistency, exact paired test, and clustered bootstrap were declared prospectively for the fresh state partition.",
+    "outcome_informed_rationale": "The prompt-level instruction-necessity result motivated a more precise mechanism test. No episode-30-through-39 lexical-ablation outcome was inspected when this protocol, matrix, intervention, or gate was chosen."
+  },
+  "elapsed_s": 8.767662457190454,
+  "frozen_gates": {
+    "all_three_checkpoints_must_pass": true,
+    "minimum_full_lexical_success_every_checkpoint": 0.6,
+    "minimum_full_lexical_success_pooled": 0.7,
+    "minimum_pooled_success_gap": 0.2,
+    "minimum_tasks_with_strictly_positive_gap": 8,
+    "negative_task_gaps_allowed": 0,
+    "one_sided_paired_exact_p_at_most": 0.01,
+    "state_cluster_retains_all_three_checkpoint_outcomes": true,
+    "success_gap_strictly_positive_every_checkpoint": true,
+    "task_stratified_state_cluster_bootstrap_draws": 20000,
+    "task_stratified_state_cluster_bootstrap_lower_strictly_above": 0.0,
+    "task_stratified_state_cluster_bootstrap_seed": 2026082701
+  },
+  "full_lexical_success_by_checkpoint": {
+    "0": 0.84,
+    "1": 0.87,
+    "2": 0.92
+  },
+  "full_lexical_success_pooled": 0.8766666666666667,
+  "gates": {
+    "at_least_eight_strictly_positive_tasks": true,
+    "full_lexical_success_every_checkpoint_at_least_0p60": true,
+    "full_lexical_success_pooled_at_least_0p70": true,
+    "no_negative_task_gap": true,
+    "one_sided_paired_exact_p_at_most_0p01": true,
+    "pooled_success_gap_at_least_0p20": true,
+    "success_gap_positive_every_checkpoint": true,
+    "task_stratified_state_cluster_bootstrap_lower_above_zero": true
+  },
+  "identity_validated": true,
+  "input_results": {
+    "results/instruction_embedding_ablation_v1_s0_t0_2.json": {
+      "sha256": "b7be66c36b1be50808a664283f7a8b8547d83ae3e095c49e0e4dc0fa5d438767"
+    },
+    "results/instruction_embedding_ablation_v1_s0_t2_4.json": {
+      "sha256": "81be3bd14c4c38c3bb0d3891af264a87a91a56f38c0ca5af511b8a5abf5bec37"
+    },
+    "results/instruction_embedding_ablation_v1_s0_t4_6.json": {
+      "sha256": "9fa8c2a8102c1cbdf5ef98738ebd551f8866e0e45d79dd8c17244ee0207e6e5a"
+    },
+    "results/instruction_embedding_ablation_v1_s0_t6_8.json": {
+      "sha256": "7289ab6f4946370e3a3d9c475363f9e7803cc5eec2a318a877cc4f2191d1ca41"
+    },
+    "results/instruction_embedding_ablation_v1_s0_t8_10.json": {
+      "sha256": "82f74997780374e2481f7c8279bbfd0788d1f9cb5c362692bb98135e7fa16c1e"
+    },
+    "results/instruction_embedding_ablation_v1_s1_t0_2.json": {
+      "sha256": "6e8db34af1d5518e84bcd9f500b8afc28d04dd634216daba6ffdfeccb53f1de8"
+    },
+    "results/instruction_embedding_ablation_v1_s1_t2_4.json": {
+      "sha256": "3a1601843d81956a66ceaa6a79bbefb0337ddbbe41d4678a47104f4cb22377cf"
+    },
+    "results/instruction_embedding_ablation_v1_s1_t4_6.json": {
+      "sha256": "af6c93394da999abadda1e6525987ee8a85d8d34f0320dfcb8456a2ca0d29d0e"
+    },
+    "results/instruction_embedding_ablation_v1_s1_t6_8.json": {
+      "sha256": "abd33bcb8b8410712e74c2aee24d384f0a1b078cc5024276fd03b759c3607c87"
+    },
+    "results/instruction_embedding_ablation_v1_s1_t8_10.json": {
+      "sha256": "c2d6c93e050530c73b26229af88cd08b5c182a512b554763c70dc04156d53ae8"
+    },
+    "results/instruction_embedding_ablation_v1_s2_t0_2.json": {
+      "sha256": "daf1b6b9132be8110e953979eeceabb6e4fba841cb069f0fcac229b97a2e0bd8"
+    },
+    "results/instruction_embedding_ablation_v1_s2_t2_4.json": {
+      "sha256": "2d8db970493c54ae06e6cc81c3a0ce1b6ebc11bc7732baeb02bc54e66ffcde4b"
+    },
+    "results/instruction_embedding_ablation_v1_s2_t4_6.json": {
+      "sha256": "d144ebd14fa3d50a3bdd2ede7fea94a22f475230751e7bfeec26608d4bf038f0"
+    },
+    "results/instruction_embedding_ablation_v1_s2_t6_8.json": {
+      "sha256": "6a4a80f57aa12c91b7b6b08d045a2067b9717940f932be78329cbd03704e235e"
+    },
+    "results/instruction_embedding_ablation_v1_s2_t8_10.json": {
+      "sha256": "80314a26ccf098e9bfefd39d57f8ee8b81490b5c7518143f09912131b3a430b5"
+    }
+  },
+  "manifest": "artifacts/instruction_embedding_ablation_v1_manifest.json",
+  "manifest_sha256": "c543af066251379f74ce4e2a09cba16da6181dad74fc3dca67e03b534dc727d0",
+  "overall_pass": true,
+  "pooled": {
+    "full_lexical_success_rate": 0.8766666666666667,
+    "full_lexical_successes": 263,
+    "full_only": 203,
+    "mcnemar_scope": "exact over 300 checkpoint-state pairs; not cluster-robust inference",
+    "paired_checkpoint_state_pairs": 300,
+    "paired_success_gap": 0.6666666666666666,
+    "pooled_pair_mcnemar_one_sided_exact_p": 1.416846395002053e-56,
+    "zeroed_lexical_success_rate": 0.21,
+    "zeroed_lexical_successes": 63,
+    "zeroed_only": 3
+  },
+  "protocol": {
+    "action_horizon": 8,
+    "canonical_episode_end_exclusive": 40,
+    "canonical_episode_start": 30,
+    "checkpoint_seeds": [
+      0,
+      1,
+      2
+    ],
+    "checkpoint_state_pairs_per_checkpoint": 100,
+    "condition_order": "one of two permutations selected by SHA-256 of instruction-embedding-ablation-v1-order|checkpoint|task|episode",
+    "conditions": [
+      "full_lexical_embeddings",
+      "zeroed_lexical_embeddings"
+    ],
+    "cublas_workspace_config": ":4096:8",
+    "cudnn_benchmark": false,
+    "deterministic_algorithms": true,
+    "execution_horizon": 8,
+    "gpu_compute_capability": [
+      8,
+      6
+    ],
+    "gpu_family": "a6000",
+    "gpu_name": "NVIDIA RTX A6000",
+    "instruction_token_count": 32,
+    "intervention": "A scoped PyTorch forward hook replaces the complete (B,32,d) output of model.tok_emb with torch.zeros_like(output) after the embedding lookup. The correct instruction IDs, sequence length, token positions, vision input, robot-state input, embodiment token, learned model BOS, joint positions, and action queries are otherwise unchanged.",
+    "learned_common_bos_semantics": "model.bos is a separate learned token prepended after visual tokens and before the 32 instruction positions. It is outside model.tok_emb and is not ablated.",
+    "matmul_precision": "highest",
+    "max_steps": 280,
+    "resolution": 64,
+    "rollouts_per_checkpoint": 200,
+    "runtime_versions": {
+      "cuda": "12.6",
+      "mujoco": "3.5.0",
+      "numpy": "1.26.4",
+      "pillow": "12.1.1",
+      "python": "3.10.19",
+      "robosuite": "1.4.1",
+      "torch": "2.7.1",
+      "torch_build": "2.7.1+cu126"
+    },
+    "settle_steps": 10,
+    "suite": "libero_object",
+    "summary_cuda_visible_devices": "",
+    "summary_python_executable": "/anonymous/cluster/home/miniconda3/envs/safesae-openvla/bin/python",
+    "task_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "task_shards": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        8,
+        10
+      ]
+    ],
+    "total_checkpoint_state_pairs": 300,
+    "total_rollouts": 600,
+    "unique_paired_states": 100
+  },
+  "schema": "xvla-instruction-embedding-ablation-summary-v1",
+  "smoke": "results/instruction_embedding_ablation_v1_smoke.json",
+  "smoke_sha256": "e52b2c02690b1b077bfc325bbc41e338a02ef8bba0e413c7f2d8a0936be791c0",
+  "summary_runtime": {
+    "cpu_count_visible": 64,
+    "cuda_visible_devices": "",
+    "declared_python_executable": "/anonymous/cluster/home/miniconda3/envs/safesae-openvla/bin/python",
+    "hostname": "cnode401",
+    "numpy": "1.26.4",
+    "numpy_distribution": "1.26.4",
+    "python": "3.10.19",
+    "python_executable": "/anonymous/cluster/work/safesae-openvla/bin/python3.10",
+    "slurm_job_id": "831489"
+  },
+  "summary_source_sha256": "f633b8d54bc94b4ce7f593d216245195445d38e5e6ba945bf60ac657f24f8d78",
+  "task_consistency": {
+    "gaps_by_task": {
+      "0": 0.3333333333333333,
+      "1": 0.8666666666666667,
+      "2": 0.7333333333333333,
+      "3": 0.6333333333333333,
+      "4": 0.7333333333333333,
+      "5": 0.6666666666666666,
+      "6": 0.8,
+      "7": 0.6333333333333333,
+      "8": 0.4,
+      "9": 0.8666666666666667
+    },
+    "negative_tasks": 0,
+    "strictly_positive_tasks": 10
+  },
+  "task_stratified_state_cluster_bootstrap_interval": [
+    0.6166666666666667,
+    0.7133333333333334
+  ]
+}

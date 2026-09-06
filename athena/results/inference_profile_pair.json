@@ -1,0 +1,26 @@
+{
+  "gpu": "NVIDIA A30",
+  "warmup_iters": 20,
+  "profile_iters": 200,
+  "conventional": {
+    "architecture": "conventional",
+    "parameters": 20138632,
+    "eager_latency_ms_batch1": 7.141495670657605,
+    "compiled_latency_ms_batch1": 0.8765579550527036,
+    "compiled_to_eager_ratio": 0.12274150898868895,
+    "compile_and_warmup_elapsed_s": 21.924141376744956,
+    "compile_error": null
+  },
+  "chi": {
+    "architecture": "chi",
+    "parameters": 20137352,
+    "eager_latency_ms_batch1": 38.048228356055915,
+    "compiled_latency_ms_batch1": 1.5235826396383345,
+    "compiled_to_eager_ratio": 0.04004345814424326,
+    "compile_and_warmup_elapsed_s": 36.377621110063046,
+    "compile_error": null
+  },
+  "eager_chi_to_conventional_latency_ratio": 5.327767474870197,
+  "compiled_chi_to_conventional_latency_ratio": 1.7381425048463888,
+  "scope": "Full image, instruction, state, backbone, and linear action-head forward pass at batch one on the same checkpoint pair and physical GPU."
+}
