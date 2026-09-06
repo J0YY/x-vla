@@ -24,7 +24,7 @@ def main() -> None:
     if destination.exists():
         raise FileExistsError("freeze destination already exists")
     worker = ROOT / "modal_odt_dimension_curve_worker.py"
-    audit = audit_direct_only_launch(ROOT, [worker, ROOT / "modal_odt_dimension_curve_reduced.py"])
+    audit = audit_direct_only_launch(ROOT, [worker, ROOT / "modal_odt_dimension_curve_reduced.py", ROOT / "modal_odt_dimension_curve_oracle.py"])
     source_map = dict(audit["source_sha256"])
     destination.mkdir(parents=True)
     for relative, digest in source_map.items():

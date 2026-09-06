@@ -89,13 +89,15 @@ def load_training(inputs: Path) -> dict:
     return read_json(training)
 
 
-def load_source(inputs: Path, configuration: dict) -> ChiVLA:
+def load_source(inputs: Path, configuration: dict, source_dtype: str = "float64") -> ChiVLA:
+    if source_dtype not in ("float32", "float64"):
+        raise ValueError("source precision must be explicitly float32 or float64")
     model = ChiVLA(VLAConfig(**configuration))
     state = torch.load(inputs / "capable_linear_b1c0_checkpoint.pt", map_location="cpu", weights_only=True)
     if len(state) != 540:
         raise RuntimeError("checkpoint tensor count differs")
     model.load_state_dict(state, strict=True)
-    model = model.cuda().eval()
+    model = model.to(dtype=torch.float64 if source_dtype == "float64" else torch.float32).cuda().eval()
     norms = {name: module for name, module in model.named_modules() if isinstance(module, RationalNorm)}
     active = {name: module for name, module in norms.items() if name != "vision.norm_out"}
     if len(norms) != 74 or len(active) != 73 or model.num_params() != 20137352:
@@ -160,7 +162,10 @@ def predict(source: Any, mapped: Any, observations: list[dict], instructions: li
     else:
         if source is None:
             raise RuntimeError("baseline source is missing")
-        normalized, loss = source(images.float().cuda(), tokens.cuda(), states.float().cuda(),
+        source_dtype = next(source.parameters()).dtype
+        if source_dtype not in (torch.float32, torch.float64):
+            raise RuntimeError("source model precision differs")
+        normalized, loss = source(images.to(dtype=source_dtype).cuda(), tokens.cuda(), states.to(dtype=source_dtype).cuda(),
                                   torch.zeros(len(observations), dtype=torch.long, device="cuda"))
         if loss is not None:
             raise RuntimeError("baseline forward returned a training loss")

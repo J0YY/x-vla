@@ -12,7 +12,9 @@ from __future__ import annotations
 import numpy as np
 
 
-COUNTS = {"calls": 0, "direct_qr_systems": 0, "largest_relative_residual": 0.0}
+COUNTS = {"calls": 0, "direct_qr_systems": 0, "largest_relative_residual": 0.0,
+    "largest_componentwise_backward_error": 0.0, "largest_normwise_backward_error": 0.0,
+    "rhs_residual_warning_systems": 0, "componentwise_residual_warning_systems": 0}
 
 
 def install_prohibited_route_guards() -> dict:
@@ -85,12 +87,29 @@ def _direct_qr_square_solve(matrix: np.ndarray, rhs: np.ndarray) -> np.ndarray:
         solution += correction
     if not np.isfinite(solution).all():
         raise RuntimeError("controller direct QR solution is nonfinite")
-    error = float(np.max(np.abs(extended_matrix @ solution.astype(np.longdouble) - extended_rhs)))
+    residual = extended_matrix @ solution.astype(np.longdouble) - extended_rhs
+    error = float(np.max(np.abs(residual)))
     relative = error / max(float(np.max(np.abs(rhs))), np.finfo(np.float64).tiny)
-    if relative > 1e-9:
-        raise RuntimeError(f"controller constrained dynamics residual too large: {relative}")
+    # Report componentwise residuals, but direct Householder QR is normwise
+    # stable.  Tiny roundoff in structural-zero components can have a large
+    # componentwise ratio even when the solution is correctly rounded.
+    denominator = np.abs(extended_matrix) @ np.abs(solution.astype(np.longdouble)) + np.abs(extended_rhs)
+    if bool(((denominator == 0) & (residual != 0)).any()):
+        raise RuntimeError("controller backward-error denominator is zero for a nonzero residual")
+    ratios = np.divide(np.abs(residual), denominator, out=np.zeros_like(residual), where=denominator != 0)
+    backward_error = float(np.max(ratios))
+    normwise_scale = np.max(np.abs(extended_matrix).sum(axis=1)) * np.max(np.abs(solution.astype(np.longdouble))) + np.max(np.abs(extended_rhs))
+    if not np.isfinite(normwise_scale) or normwise_scale < 0 or (normwise_scale == 0 and error != 0):
+        raise RuntimeError("controller normwise residual scale is invalid")
+    normwise_error = float(np.max(np.abs(residual)) / normwise_scale) if normwise_scale != 0 else 0.
+    if not np.isfinite(backward_error) or not np.isfinite(normwise_error) or normwise_error > 1e-12:
+        raise RuntimeError(f"controller constrained dynamics normwise backward error too large: {normwise_error}")
     COUNTS["direct_qr_systems"] += 1
     COUNTS["largest_relative_residual"] = max(COUNTS["largest_relative_residual"], relative)
+    COUNTS["largest_componentwise_backward_error"] = max(COUNTS["largest_componentwise_backward_error"], backward_error)
+    COUNTS["largest_normwise_backward_error"] = max(COUNTS["largest_normwise_backward_error"], normwise_error)
+    COUNTS["rhs_residual_warning_systems"] += int(relative > 1e-9)
+    COUNTS["componentwise_residual_warning_systems"] += int(backward_error > 1e-12)
     return solution
 
 
@@ -126,9 +145,13 @@ def install_controller() -> dict:
     if controller.opspace_matrices is not opspace_matrices_direct_qr:
         raise RuntimeError("controller binding installation failed")
     return {
-        "schema": "xvla_modal_direct_qr_constrained_dynamics_controller_v1",
+        "schema": "xvla_modal_direct_qr_constrained_dynamics_controller_v3",
         "method": "direct_householder_qr_of_mass_jacobian_saddle_system",
         "unconditional_same_factor_refinement_steps": 2,
+        "normwise_backward_error_gate": 1e-12,
+        "normwise_scale": "max_row_sum_abs_A_times_max_abs_X_plus_max_abs_B",
+        "componentwise_backward_error_warning_threshold": 1e-12,
+        "rhs_relative_residual_warning_threshold": 1e-9,
         "singular_policy": "fail_closed_no_fallback",
         "historical_controller_equivalence": "same_constrained_equations_on_nonsingular_systems_only",
     }

@@ -759,9 +759,214 @@ def test_honest_physical_prefix_schema_executes_without_canonical_relabeling(
         assert torch.equal(mapped.evaluate_projective_boundary(_raw_inputs()), expected)
 
 
+def test_compiled_executor_matches_mapped_for_all_core_types_and_repeated_edges(
+    tmp_path: Path,
+) -> None:
+    from xvla.train.implicit_projective_dag_numba import (
+        open_compiled_mapped_implicit_projective_dag_artifact,
+    )
+
+    root = tmp_path / "compiled"
+    receipt = export_implicit_projective_dag_artifact(
+        _network(),
+        root,
+        shard_size_bytes=64,
+    )
+    with open_mapped_implicit_projective_dag_artifact(
+        root,
+        expected_manifest_sha256=receipt.manifest_sha256,
+    ) as mapped:
+        expected, expected_receipt = mapped.evaluate_projective_boundary(
+            _raw_inputs(),
+            return_receipt=True,
+        )
+    with open_compiled_mapped_implicit_projective_dag_artifact(
+        root,
+        expected_manifest_sha256=receipt.manifest_sha256,
+    ) as compiled:
+        observed, observed_receipt = compiled.evaluate_projective_boundary(
+            _raw_inputs(),
+            return_receipt=True,
+        )
+        assert _relative_pair(observed, expected) <= 2e-10
+        assert observed_receipt.node_evaluations == expected_receipt.node_evaluations
+        assert (
+            observed_receipt.edge_occurrences_emitted
+            == expected_receipt.edge_occurrences_emitted
+        )
+        assert observed_receipt.edge_ledger_sha256 == expected_receipt.edge_ledger_sha256
+        assert observed_receipt.released_nonroot_nodes == expected_receipt.released_nonroot_nodes
+        assert observed_receipt.peak_live_values == expected_receipt.peak_live_values
+        assert compiled.execution_layout_supported
+        assert compiled.segmented_bytes_per_evaluation == 0
+        assert observed_receipt.arena_width == compiled.arena_receipt.arena_width
+        assert observed_receipt.arena_bytes == (
+            len(_raw_inputs()) * compiled.arena_receipt.arena_width * 8
+        )
+        assert compiled.arena_receipt.arena_width < (
+            compiled.arena_receipt.logical_output_width_sum
+        )
+
+
+def test_compiled_executor_matches_mapped_on_385_by_386_retained_q(
+    tmp_path: Path,
+) -> None:
+    from xvla.train.implicit_projective_dag_numba import (
+        open_compiled_mapped_implicit_projective_dag_artifact,
+    )
+
+    generator = torch.Generator().manual_seed(385386)
+    left = ImplicitNode(
+        uid=1,
+        label="pade.left",
+        core=UnaryCore(torch.eye(2, dtype=DTYPE), "physical"),
+        physical_source_key="left",
+    )
+    right = ImplicitNode(
+        uid=2,
+        label="pade.right",
+        core=UnaryCore(torch.eye(193, dtype=DTYPE), "physical"),
+        physical_source_key="right",
+    )
+    root_node = ImplicitNode(
+        uid=3,
+        label="pade.retained_q",
+        core=ReducedQRBinaryCore(
+            torch.randn(385, 386, generator=generator, dtype=DTYPE) / 64.0,
+            left_dimension=2,
+            right_dimension=193,
+            kind="bounded_direct_q",
+        ),
+        children=(left, right),
+    )
+    network = ImplicitProjectiveDAG(
+        root=root_node,
+        head=torch.randn(57, 385, generator=generator, dtype=DTYPE) / 32.0,
+        head_binary_exponent=0,
+        token_count=1,
+        feature_dimension=1,
+        selected_token=0,
+        mask=torch.ones(1, 1, dtype=DTYPE),
+        physical_sources=(
+            PhysicalSourceSpec("left", "pade.left", 1),
+            PhysicalSourceSpec("right", "pade.right", 192),
+        ),
+        algorithm1_direct_rq_complete=True,
+        algorithm1_scale_ledger_complete=True,
+        algorithm1_certified_head_binary_exponent=0,
+    )
+    raw = {
+        "left": torch.randn(20, 1, generator=generator, dtype=DTYPE),
+        "right": torch.randn(20, 192, generator=generator, dtype=DTYPE),
+    }
+    root = tmp_path / "retained-q-385x386"
+    receipt = export_implicit_projective_dag_artifact(network, root)
+    with open_mapped_implicit_projective_dag_artifact(
+        root,
+        expected_manifest_sha256=receipt.manifest_sha256,
+    ) as mapped:
+        expected = mapped.evaluate_projective_boundary(raw)
+    with open_compiled_mapped_implicit_projective_dag_artifact(
+        root,
+        expected_manifest_sha256=receipt.manifest_sha256,
+    ) as compiled:
+        observed = compiled.evaluate_projective_boundary(raw)
+    assert _relative_pair(observed, expected) <= 2e-10
+
+
+def test_compiled_executor_arena_cap_and_close_retry_fail_before_replay(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from xvla.train import implicit_projective_dag_numba as compiled_module
+
+    root = tmp_path / "compiled-lifetime"
+    receipt = export_implicit_projective_dag_artifact(_network(), root)
+    compiled = compiled_module.open_compiled_mapped_implicit_projective_dag_artifact(
+        root,
+        expected_manifest_sha256=receipt.manifest_sha256,
+        maximum_arena_bytes=8,
+    )
+    calls = 0
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        raise AssertionError("compiled kernel must not run above its arena cap")
+
+    monkeypatch.setattr(compiled_module, "_execute_compiled", forbidden)
+    with pytest.raises(RuntimeError, match="arena exceeds.*before execution"):
+        compiled.evaluate_projective_boundary(_raw_inputs())
+    assert calls == 0
+
+    mappings = compiled._mapped._mappings
+    exported = compiled._weight_arrays[0]
+    with pytest.raises(RuntimeError, match="still exported.*retry close"):
+        compiled.close()
+    assert not compiled.closed
+    with pytest.raises(RuntimeError, match="close is incomplete"):
+        compiled.evaluate_projective_boundary(_raw_inputs())
+    del exported
+    gc.collect()
+    compiled.close()
+    assert compiled.closed
+    assert all(mapping.closed for mapping in mappings)
+
+
+def test_compiled_executor_close_cannot_invalidate_an_active_lease(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import numpy as np
+    from xvla.train import implicit_projective_dag_numba as compiled_module
+
+    root = tmp_path / "compiled-active"
+    receipt = export_implicit_projective_dag_artifact(_network(), root)
+    compiled = compiled_module.open_compiled_mapped_implicit_projective_dag_artifact(
+        root,
+        expected_manifest_sha256=receipt.manifest_sha256,
+    )
+    started = threading.Event()
+    proceed = threading.Event()
+
+    def blocked(*_args: object, **_kwargs: object) -> tuple[object, object]:
+        started.set()
+        assert proceed.wait(timeout=10.0)
+        return (
+            np.ones((2, 8), dtype=np.float64),
+            np.zeros(2, dtype=np.uint8),
+        )
+
+    monkeypatch.setattr(compiled_module, "_execute_compiled", blocked)
+    errors: list[BaseException] = []
+
+    def run() -> None:
+        try:
+            compiled.evaluate_projective_boundary(_raw_inputs())
+        except BaseException as error:
+            errors.append(error)
+
+    worker = threading.Thread(target=run)
+    worker.start()
+    assert started.wait(timeout=10.0)
+    with pytest.raises(RuntimeError, match="during evaluation"):
+        compiled.close()
+    assert not compiled.closed
+    proceed.set()
+    worker.join(timeout=10.0)
+    assert not worker.is_alive()
+    assert not errors
+    compiled.close()
+    assert compiled.closed
+
+
 def test_all_six_physical_prefixes_match_their_original_mask_outputs_mapped(
     tmp_path: Path,
 ) -> None:
+    from xvla.train.implicit_projective_dag_numba import (
+        open_compiled_mapped_implicit_projective_dag_artifact,
+    )
+
     diagonal, raw = _mapped_ladder_fixture()
     plans = InternalDimensionPlans(diagonal.network)
     expected = {}
@@ -796,6 +1001,17 @@ def test_all_six_physical_prefixes_match_their_original_mask_outputs_mapped(
             assert _relative_pair(observed, expected[removal]) <= 2e-10
             assert execution.node_evaluations == mapped.node_count
             assert execution.edge_occurrences_emitted == mapped.edge_occurrence_count
+            assert execution.root_only_live
+            assert execution.all_refcounts_zero
+        with open_compiled_mapped_implicit_projective_dag_artifact(
+            destination / artifact["path"],
+            expected_manifest_sha256=artifact["manifest_sha256"],
+        ) as compiled:
+            observed, execution = compiled.evaluate_projective_boundary(
+                raw,
+                return_receipt=True,
+            )
+            assert _relative_pair(observed, expected[removal]) <= 2e-10
             assert execution.root_only_live
             assert execution.all_refcounts_zero
 

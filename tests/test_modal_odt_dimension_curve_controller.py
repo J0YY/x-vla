@@ -52,6 +52,42 @@ def test_direct_factors_handle_multiscale_known_solution_without_alternate_facto
     assert np.max(np.abs(matrix @ actual - matrix @ expected)) < 1e-12
 
 
+def test_captured_real_system_matches_independent_decimal80_direct_qr():
+    import json
+    from pathlib import Path
+    capture = json.loads((Path(__file__).parent / "fixtures/modal_odt_controller_real_gate_capture.json").read_text())
+    matrix, rhs = np.asarray(capture["matrix"]), np.asarray(capture["rhs"])
+    actual = _direct_qr_square_solve(matrix, rhs)
+    reference = np.asarray(capture["reference_decimal80_solution"], dtype=np.longdouble)
+    error = np.max(np.abs(actual.astype(np.longdouble) - reference)) / np.max(np.abs(reference))
+    assert error < 2e-16
+    # The formerly failing threshold rejects even the correctly rounded answer.
+    rounded = reference.astype(np.float64).astype(np.longdouble)
+    rhs_error = np.max(np.abs(matrix.astype(np.longdouble) @ rounded - rhs))
+    assert rhs_error > 1e-9
+
+
+def test_normwise_gate_rejects_a_deliberately_wrong_solution(monkeypatch):
+    import modal_odt_dimension_curve_controller as controller
+    monkeypatch.setattr(controller, "_back_substitute", lambda _r, projected: np.zeros_like(projected))
+    with pytest.raises(RuntimeError, match="backward error too large"):
+        _direct_qr_square_solve(np.eye(2, dtype=np.float64), np.eye(2, dtype=np.float64))
+
+
+def test_structural_zero_roundoff_matches_decimal80_despite_componentwise_warning():
+    import json
+    from pathlib import Path
+    capture = json.loads((Path(__file__).parent / "fixtures/modal_odt_controller_zero_component_capture.json").read_text())
+    matrix, rhs = np.asarray(capture["matrix"]), np.asarray(capture["rhs"])
+    actual = _direct_qr_square_solve(matrix, rhs)
+    reference = np.asarray(capture["reference_decimal80_solution"], dtype=np.longdouble)
+    error = np.max(np.abs(actual.astype(np.longdouble) - reference)) / np.max(np.abs(reference))
+    assert error < 2e-16
+    assert capture["componentwise_backward_error"] > .5
+    assert capture["worst_component_residual"] < 1e-35
+    assert capture["normwise_backward_error"] < 1e-16
+
+
 def test_guard_blocks_all_known_rank_condition_and_basis_shortcuts(monkeypatch):
     import scipy.linalg
     import torch
