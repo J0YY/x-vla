@@ -242,10 +242,19 @@ def _execute_policy(removal: int, run_name: str, artifact_manifest_sha256: str =
                 if len(receipt_sha256) != 64 or sha256(receipt_file) != receipt_sha256:
                     raise RuntimeError("dimension receipt is not authenticated")
                 receipt = read_json(receipt_file)
+                if receipt.get("checkpoint_sha256") != identity["checkpoint_sha256"] or type(receipt.get("full_rank_certificate_sha256")) is not str or len(receipt["full_rank_certificate_sha256"]) != 64:
+                    raise RuntimeError("rung does not identify this certified source checkpoint")
                 if receipt["artifact"]["manifest_sha256"] != artifact_manifest_sha256 or receipt["artifact"]["path"] != f"remove_{removal}":
                     raise RuntimeError("dimension receipt and artifact identity differ")
                 if receipt["dimension_denominator"] != "unique_nonleaf_nonroot_tensor_output_bonds":
                     raise RuntimeError("dimension denominator differs")
+                if type(receipt.get("original_internal_dimensions")) is not int or type(receipt.get("retained_internal_dimensions")) is not int or not 0 < receipt["retained_internal_dimensions"] <= receipt["original_internal_dimensions"]:
+                    raise RuntimeError("rung dimension counts are malformed")
+                if type(receipt.get("requested_internal_dimension_removal")) is not float or receipt["requested_internal_dimension_removal"] != removal / 100.:
+                    raise RuntimeError("rung requested dimension schedule differs")
+                replay_error = receipt.get("masked_materialized_boundary_max_error")
+                if type(replay_error) is not float or not 0. <= replay_error <= 2e-10:
+                    raise RuntimeError("rung physical materialization replay gate failed")
                 actual = 1. - receipt["retained_internal_dimensions"] / receipt["original_internal_dimensions"]
                 if abs(actual - receipt["actual_internal_dimension_removal"]) > 1e-14 or abs(actual - removal / 100.) > 0.001:
                     raise RuntimeError("reported physical dimensions do not match the requested rung")
