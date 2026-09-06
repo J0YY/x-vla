@@ -166,12 +166,15 @@ def clone_gate(original, raw, expected, progress):
             if values[rank-1] - values[rank] <= 1e-8 * max(float(np.max(np.abs(values))), 1e-12):
                 degenerate += 1
                 continue
-            target, candidate = oracle[:, :rank], basis[:, :rank]
-            q, r = np.linalg.qr(target, mode="reduced")
-            rhs, coordinates = q.T @ candidate, np.zeros((rank, rank))
-            for row in range(rank - 1, -1, -1):
-                coordinates[row] = (rhs[row] - r[row, row+1:] @ coordinates[row+1:]) / r[row, row]
-            close(target @ coordinates, candidate, TOLERANCES["subspace"], "retained subspace")
+            # Compare against the independent environment's leading eigenspace
+            # through its eigen-equation, not a solve or an overlap matrix.
+            # At a resolved cutoff, residual / separation bounds leakage into
+            # the excluded invariant subspace (Frobenius residual bound).
+            candidate = basis[:, :rank]
+            residual = environment @ candidate - candidate * values[:rank]
+            bound = float(np.sqrt(np.sum(residual * residual))) / (values[rank-1] - values[rank])
+            if not np.isfinite(bound) or bound > TOLERANCES["subspace"]:
+                raise ValueError("independent retained-subspace residual bound failed")
             checked += 1
     canonical = shared.copy()
 
