@@ -28,22 +28,26 @@ from xvla.nn.bilinear import BilinearFFN
 from xvla.nn.normalization import RationalNorm
 from xvla.nn.product_routing import ProductRoutingHead
 from xvla.nn.attention import causal_mask
-from xvla.train.implicit_sparse_projective_odt import (
-    ImplicitNode,
-    ImplicitProjectiveDAG,
-    MaterializationTelemetry,
-    PhysicalSourceSpec,
-    ProjectiveConstant,
-    ProjectiveValue,
+from xvla.train.odt_engine_v2.compiler import (
     _Builder,
     _add_pair_vectors,
     _affine_pair,
     _concatenate_pair_vectors,
     _pade_norm_pair,
     _scale_pair_vector,
+)
+from xvla.train.odt_engine_v2.graph import (
     _validate_network,
     _walk_unique,
     evaluate_boundary_quotient,
+)
+from xvla.train.odt_engine_v2.types import (
+    ImplicitNode,
+    ImplicitProjectiveDAG,
+    MaterializationTelemetry,
+    PhysicalSourceSpec,
+    ProjectiveConstant,
+    ProjectiveValue,
 )
 from xvla.train.implicit_sparse_projective_odt_all_tokens import compile_block_tokens
 

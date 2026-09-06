@@ -30,19 +30,23 @@ from xvla.train.direct_odt_truncation import (
 from xvla.train.implicit_projective_prefix_artifact import (
     export_implicit_projective_prefix_artifact,
 )
-from xvla.train.implicit_sparse_projective_odt import (
+from xvla.train.odt_engine_v2.graph import (
+    _prepare_physical_input,
+    _validate_network,
+    _walk_unique,
+    evaluate_projective_boundary,
+)
+from xvla.train.odt_engine_v2.ops import (
+    _core_apply,
+    _normalize_projective_batch,
+)
+from xvla.train.odt_engine_v2.types import (
     CPBinaryCore,
     DiagonalImplicitDAG,
     ImplicitNode,
     ImplicitProjectiveDAG,
     ReducedQRBinaryCore,
     UnaryCore,
-    _core_apply,
-    _normalize_projective_batch,
-    _prepare_physical_input,
-    _validate_network,
-    _walk_unique,
-    evaluate_projective_boundary,
 )
 
 

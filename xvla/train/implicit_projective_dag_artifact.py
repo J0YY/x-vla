@@ -22,7 +22,11 @@ from typing import Any, Mapping, Sequence
 
 import torch
 
-from xvla.train.implicit_sparse_projective_odt import (
+from xvla.train.odt_engine_v2.graph import (
+    _validate_network,
+    validate_canonical_exponent_normal_form,
+)
+from xvla.train.odt_engine_v2.types import (
     CPBinaryCore,
     DenseCloneCore,
     DirectQProvenance,
@@ -31,8 +35,6 @@ from xvla.train.implicit_sparse_projective_odt import (
     PhysicalSourceSpec,
     ReducedQRBinaryCore,
     UnaryCore,
-    _validate_network,
-    validate_canonical_exponent_normal_form,
 )
 
 

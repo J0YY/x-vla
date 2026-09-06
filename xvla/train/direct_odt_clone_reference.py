@@ -26,7 +26,7 @@ from typing import Any
 
 import torch
 
-from xvla.train.implicit_sparse_projective_odt import (
+from xvla.train.odt_engine_v2.types import (
     CPBinaryCore,
     DenseCloneCore,
     ImplicitNode,

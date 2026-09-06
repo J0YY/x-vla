@@ -41,10 +41,14 @@ import torch
 from torch import Tensor
 
 from xvla.train import implicit_projective_dag_artifact as eager_artifact
-from xvla.train.implicit_sparse_projective_odt import (
+from xvla.train.odt_engine_v2.constants import (
     MAXIMUM_RECTANGULAR_Q_ELEMENTS,
+)
+from xvla.train.odt_engine_v2.types import (
     PhysicalSourceSpec,
     RawPhysicalInput,
+)
+from xvla.train.odt_engine_v2.validation import (
     _validate_direct_q_provenance,
 )
 

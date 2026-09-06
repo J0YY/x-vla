@@ -21,30 +21,36 @@ from torch import Tensor
 
 from xvla.nn.attention import causal_mask
 from xvla.nn.block import ChiTransformerBlock
-from xvla.train.implicit_sparse_projective_odt import (
-    DenseCloneCore,
-    ImplicitNode,
-    ImplicitProjectiveDAG,
-    MaterializationTelemetry,
-    ScaledBatch,
+from xvla.train.odt_engine_v2.compiler import (
     _Builder,
     _add_pair_vectors,
     _affine_pair,
     _concatenate_pair_vectors,
-    _core_apply,
     _dot_pair_vectors,
     _fused_cp_ffn_pair,
     _identity_pair_leaf,
     _multiply_pair_scalars,
     _norm_snapshot,
-    _normalize_batch,
     _pade_norm_pair,
     _scale_pair_vector,
     _scale_pair_vector_by_scalar,
     _validate_block_source,
+)
+from xvla.train.odt_engine_v2.graph import (
     _validate_network,
     _walk_unique,
     evaluate_boundary_quotient,
+)
+from xvla.train.odt_engine_v2.ops import (
+    _core_apply,
+    _normalize_batch,
+)
+from xvla.train.odt_engine_v2.types import (
+    DenseCloneCore,
+    ImplicitNode,
+    ImplicitProjectiveDAG,
+    MaterializationTelemetry,
+    ScaledBatch,
 )
 
 

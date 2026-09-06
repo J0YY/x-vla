@@ -1,0 +1,50 @@
+{
+  "checkpoint_sha256": "b1c0dfce86ee90b45e30367603a7cc4d88c02f9056e836b19656179bf74ea3ee",
+  "clone_admission_message": "explicit clone requires at least 280874464 tensor bytes, limit 268435456",
+  "clone_admitted": false,
+  "clone_count": null,
+  "clone_tensor_bytes": 26655005520,
+  "export_replay_passed": true,
+  "input_shape": [
+    2,
+    2,
+    192
+  ],
+  "joint_output": true,
+  "kernels": {
+    "eigh": 0,
+    "prohibited_attempts": 0,
+    "qr": 0
+  },
+  "maximum_absolute_error": 6.217248937900877e-15,
+  "maximum_core_elements": 14340865,
+  "maximum_relative_error": 2.3685313406884594e-15,
+  "nodes": 453,
+  "norm_sites": 6,
+  "odt_completed": false,
+  "source_config": {
+    "eps": 0.000001,
+    "n_heads": 8,
+    "normalization": "pade[2/2]",
+    "residual": true,
+    "row_scale": "invsqrt",
+    "score_scale": "d_h2"
+  },
+  "source_prefix": "vision.blocks.blocks.0.",
+  "synthetic_inputs": true,
+  "trained_weights_unchanged": true,
+  "date": "2026-09-06",
+  "command": "OPENBLAS_NUM_THREADS=2 VECLIB_MAXIMUM_THREADS=2 python3 -m research.odt_reference.run_checkpoint_gate",
+  "source_sha256": {
+    "block.py": "f81ce19297f34038b2327b2c0a227195a40ffeeabd2faa9d9117cc4b7b5793e2",
+    "block_oracle.py": "76da7e5867bd8570039aacb919fef3f14ea827aabb82b642ebf7ccd9da19093a",
+    "checkpoint.py": "5179437ee766e226ae6ea596e21db54bb56797b9473910ac9a33a588c48ae6fe",
+    "clone_oracle.py": "1134fdcf92b83696b88f2c6e0ce02ffd9044799edebcd58282f62a8e603c1a5d",
+    "clone_passes.py": "585e1e54b0786344a2bce56d7be4fffa390d70f5e1ae1ade8c6d31b2e60fee2d",
+    "dooms.py": "debdaa02ddcb7fbc45c49d5c5b44d715d8014221b3c98539830ff3d7ff11ffa4",
+    "run_tests.py": "fd6465522fa0134180056caf2e4c4d088a36dc812cbfee2483b2e1b5a91093e6",
+    "shared_dag.py": "5d3de095353acd10add10feaeb33d6ecb603d2134050781f132e4a669867d6d3",
+    "weights.py": "faf07c022697e42e68e55ad847841fd805627804e91f0baa7b0087b15e189230",
+    "run_checkpoint_gate.py": "f9ae86e60f086f8a4e1ad27950a14271c24e0377c3bd01cad20a02227cbee3fe"
+  }
+}

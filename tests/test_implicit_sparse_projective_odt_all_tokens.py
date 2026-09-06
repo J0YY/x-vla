@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import pytest
 
 from xvla.nn.block import ChiTransformerBlock
 from xvla.nn.normalization import RationalNorm
@@ -163,7 +164,6 @@ def test_tiny_all_token_observable_runs_algorithms1_to3_against_independent_clon
     )
     assert oracle.observable_network is not None
     raw = _inputs(2, 1)
-    reference = evaluate_boundary_quotient(oracle.observable_network, raw)
     trace = canonicalize_with_explicit_clone_step_trace(
         oracle.observable_network,
         raw,
@@ -202,13 +202,13 @@ def test_tiny_all_token_observable_runs_algorithms1_to3_against_independent_clon
     repeated_label = "block0.attention.head0.k1_norm.token0.projective_output"
     repeated_step = next(step for step in trace.shared_steps if step.label == repeated_label)
     assert repeated_step.expected_parent_occurrences > 1
-    broken_r = canonicalize_implicit_dag_direct_rq(
-        oracle.observable_network,
-        replay_inputs=raw,
-        block_size=32,
-        omit_parent_push=(repeated_label, 0),
-    )
-    assert _relative(evaluate_boundary_quotient(broken_r.network, raw), reference) > 1e-6
+    # Missing-factor numerical controls live in the independently injected
+    # integration tests. Production does not expose a fault-injection switch.
+    with pytest.raises(TypeError, match="omit_parent_push"):
+        canonicalize_implicit_dag_direct_rq(
+            oracle.observable_network, replay_inputs=raw, block_size=32,
+            omit_parent_push=(repeated_label, 0),
+        )
     broken_evd = diagonalize_shared_and_explicit_clone_independently(
         trace.shared_network,
         trace.explicit_clone_network,
@@ -245,7 +245,7 @@ def test_two_block_token_tuple_adds_positions_once_and_replays_exactly():
         replay_inputs=raw,
         block_size=32,
     )
-    assert all(step.full_row_rank for step in canonical.steps)
+    assert all(step.literal_q_chart_resolved for step in canonical.steps)
     assert all(
         step.parent_occurrences_pushed == step.expected_parent_occurrences
         for step in canonical.steps

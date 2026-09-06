@@ -53,27 +53,27 @@ _PROHIBITED_TERMINALS = frozenset(
 
 _PRODUCTION_MODULE = "xvla.train.implicit_sparse_projective_odt"
 _INDEPENDENT_REFERENCE_MODULE = "xvla.train.direct_odt_clone_reference"
+_SPLIT_FACTORIZATION_MODULE = "xvla.train.odt_engine_v2.factorization"
+_SPLIT_CORE_MODULE = "xvla.train.odt_engine_v2.core"
+_SPLIT_OPS_MODULE = "xvla.train.odt_engine_v2.ops"
+_SPLIT_ORACLE_MODULE = "xvla.train.odt_engine_v2.oracles"
+# Populated only after a complete successful audit, before numerical imports.
+_AUDITED_RUNTIME_SOURCES: dict[str, tuple[str, str]] = {}
 
 _DIRECT_QR_CALLERS = frozenset(
     {
-        (_PRODUCTION_MODULE, "_positive_diagonal_direct_rq_rows"),
-        (_PRODUCTION_MODULE, "_direct_tsqr_panel"),
-        (_PRODUCTION_MODULE, "_independent_dense_clone_rq"),
+        (_SPLIT_FACTORIZATION_MODULE, "_positive_diagonal_direct_rq_rows"),
+        (_SPLIT_ORACLE_MODULE, "_independent_dense_clone_rq"),
         (_INDEPENDENT_REFERENCE_MODULE, "_independent_dense_clone_rq"),
     }
 )
-_TRIANGULAR_CALLERS = frozenset(
-    {(_PRODUCTION_MODULE, "_solve_compact_q")}
-)
+# The retired streamed triangular reconstruction is not an active route.
+_TRIANGULAR_CALLERS: frozenset[tuple[str, str]] = frozenset()
 _ALGORITHM3_EVD_CALLERS = frozenset(
     {
-        (_PRODUCTION_MODULE, "diagonalize_implicit_dag_full_rank"),
+        (_SPLIT_CORE_MODULE, "_environment_eigensystem"),
         (
-            _PRODUCTION_MODULE,
-            "apply_shared_eigenbases_to_explicit_clone_occurrences_control",
-        ),
-        (
-            _PRODUCTION_MODULE,
+            _SPLIT_ORACLE_MODULE,
             "diagonalize_shared_and_explicit_clone_independently",
         ),
         (
@@ -84,10 +84,11 @@ _ALGORITHM3_EVD_CALLERS = frozenset(
 )
 _APPROVED_ALGORITHM2_SELF_OVERLAP_EINSUMS = frozenset(
     {
-        (_PRODUCTION_MODULE, "_role_environment", "oi,op,pj->ij"),
-        (_PRODUCTION_MODULE, "_role_environment", "oia,op,pja->ij"),
-        (_PRODUCTION_MODULE, "_role_environment", "oai,op,paj->ij"),
-        (_PRODUCTION_MODULE, "_role_environment", "ti,si->ts"),
+        (_SPLIT_OPS_MODULE, "_role_environment", "oi,op,pj->ij"),
+        (_SPLIT_OPS_MODULE, "_role_environment", "oia,op,pja->ij"),
+        (_SPLIT_OPS_MODULE, "_role_environment", "oai,op,paj->ij"),
+        (_SPLIT_OPS_MODULE, "_role_environment", "ti,si->ts"),
+        (_SPLIT_CORE_MODULE, "_environment_records", "oa,ob->ab"),
         (_INDEPENDENT_REFERENCE_MODULE, "_role_environment", "oi,op,pj->ij"),
         (_INDEPENDENT_REFERENCE_MODULE, "_role_environment", "oia,op,pja->ij"),
         (_INDEPENDENT_REFERENCE_MODULE, "_role_environment", "oai,op,paj->ij"),
@@ -101,29 +102,19 @@ _APPROVED_ALGORITHM2_SELF_OVERLAP_EINSUMS = frozenset(
 _APPROVED_ALGORITHM2_SELF_OVERLAP_MATMULS = frozenset(
     {
         (
-            _PRODUCTION_MODULE,
+            _SPLIT_OPS_MODULE,
             "_role_environment",
             "core.matrix.T @ downstream @ core.matrix",
         ),
         (
-            _PRODUCTION_MODULE,
+            _SPLIT_OPS_MODULE,
             "_role_environment",
             "core.output_factor.T @ downstream @ core.output_factor",
         ),
         (
-            _PRODUCTION_MODULE,
+            _SPLIT_OPS_MODULE,
             "_role_environment",
             "selected.T @ weighted @ selected",
-        ),
-        (
-            _PRODUCTION_MODULE,
-            "reverse_implicit_environments",
-            "network.head.T @ output_metric @ network.head",
-        ),
-        (
-            _PRODUCTION_MODULE,
-            "diagonalize_implicit_dag_full_rank",
-            "work.head.T @ metric @ work.head",
         ),
     }
 )
@@ -241,6 +232,23 @@ EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT = 87
 if len(EXPECTED_RUNTIME_GUARD_ENTRYPOINTS) != EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT:
     raise RuntimeError("the direct-only guard surface constant is internally inconsistent")
 
+SPLIT_RUNTIME_PROFILE = "split_torch28_numpy226"
+SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINTS = EXPECTED_RUNTIME_GUARD_ENTRYPOINTS | {
+    "numpy.linalg.svdvals", "numpy.linalg.linalg.svdvals",
+}
+SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT = 89
+_SPLIT_RUNTIME_VERSIONS = {"torch": "2.8.0", "numpy": "2.2.6"}
+if len(SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINTS) != SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT:
+    raise RuntimeError("the explicit split guard surface is internally inconsistent")
+
+
+def _guard_surface(profile: str) -> frozenset[str]:
+    if profile == "legacy87":
+        return EXPECTED_RUNTIME_GUARD_ENTRYPOINTS
+    if profile == SPLIT_RUNTIME_PROFILE:
+        return frozenset(SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINTS)
+    raise DirectOnlyComplianceError(f"unknown explicit runtime guard profile: {profile!r}")
+
 ALLOWED_RUNTIME_CALLS = frozenset(
     {
         f"{module}.{caller}:torch.linalg.qr"
@@ -293,6 +301,21 @@ STREAMED_CLONE_ORACLE_RUNTIME_CALLS = frozenset(
     }
 )
 
+# Historical strings above are immutable artifact identities, not aliases to
+# the new implementation. New launchers must explicitly choose this lane.
+SPLIT_DIRECT_RQ_RUNTIME_CALL = (
+    f"{_SPLIT_FACTORIZATION_MODULE}._positive_diagonal_direct_rq_rows:torch.linalg.qr"
+)
+SPLIT_ALGORITHM3_RUNTIME_CALL = (
+    f"{_SPLIT_CORE_MODULE}._environment_eigensystem:torch.linalg.eigh"
+)
+SPLIT_CLONE_QR_RUNTIME_CALL = (
+    f"{_SPLIT_ORACLE_MODULE}._independent_dense_clone_rq:torch.linalg.qr"
+)
+SPLIT_CLONE_ALGORITHM3_RUNTIME_CALL = (
+    f"{_SPLIT_ORACLE_MODULE}.diagonalize_shared_and_explicit_clone_independently:torch.linalg.eigh"
+)
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -334,9 +357,11 @@ def _resolve_local_module(project_root: Path, module: str) -> Path | None:
         return None
     base = project_root.joinpath(*module.split("."))
     source = base.with_suffix(".py")
+    package = base / "__init__.py"
+    if source.is_file() and package.is_file():
+        raise DirectOnlyComplianceError(f"ambiguous local module/package collision: {module}")
     if source.is_file():
         return source.resolve()
-    package = base / "__init__.py"
     if package.is_file():
         return package.resolve()
     return None
@@ -348,6 +373,7 @@ def _local_imports(path: Path, project_root: Path) -> tuple[Path, ...]:
     relative = path.resolve().relative_to(project_root.resolve())
     module_parts = list(relative.with_suffix("").parts)
     package_parts = module_parts[:-1]
+    aliases = _aliases(tree)
     for node in ast.walk(tree):
         modules: list[str] = []
         if isinstance(node, ast.Import):
@@ -369,6 +395,12 @@ def _local_imports(path: Path, project_root: Path) -> tuple[Path, ...]:
                 # ``from package import submodule`` can load either the package
                 # or the named submodule.  Include both when local files exist.
                 modules.extend(f"{base}.{alias.name}" for alias in node.names)
+        elif isinstance(node, ast.Call):
+            target = _expression_name(node.func, aliases)
+            if target in {"importlib.import_module", "__import__"} and node.args:
+                argument = node.args[0]
+                if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+                    modules.append(argument.value)
         for module in modules:
             resolved = _resolve_local_module(project_root, module)
             if resolved is not None:
@@ -402,6 +434,18 @@ def transitive_local_sources(project_root: Path, entrypoints: Iterable[Path]) ->
         if not path.is_file() or project_root not in path.parents:
             raise DirectOnlyComplianceError(f"audit source is outside the project or missing: {path}")
         visited.add(path)
+        # An entrypoint can name a submodule directly, without an import that
+        # otherwise exposes the parent package initialization side effects.
+        for parent in path.parents:
+            if parent == project_root:
+                break
+            initializer = parent / "__init__.py"
+            if initializer.is_file() and parent.with_suffix(".py").is_file():
+                raise DirectOnlyComplianceError(
+                    f"ambiguous parent module/package collision: {parent.relative_to(project_root)}"
+                )
+            if initializer.is_file() and initializer not in visited:
+                pending.append(initializer)
         pending.extend(item for item in _local_imports(path, project_root) if item not in visited)
     return tuple(sorted(visited))
 
@@ -409,20 +453,19 @@ def transitive_local_sources(project_root: Path, entrypoints: Iterable[Path]) ->
 def canonical_direct_only_entrypoints(
     project_root: Path, runner: Path
 ) -> tuple[Path, ...]:
-    """Authoritative runner plus its direct-only regression helpers."""
+    """Authoritative runner plus the new primary split source boundary.
+
+    Oracle and historical regression modules enter the audit only when the
+    runner actually imports them. They are not injected into production.
+    """
 
     project_root = project_root.resolve()
     paths = (
         runner.resolve(),
-        project_root / "scripts/run_direct_odt_clone_oracle.py",
-        project_root / "scripts/run_implicit_sparse_projective_odt.py",
-        project_root / "scripts/run_implicit_sparse_projective_odt_all_tokens.py",
-        project_root / "scripts/run_implicit_sparse_projective_odt_vla.py",
-        project_root / "tests/test_implicit_sparse_projective_odt.py",
-        project_root / "tests/test_implicit_sparse_projective_odt_all_tokens.py",
-        project_root / "tests/test_implicit_sparse_projective_odt_heterogeneous.py",
-        project_root / "tests/test_implicit_sparse_projective_odt_vla.py",
-        project_root / "tests/test_direct_odt_clone_reference.py",
+        project_root / "xvla/train/odt_engine_v2/core.py",
+        project_root / "xvla/train/odt_engine_v2/compiler.py",
+        project_root / "xvla/train/odt_engine_v2/validation.py",
+        project_root / "xvla/train/odt_engine_v2/diagnostics.py",
     )
     missing = tuple(path for path in paths if not path.is_file())
     if missing:
@@ -610,6 +653,9 @@ def audit_direct_only_launch(
     """Audit the transitive local launch sources and fail on forbidden routes."""
 
     project_root = project_root.resolve()
+    entrypoints = tuple(entrypoints)
+    # A failed re-audit must not leave stale runtime authority in this process.
+    _AUDITED_RUNTIME_SOURCES.clear()
     sources = transitive_local_sources(project_root, entrypoints)
     violations: list[str] = []
     call_sites: list[str] = []
@@ -651,6 +697,18 @@ def audit_direct_only_launch(
                 self.functions.pop()
 
             visit_AsyncFunctionDef = visit_FunctionDef
+
+            def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+                for alias in node.names:
+                    if alias.name in _PROHIBITED_TERMINALS | _LOW_LEVEL_SVD_TERMINALS:
+                        violations.append(f"{relative}:{node.lineno}:forbidden_import:{node.module}.{alias.name}")
+                self.generic_visit(node)
+
+            def visit_Attribute(self, node: ast.Attribute) -> None:
+                if node.attr in _PROHIBITED_TERMINALS | _LOW_LEVEL_SVD_TERMINALS:
+                    resolved = _expression_name(node, aliases) or node.attr
+                    violations.append(f"{relative}:{node.lineno}:forbidden_binding:{resolved}")
+                self.generic_visit(node)
 
             def visit_BinOp(self, node: ast.BinOp) -> None:
                 caller = self.functions[-1] if self.functions else "<module>"
@@ -778,7 +836,13 @@ def audit_direct_only_launch(
                     violations.append(overlap_site)
                 elif terminal == "getattr" and len(node.args) >= 2:
                     requested = node.args[1]
-                    if isinstance(requested, ast.Constant) and requested.value in (
+                    literal = isinstance(requested, ast.Constant) and isinstance(requested.value, str)
+                    guard_plumbing = module_name == "scripts.odt_direct_only_compliance" and caller in {
+                        "_live_runtime_entrypoint", "_patch",
+                    }
+                    if not literal and not guard_plumbing:
+                        violations.append(f"{relative}:{node.lineno}:{caller}:unresolved_attribute_dispatch")
+                    elif literal and requested.value in (
                         _PROHIBITED_TERMINALS
                         | _CONTROLLED_TERMINALS
                         | _LOW_LEVEL_SVD_TERMINALS
@@ -813,11 +877,17 @@ def audit_direct_only_launch(
         raise DirectOnlyComplianceError(
             "transitive direct-only source audit failed: " + ", ".join(sorted(set(violations)))
         )
+    _AUDITED_RUNTIME_SOURCES.update(
+        {_module_name(path, project_root): (str(path), report["source_sha256"][path.relative_to(project_root).as_posix()])
+         for path in sources}
+    )
     return report
 
 
 _RUNTIME_STATE: dict[str, Any] = {
     "installed": False,
+    "profile": "legacy87",
+    "versions": {},
     "patched_entrypoints": [],
     "allowed_calls": [],
     "prohibited_attempts": [],
@@ -851,12 +921,17 @@ def _controlled_wrapper(
 ):
     def controlled(*args: Any, **kwargs: Any):
         module, caller = _caller_identity()
-        if (module, caller) not in allowed_callers:
+        frame = inspect.currentframe()
+        source = _AUDITED_RUNTIME_SOURCES.get(module)
+        audited_caller = (source is not None and frame is not None and frame.f_back is not None
+                          and frame.f_back.f_code.co_filename == source[0])
+        if ((module, caller) not in allowed_callers or not audited_caller
+                or f"{module}.{caller}:{qualified_name}" not in ALLOWED_RUNTIME_CALLS):
             _RUNTIME_STATE["prohibited_attempts"].append(
                 f"{module}.{caller}:{qualified_name}"
             )
             raise DirectOnlyComplianceError(
-                f"{qualified_name} is not allowed from {module}.{caller}"
+                f"{qualified_name} is not allowed from unaudited or unapproved caller {module}.{caller}"
             )
         _RUNTIME_STATE["allowed_calls"].append(f"{module}.{caller}:{qualified_name}")
         return original(*args, **kwargs)
@@ -1127,32 +1202,39 @@ def assert_direct_only_runtime_guard(
 
     snapshot = direct_only_runtime_report() if report is None else report
     errors: list[str] = []
+    profile = snapshot.get("profile", "legacy87")
+    expected_entrypoints = _guard_surface(profile)
+    expected_count = len(expected_entrypoints)
+    if profile != _RUNTIME_STATE["profile"]:
+        errors.append("reported guard profile differs from the installed profile")
+    if profile == SPLIT_RUNTIME_PROFILE and snapshot.get("runtime_versions") != _SPLIT_RUNTIME_VERSIONS:
+        errors.append("split runtime versions differ from the explicit pinned profile")
     if snapshot.get("installed") is not True:
         errors.append("runtime guard is not installed")
 
     patched_raw = snapshot.get("patched_entrypoints", ())
     patched = frozenset(patched_raw) if isinstance(patched_raw, (list, tuple)) else frozenset()
-    if patched != EXPECTED_RUNTIME_GUARD_ENTRYPOINTS:
-        missing = sorted(EXPECTED_RUNTIME_GUARD_ENTRYPOINTS - patched)
-        extra = sorted(patched - EXPECTED_RUNTIME_GUARD_ENTRYPOINTS)
+    if patched != expected_entrypoints:
+        missing = sorted(expected_entrypoints - patched)
+        extra = sorted(patched - expected_entrypoints)
         errors.append(f"guard surface differs: missing={missing}, extra={extra}")
-    if snapshot.get("patched_entrypoint_count") != EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT:
+    if snapshot.get("patched_entrypoint_count") != expected_count:
         errors.append(
             "guard count differs: "
             f"{snapshot.get('patched_entrypoint_count')!r} != "
-            f"{EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT}"
+            f"{expected_count}"
         )
 
     registered = frozenset(_RUNTIME_WRAPPERS)
-    if registered != EXPECTED_RUNTIME_GUARD_ENTRYPOINTS:
+    if registered != expected_entrypoints:
         errors.append(
             "private wrapper registry differs: "
-            f"missing={sorted(EXPECTED_RUNTIME_GUARD_ENTRYPOINTS - registered)}, "
-            f"extra={sorted(registered - EXPECTED_RUNTIME_GUARD_ENTRYPOINTS)}"
+            f"missing={sorted(expected_entrypoints - registered)}, "
+            f"extra={sorted(registered - expected_entrypoints)}"
         )
     missing_live_wrappers = sorted(
         qualified_name
-        for qualified_name in EXPECTED_RUNTIME_GUARD_ENTRYPOINTS
+        for qualified_name in expected_entrypoints
         if _live_runtime_entrypoint(qualified_name)
         is not _RUNTIME_WRAPPERS.get(qualified_name)
     )
@@ -1233,14 +1315,28 @@ def _patch(owner: Any, name: str, wrapper_factory: Any, qualified_name: str) -> 
     _RUNTIME_STATE["patched_entrypoints"].append(qualified_name)
 
 
-def install_direct_only_runtime_guard() -> dict[str, Any]:
-    """Install process-wide guards before importing any ODT model code."""
+def install_direct_only_runtime_guard(*, profile: str = "legacy87") -> dict[str, Any]:
+    """Install one explicit versioned guard profile before any ODT model code.
+
+    No automatic profile selection or fallback is permitted. The historical
+    default retains its 87-entry surface. New local tests explicitly select
+    split_torch28_numpy226, which also blocks NumPy's two added entrypoints.
+    """
+
+    _guard_surface(profile)
 
     if _RUNTIME_STATE["installed"]:
+        if profile != _RUNTIME_STATE["profile"]:
+            raise DirectOnlyComplianceError("runtime guard profile cannot change inside a process")
         return assert_direct_only_runtime_guard(direct_only_runtime_report())
 
     import numpy
     import torch
+
+    versions = {"numpy": str(numpy.__version__), "torch": str(torch.__version__)}
+    if profile == SPLIT_RUNTIME_PROFILE and versions != _SPLIT_RUNTIME_VERSIONS:
+        raise DirectOnlyComplianceError(f"split guard requires exact versions {_SPLIT_RUNTIME_VERSIONS}, got {versions}")
+    _RUNTIME_STATE["profile"], _RUNTIME_STATE["versions"] = profile, versions
 
     discard_original = lambda _original, qualified: _prohibited_wrapper(qualified)
     for name in sorted(_PROHIBITED_TERMINALS):
@@ -1350,12 +1446,15 @@ def direct_only_runtime_report() -> dict[str, Any]:
 
     return {
         "installed": bool(_RUNTIME_STATE["installed"]),
+        "profile": _RUNTIME_STATE["profile"],
+        "runtime_versions": dict(_RUNTIME_STATE["versions"]),
         "patched_entrypoints": sorted(set(_RUNTIME_STATE["patched_entrypoints"])),
         "patched_entrypoint_count": len(set(_RUNTIME_STATE["patched_entrypoints"])),
         "allowed_call_count": len(_RUNTIME_STATE["allowed_calls"]),
         "allowed_calls": sorted(set(_RUNTIME_STATE["allowed_calls"])),
         "prohibited_attempt_count": len(_RUNTIME_STATE["prohibited_attempts"]),
         "prohibited_attempts": tuple(_RUNTIME_STATE["prohibited_attempts"]),
+        "audited_source_sha256": {module: record[1] for module, record in sorted(_AUDITED_RUNTIME_SOURCES.items())},
     }
 
 
@@ -1372,6 +1471,13 @@ __all__ = [
     "REFERENCE_CLONE_QR_RUNTIME_CALL",
     "STREAMED_CLONE_ORACLE_RUNTIME_CALLS",
     "STREAMED_QR_RUNTIME_CALL",
+    "SPLIT_DIRECT_RQ_RUNTIME_CALL",
+    "SPLIT_RUNTIME_PROFILE",
+    "SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINTS",
+    "SPLIT_EXPECTED_RUNTIME_GUARD_ENTRYPOINT_COUNT",
+    "SPLIT_ALGORITHM3_RUNTIME_CALL",
+    "SPLIT_CLONE_QR_RUNTIME_CALL",
+    "SPLIT_CLONE_ALGORITHM3_RUNTIME_CALL",
     "TRIANGULAR_RUNTIME_CALL",
     "assert_direct_only_runtime_guard",
     "audit_direct_only_launch",

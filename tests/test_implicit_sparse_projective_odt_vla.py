@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from xvla.models.vla import ChiVLA, VLAConfig
@@ -484,12 +485,12 @@ def test_product_head_subgraph_matches_no_memo_clone_at_every_canonical_step():
         == diagonal.expected_clone_parent_occurrences
     )
 
-    broken = canonicalize_implicit_dag_direct_rq(
-        network,
-        replay_inputs=raw,
-        block_size=32,
-        omit_parent_push=("oracle.product.center", 0),
-    )
-    assert max(
-        step.per_step_function_replay_error for step in broken.steps
-    ) > 1e-6
+    # Fault injection is not part of the production sweep API. Independent
+    # missing-occurrence and scale controls live in test_odt_refactor_integration.
+    with pytest.raises(TypeError, match="omit_parent_push"):
+        canonicalize_implicit_dag_direct_rq(
+            network,
+            replay_inputs=raw,
+            block_size=32,
+            omit_parent_push=("oracle.product.center", 0),
+        )

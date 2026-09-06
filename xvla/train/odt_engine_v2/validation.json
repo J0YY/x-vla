@@ -1,0 +1,179 @@
+{
+  "schema": "odt_engine_v2_local_refactor_validation_v1",
+  "date": "2026-09-06",
+  "baseline_commit": "ae566bd2fde37a3590b0993f7cbf3d01f2a239e8",
+  "claim": "Bounded local refactor validation only. No corrected trained-block ODT, full-policy ODT ranking, or LIBERO result.",
+  "implementation_line_counts": {
+    "git_baseline_monolith": 4959,
+    "current_facade": 214,
+    "current_sweep_module": 375,
+    "current_split_python_including_facade": 4311
+  },
+  "guarded_tests_passed": 141,
+  "source_and_boundary_tests_passed": 23,
+  "total_distinct_tests_passed": 164,
+  "permitted_qr_evd_calls": 23840,
+  "prohibited_numerical_attempts": 0,
+  "static_negative_controls": "Intentionally rejected source fixtures and seven runtime probes blocked before underlying execution are separate from the zero-attempt numerical suites.",
+  "runtime_profile": "split_torch28_numpy226",
+  "runtime_versions": {
+    "torch": "2.8.0",
+    "numpy": "2.2.6"
+  },
+  "suites": [
+    {
+      "name": "factorization_and_integration",
+      "tests_passed": 34,
+      "tests_deselected": 0,
+      "entrypoints": [
+        "scripts/run_odt_refactor_tests.py",
+        "tests/test_implicit_sparse_projective_odt.py",
+        "tests/test_odt_refactor_integration.py",
+        "tests/test_odt_symmetric_factorization.py",
+        "xvla/train/odt_engine_v2/compiler.py",
+        "xvla/train/odt_engine_v2/core.py",
+        "xvla/train/odt_engine_v2/oracles.py"
+      ],
+      "permitted_calls": 23357,
+      "permitted_call_owners": [
+        "xvla.train.odt_engine_v2.core._environment_eigensystem:torch.linalg.eigh",
+        "xvla.train.odt_engine_v2.factorization._positive_diagonal_direct_rq_rows:torch.linalg.qr",
+        "xvla.train.odt_engine_v2.oracles._independent_dense_clone_rq:torch.linalg.qr",
+        "xvla.train.odt_engine_v2.oracles.diagonalize_shared_and_explicit_clone_independently:torch.linalg.eigh"
+      ],
+      "prohibited_attempts": 0
+    },
+    {
+      "name": "physical_truncation",
+      "tests_passed": 29,
+      "tests_deselected": 0,
+      "entrypoints": [
+        "scripts/run_odt_refactor_tests.py",
+        "tests/test_direct_odt_dimension_ladder.py",
+        "tests/test_direct_odt_truncation.py",
+        "xvla/train/odt_engine_v2/compiler.py",
+        "xvla/train/odt_engine_v2/core.py",
+        "xvla/train/odt_engine_v2/oracles.py"
+      ],
+      "permitted_calls": 483,
+      "permitted_call_owners": [
+        "xvla.train.odt_engine_v2.core._environment_eigensystem:torch.linalg.eigh",
+        "xvla.train.odt_engine_v2.factorization._positive_diagonal_direct_rq_rows:torch.linalg.qr",
+        "xvla.train.odt_engine_v2.oracles.diagonalize_shared_and_explicit_clone_independently:torch.linalg.eigh"
+      ],
+      "prohibited_attempts": 0
+    },
+    {
+      "name": "artifact_compatibility",
+      "tests_passed": 65,
+      "tests_deselected": 5,
+      "entrypoints": [
+        "scripts/run_odt_refactor_tests.py",
+        "tests/test_implicit_projective_dag_artifact.py",
+        "tests/test_implicit_projective_dag_mapped.py",
+        "xvla/train/odt_engine_v2/compiler.py",
+        "xvla/train/odt_engine_v2/core.py",
+        "xvla/train/odt_engine_v2/oracles.py"
+      ],
+      "permitted_calls": 0,
+      "permitted_call_owners": [],
+      "prohibited_attempts": 0
+    },
+    {
+      "name": "compiler_smoke",
+      "tests_passed": 13,
+      "tests_deselected": 4,
+      "entrypoints": [
+        "scripts/run_odt_refactor_tests.py",
+        "tests/test_implicit_sparse_projective_odt_all_tokens.py",
+        "tests/test_implicit_sparse_projective_odt_vla.py",
+        "xvla/train/odt_engine_v2/compiler.py",
+        "xvla/train/odt_engine_v2/core.py",
+        "xvla/train/odt_engine_v2/oracles.py"
+      ],
+      "permitted_calls": 0,
+      "permitted_call_owners": [],
+      "prohibited_attempts": 0
+    }
+  ],
+  "source_sha256": {
+    "scripts/__init__.py": "7e4eccbe7095f620526758bd1ffb1b530f4bc4ea51dc67b079ce11beee24cbdc",
+    "scripts/odt_direct_only_compliance.py": "710f1062f6ff16ff358ce6b88029a7e830f7854cd78c7eb000404cfca5e3e70d",
+    "scripts/run_odt_refactor_tests.py": "715985cf7c0e3c8a692127c5cc1123f633f89ed24b3aeaa254806c8259eec9df",
+    "tests/test_implicit_sparse_projective_odt.py": "01a533bad566a206c7cd04bcdcff69299a7ee85234f15c4e8c644d0758bfcabe",
+    "tests/test_odt_refactor_integration.py": "ca354d1ff45cc19cfa69dd16be1ac7da51165c53ee759c846624be593fae734f",
+    "tests/test_odt_symmetric_factorization.py": "1a184e0eb1e4411bdfc8f4241f341863c1983116807cc5a217dad11ea62fb062",
+    "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+    "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+    "xvla/nn/attention.py": "944c1844b17a9f67f2aa2e3e04e4e0301530af83a09d63ac7507329f08517706",
+    "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+    "xvla/nn/bilinear.py": "0d0bfdcd85426c43d4d42e993f944023641888d527c8a9671366b2176c4bac4d",
+    "xvla/nn/block.py": "42020203856039103bcad2802814da7f7253b00c795d5b827437717d20576618",
+    "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+    "xvla/nn/normalization.py": "6e332f0771180e48ee30e5fce6ee5909fd9ddcc3e227a4bfe962abc23e562524",
+    "xvla/nn/tree_mixing.py": "600f04dcefdbcc87c9f6a3cbc5c4ec0d202509ae1e9c4386e318249c60efcf06",
+    "xvla/train/__init__.py": "b1a7a347ca176ef4626ecc1f1d3318dcff63aa5350a9f6df7b8eee19e6058f42",
+    "xvla/train/implicit_projective_dag_artifact.py": "92c7a13370a31651efd7e682221e2eeb1e177dbe11bd5982c9dedd1c7294b41e",
+    "xvla/train/implicit_sparse_projective_odt.py": "e80305bda0722ec355382228bb7e0a20e56eedbf076101a5cf9f4a77dd530e09",
+    "xvla/train/odt_engine_v2/__init__.py": "0c9c75ab5b3980af12e0d32171c36afcd8adc1fe7ac8b59f457d862e46e18c0d",
+    "xvla/train/odt_engine_v2/compat.py": "fe32b29c032d215764edf25b877380bf7bfc7a39f054e98118ea09feb43c3bc6",
+    "xvla/train/odt_engine_v2/compiler.py": "5b273740e934380ff2a79f57f3b423769c11d992cee394caf85076000cce6c14",
+    "xvla/train/odt_engine_v2/constants.py": "cff6c2b839adbdd603f1a05602eef01a298bef5a6fd760859906a5d630cbd1a6",
+    "xvla/train/odt_engine_v2/core.py": "b7f46f9cfda3330b1f13905e5bc0922c2f7829d0c0e10eaf1e9398acd4578fde",
+    "xvla/train/odt_engine_v2/diagnostics.py": "4a9a8272526eb354e775092172ad563fa97ec2e497da2024387c2a98925d5c43",
+    "xvla/train/odt_engine_v2/factorization.py": "e02112482ea98beea20e47336fd9314c7d363b818f8e3cca4478fded084f2d11",
+    "xvla/train/odt_engine_v2/graph.py": "d9e5174262cfd40ee84dab0f1d1365d40f81184afa558f0bd5f14614ad2299e3",
+    "xvla/train/odt_engine_v2/ops.py": "e6d22ad37fbd2b75545f1eac8c0efe3ba69d14edd207a954855a5d7b177a3f98",
+    "xvla/train/odt_engine_v2/oracles.py": "89553d8bf24eae58ec8b0ee73f50cbd32892320a198ee4ab7054b9c288322fe5",
+    "xvla/train/odt_engine_v2/types.py": "dbf7d1d419a250c1fc84f73045da6f89e8e2bbe9ed302f832992a9bdb2127c48",
+    "xvla/train/odt_engine_v2/validation.py": "b48528fd3583f6769ebfbd19ae44123e1d95b63700cade7f163208c8ed41d067",
+    "tests/test_direct_odt_dimension_ladder.py": "a02fad685fa32b2ac6ab720095fc999aa7c2631a592a5b6c8b970804c4076502",
+    "tests/test_direct_odt_truncation.py": "f2590755130f553ecf5288e29c61fa65cc6e7cf0bda79ee032197e6fe19e1308",
+    "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+    "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+    "xvla/models/vit.py": "5c90b4424aec632f831d0e6077c0b440d3beb9ed210f493ad256abce0013e04c",
+    "xvla/models/vla.py": "93ef4f7bebb825db6de5fca4786f8c345557bc65eaea1c82a3187c262987a3b4",
+    "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+    "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+    "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+    "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+    "xvla/train/direct_odt_dimension_ladder.py": "48710d7643adf72b191c36c7b78feaaf74c85d07a870ac36d1fbe3bb7513b2a7",
+    "xvla/train/direct_odt_truncation.py": "6aefa3ed9e0074d595efdbcd92e78b369f1d79e1b7963bd6401075a01d0dd4ab",
+    "xvla/train/implicit_projective_prefix_artifact.py": "f8ea60ed7ac395127039b75d86a4d89d3e87cd87a988f3da57ca3d711e096923",
+    "xvla/train/implicit_sparse_projective_odt_all_tokens.py": "78a5068156385fa7c62154ad3756695272e011d48d96bd7d88ae4a1cd2924b9a",
+    "xvla/train/implicit_sparse_projective_odt_vla.py": "c651694c31bbb9594aaadb9589420d187a64da3b274300e45dcb474ffa623888",
+    "tests/test_implicit_projective_dag_artifact.py": "10bbd014c10f279e50a31dc19ce57fd08cb595c864c2d251cfe86ede7823c2cd",
+    "tests/test_implicit_projective_dag_mapped.py": "c18d60d9b3a196ad235a79e870bbfc36d700032eb58c06d8ac9fa7f51352028b",
+    "xvla/train/implicit_projective_dag_mapped.py": "5b5066854cb24247e69fa7ebbe41c61efd9390412072436022f222c16024f236",
+    "xvla/train/implicit_projective_dag_numba.py": "59ca78a035a88731fcc4bd0dc79c50bec1b3f3d248738c095570fe5ecbf7e2e5",
+    "tests/test_implicit_sparse_projective_odt_all_tokens.py": "be83a5b80b737dc324f64efeb70171cb944a3fca6b2f13c5ab1cd395ff0e40ea",
+    "tests/test_implicit_sparse_projective_odt_vla.py": "fc353d6801e5223b6450bad315ce2e31bbbb7caa301c49ece9be472ad1578ee5"
+  },
+  "excluded_checks": [
+    "Five optional Numba compiled-executor tests not run successfully: llvmlite download timed out twice.",
+    "Four additional legacy all-token/product ODT tests excluded from compiler-only smoke selection. Two all-token tests still need migration from removed fault flags and unassessed rank fields. Focused ODT integration and physical-truncation suites ran separately."
+  ],
+  "scientific_next_gate": "Unchanged complete trained block: occurrence-specific versus common aggregate leading bases, matched trailing/random controls, simultaneous error, decoded actions and denominator stability, with per-occurrence ranks matched and duplication costs reported separately.",
+  "production_jobs_launched": 0,
+  "commits_created": 0,
+  "pushes": 0,
+  "independent_review": {
+    "status": "no_remaining_actionable_P1_P2_findings_in_reviewed_scope",
+    "rounds": 3,
+    "round1": "Two P1 audit-runner boundary findings fixed: validate every collection target and reject unresolved dynamic attribute dispatch.",
+    "round2": "One P2 public-oracle removal finding fixed through explicit migration documentation and a static regression test.",
+    "round3": "Independent reviewer confirmed the migration fix and a clean cumulative review.",
+    "additional_parallel_review": "Rank-bank identity regression for copied networks fixed in a 19-line compatibility adapter outside the math sweep; all 29 existing truncation/dimension-ladder tests passed.",
+    "review_output_files": [
+      "/private/tmp/odt-engine-review.nqaos8/round1.txt",
+      "/private/tmp/odt-engine-review.nqaos8/round2.txt",
+      "/private/tmp/odt-engine-review.nqaos8/round3.txt"
+    ],
+    "limitation": "A clean review and bounded tests are not a guarantee of bug-free full-scale behavior."
+  },
+  "static_source_sha256": {
+    "tests/test_odt_refactor_structure.py": "5488c26e061103b807531efae95adf4f2e93d36580de0de378335ff3c0dd76a4",
+    "tests/test_odt_split_compliance.py": "0ffc5d83ca2f84494a73c3e05d236698046724216acf3d643de0da15db104930",
+    "tests/test_odt_refactor_runner.py": "c28b0cbf83b998671d8c512ef1f6f28947bb48620e527e9311866b8b7567441f"
+  }
+}

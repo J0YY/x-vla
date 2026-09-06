@@ -1,0 +1,37 @@
+{
+  "kernels": {
+    "eigh": 483,
+    "prohibited_attempts": 0,
+    "qr": 16122
+  },
+  "numpy": "2.4.2",
+  "passed": true,
+  "source_sha256": {
+    "block.py": "f81ce19297f34038b2327b2c0a227195a40ffeeabd2faa9d9117cc4b7b5793e2",
+    "block_oracle.py": "76da7e5867bd8570039aacb919fef3f14ea827aabb82b642ebf7ccd9da19093a",
+    "checkpoint.py": "5179437ee766e226ae6ea596e21db54bb56797b9473910ac9a33a588c48ae6fe",
+    "clone_oracle.py": "1134fdcf92b83696b88f2c6e0ce02ffd9044799edebcd58282f62a8e603c1a5d",
+    "clone_passes.py": "585e1e54b0786344a2bce56d7be4fffa390d70f5e1ae1ade8c6d31b2e60fee2d",
+    "dooms.py": "debdaa02ddcb7fbc45c49d5c5b44d715d8014221b3c98539830ff3d7ff11ffa4",
+    "run_tests.py": "fd6465522fa0134180056caf2e4c4d088a36dc812cbfee2483b2e1b5a91093e6",
+    "shared_dag.py": "5d3de095353acd10add10feaeb33d6ecb603d2134050781f132e4a669867d6d3",
+    "test_block.py": "5ca14b1d1cc4b5c5a84876025fedf4c5711eef18c275e38215216ffce589d8c4",
+    "test_block_oracle.py": "80f67d42956f9253b4514a4ac58a3595cac5cf508d8915a75e87115dd84ec00a",
+    "test_checkpoint.py": "09288be214987277631a94fb27e31e56eeb60dee769f4dcf8c74083e5af0273a",
+    "test_guard.py": "c464916161bff7b7bfb86a4ea4c6eb4a194c5cb00b658888fb13de70be8bc5e9",
+    "test_reference.py": "2006809d59fe4d43ad181703e3b0da4a0f1d51816c8b6ba06c1875d9fff1b751",
+    "test_shared_dag.py": "013579315cbd5a35dd8b3d99fc2a420d7d00c7061898b7b8e019d1f917d139ea",
+    "weights.py": "faf07c022697e42e68e55ad847841fd805627804e91f0baa7b0087b15e189230"
+  },
+  "suite": "all",
+  "tests": 48,
+  "date": "2026-09-06",
+  "command": "python3 -m research.odt_reference.run_tests",
+  "elapsed_seconds": 46.004,
+  "independent_review": {
+    "rounds": 2,
+    "verdict": "No actionable P0-P3 issues",
+    "repeated_tests": 48,
+    "elapsed_seconds": 45.568
+  }
+}

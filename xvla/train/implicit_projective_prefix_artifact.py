@@ -14,11 +14,13 @@ from pathlib import Path
 from typing import Any
 
 from xvla.train import implicit_projective_dag_artifact as canonical_codec
-from xvla.train.implicit_sparse_projective_odt import (
-    CPBinaryCore,
-    ImplicitProjectiveDAG,
+from xvla.train.odt_engine_v2.graph import (
     _validate_network,
     _walk_unique,
+)
+from xvla.train.odt_engine_v2.types import (
+    CPBinaryCore,
+    ImplicitProjectiveDAG,
 )
 
 

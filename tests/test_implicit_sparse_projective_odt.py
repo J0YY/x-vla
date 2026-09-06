@@ -181,7 +181,9 @@ def test_every_algorithm1_node_uses_only_direct_reduced_rq_and_replays_each_step
         step.parent_occurrences_pushed == step.expected_parent_occurrences
         for step in canonical.steps
     )
-    assert all(step.full_row_rank for step in canonical.steps)
+    # V2 does not numerically test rank. It retains every shape-selected Q row.
+    assert all(step.literal_q_chart_resolved for step in canonical.steps)
+    assert all(not step.full_row_rank for step in canonical.steps)  # unassessed legacy field
     audit = audit_algorithm1_factorization_calls()
     assert audit["prohibited_calls_found"] == []
     telemetry = telemetry_dict(canonical.telemetry)
@@ -216,7 +218,8 @@ def test_streamed_shared_algorithm1_matches_independent_dense_no_memo_clone_ever
         and record.expected_clone_parent_occurrences == record.pushed_clone_parent_occurrences
         for record in trace.records
     )
-    assert all("independent_dense" in method for method in trace.clone_factorization_methods)
+    assert all(method == "independent_symmetric_clone_qr_v2" for method in trace.clone_factorization_methods)
+    assert all(record.literal_rq_occurrences_compared == record.clone_occurrences for record in trace.records)
 
     comparison = compare_shared_and_explicit_clone_environments(
         trace.shared_network, trace.explicit_clone_network
@@ -292,25 +295,30 @@ def test_clone_algorithm2_and_independently_derived_algorithm3_match_shared_obje
     assert broken.clone_replay_relative_error > 1e-6
 
 
-def test_missing_R_and_residual_cross_term_are_load_bearing():
+def test_missing_R_and_residual_cross_term_are_load_bearing(monkeypatch):
     oracle = _oracle(13)
     raw = _inputs(3, 2)
     reference = evaluate_boundary_quotient(oracle.network, raw)
-    broken_r = canonicalize_implicit_dag_direct_rq(
-        oracle.network,
-        replay_inputs=raw,
-        block_size=64,
-        omit_parent_push=("attention.head0.q2_norm.token2.mean_square", 0),
-    )
-    assert _relative(evaluate_boundary_quotient(broken_r.network, raw), reference) > 1e-6
+    from xvla.train.odt_engine_v2 import core as engine
+    push = engine._push_factor_to_parents_with_scale_ledger
+    injected = []
+    def missing_occurrence(node, factor, parents, work):
+        if not injected and len(parents.get(id(node), ())) > 1:
+            injected.append(node.uid)
+            parents = {**parents, id(node): parents[id(node)][1:]}
+        return push(node, factor, parents, work)
+    with monkeypatch.context() as patcher:
+        patcher.setattr(engine, "_push_factor_to_parents_with_scale_ledger", missing_occurrence)
+        with pytest.raises(RuntimeError, match="every occurrence"):
+            canonicalize_implicit_dag_direct_rq(oracle.network, replay_inputs=raw, block_size=64)
+    assert len(injected) == 1
     broken_residual = drop_first_residual_add_cross_term(oracle.network)
     assert _relative(evaluate_boundary_quotient(broken_residual, raw), reference) > 1e-6
 
 
 def test_old_project_then_add_compact_chart_rejects_but_public_route_is_exact():
-    assert old_project_then_add_topology_is_rejected(
-        12, 3, like=torch.empty((), dtype=DTYPE)
-    )
+    with pytest.raises(ValueError, match="retired solver-dependent"):
+        old_project_then_add_topology_is_rejected(12, 3, like=torch.empty((), dtype=DTYPE))
     network, raw = _bounded_old_project_then_add_network()
     reference = evaluate_boundary_quotient(network, raw)
     canonical = canonicalize_implicit_dag_direct_rq(
@@ -345,11 +353,11 @@ def test_algorithm2_direct_only_path_rejects_a_nonidentity_output_metric():
     )
     metric = torch.eye(canonical.network.head.shape[0], dtype=DTYPE)
     metric[0, 0] = 2.0
-    with pytest.raises(ValueError, match="identity output metric"):
+    with pytest.raises(TypeError, match="output_metric"):
         reverse_implicit_environments(canonical.network, output_metric=metric)
 
 
-def test_native_multihead_concat_is_exact_and_full_rank():
+def test_native_multihead_concat_is_exact_with_shape_selected_q():
     oracle = _oracle(23, tokens=2, dimension=4, heads=2, rank=5)
     raw = _inputs(2, 4)
     source = source_block_boundary(oracle, raw)
@@ -358,17 +366,14 @@ def test_native_multihead_concat_is_exact_and_full_rank():
     canonical = canonicalize_implicit_dag_direct_rq(
         oracle.network, replay_inputs=raw, block_size=64
     )
-    assert all(step.full_row_rank for step in canonical.steps)
+    assert all(step.literal_q_chart_resolved for step in canonical.steps)
+    assert all(not step.full_row_rank for step in canonical.steps)
     assert max(step.per_step_function_replay_error for step in canonical.steps) < 3e-8
 
 
-def test_nondivisible_multiblock_tsqr_matches_independent_dense_qr():
-    result = multiblock_tsqr_dense_equivalence()
-    assert result["cases"] == 5
-    assert result["maximum_streamed_column_blocks"] > 1
-    assert result["maximum_factor_relative_error"] < 3e-12
-    assert result["maximum_q_core_relative_error"] < 3e-12
-    assert result["maximum_reconstruction_relative_error"] < 3e-12
+def test_solver_dependent_tsqr_control_is_retired():
+    with pytest.raises(ValueError, match="retired TSQR solve route"):
+        multiblock_tsqr_dense_equivalence()
 
 
 def test_validator_rejects_nonbinary_mask_and_malformed_cp_factor():

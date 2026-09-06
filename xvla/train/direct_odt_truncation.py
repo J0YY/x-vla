@@ -14,9 +14,22 @@ from dataclasses import dataclass
 
 import torch
 
-from xvla.train.implicit_sparse_projective_odt import (
+from xvla.train.odt_engine_v2.constants import (
     COMPACT_RELATIVE_VALUE_FLOORS,
     COMPACT_TRACE_RETENTION_TARGETS,
+)
+from xvla.train.odt_engine_v2.graph import (
+    _clone_network,
+    _parent_occurrences,
+    _prepare_physical_input,
+    _validate_network,
+    _walk_unique,
+)
+from xvla.train.odt_engine_v2.ops import (
+    _core_apply,
+    _normalize_projective_batch,
+)
+from xvla.train.odt_engine_v2.types import (
     CPBinaryCore,
     CompactSpectrumRecord,
     DenseCloneCore,
@@ -27,13 +40,6 @@ from xvla.train.implicit_sparse_projective_odt import (
     RawPhysicalInput,
     ReducedQRBinaryCore,
     UnaryCore,
-    _clone_network,
-    _core_apply,
-    _normalize_projective_batch,
-    _parent_occurrences,
-    _prepare_physical_input,
-    _validate_network,
-    _walk_unique,
 )
 
 

@@ -1477,10 +1477,26 @@ def test_authenticated_descriptor_corruption_is_rejected(
         )
 
 
-def test_existing_eager_serializer_sources_remain_byte_identical() -> None:
+def test_eager_serializer_unchanged_except_defining_module_imports() -> None:
     repository = Path(__file__).resolve().parents[1]
+    source = (repository / "xvla/train/implicit_projective_dag_artifact.py").read_text()
+    # Preserve the historical byte pin, normalizing ONLY the explicit import
+    # relocation. Do not bless a changed serializer by updating its checksum.
+    graph_import = """from xvla.train.odt_engine_v2.graph import (
+    _validate_network,
+    validate_canonical_exponent_normal_form,
+)
+"""
+    assert source.count(graph_import) == 1
+    source = source.replace(graph_import, "", 1)
+    new_owner = "from xvla.train.odt_engine_v2.types import ("
+    assert source.count(new_owner) == 1
+    source = source.replace(new_owner, "from xvla.train.implicit_sparse_projective_odt import (", 1)
+    end = "    UnaryCore,\n)"
+    assert source.count(end) == 1
+    source = source.replace(end, "    UnaryCore,\n    _validate_network,\n    validate_canonical_exponent_normal_form,\n)", 1)
     assert hashlib.sha256(
-        (repository / "xvla/train/implicit_projective_dag_artifact.py").read_bytes()
+        source.encode()
     ).hexdigest() == "e302131d021ed8fac5b8ec5bb1d321b4f3ca035487f4ba7626159d914d0f4bd9"
     assert hashlib.sha256(
         (repository / "tests/test_implicit_projective_dag_artifact.py").read_bytes()

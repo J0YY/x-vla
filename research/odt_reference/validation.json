@@ -1,0 +1,28 @@
+{
+  "kernels": {
+    "eigh": 203,
+    "prohibited_attempts": 0,
+    "qr": 312
+  },
+  "numpy": "2.4.2",
+  "passed": true,
+  "source_sha256": {
+    "clone_oracle.py": "1134fdcf92b83696b88f2c6e0ce02ffd9044799edebcd58282f62a8e603c1a5d",
+    "dooms.py": "debdaa02ddcb7fbc45c49d5c5b44d715d8014221b3c98539830ff3d7ff11ffa4",
+    "run_tests.py": "c898c142fcc1b3f3f1efa38b323e2ceb18cc26b5130493b451fca5dcc63de8c0",
+    "shared_dag.py": "5d3de095353acd10add10feaeb33d6ecb603d2134050781f132e4a669867d6d3",
+    "test_reference.py": "2006809d59fe4d43ad181703e3b0da4a0f1d51816c8b6ba06c1875d9fff1b751",
+    "test_shared_dag.py": "013579315cbd5a35dd8b3d99fc2a420d7d00c7061898b7b8e019d1f917d139ea",
+    "weights.py": "faf07c022697e42e68e55ad847841fd805627804e91f0baa7b0087b15e189230"
+  },
+  "suite": "all",
+  "tests": 31,
+  "recorded_utc": "2026-09-06 11:31:01 UTC",
+  "command": "python3 -m research.odt_reference.run_tests",
+  "independent_review": {
+    "round": 2,
+    "result": "No actionable P0–P3 findings",
+    "scope": "Ten files listed in VALIDATION.md",
+    "same_test_count": 31
+  }
+}
