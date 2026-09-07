@@ -34,3 +34,6 @@
 /xvla/nn/product_routing.py text eol=lf
 /xvla/nn/projector.py text eol=lf
 /xvla/nn/quantile_action.py text eol=lf
+/paper/odt.pdf binary
+/output/pdf/odt.pdf binary
+/output/pdf/odt_actions_success.pdf binary

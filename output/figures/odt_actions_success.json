@@ -1,0 +1,115 @@
+{
+  "source_sha256": {
+    "summary.json": "a1abfdfa30dcfc62ebe79758de47eef6dde042531abfa87a68806d5c9f6e072a",
+    "entry_descriptive_v1.json": "06c73b367217d68ca5e9887ad3dafe7c818c4ea9267b5fb8c57635379ed444d1",
+    "paired_episodes.npz": "5669329077cbc5e24055a2ec0a5d7789edbffa7f6a7e78ccebd7eab8d8a80f5d"
+  },
+  "arms": [
+    {
+      "arm": "native",
+      "label": "Original",
+      "initial_action_rmse": 1.563187944118752e-07,
+      "successes": 17,
+      "episodes": 20,
+      "outcomes_in_plot_order": [
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "arm": "leading_k174",
+      "label": "ODT",
+      "initial_action_rmse": 0.0009034710703841022,
+      "successes": 16,
+      "episodes": 20,
+      "outcomes_in_plot_order": [
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "arm": "anchored_k174_s0",
+      "label": "Random",
+      "initial_action_rmse": 0.053819340362048496,
+      "successes": 19,
+      "episodes": 20,
+      "outcomes_in_plot_order": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "random_over_odt_initial_action_rmse": 59.5695226181041,
+  "exact_paired_p": 0.25,
+  "posthoc_initial_actions": true,
+  "bar_axis": {
+    "minimum": 0,
+    "maximum": 0.06,
+    "scale": "linear"
+  },
+  "scope": "One checkpoint, one bond at rank 174, one anchored random seed, 20 paired starts.",
+  "pdf_sha256": "488fcd34e55f95a1747c1752d021ac029b482af9a97262d692a0b68d2353119a",
+  "manuscript": {
+    "path": "paper/odt.tex",
+    "source_sha256": "b0758c5cb164bb35c15663e608c1eeb1d7378de11668617b0b63ae3df7e22f77",
+    "pdf_sha256": "b999a1b82be92272ef7a9445cf508969d42afaf0b8f1838dfb2fb67d2b7a418f",
+    "main_pages": 6,
+    "total_pages": 11,
+    "all_pages_visually_verified": true,
+    "figure_number": 2
+  }
+}

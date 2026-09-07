@@ -43,7 +43,7 @@ Bilinear layers multiply pairs of transformed vectors. Pearce et al.~\citep{pear
 We adapt ODT to shared computations and input-dependent rational normalization in one policy. A copied implementation checks every full coordinate change. Local policy reductions and a small vision-block experiment test the gap between its objective and behavior:
 \begin{itemize}
 \item Full-rank decomposition preserves the tested component outputs to floating-point precision (Section~\ref{sec.setup}).
-\item Leading directions preserve recorded actions more closely than the tested random controls, while a 20-start rollout pilot establishes no success advantage (Tables~\ref{tab.actions} and~\ref{tab.rollout}).
+\item Leading directions preserve recorded actions more closely than the tested random controls, while a 20-start rollout pilot establishes no success advantage (Table~\ref{tab.actions} and Figure~\ref{fig.behavior}).
 \item At a large graph-bond budget, spectral allocation incurs greater real-input output error than a width control, despite a smaller coefficient-tail score (Table~\ref{tab.allocation}).
 \end{itemize}
 
@@ -176,23 +176,14 @@ Retained rank & Leading RMSE & Leading standardized RMSE & Anchored random RMSE 
 \end{table}
 
 \paragraph{Action agreement does not establish a task-success benefit.}
-A pilot evaluates four arms on the same 20 LIBERO-Object starts, two per task, with a 280-step limit, eight-action chunks, and ten settling steps. All arms use the same direct-QR constrained-dynamics controller, simulator versions, and RTX 6000 hardware. All 80 episodes finish without execution failures. Native and full-rank arms have identical success vectors (Table~\ref{tab.rollout}). The random reduction succeeds on three starts where the leading reduction fails, with no discordance in the opposite direction. An exact two-sided paired test gives $p=0.25$. The pilot establishes neither superiority nor equivalence.
+A pilot evaluates four arms on the same 20 LIBERO-Object starts, two per task, with a 280-step limit, eight-action chunks, and ten settling steps. All arms use the same direct-QR constrained-dynamics controller, simulator versions, and RTX 6000 hardware. All 80 episodes finish without execution failures. Native and full-rank arms have identical success vectors (Figure~\ref{fig.behavior}). The random reduction succeeds on three starts where the leading reduction fails, with no discordance in the opposite direction. An exact two-sided paired test gives $p=0.25$. The pilot establishes neither superiority nor equivalence.
 
-\begin{table}[ht]
-\centering\small\setlength{\tabcolsep}{9pt}
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-Policy arm & Successes & Success rate & First-chunk action RMSE\\
-\midrule
-Original policy & 17/20 & 85\% & $1.56\times10^{-7}$\\
-Full-rank replacement & 17/20 & 85\% & 0\\
-Leading rank 174 & 16/20 & 80\% & 0.0009035\\
-Anchored random rank 174, seed 0 & 19/20 & 95\% & 0.0538193\\
-\bottomrule
-\end{tabular}
-\caption{Exploratory paired rollouts. First-chunk errors are a post hoc comparison on all 20 identical initial observations, relative to full rank. They exclude later states, which diverge between arms. The apparent success ordering is statistically inconclusive.}
-\label{tab.rollout}
-\end{table}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{../output/pdf/odt_actions_success.pdf}
+\caption{Action agreement and task success on the same 20 starts. Left: first-chunk RMSE relative to full-rank replacement, evaluated post hoc. Right: one column per paired start. ODT and anchored random seed 0 each retain 174 of 193 directions in one feed-forward bond. The paired success comparison is inconclusive ($p=0.25$).}
+\label{fig.behavior}
+\end{figure}
 
 On those same starting observations, the leading reduction has smaller first-chunk error on all 20 starts. The random arm's aggregate RMSE is 59.6 times larger. This second input source confirms initial action agreement. It does not establish fidelity later in the rollout or independence from policy training states. Smaller offline error alone therefore provides insufficient evidence for improved task success.
 
