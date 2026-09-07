@@ -116,7 +116,10 @@ implementation bug. A separately declared smaller-removal ladder and an
 equal-budget ablation protecting narrow moment/Padé bonds would test whether
 those early cuts contribute to distortion. Protecting these bonds does not
 preserve every normalization input or establish optimality of the ODT ordering.
-Neither experiment has been run here.
+Both experiments have since completed as separately labeled post-hoc
+[rank-allocation ablations](RANK_ALLOCATION_ABLATIONS.md). Protecting moment/Padé
+bonds improves the equal-budget 30% result, but worsens 40–80% results. The
+original curve and its acceptance evidence above are unchanged.
 
 The shared ranking objective is summed independent occurrence single-cut
 coefficient loss. It does not certify simultaneous all-bond truncation or

@@ -8,6 +8,10 @@ The completed unchanged-weight two-token experiment is recorded in
 [`TRAINED_BLOCK_CURVE.md`](TRAINED_BLOCK_CURVE.md). Independent ODT acceptance
 and all six physical truncation levels passed, but output distortion is
 substantial. This is not full-policy or capability-preserving truncation.
+The completed [rank-allocation ablations](RANK_ALLOCATION_ABLATIONS.md) confirm
+that protecting moment/Padé bonds improves the equal-budget 30% result, but
+worsens higher-removal results. This is a partial allocation improvement, not
+a general truncation rescue.
 
 This directory is deliberately independent of `xvla`, the production compiler,
 streaming kernels, saved artifacts, and cluster tooling. It is a bounded dense
