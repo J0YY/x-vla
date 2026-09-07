@@ -1,0 +1,104 @@
+{
+  "accepted": true,
+  "canonical_hashes": {
+    "arrays_sha256": "b9ba6160b39edff0af983b22cb1504167dfb978c46d029135a711920fd6e5d51",
+    "graph_sha256": "4372f4c1e2b54f5d3b5ee48dc95c53cccf7eb5c5993e4887050aeba05b84712c"
+  },
+  "canonical_internal_dimensions": 390,
+  "checkpoint_sha256": "b1c0dfce86ee90b45e30367603a7cc4d88c02f9056e836b19656179bf74ea3ee",
+  "clone_count": 21,
+  "cut_checks": [
+    {
+      "frobenius_eigen_residual": 7.512976641521812e-15,
+      "gap": 0.00016732882032407907,
+      "leakage_bound": 4.4899477728766815e-11,
+      "rank": 192,
+      "resolved": true
+    },
+    {
+      "frobenius_eigen_residual": 7.491173585347686e-15,
+      "gap": 7.164856125558249e-05,
+      "leakage_bound": 1.045544174798627e-10,
+      "rank": 184,
+      "resolved": true
+    },
+    {
+      "frobenius_eigen_residual": 7.465800643022821e-15,
+      "gap": 0.0002691044445440518,
+      "leakage_bound": 2.7743133918402028e-11,
+      "rank": 174,
+      "resolved": true
+    },
+    {
+      "frobenius_eigen_residual": 7.394642413905984e-15,
+      "gap": 0.00016884017194970444,
+      "leakage_bound": 4.379670032620414e-11,
+      "rank": 154,
+      "resolved": true
+    }
+  ],
+  "elapsed_seconds": 34.611397095024586,
+  "eligible_bonds": 4,
+  "environment_binary_exponent": -8,
+  "full_policy_odt": false,
+  "gates": {
+    "degenerate_cutoffs_not_uniquely_identifiable": 0,
+    "global_binary_exponent": -4,
+    "maximum_errors": {
+      "canonical_replay": 3.2207580518632593e-15,
+      "environment": 6.855801244740183e-16,
+      "every_gauge_step": 0.0,
+      "every_qr_step": 0.0,
+      "gauged_replay": 1.73920934800616e-14,
+      "local_qr": 1.3833188401852705e-15,
+      "post_gauge_off_diagonal": 1.7345801458397938e-15
+    },
+    "subspace_checks": 14
+  },
+  "global_binary_exponent": -4,
+  "includes_zero_input": true,
+  "input_count": 32,
+  "input_seed": 20260907,
+  "kernels": {
+    "eigh": 19,
+    "prohibited_attempts": 0,
+    "qr": 54
+  },
+  "native_policy_replay_completed": false,
+  "numpy": "2.2.6",
+  "panel_sha256": "22768ce5a0c936e85ab5fad2fa33c3a1db220ce38c61f756a306bbb39dbfff73",
+  "raw_replay": 3.2207580518632593e-15,
+  "scope": "local first-vision-block residual FFN, trained width192 CP576, applied tokenwise; not full-policy ODT",
+  "source_sha256": {
+    "local": {
+      "__init__.py": "a7a311602003e640fc297c7bbe526d78e3f0ddbf3c2773f9a40a6bed60f478fc",
+      "core.py": "63656a1c05fba21862c21f03983a190ec559c486467c02744a31a688661bde11",
+      "run.py": "bb7c7501d0ba8c16e46ef38187c1b0328e456f83501055e295802e9757a7537b",
+      "test_ffn.py": "3863eb98ee3f387c172b24279a8698ea01a102bf3d6311eed79294f6eab938fa"
+    },
+    "reference": {
+      "block.py": "f81ce19297f34038b2327b2c0a227195a40ffeeabd2faa9d9117cc4b7b5793e2",
+      "block_oracle.py": "76da7e5867bd8570039aacb919fef3f14ea827aabb82b642ebf7ccd9da19093a",
+      "checkpoint.py": "5179437ee766e226ae6ea596e21db54bb56797b9473910ac9a33a588c48ae6fe",
+      "clone_oracle.py": "6a00da869359c3e31d87c2ac161d55633171d11effd37ebe6337a9e2af67e026",
+      "clone_passes.py": "2230c7250fed1f8ec7b5602626ac89b4baadde2454ddea95ae9f1759ba484bea",
+      "curve.py": "684c0e7aa9a05b378b1e737702eb3398e4a9913bfa5b20040b73af2d1b8cbc5a",
+      "dooms.py": "debdaa02ddcb7fbc45c49d5c5b44d715d8014221b3c98539830ff3d7ff11ffa4",
+      "run_curve.py": "30230bd314d13dd0ad3533e2ab0b9bd5328624f8faf9e496c4b068dbd66a989d",
+      "run_tests.py": "3c5aa713dc29edba1e621e214271342e97b5f56aca70f5719a51436bbc5d9e57",
+      "scaled.py": "4ca970af8611ee7a52bd494003c69f114b5dfa02e4a8988ee1097a35e8bf1818",
+      "shared_dag.py": "fabde4682d30aef51c9913cc1f1d4b42a019735517e69f666201d343d639e4bf",
+      "weights.py": "faf07c022697e42e68e55ad847841fd805627804e91f0baa7b0087b15e189230"
+    }
+  },
+  "tolerances": {
+    "coordinates": 3e-10,
+    "denominator_margin": 1e-12,
+    "environment": 3e-10,
+    "off_diagonal": 3e-10,
+    "replay": 1e-10,
+    "subspace": 2e-08
+  },
+  "unique_nodes": 6,
+  "weights_sha256": "5a763bf7576d93fdf18a434e622b2bf92942b03e3e933fd759ea4eec1124a75e"
+}
