@@ -7,6 +7,10 @@ import tempfile
 import numpy as np
 
 from research.odt_reference.run_tests import install_guards, COUNTS
+
+# Guard discovery/import-based invocations as well as python -m execution.
+install_guards()
+
 from research.odt_reference import run_curve as original
 from research.odt_reference.curve import rank_schedule, physical_variant
 from research.odt_reference.shared_dag import Graph, Node, common_bases, apply_bases
@@ -98,7 +102,6 @@ class RankAblationTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    install_guards()
     result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(RankAblationTests))
     print(COUNTS)
     raise SystemExit(0 if result.wasSuccessful() and COUNTS["prohibited_attempts"] == 0 else 1)

@@ -81,24 +81,27 @@ def allocation(canonical, policy, percent):
 
 
 def consumer_audit():
-    """Audit this separate boundary plus the unchanged producer source closure."""
+    """Audit this boundary AND its tests, plus the unchanged producer closure."""
     path = Path(__file__)
-    tree = ast.parse(path.read_text())
-    allowed = {"argparse", "ast", "hashlib", "json", "time", "numpy", "pathlib"}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import) and any(n.name not in allowed for n in node.names):
-            raise ValueError("unexpected consumer import")
-        if isinstance(node, ast.ImportFrom) and node.module not in {
-                "pathlib", "research.odt_reference.run_tests", "research.odt_reference",
-                "research.odt_reference.curve", "research.odt_reference.shared_dag"}:
-            raise ValueError("unexpected consumer dependency")
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in PROHIBITED:
-            raise ValueError("prohibited consumer call")
-        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.MatMult):
-            for a, b in ((node.left, node.right), (node.right, node.left)):
-                if isinstance(b, ast.Attribute) and b.attr == "T" and ast.dump(a) == ast.dump(b.value):
-                    raise ValueError("prohibited self-overlap")
-    return {"consumer_sha256": original.digest(path), "producer_sources": audit(original.SOURCES)}
+    test_path = path.with_name("test_odt_rank_ablation.py")
+    allowed = {"argparse", "ast", "hashlib", "json", "time", "numpy", "unittest", "tempfile"}
+    for source in (path, test_path):
+        for node in ast.walk(ast.parse(source.read_text())):
+            if isinstance(node, ast.Import) and any(n.name not in allowed for n in node.names):
+                raise ValueError("unexpected consumer/test import")
+            if isinstance(node, ast.ImportFrom) and node.module not in {
+                    "pathlib", "fractions", "scripts.odt_rank_ablation",
+                    "research.odt_reference.run_tests", "research.odt_reference",
+                    "research.odt_reference.curve", "research.odt_reference.shared_dag"}:
+                raise ValueError("unexpected consumer/test dependency")
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in PROHIBITED:
+                raise ValueError("prohibited consumer/test call")
+            if isinstance(node, ast.BinOp) and isinstance(node.op, ast.MatMult):
+                for a, b in ((node.left, node.right), (node.right, node.left)):
+                    if isinstance(b, ast.Attribute) and b.attr == "T" and ast.dump(a) == ast.dump(b.value):
+                        raise ValueError("prohibited self-overlap")
+    return {"consumer_sha256": original.digest(path), "test_sha256": original.digest(test_path),
+            "producer_sources": audit(original.SOURCES)}
 
 
 def load_accepted(producer, sources):
