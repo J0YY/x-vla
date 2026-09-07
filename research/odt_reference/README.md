@@ -4,6 +4,11 @@ Historical complete-block results and cleanup: `BLOCK_VALIDATION.md`. The guarde
 runner prints the current test count and exact source hashes. `VALIDATION.md` and `validation.json` preserve the initial
 31-test reference checkpoint, not an attestation of subsequent source changes.
 
+The completed unchanged-weight two-token experiment is recorded in
+[`TRAINED_BLOCK_CURVE.md`](TRAINED_BLOCK_CURVE.md). Independent ODT acceptance
+and all six physical truncation levels passed, but output distortion is
+substantial. This is not full-policy or capability-preserving truncation.
+
 This directory is deliberately independent of `xvla`, the production compiler,
 streaming kernels, saved artifacts, and cluster tooling. It is a bounded dense
 mathematical reference, not a new full-VLA implementation. Production remains
@@ -161,10 +166,12 @@ dynamic range. All replay, environment, subspace and physical-mask gates remain.
 
 The typed symmetric block export now includes attention/residual sharing and
 the fixed Padé representation. Small joint-output blocks pass the independent
-ODT gate. A bounded unchanged-width two-token trained vision block completed
-all independent clone QR comparisons, but its unscaled float64 head underflowed
-to zero and the full-rank replay gate rejected the run. The global-scale repair
-must pass a fresh complete acceptance run before claiming trained-block ODT.
+ODT gate. The first unchanged-width two-token trained run failed closed when
+its unscaled float64 head underflowed to zero. After explicit global-scale
+bookkeeping, a fresh run from original weights passed all independent clone
+QR, environment, retained-space, gauge and replay gates. The physical 30–80%
+curve is complete, with substantial decoded-output distortion as documented
+in `TRAINED_BLOCK_CURVE.md`. This does not establish a low-error regime.
 A full-policy streaming implementation is not yet accepted. Symmetrizing an FFN can be represented
 by pairing CP terms, without changing policy weights or retraining. That does
 not by itself validate every other compiler primitive or a full-policy ranking.
