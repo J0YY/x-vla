@@ -1,0 +1,3228 @@
+{
+  "actions_manifest_sha256": "083d5f3d9e9ec1262cd4d9cbe62ec8a759e4768971bf7b5fc801bec991ffc73b",
+  "all_18_arms_complete_zero_invalid": true,
+  "arms": [
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 5.726632575053653e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.74714227916854e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.3711429661096246e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.4922191376376704e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.3298731501373254e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.543639785105674e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.981816595323386e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.8087875106549154e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.5916092196723745e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.26029070551127e-15,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "native",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 5.3853153924374435e-15,
+        "all": {
+          "maximum_absolute_error": 5.960464477539062e-07,
+          "p95_frame_rmse": 9.861213553698319e-08,
+          "rmse": 7.33847081648312e-08
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 5.960464477539062e-07,
+          "p95_frame_rmse": 2.2696772533249583e-07,
+          "rmse": 1.5250958122654796e-07
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          5.445151679334662e-08,
+          6.434589827156463e-08,
+          8.425561631570852e-08,
+          5.460594555655937e-09,
+          1.0272530809311102e-08,
+          9.915705361951154e-09,
+          1.5250958122654796e-07
+        ],
+        "rotation": {
+          "maximum_absolute_error": 5.960464477539063e-08,
+          "p95_frame_rmse": 1.5791499204371798e-08,
+          "rmse": 8.825421518819595e-09
+        },
+        "stage_output_maximum_absolute_error": 4.76837158203125e-06,
+        "stage_output_rmse": 2.8096424704044196e-07,
+        "translation": {
+          "maximum_absolute_error": 3.5762786865234375e-07,
+          "p95_frame_rmse": 9.535498486456014e-08,
+          "rmse": 6.880981322023417e-08
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 0.0,
+        "all": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "stage_output_maximum_absolute_error": 0.0,
+        "stage_output_rmse": 0.0,
+        "translation": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "fullrank",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 0.0,
+        "all": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "stage_output_maximum_absolute_error": 0.0,
+        "stage_output_rmse": 0.0,
+        "translation": {
+          "maximum_absolute_error": 0.0,
+          "p95_frame_rmse": 0.0,
+          "rmse": 0.0
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 5.3853153924374435e-15,
+        "all": {
+          "maximum_absolute_error": 5.960464477539062e-07,
+          "p95_frame_rmse": 9.861213553698319e-08,
+          "rmse": 7.33847081648312e-08
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 5.960464477539062e-07,
+          "p95_frame_rmse": 2.2696772533249583e-07,
+          "rmse": 1.5250958122654796e-07
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          5.445151679334662e-08,
+          6.434589827156463e-08,
+          8.425561631570852e-08,
+          5.460594555655937e-09,
+          1.0272530809311102e-08,
+          9.915705361951154e-09,
+          1.5250958122654796e-07
+        ],
+        "rotation": {
+          "maximum_absolute_error": 5.960464477539063e-08,
+          "p95_frame_rmse": 1.5791499204371798e-08,
+          "rmse": 8.825421518819595e-09
+        },
+        "stage_output_maximum_absolute_error": 4.76837158203125e-06,
+        "stage_output_rmse": 2.8096424704044196e-07,
+        "translation": {
+          "maximum_absolute_error": 3.5762786865234375e-07,
+          "p95_frame_rmse": 9.535498486456014e-08,
+          "rmse": 6.880981322023417e-08
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 5.438405552380742e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.3436606591135923e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.0106792273663663e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.9561779914706393e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.914101254551599e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.670857421391421e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.592657662424525e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.084272247014408e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.151526542549462e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.038777933304046e-10,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "leading_k192",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 5.92972295378641e-10,
+        "all": {
+          "maximum_absolute_error": 0.0004245638847351074,
+          "p95_frame_rmse": 4.1390565883102416e-05,
+          "rmse": 2.4351022470907477e-05
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.00015556812286376953,
+          "p95_frame_rmse": 4.179222802496801e-05,
+          "rmse": 2.2623607992650807e-05
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          2.9841341732445694e-05,
+          3.409882589665822e-05,
+          3.897601595660171e-05,
+          3.256046927995097e-06,
+          5.9893667482185225e-06,
+          4.487610681743274e-06,
+          2.2623607992650807e-05
+        ],
+        "rotation": {
+          "maximum_absolute_error": 3.2491981983184814e-05,
+          "p95_frame_rmse": 7.837839430950678e-06,
+          "rmse": 4.712147609207093e-06
+        },
+        "stage_output_maximum_absolute_error": 0.06990814208984375,
+        "stage_output_rmse": 0.004726623159671135,
+        "translation": {
+          "maximum_absolute_error": 0.0004245638847351074,
+          "p95_frame_rmse": 5.876445255775774e-05,
+          "rmse": 3.450780309713773e-05
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 5.929665507417888e-10,
+        "all": {
+          "maximum_absolute_error": 0.00042475759983062744,
+          "p95_frame_rmse": 4.1412494514774896e-05,
+          "rmse": 2.435090451588583e-05
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.00015550851821899414,
+          "p95_frame_rmse": 4.1866296255578204e-05,
+          "rmse": 2.2619264680375664e-05
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          2.9841992410693833e-05,
+          3.409905047594156e-05,
+          3.897730911957049e-05,
+          3.255864315189438e-06,
+          5.989492840715243e-06,
+          4.4877235855672806e-06,
+          2.2619264680375664e-05
+        ],
+        "rotation": {
+          "maximum_absolute_error": 3.246963024139404e-05,
+          "p95_frame_rmse": 7.841693755118823e-06,
+          "rmse": 4.712194814463143e-06
+        },
+        "stage_output_maximum_absolute_error": 0.06990814208984375,
+        "stage_output_rmse": 0.004726623373299075,
+        "translation": {
+          "maximum_absolute_error": 0.00042475759983062744,
+          "p95_frame_rmse": 5.8776697665956495e-05,
+          "rmse": 3.450855150347168e-05
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 1.2797302918944936e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.261831332577957e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.2495906791870063e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.674494978756372e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.725457630138751e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.3235716222626032e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.5469731391548493e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.176597109947939e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.262043515966738e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.5191175660118506e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k192_s0",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.062902575524958e-06,
+        "all": {
+          "maximum_absolute_error": 0.012240469455718994,
+          "p95_frame_rmse": 0.0017697160696692764,
+          "rmse": 0.0010309716657236308
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.010551810264587402,
+          "p95_frame_rmse": 0.001539350824783857,
+          "rmse": 0.0008643521436241201
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.001446406383776797,
+          0.0013585638397513261,
+          0.0016131599627490592,
+          0.00013855973477585714,
+          0.00027396174464745554,
+          0.0002426671871699515,
+          0.0008643521436241201
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0020009465515613556,
+          "p95_frame_rmse": 0.0003980859830548218,
+          "rmse": 0.0002259359801362691
+        },
+        "stage_output_maximum_absolute_error": 1.1707143783569336,
+        "stage_output_rmse": 0.07139485963270373,
+        "translation": {
+          "maximum_absolute_error": 0.012240469455718994,
+          "p95_frame_rmse": 0.0024623643156919486,
+          "rmse": 0.0014764904559039864
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.0629036904056863e-06,
+        "all": {
+          "maximum_absolute_error": 0.01224052906036377,
+          "p95_frame_rmse": 0.0017697090177980464,
+          "rmse": 0.0010309722064176542
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.010551810264587402,
+          "p95_frame_rmse": 0.0015393203004001796,
+          "rmse": 0.0008643552456396274
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0014464068371032729,
+          0.0013585642479107464,
+          0.0016131600054893312,
+          0.00013855942960408723,
+          0.00027396119741823755,
+          0.0002426677389380275,
+          0.0008643552456396274
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0020009465515613556,
+          "p95_frame_rmse": 0.00039808449027052366,
+          "rmse": 0.00022593589411183223
+        },
+        "stage_output_maximum_absolute_error": 1.1707134246826172,
+        "stage_output_rmse": 0.07139486769893899,
+        "translation": {
+          "maximum_absolute_error": 0.01224052906036377,
+          "p95_frame_rmse": 0.0024623856175351173,
+          "rmse": 0.0014764907446860528
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 1.521476712787977e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.4721345045830668e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.204404244953479e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.878222738362589e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.2048122091106653e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.745418061680724e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.865737143800413e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.670519493187919e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.922231870784083e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.450307408197338e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k192_s1",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.690178815987345e-06,
+        "all": {
+          "maximum_absolute_error": 0.017766237258911133,
+          "p95_frame_rmse": 0.00215643912955695,
+          "rmse": 0.0013000687735605933
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.017766237258911133,
+          "p95_frame_rmse": 0.0022285438169130094,
+          "rmse": 0.001186434233867918
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0019191695458640572,
+          0.0018192073627903683,
+          0.0017894371180871367,
+          0.0001908021282345715,
+          0.0003466458992563679,
+          0.0002687830255370122,
+          0.001186434233867918
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.002067030407488346,
+          "p95_frame_rmse": 0.0004730599268996687,
+          "rmse": 0.00027617213619222344
+        },
+        "stage_output_maximum_absolute_error": 1.3253040313720703,
+        "stage_output_rmse": 0.07731976916532772,
+        "translation": {
+          "maximum_absolute_error": 0.013191722333431244,
+          "p95_frame_rmse": 0.0031159407954607747,
+          "rmse": 0.00184343993430676
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.690180390009223e-06,
+        "all": {
+          "maximum_absolute_error": 0.017766296863555908,
+          "p95_frame_rmse": 0.0021564372464139467,
+          "rmse": 0.001300069378921457
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.017766296863555908,
+          "p95_frame_rmse": 0.002228553670053481,
+          "rmse": 0.0011864336372570817
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.001919169270555615,
+          0.0018192075250430984,
+          0.0017894407538518846,
+          0.0001908022016360066,
+          0.00034664595797075776,
+          0.00026878268984157873,
+          0.0011864336372570817
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0020670322701334953,
+          "p95_frame_rmse": 0.00047306408575672256,
+          "rmse": 0.00027617206875731536
+        },
+        "stage_output_maximum_absolute_error": 1.325304388999939,
+        "stage_output_rmse": 0.07731977713973402,
+        "translation": {
+          "maximum_absolute_error": 0.013191618025302887,
+          "p95_frame_rmse": 0.003115951457173186,
+          "rmse": 0.0018434410685603168
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 9.955249710170115e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.683392046251214e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.180629769702981e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.61956003562028e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.348920580099146e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1080432944729425e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1674386806358e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.497858313626807e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.0477448913613e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.6144345997244292e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k192_s2",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.0085818902249037e-06,
+        "all": {
+          "maximum_absolute_error": 0.011411309242248535,
+          "p95_frame_rmse": 0.0016854104012303946,
+          "rmse": 0.0010042817782997477
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.011411309242248535,
+          "p95_frame_rmse": 0.0016376138009257149,
+          "rmse": 0.0009258572664421992
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.001442071528893705,
+          0.0013453633767843223,
+          0.0014662586229512596,
+          0.00013764694412523503,
+          0.0003136103858407048,
+          0.00021465353246352169,
+          0.0009258572664421992
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0042915791273117065,
+          "p95_frame_rmse": 0.00035284439076098016,
+          "rmse": 0.00023336258935630582
+        },
+        "stage_output_maximum_absolute_error": 1.0504111647605896,
+        "stage_output_rmse": 0.06368529287743134,
+        "translation": {
+          "maximum_absolute_error": 0.010620832443237305,
+          "p95_frame_rmse": 0.0024935605382332155,
+          "rmse": 0.0014188595490060866
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.0085828633037443e-06,
+        "all": {
+          "maximum_absolute_error": 0.01141124963760376,
+          "p95_frame_rmse": 0.001685401826665145,
+          "rmse": 0.0010042822627646792
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.01141124963760376,
+          "p95_frame_rmse": 0.001637693784025269,
+          "rmse": 0.0009258575286019112
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0014420723603093286,
+          0.0013453613950492492,
+          0.0014662615920701986,
+          0.00013764702960870553,
+          0.0003136112005206125,
+          0.00021465357664869283,
+          0.0009258575286019112
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0042915791273117065,
+          "p95_frame_rmse": 0.0003528476002102231,
+          "rmse": 0.00023336298465420483
+        },
+        "stage_output_maximum_absolute_error": 1.0504111647605896,
+        "stage_output_rmse": 0.0636852994622032,
+        "translation": {
+          "maximum_absolute_error": 0.01062077283859253,
+          "p95_frame_rmse": 0.0024935623181511386,
+          "rmse": 0.0014188602270880683
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 8.385409553523665e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.4569383779946305e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.72133935972635e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.100540417802697e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.86376671165819e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.3499414033204592e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.456104465696189e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.905074193600962e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.442279580117867e-09,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.0511502407163824e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "leading_k184",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 8.434236910048898e-09,
+        "all": {
+          "maximum_absolute_error": 0.000871121883392334,
+          "p95_frame_rmse": 0.00015018739141335247,
+          "rmse": 9.183810162480983e-05
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.000871121883392334,
+          "p95_frame_rmse": 0.0001657231290357128,
+          "rmse": 8.94192909555037e-05
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.00012406951065282952,
+          0.00013095088778113494,
+          0.0001324737059756268,
+          1.1717634368793316e-05,
+          2.2356223200008088e-05,
+          1.7778747007906678e-05,
+          8.94192909555037e-05
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0001482609659433365,
+          "p95_frame_rmse": 3.2041584091817285e-05,
+          "rmse": 1.7824959243903446e-05
+        },
+        "stage_output_maximum_absolute_error": 0.17318367958068848,
+        "stage_output_rmse": 0.015831211931475787,
+        "translation": {
+          "maximum_absolute_error": 0.0008239150047302246,
+          "p95_frame_rmse": 0.000204668473092231,
+          "rmse": 0.00012921643504758054
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 8.434237264193478e-09,
+        "all": {
+          "maximum_absolute_error": 0.0008710622787475586,
+          "p95_frame_rmse": 0.00015018419291813425,
+          "rmse": 9.18381035529016e-05
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0008710622787475586,
+          "p95_frame_rmse": 0.0001657029533528702,
+          "rmse": 8.941604230129712e-05
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.00012407375953752268,
+          0.00013094899212310154,
+          0.0001324738076980292,
+          1.1717302092112154e-05,
+          2.2356384852312427e-05,
+          1.7778724552085872e-05,
+          8.941604230129712e-05
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.00014825351536273956,
+          "p95_frame_rmse": 3.204148646247811e-05,
+          "rmse": 1.7824946551406182e-05
+        },
+        "stage_output_maximum_absolute_error": 0.17318367958068848,
+        "stage_output_rmse": 0.01583121309784605,
+        "translation": {
+          "maximum_absolute_error": 0.0008241087198257446,
+          "p95_frame_rmse": 0.0002046926670263962,
+          "rmse": 0.00012921718934910263
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 1.396893020651702e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.390040059758809e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.7587974057626186e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.0651488002298896e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.0855454370098392e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.8490782167464234e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.009572266819358e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.912020990642494e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 8.754287977016898e-06,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.5783322931242878e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k184_s0",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.3341404476661965e-05,
+        "all": {
+          "maximum_absolute_error": 0.04148542881011963,
+          "p95_frame_rmse": 0.006351829930049955,
+          "rmse": 0.003652588736315925
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.04148542881011963,
+          "p95_frame_rmse": 0.005731604488264612,
+          "rmse": 0.003171199735934487
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.004956500703409362,
+          0.005090694168323127,
+          0.005579260266845019,
+          0.0004973629740394431,
+          0.0009706825273097245,
+          0.0007304228988612747,
+          0.003171199735934487
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.007713522762060165,
+          "p95_frame_rmse": 0.0013602300294137683,
+          "rmse": 0.0007578724844261211
+        },
+        "stage_output_maximum_absolute_error": 2.354810953140259,
+        "stage_output_rmse": 0.2251751781481689,
+        "translation": {
+          "maximum_absolute_error": 0.03096938133239746,
+          "p95_frame_rmse": 0.008778441080528358,
+          "rmse": 0.005215688240411236
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.3341410375942836e-05,
+        "all": {
+          "maximum_absolute_error": 0.04148542881011963,
+          "p95_frame_rmse": 0.006351821447538854,
+          "rmse": 0.003652589543863755
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.04148542881011963,
+          "p95_frame_rmse": 0.005731628544825708,
+          "rmse": 0.003171198257219668
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.00495650085581428,
+          0.00509069836303146,
+          0.005579260896120175,
+          0.0004973626406909638,
+          0.0009706822957049156,
+          0.0007304230455168747,
+          0.003171198257219668
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.007713530212640762,
+          "p95_frame_rmse": 0.0013602227262746666,
+          "rmse": 0.0007578723597396865
+        },
+        "stage_output_maximum_absolute_error": 2.3548108339309692,
+        "stage_output_rmse": 0.22517520292166623,
+        "translation": {
+          "maximum_absolute_error": 0.030969440937042236,
+          "p95_frame_rmse": 0.008778438523362552,
+          "rmse": 0.005215689877796116
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 2.2897410556805642e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.481379172504757e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.221433375093295e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.0104334659775023e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.3789329855279873e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.3253079169935116e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.3145838120580817e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1141416432929241e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1241632661288448e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.333599632022215e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k184_s1",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.9593716325279682e-05,
+        "all": {
+          "maximum_absolute_error": 0.04688049852848053,
+          "p95_frame_rmse": 0.007432979733852648,
+          "rmse": 0.004426478998626299
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.03998219966888428,
+          "p95_frame_rmse": 0.006610659095680015,
+          "rmse": 0.004125269494459806
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.006091220649869415,
+          0.006069703821647714,
+          0.006641212421619017,
+          0.0005619536540362815,
+          0.0010420643421198948,
+          0.0008285529286940181,
+          0.004125269494459806
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0067626796662807465,
+          "p95_frame_rmse": 0.0013360841421211466,
+          "rmse": 0.0008343040928522277
+        },
+        "stage_output_maximum_absolute_error": 3.124969482421875,
+        "stage_output_rmse": 0.24142976922645837,
+        "translation": {
+          "maximum_absolute_error": 0.04688049852848053,
+          "p95_frame_rmse": 0.010806794187203178,
+          "rmse": 0.00627295719516155
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.959371249154805e-05,
+        "all": {
+          "maximum_absolute_error": 0.046880438923835754,
+          "p95_frame_rmse": 0.007432985200540256,
+          "rmse": 0.004426478565581002
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.03998219966888428,
+          "p95_frame_rmse": 0.006610682619521326,
+          "rmse": 0.004125260050381904
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.006091223119713281,
+          0.006069701396332811,
+          0.00664121628624936,
+          0.0005619536290699612,
+          0.0010420644935289715,
+          0.0008285522144940117,
+          0.004125260050381904
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.006762687116861343,
+          "p95_frame_rmse": 0.0013360822852919632,
+          "rmse": 0.0008343039138590577
+        },
+        "stage_output_maximum_absolute_error": 3.124967575073242,
+        "stage_output_rmse": 0.24142979497107578,
+        "translation": {
+          "maximum_absolute_error": 0.046880438923835754,
+          "p95_frame_rmse": 0.010806803288245074,
+          "rmse": 0.0062729585761828474
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 1.9839696018402666e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.1400992501959523e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.9262041081324194e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1399735585343945e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1346991242347409e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.5845183143359345e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.704601709665894e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.1389187091268722e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.2879464995606713e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.8104266281781653e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k184_s2",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.6851357503805312e-05,
+        "all": {
+          "maximum_absolute_error": 0.028448402881622314,
+          "p95_frame_rmse": 0.006800415620868961,
+          "rmse": 0.0041050404996547
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.021684765815734863,
+          "p95_frame_rmse": 0.006007375421418894,
+          "rmse": 0.003217768691382692
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.005748548280948229,
+          0.005533759994018701,
+          0.006423855544070014,
+          0.0005642275550888668,
+          0.001249007014399415,
+          0.0008904318382561517,
+          0.003217768691382692
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.01088983565568924,
+          "p95_frame_rmse": 0.0017026918235136111,
+          "rmse": 0.0009436171742327029
+        },
+        "stage_output_maximum_absolute_error": 3.547327756881714,
+        "stage_output_rmse": 0.23290189493364805,
+        "translation": {
+          "maximum_absolute_error": 0.028448402881622314,
+          "p95_frame_rmse": 0.009626436800513224,
+          "rmse": 0.005914226550188784
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.685136774978164e-05,
+        "all": {
+          "maximum_absolute_error": 0.028448402881622314,
+          "p95_frame_rmse": 0.0068003869149827955,
+          "rmse": 0.0041050417476295705
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.021685004234313965,
+          "p95_frame_rmse": 0.006007381238960318,
+          "rmse": 0.003217775243025308
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.005748549043453452,
+          0.005533759874248328,
+          0.006423857199241629,
+          0.000564227791538399,
+          0.0012490073008227817,
+          0.0008904317652201014,
+          0.003217775243025308
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.01088983565568924,
+          "p95_frame_rmse": 0.0017026889545331337,
+          "rmse": 0.0009436173247607492
+        },
+        "stage_output_maximum_absolute_error": 3.5473263263702393,
+        "stage_output_rmse": 0.23290191954595443,
+        "translation": {
+          "maximum_absolute_error": 0.028448402881622314,
+          "p95_frame_rmse": 0.00962642099850571,
+          "rmse": 0.005914227359147854
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 2.111491513675288e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.019044161828571e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.4197074574146366e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.8956492545776203e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.1275740385439234e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.0606617111120626e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.8889567655835628e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.537421739416941e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.5854775684752277e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.042141217498051e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "leading_k174",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 2.6688125428125882e-08,
+        "all": {
+          "maximum_absolute_error": 0.0017035752534866333,
+          "p95_frame_rmse": 0.0002603624973633039,
+          "rmse": 0.00016336500674295546
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0007947087287902832,
+          "p95_frame_rmse": 0.00022664547042970017,
+          "rmse": 0.00013057135000886549
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.00023571714900373,
+          0.00022134194876573485,
+          0.0002493241312680274,
+          1.9183683077051142e-05,
+          4.166716033113075e-05,
+          3.0764907880021845e-05,
+          0.00013057135000886549
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.00029365718364715576,
+          "p95_frame_rmse": 4.932901844231258e-05,
+          "rmse": 3.1888584704285244e-05
+        },
+        "stage_output_maximum_absolute_error": 0.3163856863975525,
+        "stage_output_rmse": 0.02690033070190158,
+        "translation": {
+          "maximum_absolute_error": 0.0017035752534866333,
+          "p95_frame_rmse": 0.0003783903895675578,
+          "rmse": 0.00023573809977063981
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 2.6687965541286263e-08,
+        "all": {
+          "maximum_absolute_error": 0.0017036199569702148,
+          "p95_frame_rmse": 0.0002603498693852153,
+          "rmse": 0.00016336451738760858
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0007946491241455078,
+          "p95_frame_rmse": 0.00022663880912279782,
+          "rmse": 0.0001305640244010729
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0002357210223546109,
+          0.00022134157751688371,
+          0.000249322260707837,
+          1.9183456881136628e-05,
+          4.166751090503174e-05,
+          3.0765627512473015e-05,
+          0.0001305640244010729
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.00029365718364715576,
+          "p95_frame_rmse": 4.933331118157179e-05,
+          "rmse": 3.188892346446544e-05
+        },
+        "stage_output_maximum_absolute_error": 0.31638556718826294,
+        "stage_output_rmse": 0.026900332591334886,
+        "translation": {
+          "maximum_absolute_error": 0.0017036199569702148,
+          "p95_frame_rmse": 0.0003783769341490555,
+          "rmse": 0.00023573861513834362
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 3.778466561938037e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.9351297321230757e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.461402175286205e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.0684210958779424e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.9050895400579817e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.161191030306141e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.004215570354638e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.0287867777161486e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.9870139255585485e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.632426014255064e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k174_s0",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 3.496214242347378e-05,
+        "all": {
+          "maximum_absolute_error": 0.1148480772972107,
+          "p95_frame_rmse": 0.010144669442388104,
+          "rmse": 0.005912879368249769
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.1148480772972107,
+          "p95_frame_rmse": 0.00970199802926216,
+          "rmse": 0.005854114317562134
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.008403106959327883,
+          0.00758164796762753,
+          0.008836915492670617,
+          0.0007575697295563502,
+          0.0015025902890744751,
+          0.0012033225460083977,
+          0.005854114317562134
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.008099045604467392,
+          "p95_frame_rmse": 0.002010656634651311,
+          "rmse": 0.00119438612149968
+        },
+        "stage_output_maximum_absolute_error": 4.55573844909668,
+        "stage_output_rmse": 0.35449466531236346,
+        "translation": {
+          "maximum_absolute_error": 0.049716513603925705,
+          "p95_frame_rmse": 0.014479036006554705,
+          "rmse": 0.008290248647246904
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 3.496215020134475e-05,
+        "all": {
+          "maximum_absolute_error": 0.11484819650650024,
+          "p95_frame_rmse": 0.010144673085414519,
+          "rmse": 0.0059128800259556046
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.11484819650650024,
+          "p95_frame_rmse": 0.009701953864134916,
+          "rmse": 0.0058541185085835105
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.00840310685211579,
+          0.0075816487855187836,
+          0.008836915233469,
+          0.0007575695656039524,
+          0.0015025902288580834,
+          0.0012033224570886314,
+          0.0058541185085835105
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.00809904932975769,
+          "p95_frame_rmse": 0.0020106562621223035,
+          "rmse": 0.0011943860317227128
+        },
+        "stage_output_maximum_absolute_error": 4.555739402770996,
+        "stage_output_rmse": 0.35449470113678444,
+        "translation": {
+          "maximum_absolute_error": 0.04971640557050705,
+          "p95_frame_rmse": 0.014479017544383748,
+          "rmse": 0.008290248768252781
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 3.777988559029766e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.697400501782685e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.802184313860144e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.929298239836518e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.722877034176019e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.296226561590217e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.097310679430424e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.987781751915242e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.061371105474357e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.789457127105828e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k174_s1",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 4.1161895874201207e-05,
+        "all": {
+          "maximum_absolute_error": 0.052464962005615234,
+          "p95_frame_rmse": 0.01037433527619338,
+          "rmse": 0.0064157537261183275
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.04306834936141968,
+          "p95_frame_rmse": 0.009539131791642572,
+          "rmse": 0.0059895614037435135
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.008912613466555664,
+          0.008705442377170131,
+          0.009652429071738064,
+          0.0007815234665944882,
+          0.0014196532614702787,
+          0.0011150956134611423,
+          0.0059895614037435135
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.008028492331504822,
+          "p95_frame_rmse": 0.0017816876412291972,
+          "rmse": 0.0011357277459557763
+        },
+        "stage_output_maximum_absolute_error": 4.000980377197266,
+        "stage_output_rmse": 0.3572490704783357,
+        "translation": {
+          "maximum_absolute_error": 0.052464962005615234,
+          "p95_frame_rmse": 0.015359751451627527,
+          "rmse": 0.009099245257554662
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 4.1161892199651874e-05,
+        "all": {
+          "maximum_absolute_error": 0.052464962005615234,
+          "p95_frame_rmse": 0.010374322516545239,
+          "rmse": 0.006415753439749058
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0430682897567749,
+          "p95_frame_rmse": 0.00953920302880529,
+          "rmse": 0.005989554995453253
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.008912615315978947,
+          0.008705442426424516,
+          0.009652430022572713,
+          0.000781523313885564,
+          0.0014196530377189936,
+          0.0011150954960339105,
+          0.005989554995453253
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.008028492331504822,
+          "p95_frame_rmse": 0.0017816903487020037,
+          "rmse": 0.0011357275792675185
+        },
+        "stage_output_maximum_absolute_error": 4.000978469848633,
+        "stage_output_rmse": 0.357249106130652,
+        "translation": {
+          "maximum_absolute_error": 0.052464962005615234,
+          "p95_frame_rmse": 0.015359746671728184,
+          "rmse": 0.009099246213305757
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 5.7254372196984615e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.12622717126376e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 8.06772826511563e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.068239366872532e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 3.436231448916657e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.951330460060923e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.4070798235372905e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.6258848756732545e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 2.0344544996510446e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.1996468031235684e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k174_s2",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 4.464225993391312e-05,
+        "all": {
+          "maximum_absolute_error": 0.1234089732170105,
+          "p95_frame_rmse": 0.011233882948095292,
+          "rmse": 0.006681486356636008
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.1234089732170105,
+          "p95_frame_rmse": 0.00976122570590227,
+          "rmse": 0.006598894459802196
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.009649437728205633,
+          0.008307438773204539,
+          0.010042655517660221,
+          0.0008469513566673996,
+          0.0018657532119396288,
+          0.0013311395531303925,
+          0.006598894459802196
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.016377367079257965,
+          "p95_frame_rmse": 0.002307700391834341,
+          "rmse": 0.0014107083514239695
+        },
+        "stage_output_maximum_absolute_error": 3.707711696624756,
+        "stage_output_rmse": 0.3458203679143768,
+        "translation": {
+          "maximum_absolute_error": 0.06773644685745239,
+          "p95_frame_rmse": 0.01649689976634724,
+          "rmse": 0.009362694008447421
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 4.464226991732323e-05,
+        "all": {
+          "maximum_absolute_error": 0.1234089732170105,
+          "p95_frame_rmse": 0.01123386062666478,
+          "rmse": 0.006681487103730967
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.1234089732170105,
+          "p95_frame_rmse": 0.009761263413394249,
+          "rmse": 0.0065988955824861925
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.009649438395469894,
+          0.008307438239631808,
+          0.010042657968748767,
+          0.0008469514827911277,
+          0.0018657535515353163,
+          0.0013311396819641079,
+          0.0065988955824861925
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.016377367079257965,
+          "p95_frame_rmse": 0.002307702881186825,
+          "rmse": 0.001410708566899187
+        },
+        "stage_output_maximum_absolute_error": 3.7077102661132812,
+        "stage_output_rmse": 0.3458204039887854,
+        "translation": {
+          "maximum_absolute_error": 0.06773650646209717,
+          "p95_frame_rmse": 0.016496915746125253,
+          "rmse": 0.009362694956235242
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 1.1039977867778998e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.054560807520987e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.4181790240498783e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 8.077078720115876e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.05412739486263e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.5173796512968343e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.11471252243403e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.903783696132402e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.569161661454136e-08,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 1.6150293556599283e-07,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "leading_k154",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 1.0684274294996061e-07,
+        "all": {
+          "maximum_absolute_error": 0.00463925302028656,
+          "p95_frame_rmse": 0.0005591399922738992,
+          "rmse": 0.0003268680818770175
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.0013518333435058594,
+          "p95_frame_rmse": 0.0004955652221755795,
+          "rmse": 0.00030023744280257956
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0004419689689469013,
+          0.0004351416869702587,
+          0.000509988143067231,
+          4.38276226988299e-05,
+          8.567672744497737e-05,
+          6.10127292579842e-05,
+          0.00030023744280257956
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0006315708160400391,
+          "p95_frame_rmse": 9.917416865285059e-05,
+          "rmse": 6.578732215409493e-05
+        },
+        "stage_output_maximum_absolute_error": 0.5873651504516602,
+        "stage_output_rmse": 0.05072303021729727,
+        "translation": {
+          "maximum_absolute_error": 0.00463925302028656,
+          "p95_frame_rmse": 0.000788202760098921,
+          "rmse": 0.000463599239041823
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 1.0684186181757297e-07,
+        "all": {
+          "maximum_absolute_error": 0.00463944673538208,
+          "p95_frame_rmse": 0.0005591312042044791,
+          "rmse": 0.00032686673403326466
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.001351773738861084,
+          "p95_frame_rmse": 0.0004955161423741406,
+          "rmse": 0.00030022984552359515
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.0004419708383045708,
+          0.00043514053250409544,
+          0.0005099858875414585,
+          4.382764119665048e-05,
+          8.567650569017062e-05,
+          6.1013411547845966e-05,
+          0.00030022984552359515
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.0006315708160400391,
+          "p95_frame_rmse": 9.917767199309901e-05,
+          "rmse": 6.57874409211135e-05
+        },
+        "stage_output_maximum_absolute_error": 0.587364673614502,
+        "stage_output_rmse": 0.0507230337481919,
+        "translation": {
+          "maximum_absolute_error": 0.00463944673538208,
+          "p95_frame_rmse": 0.0007882055694359684,
+          "rmse": 0.0004635986448179222
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 0.00011467990785270218,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.480894800319468e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0008222557858866965,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0002858232588885956,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.009468684872415e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00012888543753845926,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 8.807320949599917e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.7282201657240574e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.0938609537903516e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00012846766013095131,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k154_s0",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 0.00017913097058404665,
+        "all": {
+          "maximum_absolute_error": 0.7784969359636307,
+          "p95_frame_rmse": 0.01742672851972042,
+          "rmse": 0.01338398186579938
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.7784969359636307,
+          "p95_frame_rmse": 0.01290405583038105,
+          "rmse": 0.025943156571340487
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.013613048730809395,
+          0.013430833365313765,
+          0.014295240824479923,
+          0.0012425421820377277,
+          0.0024187732911209224,
+          0.0018489875692285023,
+          0.025943156571340487
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.013988271355628967,
+          "p95_frame_rmse": 0.0030237893521555736,
+          "rmse": 0.0018985196284776347
+        },
+        "stage_output_maximum_absolute_error": 7.075982332229614,
+        "stage_output_rmse": 0.5208798488499826,
+        "translation": {
+          "maximum_absolute_error": 0.08613589406013489,
+          "p95_frame_rmse": 0.02447308402473081,
+          "rmse": 0.01378472936337036
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 0.00017913097533078917,
+        "all": {
+          "maximum_absolute_error": 0.7784969359636307,
+          "p95_frame_rmse": 0.01742671823407662,
+          "rmse": 0.013383982043128613
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.7784969359636307,
+          "p95_frame_rmse": 0.012904024293193154,
+          "rmse": 0.02594315530655904
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.013613049469042274,
+          0.013430835212725516,
+          0.014295241850714329,
+          0.0012425420635998156,
+          0.002418773018371156,
+          0.0018489879482222241,
+          0.02594315530655904
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.013988267630338669,
+          "p95_frame_rmse": 0.0030237936824882117,
+          "rmse": 0.0018985196098439665
+        },
+        "stage_output_maximum_absolute_error": 7.075983762741089,
+        "stage_output_rmse": 0.5208798976959806,
+        "translation": {
+          "maximum_absolute_error": 0.08613592386245728,
+          "p95_frame_rmse": 0.024473062534608177,
+          "rmse": 0.01378473056112445
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 8.936777027940925e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00010227185006809585,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00016461407807618494,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.883624916080904e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.942465568638751e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00018206640724882019,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00010708998737430167,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.355512545286795e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 8.428833023899326e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.000141581654647757,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k154_s1",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 0.00011430961082336267,
+        "all": {
+          "maximum_absolute_error": 0.15399521589279175,
+          "p95_frame_rmse": 0.016984747269025737,
+          "rmse": 0.010691567276286609
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.15399521589279175,
+          "p95_frame_rmse": 0.01368655912155414,
+          "rmse": 0.009623147152649158
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.013644042697912568,
+          0.015547013763301082,
+          0.016332432732158758,
+          0.0012815944369563754,
+          0.002733334318526537,
+          0.00195724724935309,
+          0.009623147152649158
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.01755458489060402,
+          "p95_frame_rmse": 0.0033463521260374204,
+          "rmse": 0.0020772110784071946
+        },
+        "stage_output_maximum_absolute_error": 5.58203125,
+        "stage_output_rmse": 0.5201045876353606,
+        "translation": {
+          "maximum_absolute_error": 0.08479544520378113,
+          "p95_frame_rmse": 0.02456299144306456,
+          "rmse": 0.015216415445708913
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 0.00011430963207298043,
+        "all": {
+          "maximum_absolute_error": 0.15399521589279175,
+          "p95_frame_rmse": 0.01698475361282208,
+          "rmse": 0.01069156827004254
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.15399521589279175,
+          "p95_frame_rmse": 0.013686600845922265,
+          "rmse": 0.009623145792899026
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.013644047313302172,
+          0.01554701579796796,
+          0.016332432345669428,
+          0.0012815940464102201,
+          0.0027333343947828896,
+          0.00195724697220665,
+          0.009623145792899026
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.017554573714733124,
+          "p95_frame_rmse": 0.0033463514024550563,
+          "rmse": 0.0020772109444885793
+        },
+        "stage_output_maximum_absolute_error": 5.582034111022949,
+        "stage_output_rmse": 0.5201046364847114,
+        "translation": {
+          "maximum_absolute_error": 0.08479556441307068,
+          "p95_frame_rmse": 0.02456298654172742,
+          "rmse": 0.015216417379875849
+        },
+        "validity_measurement_complete": true
+      }
+    },
+    {
+      "by_task": [
+        {
+          "action_mse_all7_vs_fullrank": 0.00013535400091206092,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 0
+        },
+        {
+          "action_mse_all7_vs_fullrank": 9.01488145527615e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 1
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00012283135364221943,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 2
+        },
+        {
+          "action_mse_all7_vs_fullrank": 5.6196816268434195e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 3
+        },
+        {
+          "action_mse_all7_vs_fullrank": 7.65265052217999e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 4
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.0001838091083121197,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 5
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00013129759519595827,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 6
+        },
+        {
+          "action_mse_all7_vs_fullrank": 6.455506259367991e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 7
+        },
+        {
+          "action_mse_all7_vs_fullrank": 4.662511888993031e-05,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 8
+        },
+        {
+          "action_mse_all7_vs_fullrank": 0.00011414270948117367,
+          "episodes": 8,
+          "frames": 16,
+          "task_id": 9
+        }
+      ],
+      "name": "anchored_k154_s2",
+      "primary_reference": "fullrank",
+      "versus_fullrank": {
+        "action_mse_all7": 0.00010214870850701379,
+        "all": {
+          "maximum_absolute_error": 0.08649376034736633,
+          "p95_frame_rmse": 0.016173294782829518,
+          "rmse": 0.01010686442508327
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.058856308460235596,
+          "p95_frame_rmse": 0.016981845816603967,
+          "rmse": 0.00929754209306885
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.013482451495599802,
+          0.01324612038748371,
+          0.016015687449933296,
+          0.001348829564210674,
+          0.0029460331507849035,
+          0.0020880062052187733,
+          0.00929754209306885
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.026821807026863098,
+          "p95_frame_rmse": 0.0034686103466989356,
+          "rmse": 0.0022254754122692172
+        },
+        "stage_output_maximum_absolute_error": 5.609741687774658,
+        "stage_output_rmse": 0.5261556434482367,
+        "translation": {
+          "maximum_absolute_error": 0.08649376034736633,
+          "p95_frame_rmse": 0.023734275802428543,
+          "rmse": 0.014303128424053074
+        },
+        "validity_measurement_complete": true
+      },
+      "versus_native_descriptive": {
+        "action_mse_all7": 0.00010214871324966393,
+        "all": {
+          "maximum_absolute_error": 0.08649370074272156,
+          "p95_frame_rmse": 0.016173305341257903,
+          "rmse": 0.010106864659708467
+        },
+        "attempted_frames": 160,
+        "attempted_invalid_frames": 0,
+        "attempted_unavailable_action_frames": 0,
+        "batch_aborted_frames": 0,
+        "denominator_invalid_frames": 0,
+        "error_statistics_conditional_on_joint_validity": true,
+        "executed_gripper_sign_disagreement_probability": 0.0,
+        "execution_failed_frames": 0,
+        "frames": 160,
+        "gripper": {
+          "maximum_absolute_error": 0.058856189250946045,
+          "p95_frame_rmse": 0.016981890009961094,
+          "rmse": 0.009297538308725097
+        },
+        "gripper_sign_disagreement_probability": 0.0,
+        "incomplete": false,
+        "invalid_probability_if_fully_attempted": 0.0,
+        "jointly_valid_frames": 160,
+        "not_attempted_frames": 0,
+        "per_component_action_rmse": [
+          0.01348245403024445,
+          0.01324612123780142,
+          0.01601568768388011,
+          0.0013488297687425704,
+          0.002946033526420736,
+          0.002088006788738235,
+          0.009297538308725097
+        ],
+        "rotation": {
+          "maximum_absolute_error": 0.026821807026863098,
+          "p95_frame_rmse": 0.003468602940209918,
+          "rmse": 0.0022254758018349055
+        },
+        "stage_output_maximum_absolute_error": 5.609743595123291,
+        "stage_output_rmse": 0.5261556949701344,
+        "translation": {
+          "maximum_absolute_error": 0.08649370074272156,
+          "p95_frame_rmse": 0.023734270166345037,
+          "rmse": 0.014303129570269794
+        },
+        "validity_measurement_complete": true
+      }
+    }
+  ],
+  "basis_seed_descriptive": [
+    {
+      "arithmetic_mean": 1.253887760579069e-06,
+      "maximum": 1.6901788159873453e-06,
+      "minimum": 1.0085818902249039e-06,
+      "per_basis_seed_action_mse_vs_fullrank": {
+        "0": 1.0629025755249577e-06,
+        "1": 1.6901788159873453e-06,
+        "2": 1.0085818902249039e-06
+      },
+      "rank": 192,
+      "scope": "three random retained-basis seeds, not policy training seeds"
+    },
+    {
+      "arithmetic_mean": 1.6595492768582323e-05,
+      "maximum": 1.9593716325279685e-05,
+      "minimum": 1.3341404476661969e-05,
+      "per_basis_seed_action_mse_vs_fullrank": {
+        "0": 1.3341404476661969e-05,
+        "1": 1.9593716325279685e-05,
+        "2": 1.6851357503805312e-05
+      },
+      "rank": 184,
+      "scope": "three random retained-basis seeds, not policy training seeds"
+    },
+    {
+      "arithmetic_mean": 4.02554327438627e-05,
+      "maximum": 4.464225993391312e-05,
+      "minimum": 3.496214242347378e-05,
+      "per_basis_seed_action_mse_vs_fullrank": {
+        "0": 3.496214242347378e-05,
+        "1": 4.11618958742012e-05,
+        "2": 4.464225993391312e-05
+      },
+      "rank": 174,
+      "scope": "three random retained-basis seeds, not policy training seeds"
+    },
+    {
+      "arithmetic_mean": 0.00013186309663814106,
+      "maximum": 0.00017913097058404667,
+      "minimum": 0.00010214870850701377,
+      "per_basis_seed_action_mse_vs_fullrank": {
+        "0": 0.00017913097058404667,
+        "1": 0.00011430961082336267,
+        "2": 0.00010214870850701377
+      },
+      "rank": 154,
+      "scope": "three random retained-basis seeds, not policy training seeds"
+    }
+  ],
+  "bootstrap": {
+    "interval": "paired percentile95, pointwise without multiplicity adjustment",
+    "replicates": 4000,
+    "same_resampled_episodes_for_all_arms": true,
+    "seed": 2026090703,
+    "strata": "task",
+    "unit": "episode"
+  },
+  "checkpoint_sha256": "b1c0dfce86ee90b45e30367603a7cc4d88c02f9056e836b19656179bf74ea3ee",
+  "complete": true,
+  "contrasts": [
+    {
+      "action_mse_difference_leading_minus_anchored": -1.0623096032295794e-06,
+      "anchored": "anchored_k192_s0",
+      "basis_seed": 0,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -1.2333538359457663e-06,
+        "upper": -9.179682974834789e-07
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k192",
+      "rank": 192,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -1.6895858436919665e-06,
+      "anchored": "anchored_k192_s1",
+      "basis_seed": 1,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -1.92456050238924e-06,
+        "upper": -1.4766138213155672e-06
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k192",
+      "rank": 192,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -1.0079889179295253e-06,
+      "anchored": "anchored_k192_s2",
+      "basis_seed": 2,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -1.1717648699233886e-06,
+        "upper": -8.677400513630533e-07
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k192",
+      "rank": 192,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -1.3332970239751917e-05,
+      "anchored": "anchored_k184_s0",
+      "basis_seed": 0,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -1.5205213850161559e-05,
+        "upper": -1.1583646513747164e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k184",
+      "rank": 184,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -1.9585282088369634e-05,
+      "anchored": "anchored_k184_s1",
+      "basis_seed": 1,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -2.2428653236532452e-05,
+        "upper": -1.6997387163653852e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k184",
+      "rank": 184,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -1.684292326689526e-05,
+      "anchored": "anchored_k184_s2",
+      "basis_seed": 2,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -1.864913052593142e-05,
+        "upper": -1.5141435527790844e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k184",
+      "rank": 184,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -3.493545429804566e-05,
+      "anchored": "anchored_k174_s0",
+      "basis_seed": 0,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -4.012302424768445e-05,
+        "upper": -3.0323531501657747e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k174",
+      "rank": 174,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -4.113520774877308e-05,
+      "anchored": "anchored_k174_s1",
+      "basis_seed": 1,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -4.598755485698057e-05,
+        "upper": -3.677269190214202e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k174",
+      "rank": 174,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -4.4615571808484994e-05,
+      "anchored": "anchored_k174_s2",
+      "basis_seed": 2,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -5.188349727837949e-05,
+        "upper": -3.781989005438605e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k174",
+      "rank": 174,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -0.00017902412784109672,
+      "anchored": "anchored_k154_s0",
+      "basis_seed": 0,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -0.00032806445631039847,
+        "upper": -8.502559651057522e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k154",
+      "rank": 154,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -0.0001142027680804127,
+      "anchored": "anchored_k154_s1",
+      "basis_seed": 1,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -0.00012964923134017875,
+        "upper": -9.960449086618223e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k154",
+      "rank": 154,
+      "reference": "fullrank"
+    },
+    {
+      "action_mse_difference_leading_minus_anchored": -0.0001020418657640638,
+      "anchored": "anchored_k154_s2",
+      "basis_seed": 2,
+      "episode_clusters": 80,
+      "finite_bootstrap_replicates": 4000,
+      "interval95": {
+        "lower": -0.00011481812642281612,
+        "upper": -8.955467426449237e-05
+      },
+      "jointly_valid_frames": 160,
+      "leading": "leading_k154",
+      "rank": 154,
+      "reference": "fullrank"
+    }
+  ],
+  "double_gate_scope": "authenticated accepted receipts checked algebraically; GPU projective outputs are not re-executed by analysis",
+  "episodes": 80,
+  "frames": 160,
+  "full_policy_odt": false,
+  "interpretation": "offline local first-block FFN intervention; no closed-loop capability or training-seed inference",
+  "kernels": {
+    "eigh": 0,
+    "prohibited_attempts": 0,
+    "qr": 0
+  },
+  "panel_metadata_sha256": "14b58dc95f5e54475a1a3cf48e14af04a2e26e5a9c36d85a5883a07eebfe526e",
+  "panel_sha256": "f9eee42816ed55e1e0a9cb46b5bfa4b2ce3c886937f55636443f77298b5d143d",
+  "per_frame_sha256": "029eac039cb9752e62d74be227b074085cec0fc3b6ed80866a9142770659e422",
+  "primary_endpoint": "mean squared denormalized all7 action error across8 chunk positions versus fullrank replacement",
+  "producer_receipt_sha256": "d95301a94a3708bdb5f77bd7c9ae2d0896b4795670f1c80c5f6cc0948e1dc790",
+  "receipt_comparison_tolerance": {
+    "absolute": 1e-12,
+    "relative": 1e-10
+  },
+  "schema": "odt-ffn-summary-v2",
+  "simulator_launched": false,
+  "source_sha256": {
+    "research/odt_reference/run_tests.py": "3c5aa713dc29edba1e621e214271342e97b5f56aca70f5719a51436bbc5d9e57",
+    "scripts/odt_ffn_summary_v2.py": "e1933d67dc6685b6f730cd2c887f8609dcaca693cc9b6d4256c050e1cc957f54",
+    "scripts/test_odt_ffn_summary_v2.py": "d91b10446ba2560e8ecea6a2e95ab04c52141a9f9f02aa92b981a41424492543"
+  },
+  "tasks": 10,
+  "variants_manifest_sha256": "d4d41179bc9f857233acdf244ed89f1ef0697bb0cd68f025b36530e32f880ba0"
+}

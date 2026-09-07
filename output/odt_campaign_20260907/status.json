@@ -1,0 +1,107 @@
+{
+  "updated_utc": "2026-09-07T10:23:48.974506+00:00",
+  "started_utc": "2026-09-07T08:39:34+00:00",
+  "deadline_utc": "2026-09-07T10:33:57+00:00",
+  "remote_root": "/work/joy/x-vla-odt-campaign-20260907-v1",
+  "accepted_jobs": [
+    835742,
+    835744,
+    835745,
+    835746,
+    835748,
+    835750,
+    835757,
+    835758,
+    835775,
+    835776,
+    835777,
+    835778,
+    835820,
+    835828,
+    835839
+  ],
+  "main_array_job": 835750,
+  "main_array_indices": "2-24%6",
+  "native_action_v2": {
+    "job": 835757,
+    "completed": true,
+    "manifest_sha256": "083d5f3d9e9ec1262cd4d9cbe62ec8a759e4768971bf7b5fc801bec991ffc73b"
+  },
+  "independent_summary": {
+    "job": 835758,
+    "dependency": 835750,
+    "complete": true
+  },
+  "rollout": {
+    "complete": true,
+    "accepted_episodes": 80,
+    "paired_initial_states": 20,
+    "accepted_root": "/work/joy/x-vla-odt-campaign-20260907-v1/rollout_rtx6000_v1",
+    "original_array": 835785,
+    "hardware_correction_array": 835831,
+    "healthy_device_retry": 835837,
+    "accepted_final_audit": 835839,
+    "cancelled_obsolete_dependency": 835832,
+    "failed_audits_preserved": [
+      835829,
+      835838
+    ],
+    "successes": {
+      "native": 17,
+      "fullrank": 17,
+      "leading_k174": 16,
+      "anchored_k174_s0": 19
+    },
+    "all_measurements_complete_zero_failures": true,
+    "maximum_controller_normwise_backward_error": 1.4744112527639815e-17
+  },
+  "no_commits_or_pushes": true,
+  "fine_extension_prepare": 835775,
+  "rollout_smoke": 835776,
+  "deadline_reason": "User explicitly said about one hour left at 09:33:57 UTC",
+  "new_experiment_branches": "closed",
+  "main_summary": {
+    "job": 835758,
+    "complete": true,
+    "sha256": "3d7887e8985e016fbe15116c81b9fbeca17031abb10cd7e0b803802e80f36353"
+  },
+  "fine_array": 835777,
+  "fine_summary": 835778,
+  "rollout_array": 835785,
+  "postanalysis_jobs": {
+    "ffn_accepted": 835828,
+    "ffn_rejected_v1": 835819,
+    "scale_accepted": 835820
+  },
+  "status": "complete",
+  "active_campaign_jobs": [],
+  "main_array_complete": true,
+  "fine_complete": true,
+  "summary_sha256": {
+    "main": "3d7887e8985e016fbe15116c81b9fbeca17031abb10cd7e0b803802e80f36353",
+    "fine": "b0433045dd32779f7d90f1f14e26da09728ea3e4447d425f5bed702a23a166e1",
+    "ffn": "a7bbfd2f044247f9c21f0a52d34026bba639dc7fe4afda749a4195079bf46fa4",
+    "scale": "d24cb7f81c58428a2cf83a0984b7849c73cf2c189b053107efeab2f892f9b53e",
+    "rollout": "a1abfdfa30dcfc62ebe79758de47eef6dde042531abfa87a68806d5c9f6e072a"
+  },
+  "failed_attempt_policy": "All failed logs and partial protocols preserved. Replacements selected on hardware or initialization failure before episode outcomes. No numerical gates relaxed.",
+  "report": "ODT_CAMPAIGN_RESULTS_2026-09-07.md",
+  "final_report_review": "Two fresh-context agents reviewed the substantive report; final paired statistics independently checked; no actionable issues remaining.",
+  "report_sha256": "df7b0bcf97f4d4bd9b3e1a8b0dcc5b7b108ec00a63fd471195c1ea2df407b098",
+  "metadata_archive": {
+    "archive": "metadata_evidence.tar.gz",
+    "sha256": "5657da2f322ad476a4ae2b741625bf09b638cea41bc72a7e27bb77d4b5e973ca",
+    "bytes": 1652447,
+    "files": 739,
+    "index_sha256": "9211944918ca0caf650317c255bc4aa754a81eaaded47fa383e5ca3571475608"
+  },
+  "local_summary_and_archive_hashes_verified": true,
+  "posthoc_rollout_entry": {
+    "sha256": "06c73b367217d68ca5e9887ad3dafe7c818c4ea9267b5fb8c57635379ed444d1",
+    "all_20_starts_included": true,
+    "independent_raw_array_review_passed": true,
+    "new_simulator_or_training_jobs": false,
+    "included_in_original_metadata_archive": false,
+    "scope": "First post-settling action chunks only, exploratory."
+  }
+}

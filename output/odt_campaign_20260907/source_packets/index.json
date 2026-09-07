@@ -1,0 +1,74 @@
+{
+  "consumer_v1.tar.gz": {
+    "sha256": "736d6630f65a1efc4d39277351e3d148d6e1cf76c0ddbe5a150e9d23f10b9085",
+    "bytes": 68567
+  },
+  "ffn_bridge_v1.tar.gz": {
+    "sha256": "9748322c3516ad89d9f0ae64fb7816f0f5fd997fda189f45cbf7dac6e29981a2",
+    "bytes": 128654
+  },
+  "ffn_native_v2.tar.gz": {
+    "sha256": "1ff22117d21204b5944d4d5c4bbba8bd27fc4ee52b65fdac59797b30b4467a73",
+    "bytes": 77348
+  },
+  "ffn_native_v2_packet.json": {
+    "sha256": "08a99d660bfa0b5f126029658cb0e813218ecaa61024389ab829f070e28bfde1",
+    "bytes": 267
+  },
+  "ffn_summary_v2.tar.gz": {
+    "sha256": "685f3bb95e2cccc896f4a207062dfc1e330cd85aa7887470d72cf9647fa8e97a",
+    "bytes": 185390
+  },
+  "ffn_summary_v2_packet.json": {
+    "sha256": "c755fa3d8e4dd5aba57a68f34293d606da06a3ac53f5823f7f964fc73389592c",
+    "bytes": 203
+  },
+  "ffn_v1.tar.gz": {
+    "sha256": "eb0ec3d6836a0ce051742169bfd4f37ea117f0514f09d5dc88e0ee5519dc8974",
+    "bytes": 53731
+  },
+  "fine_v1.tar.gz": {
+    "sha256": "5d63215fffdd4ca5bbc2c8dc6fef2c48aba38357be2ebef70fb9a67348c0d47e",
+    "bytes": 82362
+  },
+  "fine_v1_packet.json": {
+    "sha256": "ec2b631e921fcbe354ba6ea8a39ce80f33c77964179280a7fa66fc26533bacdc",
+    "bytes": 203
+  },
+  "native_v1.tar.gz": {
+    "sha256": "ffab2f8db45c24bca698875ac24a89c9eab516cde61620968913bde96eb2ca62",
+    "bytes": 69127
+  },
+  "postanalysis_v1.tar.gz": {
+    "sha256": "53a9666afa13145860b021a588bf9824d73e7a32b9caed055cd6c9a6519b5d0a",
+    "bytes": 183639
+  },
+  "postanalysis_v1_packet.json": {
+    "sha256": "4f0c91a51280310f512502ac5bdb140ed79dc549cc5f88cd7779a742274dddf9",
+    "bytes": 203
+  },
+  "rollout_summary_v1.tar.gz": {
+    "sha256": "11fa1cd7341b7507fbd8c75119803bdaf35c26404abd1d617594cbd349fc88ab",
+    "bytes": 121631
+  },
+  "rollout_summary_v1_packet.json": {
+    "sha256": "02e365a2e3dcb82b6662c56a4da87fd0e709fe9fdb4deeb4355ae32a3448e4c3",
+    "bytes": 203
+  },
+  "rollout_v1.tar.gz": {
+    "sha256": "e88d46fbd87943f738d690db7f82fc468bf3d98a58d52bee6279005939c3757a",
+    "bytes": 110631
+  },
+  "rollout_v1_packet.json": {
+    "sha256": "3528afa5822c9fffb4d1ef42f144b5e927454723a9ffb5b0a8aa8cbc2d99081e",
+    "bytes": 203
+  },
+  "summary_v1.tar.gz": {
+    "sha256": "87902025303c9570291a786de425761240dbf2c04e6e131ad0e4a7cd56278ed6",
+    "bytes": 14562
+  },
+  "summary_v1_packet.json": {
+    "sha256": "24c6620d3da652200ce843f79d5aaaffe8bfe24b2137f9d6ec4fc2ff6143953f",
+    "bytes": 263
+  }
+}

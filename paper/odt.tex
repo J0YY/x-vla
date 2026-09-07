@@ -1,0 +1,524 @@
+\documentclass{article}
+% NeurIPS 2026 Neural Network Artifacts extended abstract.
+% Build from paper with two passes of:
+% pdflatex -interaction=nonstopmode -output-directory=../output/pdf odt.tex
+% Evidence snapshot: main summary SHA256
+% 3d7887e8985e016fbe15116c81b9fbeca17031abb10cd7e0b803802e80f36353
+% Revision includes the completed 20-start paired rollout pilot.
+\PassOptionsToPackage{numbers,sort&compress}{natbib}
+\usepackage[dblblindworkshop]{neurips_2026}
+\workshoptitle{Neural Network Artifacts as a New Data Modality}
+% Keep the supplied NeurIPS workshop layout. Its review-mode default notice
+% omits the workshop title, so correct that notice locally.
+\makeatletter
+\renewcommand{\@noticestring}{Submitted to the NeurIPS 2026 Workshop on Neural Network Artifacts as a New Data Modality.}
+\makeatother
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\newcommand{\chiVLA}{$\chi$-VLA}
+\setlength{\textfloatsep}{10pt}
+\setlength{\floatsep}{9pt}
+\setlength{\intextsep}{9pt}
+\title{Testing Weight-Based Direction Rankings\\in a Bilinear Robot Policy}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Can a robot policy's weights identify internal information it can lose while preserving its actions? A reliable ranking could guide analysis and simplification without examples to select each change. We apply an existing tensor decomposition to parts of one trained policy that combines images, instructions, and robot state. Its bilinear layers multiply pairs of transformed vectors. The decomposition ranks internal directions, each a weighted combination of coordinates. Across four reductions of one local computation, three random controls per size produce 31 to 53 times the leading directions' action error on 160 recorded inputs. This advantage does not establish better task success. On 20 paired simulator starts, the original policy succeeds on 17, a leading-direction reduction on 16, and the tested random reduction on 19. The difference is inconclusive. A separate vision-block test finds greater output error despite a smaller coefficient-based removal score. We therefore evaluate coefficient scores, action agreement, and task success separately. The evidence covers one checkpoint and limited controls.
+\end{abstract}
+
+\section{Introduction}
+
+Robot policies predict actions from images, instructions, and state~\citep{kim2024}. Their weights specify which input combinations affect actions. Our question is: \textbf{how far does a ranking derived from weights carry through to action agreement and task success?} A direction means a weighted combination of an internal vector's coordinates. We test rankings by removing low-ranked directions and measuring the effect.
+
+Bilinear layers multiply pairs of transformed vectors. Pearce et al.~\citep{pearce2025} use their coefficient tensors for weight-based analysis. Dooms et al.~\citep{dooms2025} introduce Orthogonalization, Diagonalization, and Truncation (ODT) for $\chi$-nets, networks built from repeated bilinear layers. ODT changes internal coordinates, ranks them using downstream coefficients, and removes selected directions. Their model already reuses inputs and weights. Its normalization becomes fixed after training, and its error bound concerns coefficients. They leave a bound on prediction loss open.
+
+We adapt ODT to shared computations and input-dependent rational normalization in one policy. A copied implementation checks every full coordinate change. Local policy reductions and a small vision-block experiment test the gap between its objective and behavior:
+\begin{itemize}
+\item Full-rank decomposition preserves the tested component outputs to floating-point precision (Section~\ref{sec.setup}).
+\item Leading directions preserve recorded actions more closely than the tested random controls, while a 20-start rollout pilot establishes no success advantage (Tables~\ref{tab.actions} and~\ref{tab.rollout}).
+\item At a large graph-bond budget, spectral allocation incurs greater real-input output error than a width control, despite a smaller coefficient-tail score (Table~\ref{tab.allocation}).
+\end{itemize}
+
+\paragraph{Relation to existing methods.}
+Pruning removes weights while controlling prediction error. Optimal Brain Compression and SparseGPT use second-order information for reconstruction~\citep{frantar2022,frantar2023}, while Wanda scores weights using magnitudes and input activations~\citep{sun2024}. Tensor-train compression stores a weight tensor as a sequence of smaller cores and measures parameter savings~\citep{novikov2015}. These are relevant comparators for practical compression. Activation patching replaces internal values to test their effect~\citep{zhang2024}, and distributed alignment search learns directions tied to specified causal variables~\citep{geiger2024}. Our removals test output sensitivity without assigning semantic meanings. The study follows the broader use of weights as research data~\citep{wsl2025}. Width and random controls isolate allocation and basis choices. They do not establish superiority to these methods.
+
+\section{The bilinear policy and its tensor representation}
+\label{sec.architecture}
+
+Our trained policy, \chiVLA{}, uses the image, instruction, state, and action organization of a vision-language-action model. Its attention and normalization differ from standard transformers. Bilinear attention replaces softmax. Rational normalization was used during training in place of inverse-square-root normalization. The decomposition represents these deployed formulas exactly. General softmax and RMSNorm do not have exact finite polynomial or rational representations of this form.
+
+\paragraph{Architecture.}
+A $64\times64$ image becomes 64 patch vectors of width 192, called \emph{tokens}, through learned affine maps and position vectors. An affine map is a matrix multiplication plus a bias. Four vision blocks use eight parallel attention heads and 576 feed-forward components each. A projection converts the visual tokens to width 384. The model joins the visual tokens with instruction embeddings, vectors indexed by instruction tokens, a projection of the eight-coordinate state, learned context tokens, and eight action queries. Eight joint blocks use 12 heads and 1,152 feed-forward components. A final normalization and linear head predict eight actions with seven coordinates each. Figure~\ref{fig.architecture} marks the analyzed components.
+
+\begin{figure}[ht]
+\centering\small
+\setlength{\fboxsep}{6pt}
+\fbox{\begin{minipage}{.95\linewidth}\centering
+Image patches $\to$ four vision blocks $\to$ projection to width 384\\[4pt]
+Join instruction, state, context, and action queries $\to$ eight joint blocks $\to$ eight actions\\[6pt]
+\hrule\vspace{6pt}
+Each block: normalize $\to$ attention $\to$ add input $\to$ normalize $\to$ feed-forward $\to$ add input.\\[4pt]
+\textbf{Tests:} two-token first vision block, and local feed-forward replacement after full attention.
+\end{minipage}}
+\caption{The policy and the two intervention scopes. Each input addition is a residual connection. Only the local feed-forward experiment preserves the original attention context.}
+\label{fig.architecture}
+\end{figure}
+
+\paragraph{Bilinear feed-forward map.}
+For vectors $u,v$, append a constant coordinate to obtain $\tilde u=(u^{\mathsf T},1)^{\mathsf T}$ and $\tilde v=(v^{\mathsf T},1)^{\mathsf T}$. Then
+\begin{equation}
+ B(u,v)=W_D[(W_L\tilde u)\odot(W_R\tilde v)],
+ \qquad B_o(u,v)=\sum_{a,b}T_{oab}\tilde u_a\tilde v_b.
+ \label{eq.bilinear}
+\end{equation}
+Each learned input map $W_L,W_R$ produces 576 components and includes a bias through the constant coordinate. The symbol $\odot$ multiplies matching components, and $W_D$ maps them to the output with no added bias. Expanding gives the coefficient array $T$. The map is linear in either lifted input with the other fixed. Supplying the same normalized token to both gives a quadratic map.
+
+\paragraph{Attention and residual paths.}
+For head width $h$, learned maps produce two queries $q_i^{(1)},q_i^{(2)}$, two keys $k_j^{(1)},k_j^{(2)}$, and a value $v_j$. Queries and keys are normalized. With fixed binary mask $M$ and $n_i=\sum_jM_{ij}$, one head computes
+\begin{equation}
+ a_i=\frac{1}{\sqrt{n_i}}\sum_jM_{ij}
+ \frac{(q_i^{(1)\mathsf T}k_j^{(1)})(q_i^{(2)\mathsf T}k_j^{(2)})}{h^2}v_j.
+ \label{eq.attention}
+\end{equation}
+Vision tokens read all image tokens. Joint tokens read current and earlier positions. An affine map combines heads into attention output $A$. With normalization maps $\mathcal N_a,\mathcal N_f$ and fixed branch scales $\alpha,\beta$, a block applies
+\begin{equation}
+ z=x+\alpha A(\mathcal N_a(x)),\qquad F(z)=z+\beta B(\mathcal N_f(z),\mathcal N_f(z)).
+ \label{eq.block}
+\end{equation}
+
+\paragraph{Rational normalization.}
+The trained and deployed normalization uses a Pad\'e approximation, a ratio of polynomials that approximates inverse-square-root scaling:
+\begin{equation}
+ t=\frac{d^{-1}\sum_jx_j^2+\epsilon}{s},\qquad
+ \mathcal N(x)=\frac{x}{\sqrt{s}}\frac{p_0+p_1t+p_2t^2}{q_0+q_1t+q_2t^2}.
+ \label{eq.norm}
+\end{equation}
+Here $d$ is width, $\epsilon=10^{-6}$, $s>0$ is a frozen running mean-square scale, and $p_i,q_i$ are fixed checkpoint coefficients. The decomposition introduces no further approximation to this formula.
+
+\paragraph{Tensor representation.}
+A tensor network connects coefficient arrays and sums their shared indices. An internal index is a \emph{bond}. We represent a rational value by a numerator vector $N$ and denominator $D$, decoded as $N/D$. These \emph{projective coordinates} express the arithmetic with polynomial tensors. A stored tensor is a \emph{core}. The graph shares cores whose outputs are reused. Copying every use produces a tree with a separate ordered index for each input occurrence. In inference, copies of the same input receive equal values. ODT analyzes the coefficient tensor of this fixed representation.
+
+\section{ODT with a shared basis at every use}
+\label{sec.method}
+
+\paragraph{Orthogonalization.}
+We process cores from inputs to output. Put the output index on rows of a matrix $M$ and the input indices on columns. Direct reduced QR on $M^{\mathsf T}$ gives $M=RQ$, where the rows of $Q$ are mutually perpendicular unit vectors. The factor $R$ is triangular. Store $Q$ and push $R$ into every parent-input slot, including both slots of a repeated child. The final head receives the root factor. Dependent rows retain the complete reduced QR basis.
+
+Before this step, a core with identical children is averaged over its two input orders. QR uses symmetric coordinates, with each diagonal entry stored once and each off-diagonal pair weighted by $\sqrt{2}$. This fixes the coefficient representation. All later full coordinate changes preserve it in exact arithmetic. Orthogonalization uses direct QR/RQ with no fallback factorization.
+
+\paragraph{Diagonalization and its objective.}
+For copied occurrence $p$, explicitly contract two copies of the downstream network, matching output and other open indices, leaving the cut coordinates free. The resulting symmetric matrix $E_p$ is its \emph{environment}. For shared bond $v$, sum over occurrences $\mathcal O(v)$ and solve
+\begin{equation}
+ H_v=\sum_{p\in\mathcal O(v)}E_p,\qquad H_vu_{vi}=\lambda_{vi}u_{vi},\qquad
+ \lambda_{v1}\ge\lambda_{v2}\ge\cdots.
+ \label{eq.environment}
+\end{equation}
+An eigenvector $u_{vi}$ is a unit direction scaled by $H_v$, with scale $\lambda_{vi}$. Environments terminate at the analyzed component's output.
+
+Fix its coefficient tensor $T$ and assume the producing subtree has orthonormal output rows after orthogonalization. Let $T_{p,U}$ restrict only occurrence $p$ to a $k$-dimensional space with orthonormal basis vectors $u_1,\ldots,u_k$. Then
+\begin{equation}
+ \sum_p\|T-T_{p,U}\|_F^2
+ =\operatorname{tr}(H_v)-\sum_{i=1}^k u_i^{\mathsf T}H_vu_i,
+ \qquad \min_U\sum_p\|T-T_{p,U}\|_F^2=\sum_{i>k}\lambda_{vi}.
+ \label{eq.objective}
+\end{equation}
+The squared Frobenius norm sums squared entries, and trace sums diagonal entries. Orthogonality makes removed and retained contributions perpendicular, giving the first equality. The eigenvalue variational principle maximizes the retained sum with the leading $k$ eigenvectors, giving the second. This objective adds \emph{separate single-occurrence} errors. Cutting all uses together introduces interactions whose coefficient error is unmeasured here. In Dooms et al.'s symmetric chain, occurrence environments coincide and their sum rescales the same eigenspaces. We use the stated summed objective for general sharing.
+
+\paragraph{Truncation.}
+A full basis transpose enters the producing core, and the basis enters every parent slot. This preserves the tensor. Retaining only the leading $k$ columns removes directions, with $k$ called the retained \emph{rank}. We save and reload the smaller cores and check their outputs against masks applied independently in the full-sized graph. Weights determine the bases. Later policy computations are used to evaluate their action effects.
+
+\section{Evaluation protocol}
+\label{sec.setup}
+
+\paragraph{Training and inputs.}
+We study one 20,137,352-parameter checkpoint trained from scratch on LIBERO-Object~\citep{liu2023}, with seed 0, 40,000 steps, batch size 256, learning rate $8\times10^{-4}$, and 63,352 usable action-chunk examples from 66,984 cached frames. Confirmation uses 80 episodes across ten tasks and two frames per episode, giving 160 images. Twenty disjoint development episodes give 40 images. Both partitions come from the training cache. These tests measure agreement on training-source inputs. They establish no generalization to held-out demonstrations or separately trained policies.
+
+\paragraph{Components and controls.}
+The residual feed-forward map $F$ in Equation~\ref{eq.block} has six cores and 21 copied occurrences. It replaces the first vision block's local map after its original 64-token attention, separately at every token. We reduce one 193-coordinate bond to ranks 192, 184, 174, and 154. Three random controls per rank use direct QR with seeds 0, 1, and 2. Each retains the bond's zero-input activation direction as an \emph{anchor}. This preserves a reference direction, while leaving the remaining space random. Its effect relative to unanchored random spaces is untested.
+
+The two-token block has 453 cores, 81,377 copied occurrences, and 9,274 eligible directions across 450 bonds. Eligible bonds exclude inputs and the final output, and each retains at least one direction. Two tokens make the copied correctness check tractable. Removing 62 tokens itself causes RMSE 0.2753, or 18.2\% of full-context output RMS. Block reductions therefore use the unchanged two-token output as reference. Real inputs are patch pairs $(27,28)$ and $(0,63)$ from each image, giving 320 inputs. The 256 synthetic inputs have independent Gaussian entries with mean zero and standard deviation 0.2, using seed 20260907. These panels have different scales and structure. Their comparison cannot isolate an input-distribution effect.
+
+\textbf{Width allocation (W)} chooses removals by increasing $(2j-1)/(2d_v)$, for width $d_v$ and removal count $j$. This is the incremental cost of $j^2/(2d_v)$ and encourages similar fractional cuts. \textbf{Spectral allocation (S)} removes the smallest tail eigenvalues across bonds, on a shared scale including occurrence counts. \textbf{Normalization protection (N)} keeps 136 mean-square and Pad\'e bonds intact, yielding WN and SN. Random block controls match all retained ranks at 10\% and 30\%. Exact duplicates leave 25 conditions. Additional $K=1,9,46$ cuts are exploratory. All percentages count graph-bond directions, which include fixed arithmetic coordinates.
+
+\paragraph{Checks and metrics.}
+An independent implementation copies every use and replays each full coordinate change. Full-rank scaled output errors are $4.60\times10^{-15}$ for the block and $1.74\times10^{-14}$ for $F$. Independently contracted occurrence environments agree to $2.07\times10^{-14}$. New block cutoffs use these accepted bases and eigen-equation checks. Independent per-cut copied checks cover the original producer schedule and all four local feed-forward ranks.
+
+Root mean square error (RMSE) takes the square root of mean squared output differences. Block error is also divided by reference output RMS, 1.3823 on real and 0.6317 on synthetic inputs. Action error combines all $8\times7$ denormalized outputs, with a second metric dividing each error coordinate by its training-target standard deviation. Finite projective coordinates pass decoding when $|D|/\max(|D|,\max_j|N_j|)>10^{-12}$. This bounds decoded output size and is not a conditioning certificate. All block and action conditions complete every input without decoding failure. Paired action intervals resample 80 episodes within ten tasks 4,000 times. They are descriptive, pointwise intervals conditional on this checkpoint.
+
+\section{Results}
+\label{sec.results}
+
+\paragraph{Local ranks preserve recorded actions.}
+Full-rank replacement agrees with original actions at RMSE $7.34\times10^{-8}$. At each reduced rank, all three anchored random controls have greater RMSE than the leading basis (Table~\ref{tab.actions}). Their error ratios span 31 to 53 across all twelve comparisons. Leading-basis median frame errors range from $2.03\times10^{-5}$ to $2.80\times10^{-4}$, and 95th percentiles from $4.14\times10^{-5}$ to $5.59\times10^{-4}$. The worst 5\% of frames contribute 19.5\% to 23.3\% of their squared error. Every arm preserves all 1,280 reference gripper signs. Appendix~\ref{app.actions} gives individual controls, tails, and all paired intervals.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+Retained rank & Leading RMSE & Leading standardized RMSE & Anchored random RMSE range\\
+\midrule
+192 & 0.0000244 & 0.0000990 & 0.001004 to 0.001300\\
+184 & 0.0000918 & 0.0003757 & 0.003653 to 0.004426\\
+174 & 0.0001634 & 0.0006697 & 0.005913 to 0.006681\\
+154 & 0.0003269 & 0.0013681 & 0.010107 to 0.013384\\
+\bottomrule
+\end{tabular}
+\caption{Action agreement on 160 training-source inputs. One 193-coordinate bond is reduced. Standardized errors use training-target standard deviations, with no division by prediction RMS. Random ranges cover three anchored bases. These are controls for direction choice.}
+\label{tab.actions}
+\end{table}
+
+\paragraph{Action agreement does not establish a task-success benefit.}
+A pilot evaluates four arms on the same 20 LIBERO-Object starts, two per task, with a 280-step limit, eight-action chunks, and ten settling steps. All arms use the same direct-QR constrained-dynamics controller, simulator versions, and RTX 6000 hardware. All 80 episodes finish without execution failures. Native and full-rank arms have identical success vectors (Table~\ref{tab.rollout}). The random reduction succeeds on three starts where the leading reduction fails, with no discordance in the opposite direction. An exact two-sided paired test gives $p=0.25$. The pilot establishes neither superiority nor equivalence.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{9pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Policy arm & Successes & Success rate & First-chunk action RMSE\\
+\midrule
+Original policy & 17/20 & 85\% & $1.56\times10^{-7}$\\
+Full-rank replacement & 17/20 & 85\% & 0\\
+Leading rank 174 & 16/20 & 80\% & 0.0009035\\
+Anchored random rank 174, seed 0 & 19/20 & 95\% & 0.0538193\\
+\bottomrule
+\end{tabular}
+\caption{Exploratory paired rollouts. First-chunk errors are a post hoc comparison on all 20 identical initial observations, relative to full rank. They exclude later states, which diverge between arms. The apparent success ordering is statistically inconclusive.}
+\label{tab.rollout}
+\end{table}
+
+On those same starting observations, the leading reduction has smaller first-chunk error on all 20 starts. The random arm's aggregate RMSE is 59.6 times larger. This second input source confirms initial action agreement. It does not establish fidelity later in the rollout or independence from policy training states. Smaller offline error alone therefore provides insufficient evidence for improved task success.
+
+\paragraph{Block allocation has a narrow low-error regime.}
+Table~\ref{tab.allocation} includes the smallest cuts in the main evidence. At $K=93$, spectral allocation has real-input error of 0.0115\% of source RMS. It rises to 2.28\% at $K=464$ and 41.20\% at $K=2782$. Across the spectral schedule, sub-percent relative error is demonstrated only through roughly 1\% graph-bond removal. At the largest budget, W has lower real-input error than S. The paired squared-error difference, S minus W, is 0.18379 with descriptive interval $[0.17996,0.18737]$. WN improves on W by 12.8\%. These control comparisons show a limitation of the coefficient-tail objective. They establish no advantage over calibrated pruning baselines.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}rr rrrr@{}}
+\toprule
+& & \multicolumn{4}{c}{Real-input RMSE / source RMS (\%)}\\
+\cmidrule(l){3-6}
+$K$ & Graph-bond removal (\%) & W & WN & S & SN\\
+\midrule
+1 & 0.0108 & 0.73 & 0.73 & $6.282\times10^{-6}$ & $6.282\times10^{-6}$\\
+9 & 0.0970 & 1.32 & 1.32 & $3.331\times10^{-4}$ & $3.331\times10^{-4}$\\
+46 & 0.4960 & 2.16 & 2.16 & 0.0039 & 0.0039\\
+93 & 1.0028 & 3.04 & 3.04 & 0.0115 & 0.0115\\
+464 & 5.0032 & 6.29 & 6.29 & 2.28 & 2.28\\
+927 & 9.9957 & 7.96 & 7.96 & 6.98 & 6.98\\
+2782 & 29.9978 & 27.12 & 23.66 & 41.20 & 41.20\\
+\bottomrule
+\end{tabular}
+\caption{Leading directions under width (W) or spectral (S) allocation, with normalization protection (N) shown explicitly. The $K=1,9,46$ extension is exploratory. The denominator is 9,274 eligible graph-bond directions, unrelated to policy parameter count.}
+\label{tab.allocation}
+\end{table}
+
+\paragraph{Large cuts concentrate in different computations.}
+At $K=2782$, S cuts 94 wider bonds and leaves all 136 normalization and 96 attention-scalar bonds intact. W cuts all 450 eligible bonds. S reduces both normalized feed-forward inputs from 193 to 43, against W's 135, and both attention outputs from 193 to 57, against W's 135. Its summed coefficient-tail score is 146.93, against W's 478,715.91 in common stored units. This diagnoses different allocations without identifying a single causal bond. S's denominator magnitude changes by only $-0.0272$ to $0.0598$ bits relative to the fixed reference, with no sign changes. Denominator collapse does not explain this case. At the same budget, the W seed-0 random control has RMSE 537.35, a 95th-percentile input error of 761.44, and a maximum of 5,748.31, despite every input passing decoding. Appendix~\ref{app.block} reports ranks and tails. A decoding pass alone gives no error guarantee.
+
+\section{Interpretation and limitations}
+
+The central gap is between coefficients and decoded outputs. If $y=N/D$, then a cut gives
+\begin{equation}
+ \delta y=\frac{D\,\delta N-N\,\delta D}{D(D+\delta D)}.
+ \label{eq.quotient}
+\end{equation}
+Cancellation and both denominators affect error. Copied tensor inputs also occupy independent coefficient axes while inference gives them equal values. Nissen Gonzalez et al.~\citep{gonzalez2026} construct symmetry-invariant similarities for polynomial model functions using symmetrized tensors and a function-space metric based on averages over Gaussian inputs. Our fixed ordered representation is different. A rational output has equivalent pairs $(N,D)$ and $(gN,gD)$ for common nonzero factors $g$ on the domain. Their polynomial similarity does not directly remove this rational-representation freedom. Our spectra are therefore conditional on the chosen representation.
+
+This study demonstrates audited local analysis and an objective-to-behavior gap. It identifies no named features or practical compression gain. Recorded inference times are 19.2 ms per input for the native policy, 44.7 ms for full-rank replacement, and 41.1 ms at rank 154. These are run timings, without repeated benchmarking. Expanded feed-forward core storage falls from 14.56 to 11.66 million scalars, compared with 332,928 learned parameters in the original feed-forward matrices and input biases. Graph savings provide no evidence of whole-policy memory or speed savings.
+
+Stronger magnitude or activation-based baselines, unanchored random spaces, multiple checkpoints, training-held-out inputs, longer attention contexts, and direct simultaneous-cut coefficient errors remain untested. The Gaussian and image panels differ in both scale and structure, so we draw no causal conclusion from their differing orderings. Larger paired rollouts are needed to test success retention. For this checkpoint, coefficient rankings, action agreement, and task success remain separate evaluation targets.
+
+\clearpage
+\begin{thebibliography}{99}
+\bibitem{dooms2025}
+Thomas Dooms, Ward Gauderis, Geraint A. Wiggins, and Jos\'e Oramas.
+\newblock Compositionality Unlocks Deep Interpretable Models.
+\newblock AAAI Workshop on Connecting Low-Rank Representations in AI, 2025.
+\newblock \url{https://arxiv.org/abs/2504.02667}.
+
+\bibitem{pearce2025}
+Michael T. Pearce, Thomas Dooms, Alice Rigg, Jos\'e Oramas, and Lee Sharkey.
+\newblock Bilinear MLPs Enable Weight-Based Mechanistic Interpretability.
+\newblock International Conference on Learning Representations, 2025.
+\newblock \url{https://arxiv.org/abs/2410.08417}.
+
+\bibitem{gonzalez2026}
+ML Nissen Gonzalez, Melwina Albuquerque, Laurence Wroe, Jacob Meyer Cohen, Logan Riggs Smith, and Thomas Dooms.
+\newblock When Are Two Networks the Same? Tensor Similarity for Mechanistic Interpretability.
+\newblock arXiv preprint arXiv:2605.15183, 2026.
+\newblock \url{https://arxiv.org/abs/2605.15183}.
+
+\bibitem{kim2024}
+Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, Quan Vuong, Thomas Kollar, Benjamin Burchfiel, Russ Tedrake, Dorsa Sadigh, Sergey Levine, Percy Liang, and Chelsea Finn.
+\newblock OpenVLA: An Open-Source Vision-Language-Action Model.
+\newblock Conference on Robot Learning, 2024.
+\newblock \url{https://arxiv.org/abs/2406.09246}.
+
+\bibitem{liu2023}
+Bo Liu, Yifeng Zhu, Chongkai Gao, Yihao Feng, Qiang Liu, Yuke Zhu, and Peter Stone.
+\newblock LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning.
+\newblock Advances in Neural Information Processing Systems, Datasets and Benchmarks Track, 2023.
+\newblock \url{https://arxiv.org/abs/2306.03310}.
+
+\bibitem{frantar2022}
+Elias Frantar, Sidak Pal Singh, and Dan Alistarh.
+\newblock Optimal Brain Compression: A Framework for Accurate Post-Training Quantization and Pruning.
+\newblock Advances in Neural Information Processing Systems, 2022.
+\newblock \url{https://arxiv.org/abs/2208.11580}.
+
+\bibitem{frantar2023}
+Elias Frantar and Dan Alistarh.
+\newblock SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot.
+\newblock International Conference on Machine Learning, 2023.
+\newblock \url{https://proceedings.mlr.press/v202/frantar23a.html}.
+
+\bibitem{sun2024}
+Mingjie Sun, Zhuang Liu, Anna Bair, and J. Zico Kolter.
+\newblock A Simple and Effective Pruning Approach for Large Language Models.
+\newblock International Conference on Learning Representations, 2024.
+\newblock \url{https://arxiv.org/abs/2306.11695}.
+
+\bibitem{novikov2015}
+Alexander Novikov, Dmitrii Podoprikhin, Anton Osokin, and Dmitry Vetrov.
+\newblock Tensorizing Neural Networks.
+\newblock Advances in Neural Information Processing Systems, 2015.
+\newblock \url{https://arxiv.org/abs/1509.06569}.
+
+\bibitem{zhang2024}
+Fred Zhang and Neel Nanda.
+\newblock Towards Best Practices of Activation Patching in Language Models: Metrics and Methods.
+\newblock International Conference on Learning Representations, 2024.
+\newblock \url{https://arxiv.org/abs/2309.16042}.
+
+\bibitem{geiger2024}
+Atticus Geiger, Zhengxuan Wu, Christopher Potts, Thomas Icard, and Noah Goodman.
+\newblock Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations.
+\newblock Conference on Causal Learning and Reasoning, 2024.
+\newblock \url{https://proceedings.mlr.press/v236/geiger24a.html}.
+
+\bibitem{wsl2025}
+ICLR 2025 Workshop.
+\newblock Neural Network Weights as a New Data Modality.
+\newblock \url{https://iclr.cc/virtual/2025/workshop/23994}.
+\end{thebibliography}
+
+\clearpage
+\appendix
+\section{Individual action controls and uncertainty}
+\label{app.actions}
+
+The frozen action experiment has 18 arms, including the original policy, full rank, four leading ranks, and twelve anchored random controls. Table~\ref{tab.actiontails} reports per-frame tails and standardized error. Standardization divides the seven error coordinates by training-target standard deviations $(0.27267,0.44593,0.45798,0.024709,0.049447,0.042694,0.99037)$ before squaring and averaging. It gives rotation, translation, and the continuous gripper output comparable target scales. Raw action RMSE retains their different scales. Neither metric is relative to the RMS of reference predictions.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}rlrrrrr@{}}
+\toprule
+Rank & Basis & RMSE & Standardized & Median frame & 95th percentile & Maximum frame\\
+\midrule
+192 & Leading & 0.0000244 & 0.0000990 & 0.0000203 & 0.0000414 & 0.0000739\\
+192 & Anchor 0 & 0.0010310 & 0.0045519 & 0.0008413 & 0.0017697 & 0.0030800\\
+192 & Anchor 1 & 0.0013001 & 0.0057482 & 0.0010789 & 0.0021564 & 0.0031260\\
+192 & Anchor 2 & 0.0010043 & 0.0045471 & 0.0008123 & 0.0016854 & 0.0033655\\
+184 & Leading & 0.0000918 & 0.0003757 & 0.0000798 & 0.0001502 & 0.0002338\\
+184 & Anchor 0 & 0.0036526 & 0.0155959 & 0.0028930 & 0.0063518 & 0.0095541\\
+184 & Anchor 1 & 0.0044265 & 0.0179281 & 0.0039240 & 0.0074330 & 0.0122404\\
+184 & Anchor 2 & 0.0041050 & 0.0185172 & 0.0036749 & 0.0068004 & 0.0105014\\
+174 & Leading & 0.0001634 & 0.0006697 & 0.0001377 & 0.0002604 & 0.0005451\\
+174 & Anchor 0 & 0.0059129 & 0.0247959 & 0.0048050 & 0.0101447 & 0.0161449\\
+174 & Anchor 1 & 0.0064158 & 0.0251769 & 0.0054522 & 0.0103743 & 0.0132616\\
+174 & Anchor 2 & 0.0066815 & 0.0285241 & 0.0056302 & 0.0112339 & 0.0203611\\
+154 & Leading & 0.0003269 & 0.0013681 & 0.0002804 & 0.0005591 & 0.0008305\\
+154 & Anchor 0 & 0.0133840 & 0.0411569 & 0.0082934 & 0.0174267 & 0.1048555\\
+154 & Anchor 1 & 0.0106916 & 0.0429834 & 0.0090762 & 0.0169847 & 0.0270213\\
+154 & Anchor 2 & 0.0101069 & 0.0440125 & 0.0088848 & 0.0161733 & 0.0240049\\
+\bottomrule
+\end{tabular}
+\caption{All reduced action arms on the same 160 inputs. Frame summaries use each frame's RMSE across eight actions and seven coordinates.}
+\label{tab.actiontails}
+\end{table}
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+Rank & Anchor seed & Paired MSE difference & 95\% lower & 95\% upper\\
+\midrule
+192 & 0 & $-1.0623\times10^{-6}$ & $-1.2334\times10^{-6}$ & $-9.1797\times10^{-7}$\\
+192 & 1 & $-1.6896\times10^{-6}$ & $-1.9246\times10^{-6}$ & $-1.4766\times10^{-6}$\\
+192 & 2 & $-1.0080\times10^{-6}$ & $-1.1718\times10^{-6}$ & $-8.6774\times10^{-7}$\\
+184 & 0 & $-1.3333\times10^{-5}$ & $-1.5205\times10^{-5}$ & $-1.1584\times10^{-5}$\\
+184 & 1 & $-1.9585\times10^{-5}$ & $-2.2429\times10^{-5}$ & $-1.6997\times10^{-5}$\\
+184 & 2 & $-1.6843\times10^{-5}$ & $-1.8649\times10^{-5}$ & $-1.5141\times10^{-5}$\\
+174 & 0 & $-3.4935\times10^{-5}$ & $-4.0123\times10^{-5}$ & $-3.0324\times10^{-5}$\\
+174 & 1 & $-4.1135\times10^{-5}$ & $-4.5988\times10^{-5}$ & $-3.6773\times10^{-5}$\\
+174 & 2 & $-4.4616\times10^{-5}$ & $-5.1883\times10^{-5}$ & $-3.7820\times10^{-5}$\\
+154 & 0 & $-1.7902\times10^{-4}$ & $-3.2806\times10^{-4}$ & $-8.5026\times10^{-5}$\\
+154 & 1 & $-1.1420\times10^{-4}$ & $-1.2965\times10^{-4}$ & $-9.9604\times10^{-5}$\\
+154 & 2 & $-1.0204\times10^{-4}$ & $-1.1482\times10^{-4}$ & $-8.9555\times10^{-5}$\\
+\bottomrule
+\end{tabular}
+\caption{Leading minus matched random mean squared action error. Whole episodes are resampled within tasks, with 4,000 replicates and seed 2026090703. All intervals lie below zero. They are pointwise descriptive intervals, without multiple-comparison correction.}
+\label{tab.actionintervals}
+\end{table}
+
+The leading arms' largest eight frame errors contribute 19.5\% to 23.3\% of total squared error. Basis seeds describe retained-space variation within one checkpoint. They provide no estimate of variation between independently trained policies. The action analyzer independently recomputes metrics from saved arrays and verifies source identities. It algebraically verifies archived 64-bit comparison receipts without re-executing GPU inference.
+
+\clearpage
+\section{Block controls, allocation, and decoding diagnostics}
+\label{app.block}
+
+All 25 primary conditions evaluate 320 image-derived and 256 Gaussian inputs. Their source output RMS values are 1.3823244 and 0.6316512. Table~\ref{tab.complete} gives absolute values for every condition. Equivalent schedules share one row. At the 30\% graph-bond budget, S has lower error than W on this Gaussian panel and higher error on this image panel. Scale and input structure are both unmatched, so these panels do not identify the cause of the difference.
+
+\begin{table}[ht]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}rlrlrr@{}}
+\toprule
+ID & Allocation & $K$ & Basis & Real RMSE & Synthetic RMSE\\
+\midrule
+0 & Full & 0 & Leading & $2.20629\times10^{-14}$ & $1.15092\times10^{-14}$\\
+1 & W / WN & 93 & Leading & 0.042030 & 0.058148\\
+2 & W / WN & 464 & Leading & 0.086894 & 0.106534\\
+3 & W / WN & 927 & Leading & 0.109973 & 0.142223\\
+4 & W / WN & 927 & Anchor seed 0 & 1.064549 & 0.573082\\
+5 & W / WN & 927 & Anchor seed 1 & 1.060635 & 0.575477\\
+6 & W / WN & 927 & Anchor seed 2 & 0.952759 & 0.549312\\
+7 & W & 2782 & Leading & 0.374901 & 0.467858\\
+8 & W & 2782 & Anchor seed 0 & 537.354468 & 3.997828\\
+9 & W & 2782 & Anchor seed 1 & 28.011595 & 4.190110\\
+10 & W & 2782 & Anchor seed 2 & 60.514962 & 3.688361\\
+11 & WN & 2782 & Leading & 0.327004 & 0.334772\\
+12 & WN & 2782 & Anchor seed 0 & 1.485593 & 0.742835\\
+13 & WN & 2782 & Anchor seed 1 & 1.244759 & 0.731174\\
+14 & WN & 2782 & Anchor seed 2 & 1.297694 & 0.730426\\
+15 & S / SN & 93 & Leading & 0.000159 & 0.000164\\
+16 & S / SN & 464 & Leading & 0.031470 & 0.030965\\
+17 & S / SN & 927 & Leading & 0.096475 & 0.127134\\
+18 & S / SN & 927 & Anchor seed 0 & 1.813258 & 0.670609\\
+19 & S / SN & 927 & Anchor seed 1 & 1.038375 & 0.657134\\
+20 & S / SN & 927 & Anchor seed 2 & 1.189186 & 0.651609\\
+21 & S / SN & 2782 & Leading & 0.569509 & 0.333199\\
+22 & S / SN & 2782 & Anchor seed 0 & 3.221475 & 0.678179\\
+23 & S / SN & 2782 & Anchor seed 1 & 1.681646 & 0.676258\\
+24 & S / SN & 2782 & Anchor seed 2 & 1.747298 & 0.676456\\
+\bottomrule
+\end{tabular}
+\caption{Complete frozen comparison. Displayed values are rounded. Source RMS values are given above. These controls are conditional on one checkpoint and the fixed two-token representation.}
+\label{tab.complete}
+\end{table}
+
+
+\clearpage
+\paragraph{Allocation at $K=2782$.}
+W removes 136 directions from all 136 moment/Pad\'e bonds, 96 from all 96 attention-scalar bonds, and 2,550 from 218 wider bonds. WN reallocates the first 136 removals to wider bonds. S removes all 2,782 directions from 94 wider bonds. Its remaining 356 bonds stay intact. Table~\ref{tab.ranks} reports retained ranks grouped by computation. This is a post hoc description of the implemented schedules. Isolating the contribution of each cut would require separate interventions.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Bond computation & Original width range & W retained range & S retained range\\
+\midrule
+Mean-square and Pad\'e & 2 & 1 & 2\\
+First query projection & 25 & 17 to 18 & 25\\
+First key projection & 25 & 18 & 25\\
+Second query projection & 25 & 18 & 25\\
+Second key projection & 25 & 18 & 25\\
+First query normalization & 25 & 17 to 18 & 17 to 25\\
+Second query normalization & 25 & 18 & 16 to 25\\
+First key normalization & 25 & 18 & 17 to 25\\
+Second key normalization & 25 & 18 & 16 to 25\\
+Value projection & 25 & 18 & 6 to 22\\
+Weighted values & 25 & 18 & 4 to 19\\
+Attention route sum & 25 & 18 & 6 to 22\\
+Joined head outputs & 49 to 193 & 34 to 135 & 29 to 57\\
+Block attention input & 193 & 135 & 193\\
+Attention output & 193 & 135 & 57\\
+Post-attention residual & 193 & 135 & 193\\
+Normalized feed-forward input & 193 & 135 & 43\\
+Feed-forward branch & 193 & 135 & 72\\
+Post-feed-forward residual & 193 & 135 & 72\\
+\bottomrule
+\end{tabular}
+\caption{Ranges across bonds with the same computational role. Input and final output bonds are excluded. S concentrates reductions after attention and before or within feed-forward computation.}
+\label{tab.ranks}
+\end{table}
+
+\paragraph{Large error remains possible after a decoding pass.}
+For finite $y=N/D$, the validity ratio equals $1/\max(1,\max_j|y_j|)$. Its threshold limits output magnitude. The proposed ratio $|D|/\max_j|N_j|$ likewise measures reciprocal output magnitude, without certifying numerical conditioning. Absolute denominator values also change under a common projective rescaling. We therefore inspect denominator changes relative to the source in the fixed representation, carrying all power-of-two scales explicitly.
+
+For S at 30\%, $\log_2|D_{\mathrm{cut}}/D_{\mathrm{source}}|$ has minimum $-0.02718$, median 0.02543, and maximum 0.05979, with no sign changes. Its decoding-margin minimum is 0.1101. In contrast, the W seed-0 random control has 84 denominator sign changes across 320 inputs and a minimum decoding margin of $4.09\times10^{-5}$. Its large RMSE is accompanied by a broad tail (Table~\ref{tab.blocktails}). Changes in this chosen representation do not isolate conditioning from simultaneous numerator changes.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Allocation & Basis & RMSE & Relative RMSE (\%) & 95th percentile & Maximum input\\
+\midrule
+W & Leading & 0.37490 & 27.12106 & 0.44891 & 0.80824\\
+W & Anchor 0 & 537.35447 & 38873.25342 & 761.44059 & 5748.31259\\
+W & Anchor 1 & 28.01159 & 2026.41251 & 48.22915 & 127.39276\\
+W & Anchor 2 & 60.51496 & 4377.76849 & 81.91347 & 420.75352\\
+WN & Leading & 0.32700 & 23.65608 & 0.43956 & 0.55265\\
+WN & Anchor 0 & 1.48559 & 107.47065 & 1.80696 & 1.93944\\
+WN & Anchor 1 & 1.24476 & 90.04829 & 1.76630 & 1.90639\\
+WN & Anchor 2 & 1.29769 & 93.87765 & 1.73215 & 1.96965\\
+S / SN & Leading & 0.56951 & 41.19937 & 0.72477 & 0.77833\\
+S / SN & Anchor 0 & 3.22148 & 233.04771 & 5.09337 & 21.98588\\
+S / SN & Anchor 1 & 1.68165 & 121.65349 & 2.43831 & 2.92744\\
+S / SN & Anchor 2 & 1.74730 & 126.40290 & 2.45517 & 2.86129\\
+\bottomrule
+\end{tabular}
+\caption{Real-input error tails at $K=2782$. Percentiles and maxima refer to each input's RMSE across 384 output coordinates. Median errors and full block-error distributions are unavailable in the retained aggregate summaries.}
+\label{tab.blocktails}
+\end{table}
+
+\clearpage
+\section{Correctness, costs, and rollout scope}
+\label{app.evidence}
+
+\paragraph{Independent replay.}
+Full-rank scaled error is $\max|a-b|/\max(\max|b|,10^{-12})$, with reference $b$. It is $4.60\times10^{-15}$ for the block and $1.74\times10^{-14}$ for the local feed-forward map. Copied every-step core comparisons agree exactly at recorded floating-point entries. Independent occurrence environments agree to $2.07\times10^{-14}$. The block producer checked 1,540 retained spaces in its original schedule. Additional campaign cutoffs use accepted bases, eigen-equation checks, and reduced-core versus full-mask replay. They were not independently copied and checked at each new cutoff. The local producer directly checked its four reduced ranks. Full-rank native action error is $7.34\times10^{-8}$ in denormalized units.
+
+\paragraph{Context and arithmetic.}
+The original 32-bit calculation and an independently written 64-bit forward have maximum absolute differences $4.69\times10^{-6}$ for the two-token block and $8.04\times10^{-6}$ for the 64-token block. A full-context calculation masked to the selected pair agrees with the two-token computation to $3.81\times10^{-6}$. The 18.2\% context-removal error uses full-context output RMS 1.5156. Every truncation result instead uses the two-token reference. No 8-token or 16-token decomposition was tested.
+
+\paragraph{Recorded costs.}
+Local decomposition took 34.6 seconds. Preparing the block campaign from accepted bases took 206.3 seconds, including 1,350 QR calls for anchored bases. Original block decomposition, peak memory, and context-length scaling costs are unavailable. Table~\ref{tab.storage} counts serialized core entries, excluding the unchanged output head and saved bases. Inference timings are single-run full-policy means. They show no acceleration over native inference.
+
+\begin{table}[ht]
+\centering\small\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Representation & Stored core scalars & Full-policy ms / input\\
+\midrule
+Native policy & Not a core representation & 19.22\\
+Local map, full rank & 14,564,367 & 44.67\\
+Local map, rank 174 & 13,148,905 & 43.18\\
+Local map, rank 154 & 11,658,945 & 41.10\\
+Two-token block, full rank & 64,051,337 & Not measured\\
+Two-token block, W at $K=2782$ & 26,299,858 & Not measured\\
+Two-token block, S at $K=2782$ & 10,203,600 & Not measured\\
+\bottomrule
+\end{tabular}
+\caption{Representation storage and recorded run timings. Core counts include fixed arithmetic, input cores, and numerator-denominator coordinates. They are not parameter counts or peak-memory measurements.}
+\label{tab.storage}
+\end{table}
+
+\paragraph{Rollout implementation.}
+All arms share MuJoCo 3.5.0, robosuite 1.4.1, LIBERO 0.1.0, PyTorch 2.7.1, and Quadro RTX 6000 GPUs. The image is rotated by $180^\circ$, resized to $64\times64$, and divided by 255. The sign of the predicted gripper coordinate determines its discrete action. A direct Householder-QR solver handles the constrained-dynamics controller, with no fallback for singular systems. Its largest normwise backward error, the linear-system residual divided by the stated matrix and solution scale, is $1.48\times10^{-17}$ against a $10^{-12}$ gate. Its equivalence to the historical controller is restricted to nonsingular systems. These results should be interpreted under this controller and horizon.
+
+Descriptive Wilson 95\% intervals for success are 64.0\% to 94.8\% for native and full rank, 58.4\% to 91.9\% for leading rank 174, and 76.4\% to 99.1\% for the random arm. They summarize this small balanced pilot. The exact paired comparison between leading and random has three discordances and $p=0.25$. A within-task bootstrap with only two starts per task is too fragile to support a superiority claim. Equal native and full-rank success vectors provide a sanity check without establishing statistical equivalence.
+
+\paragraph{Evidence availability.}
+We retain protocols, source snapshots, input identities, output summaries, action errors, and rollout outcomes. Internal hashes detect artifact changes. This draft provides no anonymous link to the complete checkpoint and raw predictions, limiting external reproduction.
+
+\end{document}

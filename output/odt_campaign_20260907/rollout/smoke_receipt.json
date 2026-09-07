@@ -1,0 +1,916 @@
+{
+  "controller": {
+    "componentwise_backward_error_warning_threshold": 1e-12,
+    "historical_controller_equivalence": "same_constrained_equations_on_nonsingular_systems_only",
+    "method": "direct_householder_qr_of_mass_jacobian_saddle_system",
+    "normwise_backward_error_gate": 1e-12,
+    "normwise_scale": "max_row_sum_abs_A_times_max_abs_X_plus_max_abs_B",
+    "rhs_relative_residual_warning_threshold": 1e-09,
+    "schema": "xvla_modal_direct_qr_constrained_dynamics_controller_v3",
+    "singular_policy": "fail_closed_no_fallback",
+    "unconditional_same_factor_refinement_steps": 2
+  },
+  "environment": {
+    "cublas_workspace_config": ":4096:8",
+    "deterministic_algorithms": true,
+    "device": "cuda",
+    "gpu": "Quadro RTX 6000",
+    "libero": "0.1.0",
+    "mujoco": "3.5.0",
+    "numpy": "1.26.4",
+    "pillow": "12.1.1",
+    "python": "3.10.19",
+    "robosuite": "1.4.1",
+    "tf32": false,
+    "threads": 4,
+    "torch": "2.7.1+cu126"
+  },
+  "full_policy_odt": false,
+  "guards": {
+    "composition": "controllerfirst,legacy87last,privatecontroller-onlyNumPyQRwrapper",
+    "controller": {
+      "blocked_entrypoints": [
+        "numpy.cov",
+        "numpy.linalg.cond",
+        "numpy.linalg.linalg.cond",
+        "numpy.linalg.linalg.lstsq",
+        "numpy.linalg.linalg.matrix_rank",
+        "numpy.linalg.linalg.pinv",
+        "numpy.linalg.linalg.svd",
+        "numpy.linalg.lstsq",
+        "numpy.linalg.matrix_rank",
+        "numpy.linalg.norm_spectral_matrix_orders",
+        "numpy.linalg.pinv",
+        "numpy.linalg.svd",
+        "scipy.linalg.lstsq",
+        "scipy.linalg.norm_spectral_matrix_orders",
+        "scipy.linalg.null_space",
+        "scipy.linalg.orth",
+        "scipy.linalg.pinv",
+        "scipy.linalg.pinvh",
+        "scipy.linalg.polar",
+        "scipy.linalg.svd",
+        "scipy.linalg.svdvals",
+        "torch.Tensor.cov",
+        "torch.Tensor.lstsq",
+        "torch.Tensor.pinverse",
+        "torch.Tensor.svd",
+        "torch.cond",
+        "torch.cov",
+        "torch.linalg.cond",
+        "torch.linalg.lstsq",
+        "torch.linalg.matrix_norm",
+        "torch.linalg.matrix_rank",
+        "torch.linalg.norm_spectral_matrix_orders",
+        "torch.linalg.pinv",
+        "torch.linalg.svd",
+        "torch.linalg.svdvals",
+        "torch.lstsq",
+        "torch.matrix_rank",
+        "torch.pca_lowrank",
+        "torch.pinverse",
+        "torch.polar",
+        "torch.svd",
+        "torch.svd_lowrank"
+      ],
+      "matrix_spectral_norm_calls": 0,
+      "prohibited_calls": 0
+    },
+    "controller_only_verified_entrypoints": [
+      "numpy.cov",
+      "scipy.linalg.lstsq",
+      "scipy.linalg.norm",
+      "scipy.linalg.null_space",
+      "scipy.linalg.orth",
+      "scipy.linalg.pinv",
+      "scipy.linalg.pinvh",
+      "scipy.linalg.polar",
+      "scipy.linalg.svd",
+      "scipy.linalg.svdvals"
+    ],
+    "controller_qr": {
+      "installed": true,
+      "prohibited_qr_callers": 0,
+      "qr_calls": 53400
+    },
+    "native": {
+      "allowed_call_count": 0,
+      "allowed_calls": [],
+      "audited_source_sha256": {
+        "research.odt_ffn_native_v1": "74b9f911de850b494d1b584cbdc755e387a827c91597d7d803f200acf7de921f",
+        "research.odt_ffn_native_v1.common": "e356b4d51e15bbee60169c1099700e61952c925d8925c60ac08d3ac85fddb5a6",
+        "research.odt_ffn_native_v2": "d3e04f3d42d6e3ecff1d0d7be5275e7db46c677aa865f043a70e98530dc41e31",
+        "research.odt_ffn_native_v2.native": "0aceb295d1e7ac57dae0755b44c50b515ae08a4bb1898f3e5f763828e386dafc",
+        "research.odt_ffn_native_v2.test_native": "304b366f31a8a42a2c18a3a80525979e21ba2e4585f55604a9d2e6dd019bff14",
+        "research.odt_reference.block_oracle": "76da7e5867bd8570039aacb919fef3f14ea827aabb82b642ebf7ccd9da19093a",
+        "scripts": "7e4eccbe7095f620526758bd1ffb1b530f4bc4ea51dc67b079ce11beee24cbdc",
+        "scripts.odt_direct_only_compliance": "710f1062f6ff16ff358ce6b88029a7e830f7854cd78c7eb000404cfca5e3e70d",
+        "scripts.odt_real_panel_v1": "4ab8510bf382a0fe7f5c03b60cf88f41775f355389f85c217c03527cf2b40a15",
+        "xvla": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla.models": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla.models.lm": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla.models.vit": "5c90b4424aec632f831d0e6077c0b440d3beb9ed210f493ad256abce0013e04c",
+        "xvla.models.vla": "93ef4f7bebb825db6de5fca4786f8c345557bc65eaea1c82a3187c262987a3b4",
+        "xvla.nn": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla.nn.attention": "944c1844b17a9f67f2aa2e3e04e4e0301530af83a09d63ac7507329f08517706",
+        "xvla.nn.baselines": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla.nn.bilinear": "0d0bfdcd85426c43d4d42e993f944023641888d527c8a9671366b2176c4bac4d",
+        "xvla.nn.block": "42020203856039103bcad2802814da7f7253b00c795d5b827437717d20576618",
+        "xvla.nn.flow_action": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla.nn.homogeneous": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla.nn.normalization": "6e332f0771180e48ee30e5fce6ee5909fd9ddcc3e227a4bfe962abc23e562524",
+        "xvla.nn.product_routing": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla.nn.projector": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla.nn.quantile_action": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla.nn.tree_mixing": "600f04dcefdbcc87c9f6a3cbc5c4ec0d202509ae1e9c4386e318249c60efcf06"
+      },
+      "installed": true,
+      "patched_entrypoint_count": 87,
+      "patched_entrypoints": [
+        "numpy.linalg.cholesky",
+        "numpy.linalg.cond",
+        "numpy.linalg.eig",
+        "numpy.linalg.eigh",
+        "numpy.linalg.eigvals",
+        "numpy.linalg.eigvalsh",
+        "numpy.linalg.inv",
+        "numpy.linalg.linalg.cholesky",
+        "numpy.linalg.linalg.cond",
+        "numpy.linalg.linalg.eig",
+        "numpy.linalg.linalg.eigh",
+        "numpy.linalg.linalg.eigvals",
+        "numpy.linalg.linalg.eigvalsh",
+        "numpy.linalg.linalg.inv",
+        "numpy.linalg.linalg.lstsq",
+        "numpy.linalg.linalg.matrix_power",
+        "numpy.linalg.linalg.matrix_rank",
+        "numpy.linalg.linalg.norm",
+        "numpy.linalg.linalg.pinv",
+        "numpy.linalg.linalg.solve",
+        "numpy.linalg.linalg.svd",
+        "numpy.linalg.linalg.tensorinv",
+        "numpy.linalg.linalg.tensorsolve",
+        "numpy.linalg.lstsq",
+        "numpy.linalg.matrix_power",
+        "numpy.linalg.matrix_rank",
+        "numpy.linalg.norm",
+        "numpy.linalg.pinv",
+        "numpy.linalg.solve",
+        "numpy.linalg.svd",
+        "numpy.linalg.tensorinv",
+        "numpy.linalg.tensorsolve",
+        "torch.Tensor.cholesky",
+        "torch.Tensor.cholesky_inverse",
+        "torch.Tensor.cov",
+        "torch.Tensor.inverse",
+        "torch.Tensor.lstsq",
+        "torch.Tensor.lu",
+        "torch.Tensor.lu_solve",
+        "torch.Tensor.matrix_power",
+        "torch.Tensor.norm",
+        "torch.Tensor.pinverse",
+        "torch.Tensor.solve",
+        "torch.Tensor.svd",
+        "torch.cholesky",
+        "torch.cholesky_inverse",
+        "torch.cond",
+        "torch.cov",
+        "torch.functional.norm",
+        "torch.inverse",
+        "torch.linalg.cholesky",
+        "torch.linalg.cholesky_ex",
+        "torch.linalg.cond",
+        "torch.linalg.eig",
+        "torch.linalg.eigh",
+        "torch.linalg.eigvals",
+        "torch.linalg.eigvalsh",
+        "torch.linalg.inv",
+        "torch.linalg.lstsq",
+        "torch.linalg.lu",
+        "torch.linalg.lu_factor",
+        "torch.linalg.lu_factor_ex",
+        "torch.linalg.lu_solve",
+        "torch.linalg.matrix_norm",
+        "torch.linalg.matrix_power",
+        "torch.linalg.matrix_rank",
+        "torch.linalg.norm",
+        "torch.linalg.pinv",
+        "torch.linalg.qr",
+        "torch.linalg.solve",
+        "torch.linalg.solve_triangular",
+        "torch.linalg.svd",
+        "torch.linalg.svdvals",
+        "torch.linalg.tensorinv",
+        "torch.linalg.tensorsolve",
+        "torch.lstsq",
+        "torch.lu",
+        "torch.lu_solve",
+        "torch.matrix_power",
+        "torch.matrix_rank",
+        "torch.norm",
+        "torch.pca_lowrank",
+        "torch.pinverse",
+        "torch.polar",
+        "torch.solve",
+        "torch.svd",
+        "torch.svd_lowrank"
+      ],
+      "profile": "legacy87",
+      "prohibited_attempt_count": 0,
+      "prohibited_attempts": [],
+      "runtime_versions": {
+        "numpy": "1.26.4",
+        "torch": "2.7.1+cu126"
+      }
+    }
+  },
+  "measurement_complete": true,
+  "model": {
+    "checkpoint_sha256": "b1c0dfce86ee90b45e30367603a7cc4d88c02f9056e836b19656179bf74ea3ee",
+    "config": {
+      "action_dim": 7,
+      "action_head": "linear",
+      "action_horizon": 8,
+      "attn": "bilinear",
+      "conv_grid": 8,
+      "conv_kernel": 3,
+      "curriculum": false,
+      "dim": 384,
+      "distill_tau0": 1.0,
+      "distill_tau1": 0.02,
+      "distill_teacher": false,
+      "dual_vision": false,
+      "ffn": "bilinear",
+      "ffn_rank": 1152,
+      "flow_decode": "mode",
+      "flow_depth": 2,
+      "flow_kwta_samples": 16,
+      "flow_steps": 10,
+      "flow_time_degree": 3,
+      "head_rank": null,
+      "image_size": 64,
+      "lambda_distill": 0.0,
+      "lambda_recon": 0.0,
+      "max_instr_len": 32,
+      "mix_width": 64,
+      "n_embodiments": 1,
+      "n_factors": 3,
+      "n_heads": 12,
+      "n_layers": 8,
+      "n_phases": 0,
+      "norm": "rational",
+      "patch_size": 8,
+      "product_st": false,
+      "projector": "crossbilinear",
+      "qk_norm": "rational",
+      "quantile_degree": 4,
+      "quantile_grid": 128,
+      "residual": true,
+      "st_samples": 4,
+      "st_temp0": 1.5,
+      "st_temp1": 0.3,
+      "state_dim": 8,
+      "teacher_weight": 1.0,
+      "unimodal_tau": 0.5,
+      "value_head": false,
+      "vision_encoder": "vit",
+      "vit_attn": "bilinear",
+      "vit_dim": 192,
+      "vit_ffn_rank": 576,
+      "vit_heads": 8,
+      "vit_layers": 4,
+      "vit_mix_width": null,
+      "vit_residual": true,
+      "vocab_size": 26
+    },
+    "normalization_inventory": {
+      "active_count": 73,
+      "count": 74,
+      "inactive_sites": [
+        "vision.norm_out"
+      ],
+      "sites": [
+        {
+          "initialized": true,
+          "running_ms": 22.171648025512695,
+          "site": "backbone.blocks.0.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 20.538490295410156,
+          "site": "backbone.blocks.0.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 7.658193588256836,
+          "site": "backbone.blocks.0.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 7.8149518966674805,
+          "site": "backbone.blocks.0.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 12.62485122680664,
+          "site": "backbone.blocks.0.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 12.629410743713379,
+          "site": "backbone.blocks.0.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 15.097135543823242,
+          "site": "backbone.blocks.1.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 14.87781810760498,
+          "site": "backbone.blocks.1.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.399556159973145,
+          "site": "backbone.blocks.1.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.0615816116333,
+          "site": "backbone.blocks.1.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 15.244620323181152,
+          "site": "backbone.blocks.1.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 15.26124095916748,
+          "site": "backbone.blocks.1.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 13.855377197265625,
+          "site": "backbone.blocks.2.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 14.216479301452637,
+          "site": "backbone.blocks.2.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.994441986083984,
+          "site": "backbone.blocks.2.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.683514595031738,
+          "site": "backbone.blocks.2.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 17.445884704589844,
+          "site": "backbone.blocks.2.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 17.496904373168945,
+          "site": "backbone.blocks.2.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 14.158084869384766,
+          "site": "backbone.blocks.3.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 14.322907447814941,
+          "site": "backbone.blocks.3.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.170348167419434,
+          "site": "backbone.blocks.3.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.465194702148438,
+          "site": "backbone.blocks.3.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 20.117996215820312,
+          "site": "backbone.blocks.3.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 20.236785888671875,
+          "site": "backbone.blocks.3.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 15.077208518981934,
+          "site": "backbone.blocks.4.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 15.190542221069336,
+          "site": "backbone.blocks.4.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 10.208911895751953,
+          "site": "backbone.blocks.4.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 10.287339210510254,
+          "site": "backbone.blocks.4.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 23.65863800048828,
+          "site": "backbone.blocks.4.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 24.064807891845703,
+          "site": "backbone.blocks.4.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 18.310529708862305,
+          "site": "backbone.blocks.5.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 17.721887588500977,
+          "site": "backbone.blocks.5.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 12.440102577209473,
+          "site": "backbone.blocks.5.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 12.491250038146973,
+          "site": "backbone.blocks.5.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 32.71424102783203,
+          "site": "backbone.blocks.5.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 33.04868698120117,
+          "site": "backbone.blocks.5.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 19.392900466918945,
+          "site": "backbone.blocks.6.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 19.811767578125,
+          "site": "backbone.blocks.6.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 13.259799003601074,
+          "site": "backbone.blocks.6.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 14.311086654663086,
+          "site": "backbone.blocks.6.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 64.10392761230469,
+          "site": "backbone.blocks.6.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 64.82456970214844,
+          "site": "backbone.blocks.6.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 19.880826950073242,
+          "site": "backbone.blocks.7.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 17.39427375793457,
+          "site": "backbone.blocks.7.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 11.940781593322754,
+          "site": "backbone.blocks.7.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 11.882211685180664,
+          "site": "backbone.blocks.7.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 81.70065307617188,
+          "site": "backbone.blocks.7.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 87.65129089355469,
+          "site": "backbone.blocks.7.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 101.61685943603516,
+          "site": "norm_out"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.45153522491455,
+          "site": "vision.blocks.blocks.0.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 10.174540519714355,
+          "site": "vision.blocks.blocks.0.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 19.49382972717285,
+          "site": "vision.blocks.blocks.0.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 19.799768447875977,
+          "site": "vision.blocks.blocks.0.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 0.12066227942705154,
+          "site": "vision.blocks.blocks.0.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 0.11935091018676758,
+          "site": "vision.blocks.blocks.0.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 12.730782508850098,
+          "site": "vision.blocks.blocks.1.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 12.514719009399414,
+          "site": "vision.blocks.blocks.1.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 10.688058853149414,
+          "site": "vision.blocks.blocks.1.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 11.175421714782715,
+          "site": "vision.blocks.blocks.1.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 2.125155448913574,
+          "site": "vision.blocks.blocks.1.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 2.1263363361358643,
+          "site": "vision.blocks.blocks.1.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.778007507324219,
+          "site": "vision.blocks.blocks.2.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.676962852478027,
+          "site": "vision.blocks.blocks.2.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.381871223449707,
+          "site": "vision.blocks.blocks.2.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.228463172912598,
+          "site": "vision.blocks.blocks.2.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 4.916817665100098,
+          "site": "vision.blocks.blocks.2.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 4.970789432525635,
+          "site": "vision.blocks.blocks.2.rbn_ffn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.173142433166504,
+          "site": "vision.blocks.blocks.3.attn.rn_k1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 9.720673561096191,
+          "site": "vision.blocks.blocks.3.attn.rn_k2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.108495712280273,
+          "site": "vision.blocks.blocks.3.attn.rn_q1"
+        },
+        {
+          "initialized": true,
+          "running_ms": 7.976906776428223,
+          "site": "vision.blocks.blocks.3.attn.rn_q2"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.282914161682129,
+          "site": "vision.blocks.blocks.3.rbn_attn"
+        },
+        {
+          "initialized": true,
+          "running_ms": 8.386725425720215,
+          "site": "vision.blocks.blocks.3.rbn_ffn"
+        },
+        {
+          "initialized": false,
+          "running_ms": 1.0,
+          "site": "vision.norm_out"
+        }
+      ]
+    },
+    "parameters": 20137352
+  },
+  "offline_sha256": "083d5f3d9e9ec1262cd4d9cbe62ec8a759e4768971bf7b5fc801bec991ffc73b",
+  "pilot_only": true,
+  "records": [
+    {
+      "arm": "native",
+      "arrays_sha256": "508de43463ac359abaeddd7e8d52fc36950d047687772e0b7788e8deac2dd624",
+      "controller_counts": {
+        "calls": 3250,
+        "componentwise_residual_warning_systems": 1,
+        "direct_qr_systems": 9750,
+        "largest_componentwise_backward_error": 0.623152269206713,
+        "largest_normwise_backward_error": 1.4144068759916343e-17,
+        "largest_relative_residual": 3.40992425268416e-15,
+        "rhs_residual_warning_systems": 0
+      },
+      "elapsed_s": 6.315980717015918,
+      "episode": 0,
+      "failure": null,
+      "initial_state_sha256": "8aecc04c67f51f29b65ab55cd27984f4a2db52d9833165e91effe5c1cc3746d2",
+      "measurement_complete": true,
+      "seed": 0,
+      "setup_elapsed_s": 2.8637682989938185,
+      "steps": 120,
+      "success": true,
+      "task_index": 0,
+      "task_protocol": {
+        "bddl_sha256": "df088984da13131f8332ee0f13a7896c6a97afd02ee5007a42e8fc5e0893571e",
+        "init_states_array_sha256": "91eed35ff60c2b791ba1d80996e359177a9202d81358e9fddb42ccafffa3f34e",
+        "language": "pick up the alphabet soup and place it in the basket",
+        "packaged_file": {
+          "path": "/athenahomes/joy/LIBERO/libero/libero/init_files/libero_object/pick_up_the_alphabet_soup_and_place_it_in_the_basket.pruned_init",
+          "sha256": "b9023e5546b239cacb2aaa3c76df3b73c3de6f97500fea5e27a0db9827002a19"
+        },
+        "task_index": 0
+      },
+      "terminated_without_success": false
+    },
+    {
+      "arm": "fullrank",
+      "arrays_sha256": "a030c7e5d77cdca3f73336903bcaf5a3303af2765c677434ef03e83a4413f4c8",
+      "controller_counts": {
+        "calls": 6500,
+        "componentwise_residual_warning_systems": 2,
+        "direct_qr_systems": 19500,
+        "largest_componentwise_backward_error": 0.623152269206713,
+        "largest_normwise_backward_error": 1.4698838229795383e-17,
+        "largest_relative_residual": 3.40992425268416e-15,
+        "rhs_residual_warning_systems": 0
+      },
+      "elapsed_s": 6.2486219219863415,
+      "episode": 0,
+      "failure": null,
+      "initial_state_sha256": "8aecc04c67f51f29b65ab55cd27984f4a2db52d9833165e91effe5c1cc3746d2",
+      "measurement_complete": true,
+      "seed": 0,
+      "setup_elapsed_s": 1.7989405950065702,
+      "steps": 120,
+      "success": true,
+      "task_index": 0,
+      "task_protocol": {
+        "bddl_sha256": "df088984da13131f8332ee0f13a7896c6a97afd02ee5007a42e8fc5e0893571e",
+        "init_states_array_sha256": "91eed35ff60c2b791ba1d80996e359177a9202d81358e9fddb42ccafffa3f34e",
+        "language": "pick up the alphabet soup and place it in the basket",
+        "packaged_file": {
+          "path": "/athenahomes/joy/LIBERO/libero/libero/init_files/libero_object/pick_up_the_alphabet_soup_and_place_it_in_the_basket.pruned_init",
+          "sha256": "b9023e5546b239cacb2aaa3c76df3b73c3de6f97500fea5e27a0db9827002a19"
+        },
+        "task_index": 0
+      },
+      "terminated_without_success": false
+    },
+    {
+      "arm": "leading_k174",
+      "arrays_sha256": "b5e74074706217dd1a7d6599e38ea4fe617bffa51394cd52378f650a7cb0a2f5",
+      "controller_counts": {
+        "calls": 13750,
+        "componentwise_residual_warning_systems": 3,
+        "direct_qr_systems": 41250,
+        "largest_componentwise_backward_error": 0.623152269206713,
+        "largest_normwise_backward_error": 1.4698838229795383e-17,
+        "largest_relative_residual": 5.4768201692562135e-15,
+        "rhs_residual_warning_systems": 0
+      },
+      "elapsed_s": 14.108467962010764,
+      "episode": 0,
+      "failure": null,
+      "initial_state_sha256": "8aecc04c67f51f29b65ab55cd27984f4a2db52d9833165e91effe5c1cc3746d2",
+      "measurement_complete": true,
+      "seed": 0,
+      "setup_elapsed_s": 1.976436986005865,
+      "steps": 280,
+      "success": false,
+      "task_index": 0,
+      "task_protocol": {
+        "bddl_sha256": "df088984da13131f8332ee0f13a7896c6a97afd02ee5007a42e8fc5e0893571e",
+        "init_states_array_sha256": "91eed35ff60c2b791ba1d80996e359177a9202d81358e9fddb42ccafffa3f34e",
+        "language": "pick up the alphabet soup and place it in the basket",
+        "packaged_file": {
+          "path": "/athenahomes/joy/LIBERO/libero/libero/init_files/libero_object/pick_up_the_alphabet_soup_and_place_it_in_the_basket.pruned_init",
+          "sha256": "b9023e5546b239cacb2aaa3c76df3b73c3de6f97500fea5e27a0db9827002a19"
+        },
+        "task_index": 0
+      },
+      "terminated_without_success": false
+    },
+    {
+      "arm": "anchored_k174_s0",
+      "arrays_sha256": "f937f42e6be7eaa38b5c8b6cb8597f2d7082a972e26603236595571f4dba9bed",
+      "controller_counts": {
+        "calls": 17800,
+        "componentwise_residual_warning_systems": 4,
+        "direct_qr_systems": 53400,
+        "largest_componentwise_backward_error": 0.623152269206713,
+        "largest_normwise_backward_error": 1.4698838229795383e-17,
+        "largest_relative_residual": 5.4768201692562135e-15,
+        "rhs_residual_warning_systems": 0
+      },
+      "elapsed_s": 8.226926521980204,
+      "episode": 0,
+      "failure": null,
+      "initial_state_sha256": "8aecc04c67f51f29b65ab55cd27984f4a2db52d9833165e91effe5c1cc3746d2",
+      "measurement_complete": true,
+      "seed": 0,
+      "setup_elapsed_s": 1.7249642019742168,
+      "steps": 152,
+      "success": true,
+      "task_index": 0,
+      "task_protocol": {
+        "bddl_sha256": "df088984da13131f8332ee0f13a7896c6a97afd02ee5007a42e8fc5e0893571e",
+        "init_states_array_sha256": "91eed35ff60c2b791ba1d80996e359177a9202d81358e9fddb42ccafffa3f34e",
+        "language": "pick up the alphabet soup and place it in the basket",
+        "packaged_file": {
+          "path": "/athenahomes/joy/LIBERO/libero/libero/init_files/libero_object/pick_up_the_alphabet_soup_and_place_it_in_the_basket.pruned_init",
+          "sha256": "b9023e5546b239cacb2aaa3c76df3b73c3de6f97500fea5e27a0db9827002a19"
+        },
+        "task_index": 0
+      },
+      "terminated_without_success": false
+    }
+  ],
+  "schema": "odt-ffn-rollout-smoke-v1",
+  "source_sha256": {
+    "controller_admission": "exact reviewed byte identity, unchanged NumPy directQR caller",
+    "fixtures": {
+      "modal_odt_controller_real_gate_capture.json": "d90397a8f1aa4bdf86cd07a8f163df12956519a359ff2b9cfdd0c410a6c4b3b7",
+      "modal_odt_controller_zero_component_capture.json": "1d00f4e60c8713d0dcf5edefa18c330c36e66cf59cf49faa2483adc30c85b5a1"
+    },
+    "local": {
+      "__init__.py": "e896126c7d3921d939f75593d976e2039e2e5775f6319653eee75c292cf8823b",
+      "controller.py": "e89c2b9efe953086859a5c9f37fcbca0fef1fcf9dd9f8c301fe94ce61aaf2687",
+      "guards.py": "be12ed94936c78ccf207d9d18558f00ee0832e0900d130ecd933dcbd32cde873",
+      "tasks.json": "eb7a89173674b0898cd0ed370719c56ff400f57f6e03afea98723bf4aaf5e59b",
+      "test_controller.py": "ca6f847b6bb6df7657771af0cd30c426d63410993043137339cf0d6673d8b574",
+      "test_worker.py": "fbec7e2b860d21e41c6012ef3a21bb5d091fcf65b9361297d474dd88997bc66a",
+      "worker.py": "0a3635d45011e072afe150eee4b04d0e727212de8a55cb1f08a6ac40e5ee10ac"
+    },
+    "native_source_audit": {
+      "call_site_count": 2378,
+      "direct_qr_call_sites": 0,
+      "direct_qr_required": false,
+      "duplicate_top_level_definition_sites": [],
+      "entrypoints": [
+        "research/odt_ffn_native_v1/native.py",
+        "research/odt_ffn_native_v1/test_native.py"
+      ],
+      "guarded_dormant_spectral_norm_sites": [],
+      "prohibited_calls_found": [],
+      "prohibited_self_overlap_sites": [],
+      "scope": "transitive_local_import_closure",
+      "source_count": 25,
+      "source_sha256": {
+        "research/odt_ffn_native_v1/__init__.py": "74b9f911de850b494d1b584cbdc755e387a827c91597d7d803f200acf7de921f",
+        "research/odt_ffn_native_v1/common.py": "e356b4d51e15bbee60169c1099700e61952c925d8925c60ac08d3ac85fddb5a6",
+        "research/odt_ffn_native_v1/native.py": "1c554af3249deba0d4d1ae131961462f348f7ea195808857b0ea35a4fef4d29e",
+        "research/odt_ffn_native_v1/test_native.py": "37bf8b63891da41e9fec343fad4ca85a0782af6f5a927fd9c734d2fa0d30433b",
+        "research/odt_reference/block_oracle.py": "76da7e5867bd8570039aacb919fef3f14ea827aabb82b642ebf7ccd9da19093a",
+        "scripts/__init__.py": "7e4eccbe7095f620526758bd1ffb1b530f4bc4ea51dc67b079ce11beee24cbdc",
+        "scripts/odt_direct_only_compliance.py": "710f1062f6ff16ff358ce6b88029a7e830f7854cd78c7eb000404cfca5e3e70d",
+        "scripts/odt_real_panel_v1.py": "4ab8510bf382a0fe7f5c03b60cf88f41775f355389f85c217c03527cf2b40a15",
+        "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla/models/vit.py": "5c90b4424aec632f831d0e6077c0b440d3beb9ed210f493ad256abce0013e04c",
+        "xvla/models/vla.py": "93ef4f7bebb825db6de5fca4786f8c345557bc65eaea1c82a3187c262987a3b4",
+        "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla/nn/attention.py": "944c1844b17a9f67f2aa2e3e04e4e0301530af83a09d63ac7507329f08517706",
+        "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla/nn/bilinear.py": "0d0bfdcd85426c43d4d42e993f944023641888d527c8a9671366b2176c4bac4d",
+        "xvla/nn/block.py": "42020203856039103bcad2802814da7f7253b00c795d5b827437717d20576618",
+        "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla/nn/normalization.py": "6e332f0771180e48ee30e5fce6ee5909fd9ddcc3e227a4bfe962abc23e562524",
+        "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla/nn/tree_mixing.py": "600f04dcefdbcc87c9f6a3cbc5c4ec0d202509ae1e9c4386e318249c60efcf06"
+      }
+    },
+    "offline_source_audit": {
+      "call_site_count": 2464,
+      "direct_qr_call_sites": 0,
+      "direct_qr_required": false,
+      "duplicate_top_level_definition_sites": [],
+      "entrypoints": [
+        "research/odt_ffn_native_v2/native.py",
+        "research/odt_ffn_native_v2/test_native.py"
+      ],
+      "guarded_dormant_spectral_norm_sites": [],
+      "prohibited_calls_found": [],
+      "prohibited_self_overlap_sites": [],
+      "scope": "transitive_local_import_closure",
+      "source_count": 26,
+      "source_sha256": {
+        "research/odt_ffn_native_v1/__init__.py": "74b9f911de850b494d1b584cbdc755e387a827c91597d7d803f200acf7de921f",
+        "research/odt_ffn_native_v1/common.py": "e356b4d51e15bbee60169c1099700e61952c925d8925c60ac08d3ac85fddb5a6",
+        "research/odt_ffn_native_v2/__init__.py": "d3e04f3d42d6e3ecff1d0d7be5275e7db46c677aa865f043a70e98530dc41e31",
+        "research/odt_ffn_native_v2/native.py": "0aceb295d1e7ac57dae0755b44c50b515ae08a4bb1898f3e5f763828e386dafc",
+        "research/odt_ffn_native_v2/test_native.py": "304b366f31a8a42a2c18a3a80525979e21ba2e4585f55604a9d2e6dd019bff14",
+        "research/odt_reference/block_oracle.py": "76da7e5867bd8570039aacb919fef3f14ea827aabb82b642ebf7ccd9da19093a",
+        "scripts/__init__.py": "7e4eccbe7095f620526758bd1ffb1b530f4bc4ea51dc67b079ce11beee24cbdc",
+        "scripts/odt_direct_only_compliance.py": "710f1062f6ff16ff358ce6b88029a7e830f7854cd78c7eb000404cfca5e3e70d",
+        "scripts/odt_real_panel_v1.py": "4ab8510bf382a0fe7f5c03b60cf88f41775f355389f85c217c03527cf2b40a15",
+        "xvla/__init__.py": "a6eeee3f1c8c9eec78d2101a0a55761c49d24c3a107d32f065fde725ee193626",
+        "xvla/models/__init__.py": "142c431a5637c1d97cc1cb8d0ada64b3904dba4d0eabf79a706be141190a71ec",
+        "xvla/models/lm.py": "c77279e821bddf168a975b777bfe1f9293fd317085b7cb9a9df771b6fd569aa0",
+        "xvla/models/vit.py": "5c90b4424aec632f831d0e6077c0b440d3beb9ed210f493ad256abce0013e04c",
+        "xvla/models/vla.py": "93ef4f7bebb825db6de5fca4786f8c345557bc65eaea1c82a3187c262987a3b4",
+        "xvla/nn/__init__.py": "2751993d3f6782f60b55f72915744c55762beb02108f05a1c550b89ceb3cfc52",
+        "xvla/nn/attention.py": "944c1844b17a9f67f2aa2e3e04e4e0301530af83a09d63ac7507329f08517706",
+        "xvla/nn/baselines.py": "eb4d6ba5f3aa66589991ee3221017dc59092ec9fd35255f9124812420451a8d4",
+        "xvla/nn/bilinear.py": "0d0bfdcd85426c43d4d42e993f944023641888d527c8a9671366b2176c4bac4d",
+        "xvla/nn/block.py": "42020203856039103bcad2802814da7f7253b00c795d5b827437717d20576618",
+        "xvla/nn/flow_action.py": "1108fd31c0091ce51afa342e798ab625514bc5a8064e45b8f0ce38790d71c1aa",
+        "xvla/nn/homogeneous.py": "314ba488c638da18d74de213218e310ea75aafa4fbbc92d9cb838aaa5a31701b",
+        "xvla/nn/normalization.py": "6e332f0771180e48ee30e5fce6ee5909fd9ddcc3e227a4bfe962abc23e562524",
+        "xvla/nn/product_routing.py": "20da357c875e426b2341e1950736ac6cb88700cb1654e46a4b8a2943c666c9b2",
+        "xvla/nn/projector.py": "6212e35fbab973de2e79d74bd5064635db12a2c5e48c8c7df7428cbf1e31aaed",
+        "xvla/nn/quantile_action.py": "6bd1ecbe5491457fb9ae0154ea566c0ce24e43f102516699f0b3941d4b497c7e",
+        "xvla/nn/tree_mixing.py": "600f04dcefdbcc87c9f6a3cbc5c4ec0d202509ae1e9c4386e318249c60efcf06"
+      }
+    }
+  },
+  "timing": {
+    "formula": "1.25*20*sum_arm(setup+280*episode_elapsed/max(1,steps))",
+    "maximum_seconds": 3000.0,
+    "passed": true,
+    "projected_serial80_episode_seconds": 1673.6212211854045
+  },
+  "variants_manifest_sha256": "d4d41179bc9f857233acdf244ed89f1ef0697bb0cd68f025b36530e32f880ba0"
+}
