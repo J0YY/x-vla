@@ -10,7 +10,7 @@ from research.odt_reference.run_tests import install_guards, COUNTS
 from research.odt_reference import run_curve as original
 from research.odt_reference.curve import rank_schedule, physical_variant
 from research.odt_reference.shared_dag import Graph, Node, common_bases, apply_bases
-from scripts.odt_rank_ablation import protected_plan, allocation, consumer_audit
+from scripts.odt_rank_ablation import protected_plan, allocation, consumer_audit, load_accepted
 
 
 def fixture():
@@ -88,6 +88,13 @@ class RankAblationTests(unittest.TestCase):
     def test_source_audit_and_guard(self):
         self.assertIn("consumer_sha256", consumer_audit())
         self.assertEqual(COUNTS["prohibited_attempts"], 0)
+
+    def test_forged_producer_rejected_before_arrays(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original.write_json(root / "accepted.json", {"accepted": True})
+            with self.assertRaisesRegex(ValueError, "immutable accepted producer identity"):
+                load_accepted(root, consumer_audit())
 
 
 if __name__ == "__main__":

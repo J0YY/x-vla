@@ -162,6 +162,9 @@ def run(producer, output, task_index):
     delta = decoded - expected[valid]
     if not np.isfinite(delta).all():
         raise ValueError("nonfinite decoded error")
+    full_rank_error = (original.close(decoded, expected, original.TOLERANCES["replay"],
+                                     "consumer full-rank replay")
+                       if plan.removed_dimensions == 0 else None)
     if consumer_audit() != sources or COUNTS["prohibited_attempts"]:
         raise ValueError("consumer source changed or prohibited route attempted")
     result = {"scope": original.SCOPE, "full_policy": False, "libero_evaluated": False,
@@ -178,6 +181,7 @@ def run(producer, output, task_index):
               "new_cutoffs_independently_clone_checked": False,
               "new_cutoff_unresolved_nodes": unresolved, "basis_eigen_residual_max": max(residuals),
               "rank_mask_equivalence": equivalence, "valid_inputs": int(np.sum(valid)),
+              "full_rank_replay_error": full_rank_error,
               "input_count": len(raw), "failure_reasons": physical.failure_reasons,
               "relative_denominators": physical.relative_denominators,
               "errors_on_valid_inputs_only": {
